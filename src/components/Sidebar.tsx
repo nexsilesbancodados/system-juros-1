@@ -26,7 +26,7 @@ const sections: MenuSection[] = [
     title: "Principal",
     items: [
       { label: "Painel", icon: <LayoutDashboard size={18} />, path: "/dashboard" },
-      { label: "Mesa de Cobrança", icon: <PhoneCall size={18} />, path: "/mesa-cobranca" },
+      { label: "Cobranças", icon: <Receipt size={18} />, path: "/cobrancas" },
       { label: "Agente IA", icon: <Bot size={18} />, path: "/agente-ia" },
       { label: "Análises", icon: <BarChart3 size={18} />, path: "/analises" },
       { label: "Relatórios", icon: <FileText size={18} />, path: "/relatorios" },
@@ -43,8 +43,6 @@ const sections: MenuSection[] = [
   {
     title: "Financeiro",
     items: [
-      { label: "Tesouraria", icon: <Landmark size={18} />, path: "/tesouraria" },
-      { label: "Cobranças", icon: <Receipt size={18} />, path: "/cobrancas" },
       { label: "Carteira", icon: <Wallet size={18} />, path: "/carteira" },
       { label: "Lucros", icon: <TrendingUp size={18} />, path: "/lucros" },
       { label: "Gastos", icon: <DollarSign size={18} />, path: "/gastos" },
