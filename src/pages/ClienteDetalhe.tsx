@@ -12,7 +12,7 @@ import {
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
-  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer
+  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
