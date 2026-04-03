@@ -5,6 +5,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 
 const Index = () => {
   const [email, setEmail] = useState("");
