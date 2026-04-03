@@ -48,7 +48,7 @@ const Index = () => {
     }
   };
 
-  const inputCls = "w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(38,75%,50%)]/40 focus:border-[hsl(38,75%,50%)]/40 transition-all duration-200";
+  const inputCls = "w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-body">
