@@ -381,7 +381,7 @@ const Dashboard = () => {
                   <div
                     key={item.id}
                     className="data-row cursor-pointer micro-bounce"
-                    onClick={() => navigate(`/contratos/${item.contractId}`)}
+                    onClick={() => navigate(`/clientes/${item.clientId || item.client_id}`)}}
                   >
                     <div className="num-badge bg-destructive/10 text-destructive">
                       {item.installment_number}
