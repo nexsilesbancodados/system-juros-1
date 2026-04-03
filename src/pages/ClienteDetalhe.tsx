@@ -565,7 +565,6 @@ const ClienteDetalhe = () => {
     { key: "historico", label: "Histórico", icon: Clock },
   ] as const;
 
-  const [showMoreActions, setShowMoreActions] = useState(false);
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-24">
