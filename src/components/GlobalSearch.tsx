@@ -24,7 +24,7 @@ const pages: SearchResult[] = [
   { type: "page", title: "Agente IA", path: "/agente-ia" },
   { type: "page", title: "Configurações", path: "/configuracoes" },
   { type: "page", title: "Histórico", path: "/historico" },
-  { type: "page", title: "QR Code", path: "/qrcode" },
+  { type: "page", title: "Portais", path: "/qrcode" },
   { type: "page", title: "Simulador", path: "/ferramentas/simulador" },
   { type: "page", title: "Metas", path: "/ferramentas/metas" },
   { type: "page", title: "Tarefas", path: "/ferramentas/tarefas" },
