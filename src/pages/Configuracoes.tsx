@@ -272,90 +272,193 @@ const Configuracoes = () => {
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><Palette size={16} className="text-primary" /></div>
               <div>
-                <h2 className="font-semibold text-foreground">White Label</h2>
-                <p className="text-xs text-muted-foreground">Personalize nome, logo e cores do sistema</p>
+                <h2 className="font-semibold text-foreground">White Label Completo</h2>
+                <p className="text-xs text-muted-foreground">Personalize toda a identidade visual do sistema</p>
               </div>
             </div>
 
-            {/* Logo */}
-            <div className="space-y-3">
-              <label className="text-label mb-1.5 block">Logo da Empresa</label>
+            {/* Identity Section */}
+            <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Building size={12} className="text-primary" /> Identidade
+              </p>
+
+              {/* Logo */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted/30 border border-border flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-20 h-20 rounded-2xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0 hover:border-primary/30 transition-colors">
                   {form.company_logo_url ? (
                     <img src={form.company_logo_url} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                    <Image size={24} className="text-muted-foreground/30" />
+                    <div className="text-center">
+                      <Image size={24} className="text-muted-foreground/30 mx-auto" />
+                      <p className="text-[8px] text-muted-foreground mt-1">Logo</p>
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 space-y-2">
                   <input ref={logoInputRef} type="file" accept="image/*" onChange={handleUploadLogo} className="hidden" />
                   <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50 w-full justify-center">
                     <Upload size={14} /> {uploadingLogo ? "Enviando..." : "Enviar Logo"}
                   </button>
                   {form.company_logo_url && (
                     <button onClick={() => setForm({ ...form, company_logo_url: "" })}
-                      className="text-xs text-destructive hover:underline">Remover logo</button>
+                      className="text-xs text-destructive hover:underline block mx-auto">Remover logo</button>
                   )}
+                  <p className="text-[10px] text-muted-foreground text-center">PNG ou JPG, máx 2MB</p>
                 </div>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
+                <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
+                <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar e login</p>
               </div>
             </div>
 
-            {/* Name */}
-            <div>
-              <label className="text-label mb-1.5 block">Nome do Sistema</label>
-              <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
-              <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral e login</p>
+            {/* Theme Mode */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Sun size={12} className="text-warning" /> Modo do Tema
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "dark", label: "Escuro", icon: Moon, desc: "Interface dark" },
+                  { value: "light", label: "Claro", icon: Sun, desc: "Interface light" },
+                  { value: "system", label: "Sistema", icon: Monitor, desc: "Automático" },
+                ].map(mode => (
+                  <button
+                    key={mode.value}
+                    onClick={() => setForm({ ...form, theme_mode: mode.value })}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      form.theme_mode === mode.value
+                        ? "border-primary/40 bg-primary/10 shadow-sm"
+                        : "border-border hover:border-primary/20 hover:bg-accent/20"
+                    }`}
+                  >
+                    <mode.icon size={20} className={`mx-auto mb-1.5 ${form.theme_mode === mode.value ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="text-xs font-semibold text-foreground">{mode.label}</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">{mode.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Color presets */}
-            <div>
-              <label className="text-label mb-2 block">Cor Principal</label>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
+            {/* Color Palette */}
+            <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Palette size={12} className="text-primary" /> Paleta de Cores
+              </p>
+
+              {/* Presets Grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {COLOR_PRESETS.map((preset) => (
                   <button
                     key={preset.label}
                     onClick={() => setForm({ ...form, primary_color: preset.primary, accent_color: preset.accent })}
-                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all ${
-                      form.primary_color === preset.primary ? "border-primary bg-primary/10 scale-105" : "border-border hover:border-primary/30"
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all ${
+                      form.primary_color === preset.primary
+                        ? "border-primary bg-primary/10 shadow-sm scale-[1.02]"
+                        : "border-border hover:border-primary/30 hover:bg-accent/20"
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-full shadow-sm" style={{ background: `linear-gradient(135deg, ${preset.primary}, ${preset.accent})` }} />
-                    <span className="text-[9px] font-medium text-muted-foreground">{preset.label}</span>
+                    <div className="w-8 h-8 rounded-lg shadow-sm shrink-0" style={{ background: `linear-gradient(135deg, ${preset.primary}, ${preset.accent})` }} />
+                    <div className="text-left min-w-0">
+                      <p className="text-[10px] font-semibold text-foreground truncate">{preset.label}</p>
+                      <p className="text-[8px] text-muted-foreground font-mono">{preset.primary}</p>
+                    </div>
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground">Principal:</label>
+
+              {/* Custom Color Pickers */}
+              <div className="flex items-center gap-4 pt-2">
+                <div className="flex items-center gap-2.5 flex-1">
                   <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-                    className="w-8 h-8 rounded-lg border border-border cursor-pointer" />
+                    className="w-10 h-10 rounded-xl border border-border cursor-pointer shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Principal</p>
+                    <p className="text-[10px] font-mono text-muted-foreground">{form.primary_color}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground">Destaque:</label>
+                <div className="flex items-center gap-2.5 flex-1">
                   <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                    className="w-8 h-8 rounded-lg border border-border cursor-pointer" />
+                    className="w-10 h-10 rounded-xl border border-border cursor-pointer shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Destaque</p>
+                    <p className="text-[10px] font-mono text-muted-foreground">{form.accent_color}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="p-4 rounded-2xl border border-border bg-muted/20">
-              <p className="text-label mb-2">Pré-visualização</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})` }}>
-                  {form.company_logo_url && <img src={form.company_logo_url} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <div>
-                  <p className="text-sm font-bold" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    {form.company_name || "SYSTEM JUROS"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">Seu sistema personalizado</p>
-                </div>
-                <div className="ml-auto flex gap-1.5">
-                  <div className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style={{ background: form.primary_color }}>Botão</div>
-                  <div className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style={{ background: form.accent_color }}>Ação</div>
+            {/* Live Preview */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Eye size={12} className="text-primary" /> Pré-visualização ao Vivo
+              </p>
+
+              {/* Mockup: Sidebar + Header */}
+              <div className="rounded-xl border border-border overflow-hidden bg-background">
+                {/* Fake sidebar + main area */}
+                <div className="flex">
+                  {/* Mini sidebar */}
+                  <div className="w-[140px] border-r border-border p-3 space-y-2 bg-card shrink-0 hidden sm:block">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})` }}>
+                        {form.company_logo_url && <img src={form.company_logo_url} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <p className="text-[9px] font-bold truncate" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        {form.company_name || "SYSTEM JUROS"}
+                      </p>
+                    </div>
+                    {[
+                      { icon: LayoutDashboard, label: "Dashboard", active: true },
+                      { icon: Users, label: "Clientes", active: false },
+                      { icon: Receipt, label: "Contratos", active: false },
+                      { icon: Settings, label: "Config", active: false },
+                    ].map(item => (
+                      <div key={item.label} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[9px] ${
+                        item.active ? "text-white font-semibold" : "text-muted-foreground"
+                      }`} style={item.active ? { background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})` } : {}}>
+                        <item.icon size={10} /> {item.label}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Main content mockup */}
+                  <div className="flex-1 p-3 space-y-2">
+                    {/* Topbar */}
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold text-foreground">Dashboard</p>
+                      <div className="flex gap-1">
+                        <div className="w-5 h-5 rounded-md" style={{ background: `${form.primary_color}20` }} />
+                        <div className="w-5 h-5 rounded-full bg-muted" />
+                      </div>
+                    </div>
+                    {/* Stat cards */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {["R$ 15.000", "R$ 3.200", "12"].map((val, i) => (
+                        <div key={i} className="rounded-lg border border-border p-2 bg-card">
+                          <div className="w-4 h-4 rounded-md mb-1" style={{ background: `${form.primary_color}15` }}>
+                            <div className="w-2 h-2 m-1 rounded-sm" style={{ background: form.primary_color }} />
+                          </div>
+                          <p className="text-[9px] font-bold text-foreground">{val}</p>
+                          <p className="text-[7px] text-muted-foreground">{["Capital", "Lucro", "Clientes"][i]}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Button preview */}
+                    <div className="flex gap-1.5 pt-1">
+                      <div className="px-3 py-1.5 rounded-lg text-[9px] font-bold text-white" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})` }}>
+                        Novo Cliente
+                      </div>
+                      <div className="px-3 py-1.5 rounded-lg text-[9px] font-medium border border-border text-foreground">
+                        Exportar
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
