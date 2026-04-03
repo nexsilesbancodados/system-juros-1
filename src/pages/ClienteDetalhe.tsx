@@ -520,6 +520,7 @@ const ClienteDetalhe = () => {
     { icon: Mail, label: "E-mail", action: emailClient, color: "text-primary" },
     { icon: Copy, label: "Copiar Dados", action: copyClientInfo, color: "text-muted-foreground" },
     { icon: Download, label: "Exportar Resumo", action: exportSummary, color: "text-primary" },
+    { icon: Printer, label: "Gerar PDF", action: generatePDF, color: "text-primary" },
     { icon: Star, label: "Score +50", action: () => updateScore(50), color: "text-warning" },
     { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50), color: "text-destructive" },
     { icon: Ban, label: client?.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus, color: client?.status === "Ativo" ? "text-warning" : "text-success" },
