@@ -12,7 +12,7 @@ import {
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
-  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer
+  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
@@ -403,8 +403,28 @@ const ClienteDetalhe = () => {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary shrink-0">
-              {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+            <div className="relative group shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary overflow-hidden">
+                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+              </div>
+              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100" style={{ background: "var(--gradient-button)" }}>
+                <Camera size={10} className="text-white" />
+                <input type="file" accept="image/*" onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !id) return;
+                  const ext = file.name.split(".").pop();
+                  const path = `client-avatars/${id}.${ext}`;
+                  const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
+                  if (!upErr) {
+                    const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
+                    await supabase.from("clients").update({ avatar_url: urlData.publicUrl + "?t=" + Date.now() }).eq("id", id);
+                    inv("client-detail");
+                    toast({ title: "✓ Foto atualizada!" });
+                  } else {
+                    toast({ title: "Erro no upload", description: upErr.message, variant: "destructive" });
+                  }
+                }} className="hidden" />
+              </label>
             </div>
             <div className="min-w-0">
               <h1 className="text-xl font-bold text-foreground truncate">{client.name}</h1>

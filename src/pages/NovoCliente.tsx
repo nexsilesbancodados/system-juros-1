@@ -46,6 +46,8 @@ const NovoCliente = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -165,8 +167,21 @@ const NovoCliente = () => {
 
     setSaving(true);
 
+    const clientId = crypto.randomUUID();
+    let avatar_url: string | null = null;
+
+    if (avatarFile) {
+      const ext = avatarFile.name.split(".").pop();
+      const path = `client-avatars/${clientId}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
+        avatar_url = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("clients").insert({
-      id: crypto.randomUUID(),
+      id: clientId,
       user_id: user.id,
       name: nome.trim(),
       email: email.trim() || null,
@@ -175,6 +190,7 @@ const NovoCliente = () => {
       cpf_cnpj: cpfCnpj.trim() || null,
       client_type: "loan",
       status: "Ativo",
+      avatar_url,
       address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
     });
 
@@ -235,13 +251,17 @@ const NovoCliente = () => {
           <h2 className="text-sm font-semibold text-foreground">Identificação</h2>
         </div>
         <div className="flex items-start gap-5">
-          <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-muted-foreground bg-muted/30">
-              <User size={24} />
+          <div className="relative flex-shrink-0 group">
+            <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-muted-foreground bg-muted/30 overflow-hidden">
+              {avatarPreview ? <img src={avatarPreview} alt="" className="w-16 h-16 object-cover" /> : <User size={24} />}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
-              <Camera size={12} />
-            </button>
+            <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" style={{ background: "var(--gradient-button)" }}>
+              <Camera size={12} className="text-white" />
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); }
+              }} className="hidden" />
+            </label>
           </div>
           <div className="flex-1 space-y-3">
             <div>
