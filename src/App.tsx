@@ -38,6 +38,11 @@ import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
 import MesaCobranca from "./pages/MesaCobranca.tsx";
 import Tesouraria from "./pages/Tesouraria.tsx";
 import Historico from "./pages/Historico.tsx";
+import Configuracoes from "./pages/Configuracoes.tsx";
+import Cobradores from "./pages/Cobradores.tsx";
+import PortalCliente from "./pages/PortalCliente.tsx";
+import QRCodePage from "./pages/QRCodePage.tsx";
+import AgenteIA from "./pages/AgenteIA.tsx";
 
 const queryClient = new QueryClient();
 
@@ -81,8 +86,20 @@ const App = () => (
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/tesouraria" element={<Tesouraria />} />
                 <Route path="/historico" element={<Historico />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/cobradores" element={<Cobradores />} />
+                <Route path="/portal-cliente" element={<PortalCliente />} />
+                <Route path="/qrcode" element={<QRCodePage />} />
+                <Route path="/agente-ia" element={<AgenteIA />} />
               </Route>
               <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
             </Routes>
           </BrowserRouter>
         </AuthProvider>
