@@ -1,4 +1,4 @@
-import { Bell, Wallet, TrendingUp, LogOut, Sun, Moon, Search } from "lucide-react";
+import { Bell, TrendingUp, LogOut, Sun, Moon, Search, Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -58,96 +58,106 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     navigate("/");
   };
 
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6 gap-4">
+    <header className="h-14 border-b border-border bg-card/80 glass flex items-center justify-between px-4 lg:px-6 gap-3">
       {/* Search */}
       <button
         onClick={onSearchClick}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-accent/50 border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-accent transition-all duration-200"
       >
         <Search size={14} />
-        <span className="hidden sm:inline">Buscar...</span>
-        <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded bg-muted font-mono ml-4">⌘K</kbd>
+        <span className="hidden sm:inline text-[13px]">Buscar...</span>
+        <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-muted font-mono ml-3 text-muted-foreground/70">⌘K</kbd>
       </button>
       <div className="flex-1" />
 
-      <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-        <Wallet size={16} />
-        <span>R$ {Number(profile?.loan_balance || 0).toFixed(2)}</span>
-      </div>
-      <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-        <TrendingUp size={16} />
-        <span>R$ {Number(profile?.profit_balance || 0).toFixed(2)}</span>
+      {/* Balances */}
+      <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Wallet size={14} className="text-primary/70" />
+          <span className="font-medium">R$ {fmt(Number(profile?.loan_balance || 0))}</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <TrendingUp size={14} className="text-success" />
+          <span className="font-medium">R$ {fmt(Number(profile?.profit_balance || 0))}</span>
+        </div>
       </div>
 
-      <button
-        onClick={toggleTheme}
-        className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground"
-        title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-      >
-        {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
-
-      <div className="relative">
+      {/* Actions */}
+      <div className="flex items-center gap-1">
         <button
-          onClick={() => setShowNotifications(!showNotifications)}
-          className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground relative"
+          onClick={toggleTheme}
+          className="p-2 rounded-xl hover:bg-accent transition-all duration-200 text-muted-foreground hover:text-foreground"
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
         >
-          <Bell size={18} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+          {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="p-2 rounded-xl hover:bg-accent transition-all duration-200 text-muted-foreground hover:text-foreground relative"
+          >
+            <Bell size={17} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold animate-scale-in">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+              <div className="absolute right-0 top-12 w-80 max-h-96 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden animate-scale-in">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <span className="text-sm font-semibold text-foreground">Notificações</span>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline">
+                      Marcar como lidas
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-y-auto max-h-72">
+                  {notifications.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Sem notificações.</p>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`px-4 py-3 border-b border-border last:border-0 transition-colors ${!n.is_read ? "bg-primary/5" : ""}`}
+                      >
+                        <p className="text-sm text-foreground">{n.message}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {n.from} · {new Date(n.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={() => navigate("/perfil")}
+          className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary hover:ring-2 hover:ring-primary/30 transition-all duration-200 ml-1"
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-xl object-cover" />
+          ) : (
+            profile?.name?.charAt(0)?.toUpperCase() || "U"
           )}
         </button>
 
-        {showNotifications && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-            <div className="absolute right-0 top-12 w-80 max-h-96 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <span className="text-sm font-semibold text-foreground">Notificações</span>
-                {unreadCount > 0 && (
-                  <button onClick={handleMarkAllRead} className="text-xs text-muted-foreground hover:text-foreground">
-                    Marcar todas como lidas
-                  </button>
-                )}
-              </div>
-              <div className="overflow-y-auto max-h-72">
-                {notifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">Sem notificações.</p>
-                ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`px-4 py-3 border-b border-border last:border-0 ${!n.is_read ? "bg-accent/30" : ""}`}
-                    >
-                      <p className="text-sm text-foreground">{n.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {n.from} · {new Date(n.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </>
-        )}
+        <button onClick={handleSignOut} className="p-2 rounded-xl hover:bg-accent transition-all duration-200 text-muted-foreground hover:text-destructive" title="Sair">
+          <LogOut size={17} />
+        </button>
       </div>
-
-      <button
-        onClick={() => navigate("/perfil")}
-        className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm font-semibold text-foreground hover:ring-2 hover:ring-ring transition-all"
-      >
-        {profile?.avatar_url ? (
-          <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-        ) : (
-          profile?.name?.charAt(0)?.toUpperCase() || "U"
-        )}
-      </button>
-      <button onClick={handleSignOut} className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground" title="Sair">
-        <LogOut size={18} />
-      </button>
     </header>
   );
 };
