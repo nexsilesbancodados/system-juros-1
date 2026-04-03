@@ -727,10 +727,10 @@ const Cobradores = () => {
                 </div>
               </div>
 
-              <DialogFooter className="gap-2 mt-4">
-                <Button variant="outline" onClick={() => setFichaCollector(null)}>Fechar</Button>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setFichaCollector(null)} className="rounded-xl">Fechar</Button>
                 <Button onClick={() => { setFichaCollector(null); setAssignCobrancaModal(fichaData.id); }}
-                  className="gap-1.5" style={{ background: "var(--gradient-button)" }}>
+                  className="gap-1.5 rounded-xl" style={{ background: "var(--gradient-button)" }}>
                   <DollarSign size={14} /> Atribuir Cobranças
                 </Button>
               </DialogFooter>
