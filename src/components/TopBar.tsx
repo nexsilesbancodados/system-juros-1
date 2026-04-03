@@ -1,11 +1,15 @@
-import { Bell, Wallet, TrendingUp, LogOut, Menu, Sun, Moon } from "lucide-react";
+import { Bell, Wallet, TrendingUp, LogOut, Sun, Moon, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TopBar = () => {
+interface TopBarProps {
+  onSearchClick?: () => void;
+}
+
+const TopBar = ({ onSearchClick }: TopBarProps) => {
   const { user, profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
