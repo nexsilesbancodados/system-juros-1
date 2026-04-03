@@ -30,7 +30,7 @@ import Relatorios from "./pages/Relatorios.tsx";
 import Contratos from "./pages/Contratos.tsx";
 import NovoContrato from "./pages/NovoContrato.tsx";
 import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
-import CobradorExterno from "./pages/CobradorExterno.tsx";
+import Historico from "./pages/Historico.tsx";
 import Configuracoes from "./pages/Configuracoes.tsx";
 import Cobradores from "./pages/Cobradores.tsx";
 import PortalCliente from "./pages/PortalCliente.tsx";
