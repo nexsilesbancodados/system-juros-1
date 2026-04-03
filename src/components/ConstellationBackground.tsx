@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useEffect, useRef, memo } from "react";
 
 interface Star {
   x: number;
@@ -10,9 +9,8 @@ interface Star {
   opacity: number;
 }
 
-const ConstellationBackground = () => {
+const ConstellationBackground = memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { theme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,8 +20,8 @@ const ConstellationBackground = () => {
 
     let animationId: number;
     const stars: Star[] = [];
-    const STAR_COUNT = 100;
-    const MAX_DIST = 140;
+    const STAR_COUNT = 50; // reduced from 100
+    const MAX_DIST = 120;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -36,27 +34,25 @@ const ConstellationBackground = () => {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: (Math.random() - 0.5) * 0.25,
-        radius: Math.random() * 1.8 + 0.4,
-        opacity: Math.random() * 0.5 + 0.3,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        radius: Math.random() * 1.5 + 0.3,
+        opacity: Math.random() * 0.4 + 0.2,
       });
     }
 
-    const draw = () => {
+    let lastTime = 0;
+    const FPS_INTERVAL = 1000 / 30; // cap at 30fps
+
+    const draw = (timestamp: number) => {
+      animationId = requestAnimationFrame(draw);
+      const delta = timestamp - lastTime;
+      if (delta < FPS_INTERVAL) return;
+      lastTime = timestamp - (delta % FPS_INTERVAL);
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Subtle radial gradient overlay
-      const grd = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, 0,
-        canvas.width / 2, canvas.height / 2, canvas.width * 0.7
-      );
-      grd.addColorStop(0, "rgba(180, 180, 190, 0.03)");
-      grd.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const goldR = 180, goldG = 185, goldB = 195;
+      const r = 180, g = 185, b = 195;
 
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i];
@@ -65,36 +61,34 @@ const ConstellationBackground = () => {
         if (s.x < 0 || s.x > canvas.width) s.vx *= -1;
         if (s.y < 0 || s.y > canvas.height) s.vy *= -1;
 
-        // Gold-tinted stars
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${goldR}, ${goldG}, ${goldB}, ${s.opacity})`;
+        ctx.fillStyle = `rgba(${r},${g},${b},${s.opacity})`;
         ctx.fill();
 
         for (let j = i + 1; j < stars.length; j++) {
           const s2 = stars[j];
           const dx = s.x - s2.x;
           const dy = s.y - s2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MAX_DIST) {
+          const distSq = dx * dx + dy * dy;
+          if (distSq < MAX_DIST * MAX_DIST) {
             ctx.beginPath();
             ctx.moveTo(s.x, s.y);
             ctx.lineTo(s2.x, s2.y);
-            ctx.strokeStyle = `rgba(${goldR}, ${goldG}, ${goldB}, ${0.08 * (1 - dist / MAX_DIST)})`;
+            ctx.strokeStyle = `rgba(${r},${g},${b},${0.06 * (1 - Math.sqrt(distSq) / MAX_DIST)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
-      animationId = requestAnimationFrame(draw);
     };
-    draw();
+    animationId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", resize);
     };
-  }, [theme]);
+  }, []);
 
   return (
     <canvas
@@ -103,6 +97,8 @@ const ConstellationBackground = () => {
       style={{ background: "linear-gradient(160deg, hsl(0 0% 4%), hsl(0 0% 7%), hsl(0 0% 4%))" }}
     />
   );
-};
+});
+
+ConstellationBackground.displayName = "ConstellationBackground";
 
 export default ConstellationBackground;
