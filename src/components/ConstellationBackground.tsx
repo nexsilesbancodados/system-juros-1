@@ -56,7 +56,7 @@ const ConstellationBackground = () => {
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const goldR = 200, goldG = 160, goldB = 60;
+      const goldR = 180, goldG = 185, goldB = 195;
 
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i];
