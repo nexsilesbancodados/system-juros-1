@@ -233,4 +233,17 @@
     letter-spacing: 0.1em;
     color: hsl(var(--muted-foreground));
   }
+
+  /* Safe area for bottom nav */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    .bento-item:hover {
+      transform: none;
+      box-shadow: var(--shadow-glass);
+    }
+  }
 }

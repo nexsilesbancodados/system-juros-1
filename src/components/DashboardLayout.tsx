@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
 import { Outlet } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -22,13 +25,21 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
-      <div className={`transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
+      {/* Desktop: sidebar */}
+      {!isMobile && (
+        <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      )}
+
+      <div className={`transition-all duration-300 ${isMobile ? "ml-0" : collapsed ? "ml-16" : "ml-60"}`}>
         <TopBar onSearchClick={() => setSearchOpen(true)} />
-        <main className="p-4 lg:p-6 animate-fade-in">
+        <main className={`p-3 lg:p-6 animate-fade-in ${isMobile ? "pb-24" : ""}`}>
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile: bottom nav */}
+      {isMobile && <MobileBottomNav />}
+
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );

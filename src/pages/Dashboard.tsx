@@ -156,7 +156,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-4 md:space-y-5 pb-8">
       {/* ─── Hero Header ─── */}
       <div className="animate-fade-in">
         <div className="flex items-end justify-between gap-4">
@@ -166,10 +166,10 @@ const Dashboard = () => {
               <span className="text-label opacity-50">·</span>
               <p className="text-label">{timeStr}</p>
             </div>
-            <h1 className="text-display text-4xl md:text-5xl text-foreground">
+            <h1 className="text-display text-3xl md:text-5xl text-foreground">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
-            <p className="text-xs text-muted-foreground capitalize mt-1">{dateStr}</p>
+            <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card">
@@ -181,7 +181,7 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Main Metric Cards ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
         {mainCards.map((card, i) => (
           <div
             key={card.title}
@@ -190,21 +190,21 @@ const Dashboard = () => {
           >
             {/* Gradient accent top border */}
             <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-60`} />
-            <div className="p-5 flex flex-col justify-between min-h-[140px]">
+            <div className="p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>
                 <div className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
                   <card.icon size={15} className={card.iconColor} />
                 </div>
               </div>
-              <p className={`text-headline text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
+              <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* ─── Quick Stats Strip ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
         {[
           { label: "Contratos Ativos", value: metrics.contratosAtivos, icon: FileSignature, color: "text-success", bg: "bg-success/8" },
           { label: "Em Atraso", value: metrics.contratosAtraso, icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8" },
