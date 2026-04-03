@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const STATUS: Record<string, { label: string; icon: any; cls: string }> = {
   pending: { label: "Pendente", icon: Clock, cls: "bg-warning/10 text-warning border-warning/20" },
