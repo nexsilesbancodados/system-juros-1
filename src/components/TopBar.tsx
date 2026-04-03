@@ -5,11 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface TopBarProps {
-  onMenuClick?: () => void;
-}
-
-const TopBar = ({ onMenuClick }: TopBarProps) => {
+const TopBar = () => {
   const { user, profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -60,10 +56,6 @@ const TopBar = ({ onMenuClick }: TopBarProps) => {
 
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6 gap-4">
-      <button onClick={onMenuClick} className="lg:hidden p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground">
-        <Menu size={20} />
-      </button>
-
       <div className="flex-1" />
 
       <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">

@@ -4,7 +4,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import {
   LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, X, FileText, Crown,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown,
 } from "lucide-react";
 
 interface MenuItem {
@@ -65,11 +65,11 @@ const bottomItems: MenuItem[] = [
 ];
 
 interface SidebarProps {
-  mobileOpen?: boolean;
-  onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
+const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [ferramentasOpen, setFerramentasOpen] = useState(
@@ -78,85 +78,92 @@ const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    onClose?.();
-  };
-
   const renderItem = (item: MenuItem) => (
     <button
       key={item.path}
-      onClick={() => handleNavigate(item.path)}
+      onClick={() => navigate(item.path)}
+      title={collapsed ? item.label : undefined}
       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
         isActive(item.path)
           ? "bg-accent text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-      }`}
+      } ${collapsed ? "justify-center" : ""}`}
     >
       {item.icon}
-      <span>{item.label}</span>
-      {item.badge !== undefined && (
+      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && item.badge !== undefined && (
         <span className="ml-auto text-xs text-muted-foreground">{item.badge}</span>
       )}
     </button>
   );
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
-      )}
-
-      <aside className={`fixed left-0 top-0 h-screen w-60 bg-card border-r border-border flex flex-col z-50 transition-transform duration-300 ${
-        mobileOpen === undefined ? "hidden lg:flex" : mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } lg:flex`}>
-        {/* Logo */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+    <aside className={`fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-50 transition-all duration-300 ${
+      collapsed ? "w-16" : "w-60"
+    }`}>
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+        {!collapsed && (
           <div className="flex items-center gap-2">
             <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full" />
             <span className="font-display text-sm tracking-widest text-foreground">URUS JURISTA</span>
           </div>
-          <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
-            <X size={18} />
-          </button>
-        </div>
+        )}
+        {collapsed && (
+          <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full mx-auto" />
+        )}
+      </div>
 
-        {/* Sections */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {sections.map((section) => (
-            <div key={section.title}>
+      {/* Collapse toggle button */}
+      <button
+        onClick={onToggleCollapse}
+        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shadow-sm"
+        title={collapsed ? "Expandir menu" : "Minimizar menu"}
+      >
+        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+
+      {/* Sections */}
+      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
+        {sections.map((section) => (
+          <div key={section.title}>
+            {!collapsed && (
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
                 {section.title}
               </p>
-              <div className="space-y-0.5">{section.items.map(renderItem)}</div>
-            </div>
-          ))}
-
-          {/* Ferramentas collapsible */}
-          <div className="pt-2 border-t border-border">
-            <button
-              onClick={() => setFerramentasOpen(!ferramentasOpen)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-            >
-              <Wrench size={18} />
-              <span>Ferramentas</span>
-              <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
-            </button>
-            {ferramentasOpen && (
-              <div className="ml-3 space-y-0.5 mt-0.5">
-                {ferramentasItems.map(renderItem)}
-              </div>
             )}
+            <div className="space-y-0.5">{section.items.map(renderItem)}</div>
           </div>
+        ))}
 
-          {/* Bottom items */}
-          <div className="space-y-0.5 pt-2">
-            {bottomItems.map(renderItem)}
-          </div>
-        </nav>
-      </aside>
-    </>
+        {/* Ferramentas collapsible */}
+        <div className="pt-2 border-t border-border">
+          <button
+            onClick={() => !collapsed && setFerramentasOpen(!ferramentasOpen)}
+            title={collapsed ? "Ferramentas" : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <Wrench size={18} />
+            {!collapsed && <span>Ferramentas</span>}
+            {!collapsed && (
+              <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+            )}
+          </button>
+          {ferramentasOpen && !collapsed && (
+            <div className="ml-3 space-y-0.5 mt-0.5">
+              {ferramentasItems.map(renderItem)}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom items */}
+        <div className="space-y-0.5 pt-2">
+          {bottomItems.map(renderItem)}
+        </div>
+      </nav>
+    </aside>
   );
 };
 
