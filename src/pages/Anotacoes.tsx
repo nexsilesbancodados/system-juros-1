@@ -104,7 +104,7 @@ const Anotacoes = () => {
             <p className="text-[10px] text-muted-foreground mt-1">Cmd+Enter para salvar</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleAdd} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
+            <button onClick={handleAdd} className="action-btn-primary">Salvar</button>
             <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
           </div>
         </div>

@@ -473,7 +473,7 @@ const ClienteDetalhe = () => {
             ))}
             <div className="flex gap-2 pt-2">
               <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={saveEdit} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
+              <button onClick={saveEdit} className="action-btn-primary">Salvar</button>
             </div>
           </div>
         </div>
@@ -501,7 +501,7 @@ const ClienteDetalhe = () => {
             ))}
             <div className="flex gap-2 pt-2">
               <button onClick={() => setEditAddressMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={saveAddress} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
+              <button onClick={saveAddress} className="action-btn-primary">Salvar</button>
             </div>
           </div>
         </div>
@@ -562,7 +562,7 @@ const ClienteDetalhe = () => {
             <div className="flex gap-2 pt-2">
               <button onClick={() => setNewLoanMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
               <button onClick={handleCreateLoan} disabled={loanLoading || !loanCalc}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+                className="action-btn-primary disabled:opacity-50">
                 {loanLoading ? "Criando..." : "Criar Empréstimo"}
               </button>
             </div>
