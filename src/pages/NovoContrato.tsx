@@ -159,7 +159,7 @@ const NovoContrato = () => {
           user_id: user.id,
           client_id: selectedClientId,
           capital: parseFloat(capital),
-          interest_rate: parseFloat(interestRate),
+          interest_rate: parseFloat(lateFeePercent),
           num_installments: n,
           installment_amount: calc.installmentAmount,
           frequency,
