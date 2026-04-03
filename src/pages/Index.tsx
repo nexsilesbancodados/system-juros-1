@@ -140,14 +140,14 @@ const Index = () => {
           ) : (
             <div className="flex flex-col md:flex-row">
               {/* Left - Back to Login CTA */}
-              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-[hsl(38,75%,50%)]/[0.03] border-b md:border-b-0 md:border-r border-white/[0.06]">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-white/[0.02] border-b md:border-b-0 md:border-r border-white/[0.06]">
                 <h2 className="font-display text-xl font-bold text-white mb-2">Já tem conta?</h2>
                 <p className="text-white/40 text-sm text-center mb-6 max-w-[240px]">
                   Entre com suas credenciais e acesse o sistema.
                 </p>
                 <button
                   onClick={() => setIsRegister(false)}
-                  className="px-8 py-2.5 rounded-xl border border-[hsl(38,75%,50%)]/30 text-[hsl(38,75%,55%)] text-sm font-medium hover:bg-[hsl(38,75%,50%)]/10 transition-all duration-300"
+                  className="px-8 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
                 >
                   Fazer Login
                 </button>
