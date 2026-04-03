@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, UserCheck, UserX, Key, Trash2, Users, X, Phone, Mail, MapPin,
   Copy, Search, Shield, Edit2, Check, MoreVertical, ChevronDown, Eye, EyeOff,
-  Star, TrendingUp, Clock, AlertTriangle
+  Star, TrendingUp, Clock, AlertTriangle, FileText, DollarSign, Calendar,
+  ArrowRight, ExternalLink
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +37,9 @@ const Cobradores = () => {
   const [tokenVisibility, setTokenVisibility] = useState<Record<string, boolean>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState("");
+  const [fichaCollector, setFichaCollector] = useState<string | null>(null);
+  const [assignCobrancaModal, setAssignCobrancaModal] = useState<string | null>(null);
+  const [cobrancaClientSearch, setCobrancaClientSearch] = useState("");
 
   const { data: collectors = [] } = useQuery({
     queryKey: ["collectors", user?.id],
@@ -49,7 +53,7 @@ const Cobradores = () => {
   const { data: assignments = [] } = useQuery({
     queryKey: ["collector-assignments", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("collector_assignments").select("*, clients(name)").eq("user_id", user!.id);
+      const { data } = await supabase.from("collector_assignments").select("*, clients(id, name, phone, whatsapp, cpf_cnpj, status)").eq("user_id", user!.id);
       return data || [];
     },
     enabled: !!user,
@@ -67,10 +71,26 @@ const Cobradores = () => {
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("id, name").eq("user_id", user!.id).order("name");
+      const { data } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("user_id", user!.id).order("name");
       return data || [];
     },
     enabled: !!user,
+  });
+
+  const { data: allInstallments = [] } = useQuery({
+    queryKey: ["all-installments-collectors", user?.id],
+    queryFn: async () => {
+      const clientIds = assignments.map((a: any) => a.client_id);
+      if (clientIds.length === 0) return [];
+      const { data } = await supabase
+        .from("contract_installments")
+        .select("*, contracts(capital, interest_rate, frequency)")
+        .in("client_id", clientIds)
+        .eq("user_id", user!.id)
+        .order("due_date");
+      return data || [];
+    },
+    enabled: !!user && assignments.length > 0,
   });
 
   const inv = (key: string) => queryClient.invalidateQueries({ queryKey: [key] });
@@ -153,12 +173,17 @@ const Cobradores = () => {
     const { error } = await supabase.from("collector_assignments")
       .insert({ user_id: user.id, collector_id: collectorId, client_id: clientId });
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "✓ Cliente atribuído!" }); inv("collector-assignments"); }
+    else {
+      toast({ title: "✓ Cliente atribuído!" });
+      inv("collector-assignments");
+      inv("all-installments-collectors");
+    }
   };
 
   const handleRemoveAssignment = async (id: string) => {
     await supabase.from("collector_assignments").delete().eq("id", id);
     inv("collector-assignments");
+    inv("all-installments-collectors");
     toast({ title: "Atribuição removida" });
   };
 
@@ -183,6 +208,22 @@ const Cobradores = () => {
     if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
+
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  const now = new Date();
+
+  // Ficha data
+  const fichaData = fichaCollector ? collectors.find((c: any) => c.id === fichaCollector) : null;
+  const fichaAssignments = fichaCollector ? assignments.filter((a: any) => a.collector_id === fichaCollector) : [];
+  const fichaTokens = fichaCollector ? tokens.filter((t: any) => t.collector_id === fichaCollector) : [];
+  const fichaClientIds = fichaAssignments.map((a: any) => a.client_id);
+  const fichaInstallments = allInstallments.filter((i: any) => fichaClientIds.includes(i.client_id));
+  const fichaPending = fichaInstallments.filter((i: any) => i.status === "pending");
+  const fichaOverdue = fichaPending.filter((i: any) => new Date(i.due_date) < now);
+  const fichaPaid = fichaInstallments.filter((i: any) => i.status === "paid");
+  const fichaTotalPending = fichaPending.reduce((s: number, i: any) => s + Number(i.amount), 0);
+  const fichaTotalOverdue = fichaOverdue.reduce((s: number, i: any) => s + Number(i.amount), 0);
+  const fichaTotalPaid = fichaPaid.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -330,6 +371,12 @@ const Cobradores = () => {
             const isExpanded = expandedCard === c.id;
             const showToken = tokenVisibility[c.id];
 
+            // Stats for this collector
+            const cClientIds = cAssignments.map((a: any) => a.client_id);
+            const cInstallments = allInstallments.filter((i: any) => cClientIds.includes(i.client_id));
+            const cPending = cInstallments.filter((i: any) => i.status === "pending");
+            const cOverdue = cPending.filter((i: any) => new Date(i.due_date) < now);
+
             return (
               <div key={c.id}
                 className={`rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg ${
@@ -341,7 +388,7 @@ const Cobradores = () => {
                 <div className="p-5 space-y-4">
                   {/* Header */}
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3.5 cursor-pointer" onClick={() => setFichaCollector(c.id)}>
                       <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold shadow-sm ${
                         isActive
                           ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/10"
@@ -353,7 +400,7 @@ const Cobradores = () => {
                         }`} />
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground text-base">{c.name}</p>
+                        <p className="font-semibold text-foreground text-base hover:text-primary transition-colors">{c.name}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Phone size={10} /> {c.phone}
@@ -386,6 +433,9 @@ const Cobradores = () => {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => setFichaCollector(c.id)} className="gap-2">
+                            <FileText size={14} /> Ver Ficha
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(c)} className="gap-2">
                             <Edit2 size={14} /> Editar
                           </DropdownMenuItem>
@@ -395,8 +445,12 @@ const Cobradores = () => {
                           <DropdownMenuItem onClick={() => handleGenerateToken(c.id)} className="gap-2">
                             <Key size={14} /> Gerar Token
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setAssignModal(c.id)} className="gap-2">
                             <Users size={14} /> Atribuir Cliente
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setAssignCobrancaModal(c.id)} className="gap-2">
+                            <DollarSign size={14} /> Atribuir Cobranças
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setDeleteConfirm(c.id)} className="gap-2 text-destructive focus:text-destructive">
@@ -415,15 +469,14 @@ const Cobradores = () => {
                       <span className="text-[10px] text-muted-foreground">clientes</span>
                     </div>
                     <div className="flex-1 flex items-center gap-2 p-2.5 rounded-xl bg-accent/20">
-                      <Key size={12} className="text-primary shrink-0" />
-                      <span className="text-xs text-foreground font-medium">{cTokens.length}</span>
-                      <span className="text-[10px] text-muted-foreground">{cTokens.length === 1 ? "token" : "tokens"}</span>
+                      <DollarSign size={12} className="text-amber-500 shrink-0" />
+                      <span className="text-xs text-foreground font-medium">{cPending.length}</span>
+                      <span className="text-[10px] text-muted-foreground">pendentes</span>
                     </div>
                     <div className="flex-1 flex items-center gap-2 p-2.5 rounded-xl bg-accent/20">
-                      <Clock size={12} className="text-muted-foreground shrink-0" />
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                      </span>
+                      <AlertTriangle size={12} className="text-destructive shrink-0" />
+                      <span className="text-xs text-foreground font-medium">{cOverdue.length}</span>
+                      <span className="text-[10px] text-muted-foreground">atrasadas</span>
                     </div>
                   </div>
 
@@ -477,13 +530,17 @@ const Cobradores = () => {
 
                   {/* Quick action buttons */}
                   <div className="flex items-center gap-2 pt-1">
-                    <button onClick={() => setAssignModal(c.id)}
+                    <button onClick={() => setFichaCollector(c.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-accent/50 text-foreground hover:bg-accent transition-all">
+                      <FileText size={12} /> Ver Ficha
+                    </button>
+                    <button onClick={() => setAssignCobrancaModal(c.id)}
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-all">
-                      <Users size={12} /> Atribuir Cliente
+                      <DollarSign size={12} /> Atribuir Cobranças
                     </button>
                     <button onClick={() => handleGenerateToken(c.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-accent/50 text-foreground hover:bg-accent transition-all">
-                      <Key size={12} /> Gerar Token
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-accent/50 text-foreground hover:bg-accent transition-all">
+                      <Key size={12} />
                     </button>
                   </div>
                 </div>
@@ -492,6 +549,283 @@ const Cobradores = () => {
           })}
         </div>
       )}
+
+      {/* ============ FICHA DO COBRADOR ============ */}
+      <Dialog open={!!fichaCollector} onOpenChange={() => setFichaCollector(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          {fichaData && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary border border-primary/10">
+                    {fichaData.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-foreground">{fichaData.name}</p>
+                    <p className="text-sm text-muted-foreground font-normal">{fichaData.city}/{fichaData.state}</p>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-5 mt-2">
+                {/* Contact Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-accent/20 border border-border/50">
+                    <Phone size={14} className="text-primary shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Telefone</p>
+                      <p className="text-sm font-medium text-foreground">{fichaData.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-accent/20 border border-border/50">
+                    <Mail size={14} className="text-primary shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">E-mail</p>
+                      <p className="text-sm font-medium text-foreground truncate">{fichaData.email || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-accent/20 border border-border/50">
+                    <Calendar size={14} className="text-primary shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Cadastro</p>
+                      <p className="text-sm font-medium text-foreground">{new Date(fichaData.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl border border-border bg-card">
+                    <p className="text-[10px] text-muted-foreground uppercase">Clientes</p>
+                    <p className="text-xl font-bold text-foreground">{fichaAssignments.length}</p>
+                  </div>
+                  <div className="p-3 rounded-xl border border-border bg-card">
+                    <p className="text-[10px] text-muted-foreground uppercase">A Receber</p>
+                    <p className="text-xl font-bold text-amber-500">R$ {fmt(fichaTotalPending)}</p>
+                  </div>
+                  <div className="p-3 rounded-xl border border-border bg-card">
+                    <p className="text-[10px] text-muted-foreground uppercase">Atrasado</p>
+                    <p className="text-xl font-bold text-destructive">R$ {fmt(fichaTotalOverdue)}</p>
+                  </div>
+                  <div className="p-3 rounded-xl border border-border bg-card">
+                    <p className="text-[10px] text-muted-foreground uppercase">Recebido</p>
+                    <p className="text-xl font-bold text-success">R$ {fmt(fichaTotalPaid)}</p>
+                  </div>
+                </div>
+
+                {/* Tokens */}
+                {fichaTokens.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Key size={14} className="text-primary" /> Tokens de Acesso
+                    </h3>
+                    <div className="space-y-1.5">
+                      {fichaTokens.map((t: any) => (
+                        <div key={t.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/30 border border-border/50">
+                          <span className="text-xs font-mono text-foreground flex-1 truncate">{t.token}</span>
+                          <Badge variant="outline" className={`text-[10px] ${t.is_active ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
+                            {t.is_active ? "Ativo" : "Revogado"}
+                          </Badge>
+                          <button onClick={() => { navigator.clipboard.writeText(t.token); toast({ title: "Copiado!" }); }}
+                            className="p-1 rounded hover:bg-accent text-muted-foreground"><Copy size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assigned Clients with Installments */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Users size={14} className="text-primary" /> Clientes & Cobranças Atribuídas
+                    </h3>
+                    <button onClick={() => { setFichaCollector(null); setAssignCobrancaModal(fichaCollector); }}
+                      className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      <Plus size={12} /> Atribuir
+                    </button>
+                  </div>
+
+                  {fichaAssignments.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">Nenhum cliente atribuído</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {fichaAssignments.map((a: any) => {
+                        const clientInst = fichaInstallments.filter((i: any) => i.client_id === a.client_id);
+                        const clientPending = clientInst.filter((i: any) => i.status === "pending");
+                        const clientOverdue = clientPending.filter((i: any) => new Date(i.due_date) < now);
+                        const clientTotal = clientPending.reduce((s: number, i: any) => s + Number(i.amount), 0);
+
+                        return (
+                          <div key={a.id} className="rounded-xl border border-border bg-card/50 overflow-hidden">
+                            <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+                              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                                {a.clients?.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{a.clients?.name}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {a.clients?.phone || a.clients?.whatsapp || "Sem telefone"}
+                                  {a.clients?.cpf_cnpj && ` · ${a.clients.cpf_cnpj}`}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-bold text-foreground">R$ {fmt(clientTotal)}</p>
+                                <div className="flex items-center gap-2">
+                                  {clientOverdue.length > 0 && (
+                                    <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                                      {clientOverdue.length} atrasada(s)
+                                    </Badge>
+                                  )}
+                                  {clientPending.length > 0 && clientOverdue.length === 0 && (
+                                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">
+                                      {clientPending.length} pendente(s)
+                                    </Badge>
+                                  )}
+                                  {clientPending.length === 0 && (
+                                    <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">
+                                      Em dia
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {clientPending.length > 0 && (
+                              <div className="divide-y divide-border/30 max-h-40 overflow-y-auto">
+                                {clientPending.slice(0, 5).map((inst: any) => {
+                                  const isOverdue = new Date(inst.due_date) < now;
+                                  return (
+                                    <div key={inst.id} className="flex items-center gap-3 px-4 py-2">
+                                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                        isOverdue ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-500"
+                                      }`}>
+                                        {inst.installment_number}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-xs font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
+                                        <p className="text-[10px] text-muted-foreground">
+                                          {new Date(inst.due_date).toLocaleDateString("pt-BR")}
+                                          {isOverdue && (
+                                            <span className="text-destructive ml-1">
+                                              ({Math.floor((now.getTime() - new Date(inst.due_date).getTime()) / 86400000)}d atrás)
+                                            </span>
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {clientPending.length > 5 && (
+                                  <p className="text-[10px] text-muted-foreground text-center py-1.5">
+                                    +{clientPending.length - 5} parcelas
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 mt-4">
+                <Button variant="outline" onClick={() => setFichaCollector(null)}>Fechar</Button>
+                <Button onClick={() => { setFichaCollector(null); setAssignCobrancaModal(fichaData.id); }}
+                  className="gap-1.5" style={{ background: "var(--gradient-button)" }}>
+                  <DollarSign size={14} /> Atribuir Cobranças
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ ATRIBUIR COBRANÇAS (clientes com parcelas pendentes) ============ */}
+      <Dialog open={!!assignCobrancaModal} onOpenChange={() => { setAssignCobrancaModal(null); setCobrancaClientSearch(""); }}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign size={18} className="text-primary" />
+              Atribuir Cobranças
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Selecione clientes com cobranças pendentes para atribuir ao cobrador. As cobranças ficarão disponíveis no portal do cobrador.
+          </p>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={cobrancaClientSearch}
+                onChange={(e) => setCobrancaClientSearch(e.target.value)}
+                placeholder="Buscar cliente..."
+                className={`${inputCls} pl-9 text-sm`}
+                autoFocus
+              />
+            </div>
+            <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
+              {clients
+                .filter((cl: any) => {
+                  const collectorAssigns = assignments.filter((a: any) => a.collector_id === assignCobrancaModal);
+                  return !collectorAssigns.some((a: any) => a.client_id === cl.id) &&
+                    (!cobrancaClientSearch || cl.name.toLowerCase().includes(cobrancaClientSearch.toLowerCase()));
+                })
+                .map((cl: any) => {
+                  // Find pending installments for this client
+                  const clientPendingInst = allInstallments.filter((i: any) =>
+                    i.client_id === cl.id && i.status === "pending"
+                  );
+                  const clientOverdueInst = clientPendingInst.filter((i: any) => new Date(i.due_date) < now);
+                  const totalPending = clientPendingInst.reduce((s: number, i: any) => s + Number(i.amount), 0);
+
+                  return (
+                    <button key={cl.id}
+                      onClick={() => { handleAssign(assignCobrancaModal!, cl.id); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm hover:bg-accent/50 text-foreground transition-colors text-left border border-border/50 bg-card/50">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                        {cl.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{cl.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {cl.phone || cl.whatsapp || "Sem telefone"}
+                          {cl.cpf_cnpj && ` · ${cl.cpf_cnpj}`}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {clientPendingInst.length > 0 ? (
+                          <>
+                            <p className="text-sm font-bold text-foreground">R$ {fmt(totalPending)}</p>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-amber-500">{clientPendingInst.length} parcela(s)</span>
+                              {clientOverdueInst.length > 0 && (
+                                <span className="text-[10px] text-destructive">· {clientOverdueInst.length} atrasada(s)</span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-success">Em dia</span>
+                        )}
+                      </div>
+                      <ArrowRight size={14} className="text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })}
+              {clients.filter((cl: any) => {
+                const collectorAssigns = assignments.filter((a: any) => a.collector_id === assignCobrancaModal);
+                return !collectorAssigns.some((a: any) => a.client_id === cl.id) &&
+                  (!cobrancaClientSearch || cl.name.toLowerCase().includes(cobrancaClientSearch.toLowerCase()));
+              }).length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-6">
+                  {cobrancaClientSearch ? "Nenhum cliente encontrado" : "Todos os clientes já foram atribuídos"}
+                </p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign Client Dialog */}
       <Dialog open={!!assignModal} onOpenChange={() => { setAssignModal(null); setClientSearch(""); }}>
