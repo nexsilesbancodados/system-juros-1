@@ -172,6 +172,8 @@ const Configuracoes = () => {
   const tabs = [
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
+    { id: "pix", label: "PIX", icon: CreditCard },
+    { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
     { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
     { id: "templates", label: "Templates", icon: MessageSquare },
