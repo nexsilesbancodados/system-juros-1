@@ -27,6 +27,24 @@ const QRCodePage = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = async () => {
+    if (!qrUrl) return;
+    try {
+      const resp = await fetch(qrUrl);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "qrcode.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(qrUrl, "_blank");
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto space-y-8 pb-8">
       {/* Header */}
@@ -122,15 +140,14 @@ const QRCodePage = () => {
             </div>
 
             {/* Download */}
-            <a
-              href={qrUrl}
-              download="qrcode.png"
+            <button
+              onClick={handleDownload}
               className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}
             >
               <Download size={16} />
               Baixar QR Code
-            </a>
+            </button>
           </div>
         </div>
       )}
