@@ -53,8 +53,8 @@ const QRCodePage = () => {
           <QrCode size={22} className="text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">QR Code</h1>
-          <p className="text-xs text-muted-foreground">Gere e compartilhe QR Codes facilmente</p>
+          <h1 className="text-xl font-bold text-foreground">Portais</h1>
+          <p className="text-xs text-muted-foreground">Acesse e compartilhe os portais do sistema</p>
         </div>
       </div>
 
