@@ -282,7 +282,10 @@ const ClienteDetalhe = () => {
   const reversePayment = async (instId: string) => {
     if (!confirm("Estornar pagamento desta parcela?")) return;
     await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
-    toast({ title: "Estornado!" }); inv("client-installments");
+    toast({ title: "Estornado!" });
+    inv("client-installments"); inv("client-contracts"); inv("client-transactions"); inv("client-profits");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 7. Enviar Cobrança Individual
