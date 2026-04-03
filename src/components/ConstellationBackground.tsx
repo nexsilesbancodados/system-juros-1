@@ -100,7 +100,7 @@ const ConstellationBackground = () => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0"
-      style={{ background: "linear-gradient(160deg, hsl(220 16% 5%), hsl(220 20% 8%), hsl(220 16% 5%))" }}
+      style={{ background: "linear-gradient(160deg, hsl(0 0% 4%), hsl(0 0% 7%), hsl(0 0% 4%))" }}
     />
   );
 };
