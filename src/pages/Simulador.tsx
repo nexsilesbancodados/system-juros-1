@@ -1,44 +1,146 @@
 import { useState, useMemo } from "react";
-import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap } from "lucide-react";
+import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+type LoanMode = "percentage" | "installments";
+type Frequency = "monthly" | "weekly" | "daily";
+type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
 
 const Simulador = () => {
   const [valor, setValor] = useState("");
   const [taxa, setTaxa] = useState("");
   const [parcelas, setParcelas] = useState("");
+  const [loanMode, setLoanMode] = useState<LoanMode>("installments");
+  const [frequency, setFrequency] = useState<Frequency>("monthly");
+  const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const navigate = useNavigate();
 
   const valorNum = parseFloat(valor) || 0;
   const taxaNum = parseFloat(taxa) || 0;
-  const parcelasNum = parseInt(parcelas) || 1;
+  const parcelasNum = parseInt(parcelas) || 0;
 
-  const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
-  const totalReceber = valorNum + jurosTotal;
-  const valorParcela = parcelasNum > 0 ? totalReceber / parcelasNum : 0;
-  const lucroPercent = valorNum > 0 ? (jurosTotal / valorNum) * 100 : 0;
+  const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
+
+  const calc = useMemo(() => {
+    if (valorNum <= 0 || taxaNum <= 0) return null;
+
+    if (loanMode === "percentage") {
+      // Percentage mode: pays X% per period until capital is paid
+      const paymentPerPeriod = valorNum * (taxaNum / 100);
+      // How many periods to pay off capital if each payment = percentage of original
+      // Each payment covers interest only if interest = payment, so we need to think differently
+      // In this mode: client pays a fixed amount (percentage of capital) each period
+      // That payment IS the total (capital + interest mixed). The total paid = payments * amount
+      // User defines how many periods OR we calculate based on daily percentage
+      
+      if (frequency === "daily") {
+        // Daily percentage: pays taxaNum% of capital per day
+        // e.g., 1000 at 10% = pays R$100/day for 10 days = R$1000 total
+        // But the lender wants profit, so total = capital + (capital * taxa/100 * days)
+        // Actually per user: "pega 1000 a 10% paga 10 dias de 110"
+        // That means: 1000 + 10% = 1100, divided by 10 days = 110/day
+        // OR: "pagar 10% ao dia todo dia 100 ate quitar"
+        // 10% of 1000 = 100/day, pays until capital is covered
+        // Let's support both: if parcelas > 0, use fixed days; otherwise calculate
+        if (parcelasNum > 0) {
+          const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
+          const totalReceber = valorNum + jurosTotal;
+          const valorParcela = totalReceber / parcelasNum;
+          return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "dia" };
+        } else {
+          // Pay percentage per day until capital covered: days = 100/taxa
+          const days = Math.ceil(100 / taxaNum);
+          const payPerDay = valorNum * (taxaNum / 100);
+          const totalReceber = payPerDay * days;
+          const jurosTotal = totalReceber - valorNum;
+          return { jurosTotal, totalReceber, valorParcela: payPerDay, numParcelas: days, perPeriodLabel: "dia" };
+        }
+      } else if (frequency === "weekly") {
+        if (parcelasNum > 0) {
+          const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
+          const totalReceber = valorNum + jurosTotal;
+          const valorParcela = totalReceber / parcelasNum;
+          return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "semana" };
+        } else {
+          const weeks = Math.ceil(100 / taxaNum);
+          const payPerWeek = valorNum * (taxaNum / 100);
+          const totalReceber = payPerWeek * weeks;
+          const jurosTotal = totalReceber - valorNum;
+          return { jurosTotal, totalReceber, valorParcela: payPerWeek, numParcelas: weeks, perPeriodLabel: "semana" };
+        }
+      } else {
+        // Monthly single payment: 1000 at 10% = 1100
+        const jurosTotal = valorNum * (taxaNum / 100);
+        const totalReceber = valorNum + jurosTotal;
+        return { jurosTotal, totalReceber, valorParcela: totalReceber, numParcelas: 1, perPeriodLabel: "mês" };
+      }
+    } else {
+      // Installments mode: capital + (capital * taxa% * parcelas) / parcelas
+      if (parcelasNum <= 0) return null;
+      const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
+      const totalReceber = valorNum + jurosTotal;
+      const valorParcela = totalReceber / parcelasNum;
+      const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
+      return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: periodLabel };
+    }
+  }, [valorNum, taxaNum, parcelasNum, loanMode, frequency, dailyMode]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // Quick presets
   const presets = [
-    { label: "R$ 500", valor: "500", taxa: "10", parcelas: "5" },
-    { label: "R$ 1.000", valor: "1000", taxa: "10", parcelas: "10" },
-    { label: "R$ 5.000", valor: "5000", taxa: "8", parcelas: "12" },
-    { label: "R$ 10.000", valor: "10000", taxa: "5", parcelas: "24" },
+    { label: "Mensal Simples", valor: "1000", taxa: "10", parcelas: "", mode: "percentage" as LoanMode, freq: "monthly" as Frequency },
+    { label: "Mensal Parcelado", valor: "1000", taxa: "10", parcelas: "10", mode: "installments" as LoanMode, freq: "monthly" as Frequency },
+    { label: "Diário 10 dias", valor: "1000", taxa: "10", parcelas: "10", mode: "installments" as LoanMode, freq: "daily" as Frequency },
+    { label: "Semanal 4x", valor: "1000", taxa: "10", parcelas: "4", mode: "installments" as LoanMode, freq: "weekly" as Frequency },
   ];
 
   const applyPreset = (p: typeof presets[0]) => {
     setValor(p.valor); setTaxa(p.taxa); setParcelas(p.parcelas);
+    setLoanMode(p.mode); setFrequency(p.freq);
   };
 
   const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
-  const hasValue = valorNum > 0 && parcelasNum > 0;
+  const hasValue = calc !== null;
 
-  // Progress ring for profit visualization
-  const maxProfit = 200;
-  const profitClamped = Math.min(lucroPercent, maxProfit);
   const circumference = 2 * Math.PI * 40;
+  const maxProfit = 200;
+  const lucroPercent = calc && valorNum > 0 ? (calc.jurosTotal / valorNum) * 100 : 0;
+  const profitClamped = Math.min(lucroPercent, maxProfit);
+
+  // Generate installment breakdown with proper dates
+  const generateBreakdown = () => {
+    if (!calc) return [];
+    const items: { num: number; date: string; value: number }[] = [];
+    const start = new Date();
+    
+    for (let i = 0; i < Math.min(calc.numParcelas, 60); i++) {
+      const d = new Date(start);
+      
+      if (frequency === "daily") {
+        // Skip weekends based on dailyMode
+        let daysAdded = 0;
+        let currentDay = new Date(start);
+        while (daysAdded < i + 1) {
+          currentDay.setDate(currentDay.getDate() + 1);
+          const dow = currentDay.getDay(); // 0=Sun, 6=Sat
+          if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+          if (dailyMode === "mon-sat" && dow === 0) continue;
+          daysAdded++;
+        }
+        items.push({ num: i + 1, date: currentDay.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+      } else if (frequency === "weekly") {
+        d.setDate(start.getDate() + (i + 1) * 7);
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+      } else {
+        d.setMonth(start.getMonth() + (i + 1));
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+      }
+    }
+    return items;
+  };
+
+  const breakdown = generateBreakdown();
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto animate-fade-in">
@@ -46,7 +148,7 @@ const Simulador = () => {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Calculator size={24} className="text-primary" /> Simulador
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Calcule juros e parcelas antes de criar um contrato.</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Simule empréstimos por parcela ou porcentagem.</p>
       </div>
 
       {/* Quick presets */}
@@ -59,85 +161,219 @@ const Simulador = () => {
         ))}
       </div>
 
+      {/* Loan Mode Selection */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">
+        <label className="text-label mb-1 block">Modo do Empréstimo</label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setLoanMode("installments")}
+            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+              loanMode === "installments"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-muted-foreground/30"
+            }`}
+          >
+            <Hash size={20} className={loanMode === "installments" ? "text-primary" : "text-muted-foreground"} />
+            <div className="text-left">
+              <p className={`text-sm font-semibold ${loanMode === "installments" ? "text-primary" : "text-foreground"}`}>Por Parcelas</p>
+              <p className="text-[10px] text-muted-foreground">Nº fixo de parcelas</p>
+            </div>
+          </button>
+          <button
+            onClick={() => setLoanMode("percentage")}
+            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+              loanMode === "percentage"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-muted-foreground/30"
+            }`}
+          >
+            <Percent size={20} className={loanMode === "percentage" ? "text-primary" : "text-muted-foreground"} />
+            <div className="text-left">
+              <p className={`text-sm font-semibold ${loanMode === "percentage" ? "text-primary" : "text-foreground"}`}>Por Porcentagem</p>
+              <p className="text-[10px] text-muted-foreground">Paga % até quitar</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Frequency Selection */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">
+        <label className="text-label mb-1 block">Frequência de Pagamento</label>
+        <div className="grid grid-cols-3 gap-3">
+          {([
+            { value: "monthly" as Frequency, label: "Mensal", icon: Calendar, desc: "1x por mês" },
+            { value: "weekly" as Frequency, label: "Semanal", icon: Repeat, desc: "A cada 7 dias" },
+            { value: "daily" as Frequency, label: "Diário", icon: Clock, desc: "Todo dia" },
+          ]).map(f => (
+            <button
+              key={f.value}
+              onClick={() => setFrequency(f.value)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                frequency === f.value
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              <f.icon size={18} className={frequency === f.value ? "text-primary" : "text-muted-foreground"} />
+              <p className={`text-xs font-semibold ${frequency === f.value ? "text-primary" : "text-foreground"}`}>{f.label}</p>
+              <p className="text-[9px] text-muted-foreground">{f.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Daily mode sub-options */}
+        {frequency === "daily" && (
+          <div className="space-y-2 pt-2 border-t border-border">
+            <label className="text-label block">Dias da Semana</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: "mon-fri" as DailyMode, label: "Seg → Sex", desc: "5 dias" },
+                { value: "mon-sat" as DailyMode, label: "Seg → Sáb", desc: "6 dias" },
+                { value: "mon-sun" as DailyMode, label: "Seg → Dom", desc: "7 dias" },
+              ]).map(d => (
+                <button
+                  key={d.value}
+                  onClick={() => setDailyMode(d.value)}
+                  className={`p-2.5 rounded-lg border text-center transition-all ${
+                    dailyMode === d.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <p className="text-xs font-semibold">{d.label}</p>
+                  <p className="text-[9px]">{d.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Input form */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5 card-shine">
         <div>
           <label className="text-label mb-1.5 block">Valor do Empréstimo (R$)</label>
           <div className="relative">
             <DollarSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="10.000" className={`${inputCls} pl-10`} />
+            <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="1.000" className={`${inputCls} pl-10`} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-label mb-1.5 block">Taxa de Juros (%)</label>
+            <label className="text-label mb-1.5 block">
+              Taxa de Juros (%)
+              <span className="text-[9px] text-muted-foreground ml-1">
+                {frequency === "daily" ? "ao dia" : frequency === "weekly" ? "por semana" : "ao mês"}
+              </span>
+            </label>
             <div className="relative">
               <Percent size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input type="number" value={taxa} onChange={(e) => setTaxa(e.target.value)} placeholder="10" className={`${inputCls} pl-10`} />
             </div>
           </div>
           <div>
-            <label className="text-label mb-1.5 block">Nº de Parcelas</label>
+            <label className="text-label mb-1.5 block">
+              {loanMode === "percentage" ? "Nº de Períodos (opcional)" : "Nº de Parcelas"}
+            </label>
             <div className="relative">
               <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="number" value={parcelas} onChange={(e) => setParcelas(e.target.value)} placeholder="12" className={`${inputCls} pl-10`} />
+              <input
+                type="number"
+                value={parcelas}
+                onChange={(e) => setParcelas(e.target.value)}
+                placeholder={loanMode === "percentage" ? "Auto" : "10"}
+                className={`${inputCls} pl-10`}
+              />
             </div>
           </div>
         </div>
+
+        {/* Quick example text */}
+        {valorNum > 0 && taxaNum > 0 && (
+          <div className="bg-muted/30 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">
+              {loanMode === "percentage" && frequency === "monthly" && (
+                <>💡 R$ {fmt(valorNum)} a {taxaNum}% ao mês = paga R$ {fmt(valorNum + valorNum * taxaNum / 100)} em 1 mês</>
+              )}
+              {loanMode === "percentage" && frequency === "daily" && !parcelasNum && (
+                <>💡 R$ {fmt(valorNum)} a {taxaNum}% ao dia = paga R$ {fmt(valorNum * taxaNum / 100)}/dia até quitar (~{Math.ceil(100 / taxaNum)} dias)</>
+              )}
+              {loanMode === "percentage" && frequency === "daily" && parcelasNum > 0 && (
+                <>💡 R$ {fmt(valorNum)} a {taxaNum}% por {parcelasNum} dias = R$ {fmt((valorNum + valorNum * taxaNum / 100 * parcelasNum) / parcelasNum)}/dia</>
+              )}
+              {loanMode === "percentage" && frequency === "weekly" && (
+                <>💡 R$ {fmt(valorNum)} a {taxaNum}% por semana</>
+              )}
+              {loanMode === "installments" && parcelasNum > 0 && (
+                <>💡 R$ {fmt(valorNum)} + {taxaNum}% × {parcelasNum} parcelas = {parcelasNum}x de R$ {fmt((valorNum + valorNum * taxaNum / 100 * parcelasNum) / parcelasNum)}</>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Results */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center gap-2">
-          <Calculator size={16} className="text-primary" />
-          <h2 className="font-semibold text-foreground text-sm">Resultado da Simulação</h2>
-        </div>
+      {hasValue && calc && (
+        <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
+          <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+            <Calculator size={16} className="text-primary" />
+            <h2 className="font-semibold text-foreground text-sm">Resultado da Simulação</h2>
+          </div>
 
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Progress ring */}
-            <div className="relative w-28 h-28 shrink-0">
-              <svg className="progress-ring w-28 h-28" viewBox="0 0 96 96">
-                <circle cx="48" cy="48" r="40" fill="none" strokeWidth="6" stroke="hsl(var(--muted))" />
-                <circle
-                  cx="48" cy="48" r="40" fill="none" strokeWidth="6"
-                  stroke={lucroPercent > 50 ? "hsl(var(--success))" : "hsl(var(--primary))"}
-                  strokeLinecap="round"
-                  strokeDasharray={`${circumference}`}
-                  strokeDashoffset={`${circumference * (1 - profitClamped / maxProfit)}`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-lg font-bold text-foreground">{lucroPercent.toFixed(0)}%</span>
-                <span className="text-[9px] text-muted-foreground uppercase">Lucro</span>
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              {/* Progress ring */}
+              <div className="relative w-28 h-28 shrink-0">
+                <svg className="progress-ring w-28 h-28" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="40" fill="none" strokeWidth="6" stroke="hsl(var(--muted))" />
+                  <circle
+                    cx="48" cy="48" r="40" fill="none" strokeWidth="6"
+                    stroke={lucroPercent > 50 ? "hsl(var(--success))" : "hsl(var(--primary))"}
+                    strokeLinecap="round"
+                    strokeDasharray={`${circumference}`}
+                    strokeDashoffset={`${circumference * (1 - profitClamped / maxProfit)}`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-bold text-foreground">{lucroPercent.toFixed(0)}%</span>
+                  <span className="text-[9px] text-muted-foreground uppercase">Lucro</span>
+                </div>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-4 flex-1 w-full">
+                {[
+                  { label: "Juros Total", value: `R$ ${fmt(calc.jurosTotal)}`, color: "text-primary", icon: TrendingUp },
+                  { label: "Total a Receber", value: `R$ ${fmt(calc.totalReceber)}`, color: "text-success", icon: DollarSign },
+                  { label: `Valor/${calc.perPeriodLabel}`, value: `R$ ${fmt(calc.valorParcela)}`, color: "text-foreground", icon: Calculator },
+                  { label: "Períodos", value: `${calc.numParcelas}x`, color: "text-primary", icon: Hash },
+                ].map(r => (
+                  <div key={r.label} className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <r.icon size={12} className="text-muted-foreground" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{r.label}</p>
+                    </div>
+                    <p className={`text-lg font-bold ${r.color}`}>{r.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-4 flex-1 w-full">
-              {[
-                { label: "Juros Total", value: `R$ ${fmt(jurosTotal)}`, color: "text-primary", icon: TrendingUp },
-                { label: "Total a Receber", value: `R$ ${fmt(totalReceber)}`, color: "text-success", icon: DollarSign },
-                { label: "Valor Parcela", value: `R$ ${fmt(valorParcela)}`, color: "text-foreground", icon: Calculator },
-                { label: "Lucro (%)", value: `${lucroPercent.toFixed(1)}%`, color: "text-primary", icon: Percent },
-              ].map(r => (
-                <div key={r.label} className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <r.icon size={12} className="text-muted-foreground" />
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{r.label}</p>
-                  </div>
-                  <p className={`text-lg font-bold ${r.color}`}>{r.value}</p>
-                </div>
-              ))}
-            </div>
+            {/* Daily mode info */}
+            {frequency === "daily" && (
+              <div className="mt-4 p-3 rounded-lg bg-muted/30 text-xs text-muted-foreground flex items-center gap-2">
+                <Calendar size={14} />
+                Pagamentos: {dailyMode === "mon-fri" ? "Segunda a Sexta (5 dias/semana)" : dailyMode === "mon-sat" ? "Segunda a Sábado (6 dias/semana)" : "Segunda a Domingo (7 dias/semana)"}
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* CTA to create contract */}
       {hasValue && (
         <button
-          onClick={() => navigate("/novo-contrato")}
+          onClick={() => navigate("/novo-contrato", { state: { valor, taxa, parcelas: calc?.numParcelas, loanMode, frequency, dailyMode } })}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground micro-press focus-ring animate-fade-in"
           style={{ background: "var(--gradient-button)" }}
         >
@@ -146,18 +382,18 @@ const Simulador = () => {
       )}
 
       {/* Installment breakdown */}
-      {hasValue && (
+      {hasValue && breakdown.length > 0 && (
         <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-            <h2 className="font-semibold text-foreground text-sm">Detalhamento das Parcelas</h2>
-            <span className="text-xs text-muted-foreground">{Math.min(parcelasNum, 60)} parcelas</span>
+            <h2 className="font-semibold text-foreground text-sm">Detalhamento dos Pagamentos</h2>
+            <span className="text-xs text-muted-foreground">{breakdown.length} pagamentos</span>
           </div>
           <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
-            {Array.from({ length: Math.min(parcelasNum, 60) }, (_, i) => (
-              <div key={i} className="data-row">
-                <div className="num-badge bg-primary/8 text-primary">{i + 1}</div>
-                <span className="text-sm text-muted-foreground flex-1">Parcela {i + 1}</span>
-                <span className="text-sm font-semibold text-foreground">R$ {fmt(valorParcela)}</span>
+            {breakdown.map((item) => (
+              <div key={item.num} className="data-row">
+                <div className="num-badge bg-primary/8 text-primary">{item.num}</div>
+                <span className="text-sm text-muted-foreground flex-1">{item.date}</span>
+                <span className="text-sm font-semibold text-foreground">R$ {fmt(item.value)}</span>
               </div>
             ))}
           </div>
