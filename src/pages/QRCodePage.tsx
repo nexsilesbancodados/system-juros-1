@@ -140,15 +140,14 @@ const QRCodePage = () => {
             </div>
 
             {/* Download */}
-            <a
-              href={qrUrl}
-              download="qrcode.png"
+            <button
+              onClick={handleDownload}
               className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}
             >
               <Download size={16} />
               Baixar QR Code
-            </a>
+            </button>
           </div>
         </div>
       )}
