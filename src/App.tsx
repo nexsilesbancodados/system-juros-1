@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
@@ -29,6 +30,8 @@ import PuxadaDados from "./pages/PuxadaDados.tsx";
 import NetworkPage from "./pages/NetworkPage.tsx";
 import Sobre from "./pages/Sobre.tsx";
 import Perfil from "./pages/Perfil.tsx";
+import Admin from "./pages/Admin.tsx";
+import Relatorios from "./pages/Relatorios.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,37 +40,41 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/analises" element={<Analises />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/clientes/novo" element={<NovoCliente />} />
-              <Route path="/veiculos" element={<Veiculos />} />
-              <Route path="/celulares" element={<Celulares />} />
-              <Route path="/penhoras" element={<Penhoras />} />
-              <Route path="/cobrancas" element={<Cobrancas />} />
-              <Route path="/carteira" element={<Carteira />} />
-              <Route path="/lucros" element={<Lucros />} />
-              <Route path="/gastos" element={<Gastos />} />
-              <Route path="/ferramentas/metas" element={<Metas />} />
-              <Route path="/ferramentas/simulador" element={<Simulador />} />
-              <Route path="/ferramentas/tarefas" element={<Tarefas />} />
-              <Route path="/ferramentas/anotacoes" element={<Anotacoes />} />
-              <Route path="/ferramentas/planilha" element={<Planilha />} />
-              <Route path="/uruszap" element={<Uruszap />} />
-              <Route path="/puxada-dados" element={<PuxadaDados />} />
-              <Route path="/network" element={<NetworkPage />} />
-              <Route path="/sobre" element={<Sobre />} />
-              <Route path="/perfil" element={<Perfil />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/analises" element={<Analises />} />
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/clientes/novo" element={<NovoCliente />} />
+                <Route path="/veiculos" element={<Veiculos />} />
+                <Route path="/celulares" element={<Celulares />} />
+                <Route path="/penhoras" element={<Penhoras />} />
+                <Route path="/cobrancas" element={<Cobrancas />} />
+                <Route path="/carteira" element={<Carteira />} />
+                <Route path="/lucros" element={<Lucros />} />
+                <Route path="/gastos" element={<Gastos />} />
+                <Route path="/ferramentas/metas" element={<Metas />} />
+                <Route path="/ferramentas/simulador" element={<Simulador />} />
+                <Route path="/ferramentas/tarefas" element={<Tarefas />} />
+                <Route path="/ferramentas/anotacoes" element={<Anotacoes />} />
+                <Route path="/ferramentas/planilha" element={<Planilha />} />
+                <Route path="/uruszap" element={<Uruszap />} />
+                <Route path="/puxada-dados" element={<PuxadaDados />} />
+                <Route path="/network" element={<NetworkPage />} />
+                <Route path="/sobre" element={<Sobre />} />
+                <Route path="/perfil" element={<Perfil />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/relatorios" element={<Relatorios />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
