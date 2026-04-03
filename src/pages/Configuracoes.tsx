@@ -340,25 +340,92 @@ const Configuracoes = () => {
                 <p className="text-xs text-muted-foreground">Use [Nome], [Valor], [Dias] como variáveis.</p>
               </div>
             </div>
-            <div className="space-y-3">
-              {templates.map((t: any) => (
-                <div key={t.id} className="flex items-start gap-3 p-4 rounded-2xl bg-muted/20 border border-border group">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{t.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{t.content}</p>
-                    {t.trigger_days && (
-                      <div className="flex items-center gap-1 mt-2">
-                        <AlertTriangle size={10} className="text-warning" />
-                        <span className="text-[10px] text-warning font-medium">Dispara após {t.trigger_days} dia(s) de atraso</span>
+
+            {/* Templates prontos para usar */}
+            <div className="space-y-2">
+              <p className="text-label">Templates Prontos</p>
+              <p className="text-[11px] text-muted-foreground mb-2">Clique para adicionar ao seu sistema</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { name: "Lembrete Amigável", content: "Olá [Nome], tudo bem? 😊 Passando para lembrar que sua parcela de R$ [Valor] vence hoje. Qualquer dúvida, estamos à disposição!", trigger_days: 0 },
+                  { name: "Cobrança 1 Dia", content: "Olá [Nome], notamos que sua parcela de R$ [Valor] venceu ontem. Por favor, realize o pagamento o quanto antes para evitar juros adicionais. Obrigado!", trigger_days: 1 },
+                  { name: "Cobrança 3 Dias", content: "Prezado(a) [Nome], sua parcela de R$ [Valor] está com [Dias] dias de atraso. Entre em contato para negociarmos. Evite a negativação do seu nome.", trigger_days: 3 },
+                  { name: "Cobrança 7 Dias", content: "⚠️ [Nome], sua parcela de R$ [Valor] está com [Dias] dias de atraso. Caso o pagamento não seja regularizado, medidas adicionais poderão ser tomadas. Entre em contato urgente.", trigger_days: 7 },
+                  { name: "Cobrança 15 Dias", content: "🚨 [Nome], informamos que sua dívida de R$ [Valor] com [Dias] dias de atraso será encaminhada para negativação. Regularize imediatamente para evitar restrições no seu CPF.", trigger_days: 15 },
+                  { name: "Cobrança 30 Dias", content: "[Nome], sua dívida de R$ [Valor] está com [Dias] dias de atraso. Seu nome será incluído nos órgãos de proteção ao crédito. Entre em contato HOJE para negociar e evitar maiores consequências.", trigger_days: 30 },
+                  { name: "Confirmação de Pagamento", content: "✅ [Nome], confirmamos o recebimento do pagamento de R$ [Valor]. Obrigado pela pontualidade! Qualquer dúvida, estamos à disposição.", trigger_days: null },
+                  { name: "Acordo / Negociação", content: "Olá [Nome], gostaríamos de oferecer uma condição especial para regularizar sua parcela de R$ [Valor] em atraso há [Dias] dias. Entre em contato para negociarmos. 🤝", trigger_days: null },
+                ].map((preset, idx) => {
+                  const alreadyAdded = templates.some((t: any) => t.name === preset.name);
+                  return (
+                    <button
+                      key={idx}
+                      disabled={alreadyAdded}
+                      onClick={async () => {
+                        if (!user) return;
+                        const { error } = await supabase.from("message_templates").insert({
+                          user_id: user.id, name: preset.name, content: preset.content,
+                          trigger_days: preset.trigger_days,
+                        });
+                        if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+                        else {
+                          toast({ title: `✓ "${preset.name}" adicionado!` });
+                          queryClient.invalidateQueries({ queryKey: ["message-templates"] });
+                        }
+                      }}
+                      className={`text-left p-3 rounded-xl border transition-colors ${
+                        alreadyAdded
+                          ? "border-success/30 bg-success/5 opacity-60 cursor-default"
+                          : "border-border hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-foreground">{preset.name}</p>
+                        {alreadyAdded ? (
+                          <Check size={12} className="text-success shrink-0" />
+                        ) : (
+                          <Plus size={12} className="text-primary shrink-0" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <button onClick={() => handleDeleteTemplate(t.id)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all p-1"><Trash2 size={14} /></button>
-                </div>
-              ))}
+                      <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{preset.content}</p>
+                      {preset.trigger_days !== null && (
+                        <span className="inline-block mt-1.5 text-[9px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded-md">
+                          {preset.trigger_days === 0 ? "No vencimento" : `${preset.trigger_days}d de atraso`}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Templates existentes do usuário */}
+            {templates.length > 0 && (
+              <div className="space-y-3 border-t border-border pt-5">
+                <p className="text-label">Seus Templates</p>
+                {templates.map((t: any) => (
+                  <div key={t.id} className="flex items-start gap-3 p-4 rounded-2xl bg-muted/20 border border-border group">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{t.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{t.content}</p>
+                      {t.trigger_days !== null && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <AlertTriangle size={10} className="text-warning" />
+                          <span className="text-[10px] text-warning font-medium">
+                            {t.trigger_days === 0 ? "No dia do vencimento" : `Dispara após ${t.trigger_days} dia(s) de atraso`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={() => handleDeleteTemplate(t.id)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all p-1"><Trash2 size={14} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Criar template personalizado */}
             <div className="border-t border-border pt-5 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Novo Template</p>
+              <p className="text-sm font-semibold text-foreground">Template Personalizado</p>
               <input value={newTemplate.name} onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })} placeholder="Nome do template" className={inputCls} />
               <textarea value={newTemplate.content} onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })} placeholder="Olá [Nome], sua parcela de R$ [Valor] está atrasada há [Dias] dias..." className={`${inputCls} min-h-[80px] resize-none`} />
               <input type="number" value={newTemplate.trigger_days} onChange={(e) => setNewTemplate({ ...newTemplate, trigger_days: e.target.value })} placeholder="Dias de atraso para disparar (opcional)" className={inputCls} />
