@@ -5,6 +5,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +16,11 @@ const Index = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { config } = useWhiteLabel();
+  const logoSrc = config.companyLogo || eagleLogo;
+  const brandTitle = config.loginTitle || config.companyName || "SYSTEM JUROS";
+  const brandSubtitle = config.loginSubtitle || "SISTEMA DE GESTÃO DE EMPRÉSTIMOS";
+  const footerText = config.footerText || "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,12 +64,12 @@ const Index = () => {
       <div className="relative z-10 flex flex-col items-center mb-10 animate-fade-in">
         <div className="relative">
           <div className="absolute inset-0 rounded-full gold-glow" />
-          <img src={eagleLogo} alt="System Juros" width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
+          <img src={logoSrc} alt={brandTitle} width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
         </div>
         <h1 className="font-display text-2xl tracking-[0.35em] mt-4 text-gradient-gold">
-          SYSTEM JUROS
+          {brandTitle}
         </h1>
-        <p className="text-white/40 text-xs mt-1.5 tracking-wider">SISTEMA DE GESTÃO DE EMPRÉSTIMOS</p>
+        <p className="text-white/40 text-xs mt-1.5 tracking-wider">{brandSubtitle}</p>
       </div>
 
       {/* Card */}
@@ -189,7 +195,7 @@ const Index = () => {
 
       {/* Footer */}
       <p className="relative z-10 text-white/20 text-[10px] mt-8 tracking-wider">
-        © 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS
+        {footerText}
       </p>
     </div>
   );

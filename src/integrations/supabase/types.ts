@@ -819,6 +819,7 @@ export type Database = {
       settings: {
         Row: {
           accent_color: string | null
+          border_radius: string | null
           bot_auto_send: boolean | null
           bot_closing_message: string | null
           bot_enabled: boolean | null
@@ -842,10 +843,15 @@ export type Database = {
           default_frequency: string | null
           default_interest_rate: number | null
           default_late_fee: number | null
+          font_family: string | null
+          footer_text: string | null
           id: string
+          login_subtitle: string | null
+          login_title: string | null
           n8n_webhook_url: string | null
           primary_color: string | null
           push_notifications_enabled: boolean | null
+          sidebar_style: string | null
           theme_mode: string | null
           user_id: string
           whatsapp_api_key: string | null
@@ -854,6 +860,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          border_radius?: string | null
           bot_auto_send?: boolean | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
@@ -877,10 +884,15 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          font_family?: string | null
+          footer_text?: string | null
           id?: string
+          login_subtitle?: string | null
+          login_title?: string | null
           n8n_webhook_url?: string | null
           primary_color?: string | null
           push_notifications_enabled?: boolean | null
+          sidebar_style?: string | null
           theme_mode?: string | null
           user_id: string
           whatsapp_api_key?: string | null
@@ -889,6 +901,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          border_radius?: string | null
           bot_auto_send?: boolean | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
@@ -912,10 +925,15 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          font_family?: string | null
+          footer_text?: string | null
           id?: string
+          login_subtitle?: string | null
+          login_title?: string | null
           n8n_webhook_url?: string | null
           primary_color?: string | null
           push_notifications_enabled?: boolean | null
+          sidebar_style?: string | null
           theme_mode?: string | null
           user_id?: string
           whatsapp_api_key?: string | null

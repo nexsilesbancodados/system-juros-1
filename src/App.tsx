@@ -62,9 +62,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ThemeProvider>
-        <AuthProvider>
-          <WhiteLabelProvider>
+      <AuthProvider>
+        <WhiteLabelProvider>
+          <ThemeProvider>
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -103,9 +103,9 @@ const App = () => (
               </Routes>
             </Suspense>
           </BrowserRouter>
-          </WhiteLabelProvider>
-        </AuthProvider>
-      </ThemeProvider>
+          </ThemeProvider>
+        </WhiteLabelProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

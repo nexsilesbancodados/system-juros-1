@@ -4,7 +4,7 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt, Info } from "lucide-react";
 
 const COLOR_PRESETS = [
   { label: "Azul Steel", primary: "#4a86c8", accent: "#6ba3d6", emoji: "🔷" },
@@ -53,6 +53,8 @@ const Configuracoes = () => {
   const [form, setForm] = useState({
     company_name: "", company_cnpj: "", company_logo_url: "",
     primary_color: "#4a86c8", accent_color: "#6ba3d6", theme_mode: "dark",
+    sidebar_style: "default", login_title: "", login_subtitle: "",
+    footer_text: "", border_radius: "16", font_family: "default",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
@@ -89,6 +91,12 @@ const Configuracoes = () => {
         primary_color: s.primary_color || "#4a86c8",
         accent_color: s.accent_color || "#6ba3d6",
         theme_mode: s.theme_mode || "dark",
+        sidebar_style: s.sidebar_style || "default",
+        login_title: s.login_title || "",
+        login_subtitle: s.login_subtitle || "",
+        footer_text: s.footer_text || "",
+        border_radius: s.border_radius || "16",
+        font_family: s.font_family || "default",
         default_interest_rate: String(s.default_interest_rate || 10),
         default_late_fee: String(s.default_late_fee || 2),
         default_daily_interest: String(s.default_daily_interest || 0.33),
@@ -156,6 +164,12 @@ const Configuracoes = () => {
       primary_color: form.primary_color,
       accent_color: form.accent_color,
       theme_mode: form.theme_mode,
+      sidebar_style: form.sidebar_style,
+      login_title: form.login_title || null,
+      login_subtitle: form.login_subtitle || null,
+      footer_text: form.footer_text || null,
+      border_radius: form.border_radius,
+      font_family: form.font_family,
       default_interest_rate: parseFloat(form.default_interest_rate),
       default_late_fee: parseFloat(form.default_late_fee),
       default_daily_interest: parseFloat(form.default_daily_interest),
@@ -460,6 +474,133 @@ const Configuracoes = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Sidebar Style */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <LayoutDashboard size={12} className="text-primary" /> Estilo da Sidebar
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "default", label: "Padrão", desc: "Clássico, limpo" },
+                  { value: "minimal", label: "Minimalista", desc: "Ícones + texto fino" },
+                  { value: "gradient", label: "Gradiente", desc: "Fundo com gradiente" },
+                ].map(style => (
+                  <button
+                    key={style.value}
+                    onClick={() => setForm({ ...form, sidebar_style: style.value })}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      form.sidebar_style === style.value
+                        ? "border-primary/40 bg-primary/10 shadow-sm"
+                        : "border-border hover:border-primary/20 hover:bg-accent/20"
+                    }`}
+                  >
+                    <div className="w-8 h-14 mx-auto mb-2 rounded-lg border border-border/50 overflow-hidden">
+                      <div className={`w-full h-full ${
+                        style.value === "gradient" 
+                          ? "" 
+                          : style.value === "minimal" 
+                            ? "bg-transparent" 
+                            : "bg-card"
+                      }`} style={style.value === "gradient" ? { background: `linear-gradient(180deg, ${form.primary_color}15, ${form.primary_color}05)` } : {}}>
+                        <div className="space-y-1 p-1 pt-2">
+                          <div className="w-3 h-0.5 rounded-full" style={{ background: form.primary_color }} />
+                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
+                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
+                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-semibold text-foreground">{style.label}</p>
+                    <p className="text-[8px] text-muted-foreground">{style.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Font Family */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Settings size={12} className="text-primary" /> Tipografia
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { value: "default", label: "Space Grotesk", sample: "Aa 123" },
+                  { value: "inter", label: "Inter", sample: "Aa 123" },
+                  { value: "roboto", label: "Roboto", sample: "Aa 123" },
+                  { value: "poppins", label: "Poppins", sample: "Aa 123" },
+                  { value: "montserrat", label: "Montserrat", sample: "Aa 123" },
+                  { value: "nunito", label: "Nunito", sample: "Aa 123" },
+                ].map(font => (
+                  <button
+                    key={font.value}
+                    onClick={() => setForm({ ...form, font_family: font.value })}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      form.font_family === font.value
+                        ? "border-primary/40 bg-primary/10 shadow-sm"
+                        : "border-border hover:border-primary/20 hover:bg-accent/20"
+                    }`}
+                  >
+                    <p className="text-lg font-bold text-foreground mb-0.5">{font.sample}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">{font.label}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Border Radius */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Settings size={12} className="text-primary" /> Arredondamento
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="24"
+                  step="2"
+                  value={form.border_radius}
+                  onChange={(e) => setForm({ ...form, border_radius: e.target.value })}
+                  className="flex-1 accent-primary"
+                />
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-12 h-12 border-2 border-primary/40 bg-primary/10"
+                    style={{ borderRadius: `${form.border_radius}px` }}
+                  />
+                  <span className="text-xs font-mono text-muted-foreground">{form.border_radius}px</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Login Page Branding */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Shield size={12} className="text-primary" /> Tela de Login
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Título Principal</label>
+                  <input value={form.login_title} onChange={(e) => setForm({ ...form, login_title: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Subtítulo</label>
+                  <input value={form.login_subtitle} onChange={(e) => setForm({ ...form, login_subtitle: e.target.value })} placeholder="SISTEMA DE GESTÃO DE EMPRÉSTIMOS" className={inputCls} />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Info size={12} className="text-primary" /> Rodapé
+              </p>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Texto do Rodapé</label>
+                <input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} placeholder="© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS" className={inputCls} />
+                <p className="text-[10px] text-muted-foreground mt-1">Aparece no login e no portal do cliente</p>
               </div>
             </div>
           </>

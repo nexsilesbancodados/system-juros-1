@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 
 type Theme = "light" | "dark";
 
@@ -15,22 +16,23 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const { effectiveTheme, setThemeMode, isLoaded } = useWhiteLabel();
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem("theme");
     return (stored as Theme) || "dark";
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    if (isLoaded) {
+      setTheme(effectiveTheme);
     }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+  }, [effectiveTheme, isLoaded]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setThemeMode(next);
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

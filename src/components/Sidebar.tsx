@@ -223,13 +223,17 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
     navigate("/");
   };
 
+  const sidebarBg = config.sidebarStyle === "gradient"
+    ? `linear-gradient(180deg, hsl(var(--card) / 0.98), ${config.primaryColor}08)`
+    : undefined;
+
   return (
     <aside
       className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-[width] duration-150 border-r border-border/20 ${
         collapsed ? "w-[68px]" : "w-60"
-      }`}
+      } ${config.sidebarStyle === "minimal" ? "bg-background" : ""}`}
       style={{
-        background: "hsl(var(--card) / 0.98)",
+        background: sidebarBg || "hsl(var(--card) / 0.98)",
       }}
     >
       {/* Logo */}
