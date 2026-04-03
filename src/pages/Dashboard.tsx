@@ -449,7 +449,7 @@ const Dashboard = () => {
       {/* ─── Quick Actions ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "500ms" }}>
         {[
-          { label: "Novo Contrato", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/novo-contrato" },
+          { label: "Novo Cliente", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/clientes/novo" },
           { label: "Novo Cliente", icon: Users, color: "text-success", bg: "bg-success/8", path: "/clientes/novo" },
           { label: "Cobranças", icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8", path: "/cobrancas" },
           { label: "Relatórios", icon: PieChart, color: "text-info", bg: "bg-info/8", path: "/relatorios" },
