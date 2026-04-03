@@ -52,6 +52,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/portal-cliente" element={<PortalCliente />} />
               <Route path="/cobrador-externo" element={<CobradorExterno />} />
               <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<Dashboard />} />
