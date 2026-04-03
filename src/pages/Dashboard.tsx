@@ -105,8 +105,10 @@ const Dashboard = () => {
   }
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const hour = new Date().getHours();
+  const now = new Date();
+  const hour = now.getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const currentTime = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="space-y-6 pb-8">
@@ -114,7 +116,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-label mb-1">{greeting}</p>
+            <p className="text-label mb-1">{greeting} · {currentTime}</p>
             <h1 className="text-display text-4xl md:text-5xl text-foreground">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
