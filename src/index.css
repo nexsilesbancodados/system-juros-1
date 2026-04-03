@@ -213,7 +213,8 @@
 
   /* Bento */
   .bento-item {
-    @apply rounded-2xl overflow-hidden transition-all duration-300;
+    @apply overflow-hidden transition-all duration-300;
+    border-radius: 1.25rem;
   }
   .bento-item:hover {
     transform: translateY(-2px);
