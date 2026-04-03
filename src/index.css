@@ -181,12 +181,10 @@
     border: 1px solid hsl(var(--border) / 0.4);
     box-shadow: var(--shadow-card);
     border-radius: 1.5rem;
-    @apply transition-all duration-300;
+    @apply transition-colors duration-200;
   }
   .premium-card:hover {
-    box-shadow: var(--shadow-elevated);
     border-color: hsl(var(--primary) / 0.2);
-    transform: translateY(-2px);
   }
 
   /* Accent glow card */
