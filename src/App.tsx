@@ -82,7 +82,6 @@ const App = () => (
                 <Route path="/historico" element={<Historico />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
                 <Route path="/cobradores" element={<Cobradores />} />
-                <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/qrcode" element={<QRCodePage />} />
                 <Route path="/agente-ia" element={<AgenteIA />} />
                 <Route path="/auditoria" element={<Auditoria />} />
