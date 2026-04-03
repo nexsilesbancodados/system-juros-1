@@ -5,7 +5,7 @@ import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
   TrendingUp, DollarSign, Wrench, Database, Info,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
-  FileText, Crown, FileSignature, PhoneCall, Landmark, ClipboardList,
+  FileText, Crown, FileSignature, ClipboardList,
   Settings, Bot, QrCode, UserCheck, Shield,
 } from "lucide-react";
 
