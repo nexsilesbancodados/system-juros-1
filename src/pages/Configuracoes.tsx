@@ -57,12 +57,13 @@ const Configuracoes = () => {
 
   useEffect(() => {
     if (settings) {
-      setForm({
+      setForm(prev => ({
+        ...prev,
         company_name: settings.company_name || "",
         company_cnpj: settings.company_cnpj || "",
         company_logo_url: settings.company_logo_url || "",
-        primary_color: (settings as any).primary_color || "#d97706",
-        accent_color: (settings as any).accent_color || "#f59e0b",
+        primary_color: (settings as any).primary_color || "#4a86c8",
+        accent_color: (settings as any).accent_color || "#6ba3d6",
         theme_mode: (settings as any).theme_mode || "dark",
         default_interest_rate: String(settings.default_interest_rate || 10),
         default_late_fee: String(settings.default_late_fee || 2),
@@ -73,9 +74,20 @@ const Configuracoes = () => {
         whatsapp_instance: settings.whatsapp_instance || "",
         n8n_webhook_url: settings.n8n_webhook_url || "",
         push_notifications_enabled: settings.push_notifications_enabled || false,
-      });
+      }));
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (profile) {
+      setForm(prev => ({
+        ...prev,
+        pix_key: profile.pix_key || "",
+        pix_key_type: profile.pix_key_type || "CPF",
+        billing_message: profile.billing_message || "",
+      }));
+    }
+  }, [profile]);
 
   const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
