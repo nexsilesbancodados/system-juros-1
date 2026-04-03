@@ -18,7 +18,7 @@ const COLOR_PRESETS = [
 ];
 
 const Configuracoes = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { refresh: refreshWhiteLabel } = useWhiteLabel();
