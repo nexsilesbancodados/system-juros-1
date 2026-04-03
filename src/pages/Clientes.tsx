@@ -103,7 +103,7 @@ const Clientes = () => {
           {search && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
-              <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
+              <button onClick={() => setSearch("")} className="icon-action-sm"><X size={14} /></button>
             </div>
           )}
         </div>
