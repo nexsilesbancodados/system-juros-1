@@ -53,6 +53,25 @@ const Configuracoes = () => {
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
     pix_key: "", pix_key_type: "CPF", billing_message: "",
+    // Bot de cobranças
+    bot_enabled: false, bot_auto_send: false,
+    bot_send_hour: 9, bot_send_minute: 0,
+    bot_max_messages_per_day: 50,
+    bot_work_days: ["mon", "tue", "wed", "thu", "fri"] as string[],
+    bot_escalation_rules: [
+      { days: 0, template: "lembrete", channel: "whatsapp" },
+      { days: 1, template: "cobranca_1d", channel: "whatsapp" },
+      { days: 3, template: "cobranca_3d", channel: "whatsapp" },
+      { days: 7, template: "cobranca_7d", channel: "whatsapp" },
+      { days: 15, template: "cobranca_15d", channel: "whatsapp" },
+      { days: 30, template: "cobranca_30d", channel: "whatsapp" },
+    ] as { days: number; template: string; channel: string }[],
+    bot_retry_interval_hours: 24,
+    bot_stop_on_payment: true, bot_notify_owner: true,
+    bot_greeting_message: "Olá {nome}, aqui é do {empresa}.",
+    bot_closing_message: "Qualquer dúvida, entre em contato. Obrigado!",
+    bot_send_pix: true, bot_send_receipt: false,
+    bot_tone: "formal",
   });
 
   useEffect(() => {
