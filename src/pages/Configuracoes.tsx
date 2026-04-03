@@ -4,7 +4,7 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard } from "lucide-react";
 
 const COLOR_PRESETS = [
   { label: "Âmbar", primary: "#d97706", accent: "#f59e0b" },
