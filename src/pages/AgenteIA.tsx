@@ -82,11 +82,7 @@ const AgenteIA = () => {
 
   // Check WhatsApp connection status on mount
   useEffect(() => {
-    if (!settings) return;
-    if (!settings.whatsapp_api_url || !settings.whatsapp_api_key) {
-      setWhatsappStatus("error");
-      return;
-    }
+    if (settings === undefined) return; // still loading
     checkStatus();
   }, [settings]);
 
