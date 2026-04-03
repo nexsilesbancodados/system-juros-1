@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Users, Trash2, Eye, X, ChevronRight } from "lucide-react";
+import { Plus, Search, Users, Trash2, Eye, X, ChevronRight, LayoutGrid, List, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,14 @@ const Clientes = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Ativo" | "Inativo">("all");
+  const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
+    return (localStorage.getItem("clients-view") as "list" | "cards") || "list";
+  });
+
+  const toggleView = (mode: "list" | "cards") => {
+    setViewMode(mode);
+    localStorage.setItem("clients-view", mode);
+  };
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id],
@@ -87,30 +95,46 @@ const Clientes = () => {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input type="text" placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-20 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
-        {search && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
-            <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
-          </div>
-        )}
+      {/* Search + View Toggle */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input type="text" placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-20 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+          {search && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
+              <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center bg-card border border-border rounded-2xl p-1 shrink-0">
+          <button onClick={() => toggleView("list")}
+            className={`p-2.5 rounded-xl transition-colors ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            title="Lista">
+            <List size={16} />
+          </button>
+          <button onClick={() => toggleView("cards")}
+            className={`p-2.5 rounded-xl transition-colors ${viewMode === "cards" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            title="Cards">
+            <LayoutGrid size={16} />
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />)}</div>
+        <div className={viewMode === "cards" ? "grid grid-cols-2 lg:grid-cols-3 gap-3" : "space-y-3"}>
+          {[1,2,3,4,5,6].map(i => <div key={i} className={`rounded-xl bg-muted/30 animate-pulse ${viewMode === "cards" ? "h-40" : "h-16"}`} />)}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <Users size={28} className="mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-foreground font-medium">{search ? `Nenhum resultado para "${search}"` : "Nenhum cliente encontrado"}</p>
           {!search && <button onClick={() => navigate("/clientes/novo")} className="mt-4 text-sm text-primary hover:underline">+ Cadastrar cliente</button>}
         </div>
-      ) : (
+      ) : viewMode === "list" ? (
         <>
-          {/* Desktop */}
+          {/* Desktop Table */}
           <div className="hidden md:block rounded-2xl border border-border overflow-hidden bg-card">
             <table className="w-full text-sm">
               <thead>
@@ -159,7 +183,7 @@ const Clientes = () => {
             </table>
           </div>
 
-          {/* Mobile */}
+          {/* Mobile List */}
           <div className="md:hidden space-y-2">
             {filtered.map((c: any) => (
               <button key={c.id} onClick={() => navigate(`/clientes/${c.id}`)}
@@ -182,6 +206,56 @@ const Clientes = () => {
             ))}
           </div>
         </>
+      ) : (
+        /* Cards View */
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filtered.map((c: any) => (
+            <div key={c.id} onClick={() => navigate(`/clientes/${c.id}`)}
+              className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 cursor-pointer transition-all group relative">
+              {/* Delete button */}
+              <button onClick={(e) => handleDelete(c.id, e)}
+                className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                title="Excluir">
+                <Trash2 size={13} />
+              </button>
+
+              {/* Avatar + Name */}
+              <div className="flex flex-col items-center text-center mb-3">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary mb-2">
+                  {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-14 h-14 rounded-2xl object-cover" /> : c.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <p className="font-semibold text-foreground text-sm truncate w-full">{c.name}</p>
+                {c.cpf_cnpj && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{c.cpf_cnpj}</p>}
+              </div>
+
+              {/* Info */}
+              <div className="space-y-1.5 mb-3">
+                {(c.phone || c.whatsapp) && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Phone size={11} className="shrink-0" />
+                    <span className="truncate">{c.phone || c.whatsapp}</span>
+                  </div>
+                )}
+                {c.email && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Mail size={11} className="shrink-0" />
+                    <span className="truncate">{c.email}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-2.5 border-t border-border">
+                <Badge variant="outline" className={`text-[9px] ${c.status === "Ativo" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}`}>
+                  {c.status}
+                </Badge>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${scoreColor(c.credit_score || 0)}`}>
+                  {c.credit_score || 0}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
