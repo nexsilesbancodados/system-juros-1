@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Calendar } from "lucide-react";
+import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Relatorios = () => {
   const { user } = useAuth();
@@ -33,20 +35,20 @@ const Relatorios = () => {
     const clientData = clients.data || [];
     const installmentData = installments.data || [];
 
-    const totalProfit = profitData.reduce((a, p) => a + Number(p.amount), 0);
-    const totalExpense = expenseData.reduce((a, e) => a + Number(e.amount), 0);
-    const paidInstallments = installmentData.filter((i) => i.status === "paid");
-    const overdueInstallments = installmentData.filter((i) => i.status !== "paid" && new Date(i.due_date) < new Date());
-    const totalReceived = paidInstallments.reduce((a, i) => a + Number(i.amount), 0);
-    const totalOverdue = overdueInstallments.reduce((a, i) => a + Number(i.amount), 0);
+    const totalProfit = profitData.reduce((a: number, p: any) => a + Number(p.amount), 0);
+    const totalExpense = expenseData.reduce((a: number, e: any) => a + Number(e.amount), 0);
+    const paidInstallments = installmentData.filter((i: any) => i.status === "paid");
+    const overdueInstallments = installmentData.filter((i: any) => i.status !== "paid" && new Date(i.due_date) < new Date());
+    const totalReceived = paidInstallments.reduce((a: number, i: any) => a + Number(i.amount), 0);
+    const totalOverdue = overdueInstallments.reduce((a: number, i: any) => a + Number(i.amount), 0);
 
     setData({
       profitData, expenseData, clientData, installmentData,
       totalProfit, totalExpense, totalReceived, totalOverdue,
       paidCount: paidInstallments.length,
       overdueCount: overdueInstallments.length,
-      pendingCount: installmentData.filter((i) => i.status === "pending" && new Date(i.due_date) >= new Date()).length,
-      activeClients: clientData.filter((c) => c.status === "Ativo").length,
+      pendingCount: installmentData.filter((i: any) => i.status === "pending" && new Date(i.due_date) >= new Date()).length,
+      activeClients: clientData.filter((c: any) => c.status === "Ativo").length,
       balance: totalProfit - totalExpense,
     });
     setLoading(false);
@@ -67,114 +69,138 @@ const Relatorios = () => {
     csv += `Gastos Total,R$ ${data.totalExpense.toFixed(2)}\n`;
     csv += `Saldo,R$ ${data.balance.toFixed(2)}\n`;
     csv += `Recebido (parcelas),R$ ${data.totalReceived.toFixed(2)}\n`;
-    csv += `Em atraso,R$ ${data.totalOverdue.toFixed(2)}\n`;
-    csv += `Clientes ativos,${data.activeClients}\n\n`;
+    csv += `Em atraso,R$ ${data.totalOverdue.toFixed(2)}\n\n`;
 
-    csv += "LUCROS\n";
-    csv += "Data,Descrição,Valor\n";
+    csv += "LUCROS\nData,Descrição,Valor\n";
     data.profitData.forEach((p: any) => {
       csv += `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description}",R$ ${Number(p.amount).toFixed(2)}\n`;
     });
-
-    csv += "\nGASTOS\n";
-    csv += "Data,Descrição,Categoria,Valor\n";
+    csv += "\nGASTOS\nData,Descrição,Categoria,Valor\n";
     data.expenseData.forEach((e: any) => {
       csv += `${new Date(e.date).toLocaleDateString("pt-BR")},"${e.description}","${e.category || "-"}",R$ ${Number(e.amount).toFixed(2)}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-${month}.csv`;
-    a.click();
+    const a = document.createElement("a"); a.href = url; a.download = `relatorio-${month}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Relatório exportado!" });
+    toast({ title: "✓ Relatório exportado!" });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground text-sm mt-1">Resumo mensal completo do seu negócio.</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Resumo mensal completo do seu negócio.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-muted-foreground" />
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-input/80 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border">
+            <Calendar size={14} className="text-muted-foreground shrink-0" />
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
+              className="bg-transparent text-sm text-foreground focus:outline-none" />
           </div>
-          <button onClick={handleExportCSV} disabled={!data} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-            <Download size={16} /> Exportar CSV
+          <button onClick={handleExportCSV} disabled={!data}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 focus-ring"
+            style={{ background: "var(--gradient-button)" }}>
+            <Download size={16} /> Exportar
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Carregando relatório...</div>
+        <div className="space-y-4">
+          <div className="h-8 w-48 skeleton-shimmer rounded-lg" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="h-24 rounded-xl skeleton-shimmer" />)}</div>
+        </div>
       ) : !data ? null : (
         <>
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-1">
-              Resumo de {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
-            </h2>
-            <p className="text-xs text-muted-foreground mb-4">Visão consolidada do período.</p>
+          {/* Month label */}
+          <div className="flex items-center gap-2 animate-fade-in">
+            <BarChart3 size={16} className="text-primary" />
+            <h2 className="text-headline text-lg text-foreground capitalize">{monthLabel}</h2>
+          </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Main stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
+            {[
+              { label: "Lucros", value: `R$ ${fmt(data.totalProfit)}`, icon: TrendingUp, color: "text-success", bg: "bg-success/8", glow: data.totalProfit > 0 ? "success-glow" : "" },
+              { label: "Gastos", value: `R$ ${fmt(data.totalExpense)}`, icon: ArrowDownRight, color: "text-destructive", bg: "bg-destructive/8", glow: "" },
+              { label: "Saldo", value: `R$ ${fmt(data.balance)}`, icon: Wallet, color: data.balance >= 0 ? "text-success" : "text-destructive", bg: data.balance >= 0 ? "bg-success/8" : "bg-destructive/8", glow: data.balance >= 0 ? "success-glow" : "danger-glow" },
+              { label: "Recebido", value: `R$ ${fmt(data.totalReceived)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", glow: "" },
+              { label: "Em Atraso", value: `R$ ${fmt(data.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", glow: data.totalOverdue > 0 ? "danger-glow" : "" },
+              { label: "Clientes Ativos", value: String(data.activeClients), icon: Users, color: "text-primary", bg: "bg-primary/8", glow: "" },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-xl border border-border bg-card p-4 card-shine ${s.glow}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+                    <s.icon size={16} className={s.color} />
+                  </div>
+                  <p className="text-label">{s.label}</p>
+                </div>
+                <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Installments summary */}
+          <div className="rounded-xl border border-border bg-card p-5 animate-fade-in">
+            <div className="flex items-center gap-2 mb-4">
+              <Receipt size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Parcelas do Mês</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Lucros", value: `R$ ${data.totalProfit.toFixed(2)}`, color: "text-green-400" },
-                { label: "Gastos", value: `R$ ${data.totalExpense.toFixed(2)}`, color: "text-destructive" },
-                { label: "Saldo", value: `R$ ${data.balance.toFixed(2)}`, color: data.balance >= 0 ? "text-green-400" : "text-destructive" },
-                { label: "Recebido", value: `R$ ${data.totalReceived.toFixed(2)}`, color: "text-foreground" },
-                { label: "Em Atraso", value: `R$ ${data.totalOverdue.toFixed(2)}`, color: "text-destructive" },
-                { label: "Clientes Ativos", value: String(data.activeClients), color: "text-foreground" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                  <p className={`text-xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+                { label: "Pagas", value: data.paidCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10", border: "border-success/20" },
+                { label: "Atrasadas", value: data.overdueCount, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20" },
+                { label: "Pendentes", value: data.pendingCount, icon: Clock, color: "text-warning", bg: "bg-warning/10", border: "border-warning/20" },
+              ].map(s => (
+                <div key={s.label} className={`rounded-xl ${s.bg} border ${s.border} p-4 text-center`}>
+                  <s.icon size={18} className={`${s.color} mx-auto mb-1`} />
+                  <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Parcelas summary */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Parcelas do Mês</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4 text-center">
-                <p className="text-2xl font-bold text-green-400">{data.paidCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">Pagas</p>
+            {/* Progress bar */}
+            {data.installmentData.length > 0 && (
+              <div className="mt-4">
+                <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                  <div className="h-full bg-success transition-all duration-500" style={{ width: `${(data.paidCount / data.installmentData.length) * 100}%` }} />
+                  <div className="h-full bg-destructive/60 transition-all duration-500" style={{ width: `${(data.overdueCount / data.installmentData.length) * 100}%` }} />
+                  <div className="h-full bg-warning/40 transition-all duration-500" style={{ width: `${(data.pendingCount / data.installmentData.length) * 100}%` }} />
+                </div>
+                <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
+                  <span>{data.paidCount} pagas</span>
+                  <span>{data.installmentData.length} total</span>
+                </div>
               </div>
-              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-center">
-                <p className="text-2xl font-bold text-destructive">{data.overdueCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">Atrasadas</p>
-              </div>
-              <div className="rounded-lg bg-accent border border-border p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">{data.pendingCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">Pendentes</p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Profit details */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Detalhes de Lucros ({data.profitData.length})</h2>
+          <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky-header">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp size={14} className="text-success" /></div>
+                <h2 className="text-sm font-semibold text-foreground">Lucros ({data.profitData.length})</h2>
+              </div>
+              <span className="text-sm font-bold text-success">+R$ {fmt(data.totalProfit)}</span>
+            </div>
             {data.profitData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum lucro neste período.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhum lucro neste período.</p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto divide-y divide-border/50">
                 {data.profitData.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="text-sm text-foreground">{p.description}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(p.date).toLocaleDateString("pt-BR")}</p>
+                  <div key={p.id} className="data-row">
+                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                      <TrendingUp size={14} className="text-success" />
                     </div>
-                    <span className="text-green-400 font-semibold text-sm">R$ {Number(p.amount).toFixed(2)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate">{p.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(p.date).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-success">+R$ {fmt(Number(p.amount))}</span>
                   </div>
                 ))}
               </div>
@@ -182,19 +208,28 @@ const Relatorios = () => {
           </div>
 
           {/* Expense details */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Detalhes de Gastos ({data.expenseData.length})</h2>
+          <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky-header">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center"><ArrowDownRight size={14} className="text-destructive" /></div>
+                <h2 className="text-sm font-semibold text-foreground">Gastos ({data.expenseData.length})</h2>
+              </div>
+              <span className="text-sm font-bold text-destructive">−R$ {fmt(data.totalExpense)}</span>
+            </div>
             {data.expenseData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum gasto neste período.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhum gasto neste período.</p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto divide-y divide-border/50">
                 {data.expenseData.map((e: any) => (
-                  <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="text-sm text-foreground">{e.description}</p>
-                      <p className="text-xs text-muted-foreground">{e.category || "Sem categoria"} · {new Date(e.date).toLocaleDateString("pt-BR")}</p>
+                  <div key={e.id} className="data-row">
+                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                      <ArrowDownRight size={14} className="text-destructive" />
                     </div>
-                    <span className="text-destructive font-semibold text-sm">R$ {Number(e.amount).toFixed(2)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate">{e.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{e.category || "Sem categoria"} · {new Date(e.date).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-destructive">−R$ {fmt(Number(e.amount))}</span>
                   </div>
                 ))}
               </div>
