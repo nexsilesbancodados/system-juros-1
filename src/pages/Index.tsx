@@ -58,7 +58,7 @@ const Index = () => {
       <div className="relative z-10 flex flex-col items-center mb-10 animate-fade-in">
         <div className="relative">
           <div className="absolute inset-0 rounded-full gold-glow" />
-          <img src={eagleLogo} alt="Urus Jurista" width={88} height={88} className="relative rounded-full ring-2 ring-[hsl(38,75%,50%)]/30" />
+          <img src={eagleLogo} alt="Urus Jurista" width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
         </div>
         <h1 className="font-display text-2xl tracking-[0.35em] mt-4 text-gradient-gold">
           URUS JURISTA
