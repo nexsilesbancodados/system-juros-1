@@ -1,16 +1,21 @@
-import eagleLogo from "@/assets/eagle-logo.webp";
 import { Shield, Code, Users, Zap, Star, Globe } from "lucide-react";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
+import eagleLogo from "@/assets/eagle-logo.webp";
 
 const features = [
   { icon: Shield, title: "Segurança", desc: "Autenticação e RLS com Supabase" },
   { icon: Code, title: "Tecnologia", desc: "React, TypeScript e Tailwind CSS" },
   { icon: Users, title: "Multi-usuário", desc: "Controle de permissões por roles" },
   { icon: Zap, title: "Performance", desc: "Carregamento otimizado e cache" },
-  { icon: Star, title: "Interface", desc: "Design premium preto e prata" },
+  { icon: Star, title: "Interface", desc: "Design premium azul metálico" },
   { icon: Globe, title: "Acessível", desc: "Responsivo para todos os dispositivos" },
 ];
 
 const Sobre = () => {
+  const { config } = useWhiteLabel();
+  const logoSrc = config.companyLogo || eagleLogo;
+  const brandName = config.companyName || "SYSTEM JUROS";
+
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       {/* Hero */}
@@ -18,10 +23,9 @@ const Sobre = () => {
         <div className="absolute inset-0 opacity-5" style={{ background: "var(--gradient-gold)" }} />
         <div className="relative">
           <div className="relative inline-block mb-5">
-            <div className="absolute inset-0 rounded-full gold-glow" />
-            <img src={eagleLogo} alt="System Juros" width={96} height={96} className="relative rounded-full ring-2 ring-primary/20" />
+            <img src={logoSrc} alt={brandName} width={96} height={96} className="relative rounded-full ring-2 ring-primary/20" />
           </div>
-          <h1 className="font-display text-3xl tracking-[0.3em] text-gradient-gold mb-2">SYSTEM JUROS</h1>
+          <h1 className="font-display text-3xl tracking-[0.3em] text-gradient-gold mb-2">{brandName}</h1>
           <p className="text-muted-foreground text-sm tracking-wider">SISTEMA COMPLETO DE GESTÃO FINANCEIRA</p>
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-muted/50 text-sm text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -45,7 +49,7 @@ const Sobre = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground pb-4">
-        © 2026 System Juros. Todos os direitos reservados.
+        © {new Date().getFullYear()} {brandName}. Todos os direitos reservados.
       </div>
     </div>
   );
