@@ -161,6 +161,22 @@ const Configuracoes = () => {
       whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
+      // Bot settings
+      bot_enabled: form.bot_enabled,
+      bot_auto_send: form.bot_auto_send,
+      bot_send_hour: form.bot_send_hour,
+      bot_send_minute: form.bot_send_minute,
+      bot_max_messages_per_day: form.bot_max_messages_per_day,
+      bot_work_days: form.bot_work_days,
+      bot_escalation_rules: form.bot_escalation_rules,
+      bot_retry_interval_hours: form.bot_retry_interval_hours,
+      bot_stop_on_payment: form.bot_stop_on_payment,
+      bot_notify_owner: form.bot_notify_owner,
+      bot_greeting_message: form.bot_greeting_message || null,
+      bot_closing_message: form.bot_closing_message || null,
+      bot_send_pix: form.bot_send_pix,
+      bot_send_receipt: form.bot_send_receipt,
+      bot_tone: form.bot_tone,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
