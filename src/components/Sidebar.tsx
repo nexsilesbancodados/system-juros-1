@@ -4,7 +4,8 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import {
   LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown, FileSignature, PhoneCall,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
+  FileText, Crown, FileSignature, PhoneCall, Landmark, ClipboardList,
 } from "lucide-react";
 
 interface MenuItem {
@@ -42,6 +43,7 @@ const sections: MenuSection[] = [
   {
     title: "Financeiro",
     items: [
+      { label: "Tesouraria", icon: <Landmark size={18} />, path: "/tesouraria" },
       { label: "Cobranças", icon: <Receipt size={18} />, path: "/cobrancas" },
       { label: "Carteira", icon: <Wallet size={18} />, path: "/carteira" },
       { label: "Lucros", icon: <TrendingUp size={18} />, path: "/lucros" },
@@ -59,6 +61,7 @@ const ferramentasItems: MenuItem[] = [
 ];
 
 const bottomItems: MenuItem[] = [
+  { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Network", icon: <Network size={18} />, path: "/network" },
