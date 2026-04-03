@@ -6,11 +6,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
-  Calendar, Receipt, Activity, Search, X, ArrowRight, Check, Percent, Wallet
+  Calendar, Receipt, Activity, Search, X, ArrowRight, Check, Percent, Wallet, Printer
 } from "lucide-react";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
@@ -286,6 +288,159 @@ const ClienteDetalhe = () => {
     navigator.clipboard.writeText(lines.join("\n")); toast({ title: "Resumo copiado!" });
   };
 
+  // PDF Extrato Completo
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const now = new Date();
+    const pg = { x: 14, w: 182 };
+
+    // Header
+    doc.setFillColor(20, 20, 25);
+    doc.rect(0, 0, 210, 38, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("EXTRATO DO CLIENTE", pg.x, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Emitido em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR")}`, pg.x, 24);
+    doc.text(`Cliente: ${client?.name || "—"}  |  CPF/CNPJ: ${client?.cpf_cnpj || "—"}`, pg.x, 31);
+
+    let y = 46;
+
+    // Dados do Cliente
+    doc.setTextColor(40, 40, 40);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Dados do Cliente", pg.x, y);
+    y += 7;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    const addr = client?.address as any;
+    const infoLines = [
+      `Nome: ${client?.name || "—"}`,
+      `CPF/CNPJ: ${client?.cpf_cnpj || "—"}`,
+      `Telefone: ${client?.phone || "—"}  |  WhatsApp: ${client?.whatsapp || "—"}`,
+      `Email: ${client?.email || "—"}`,
+      `Endereço: ${addr ? `${addr.street || ""}, ${addr.number || ""} - ${addr.neighborhood || ""}, ${addr.city || ""}/${addr.state || ""}` : "Não informado"}`,
+      `Score: ${client?.credit_score || 0}  |  Status: ${client?.status || "—"}`,
+    ];
+    infoLines.forEach(l => { doc.text(l, pg.x, y); y += 5; });
+
+    y += 4;
+
+    // Resumo Financeiro
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumo Financeiro", pg.x, y);
+    y += 2;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Descrição", "Valor"]],
+      body: [
+        ["Capital Emprestado", `R$ ${fmt(totalCapital)}`],
+        ["Total com Juros", `R$ ${fmt(totalAmount)}`],
+        ["Total Recebido", `R$ ${fmt(totalPaid)}`],
+        ["Total em Atraso", `R$ ${fmt(totalOverdue)}`],
+        ["Total Pendente", `R$ ${fmt(totalPending)}`],
+        ["Saldo Restante", `R$ ${fmt(remaining)}`],
+        ["Lucro Gerado", `R$ ${fmt(totalProfit)}`],
+        ["Contratos Ativos", String(contracts.filter((c: any) => c.status === "active").length)],
+        ["Parcelas Pagas", String(paidInst.length)],
+        ["Parcelas Atrasadas", String(overdueInst.length)],
+        ["Parcelas Pendentes", String(pendingInst.length)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [20, 20, 25], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8.5 },
+      columnStyles: { 0: { cellWidth: 100 }, 1: { cellWidth: 82, halign: "right" } },
+      margin: { left: pg.x, right: pg.x },
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Contratos
+    if (contracts.length > 0) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(40, 40, 40);
+      doc.text("Contratos", pg.x, y);
+      y += 2;
+
+      const freqMap: any = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };
+      autoTable(doc, {
+        startY: y,
+        head: [["#", "Capital", "Juros", "Total", "Parcelas", "Freq.", "Início", "Status"]],
+        body: contracts.map((c: any, i: number) => [
+          String(i + 1),
+          `R$ ${fmt(Number(c.capital))}`,
+          `${c.interest_rate}%`,
+          `R$ ${fmt(Number(c.total_amount))}`,
+          `${c.num_installments}x R$ ${fmt(Number(c.installment_amount))}`,
+          freqMap[c.frequency] || c.frequency,
+          new Date(c.start_date).toLocaleDateString("pt-BR"),
+          c.status === "active" ? "Ativo" : c.status,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [20, 20, 25], fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 7.5 },
+        margin: { left: pg.x, right: pg.x },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Parcelas
+    const allInst = [...overdueInst, ...pendingInst, ...paidInst];
+    if (allInst.length > 0) {
+      if (y > 230) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(40, 40, 40);
+      doc.text("Parcelas", pg.x, y);
+      y += 2;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Nº", "Valor", "Vencimento", "Pago em", "Valor Pago", "Status"]],
+        body: allInst.map((i: any) => [
+          String(i.installment_number),
+          `R$ ${fmt(Number(i.amount))}`,
+          new Date(i.due_date).toLocaleDateString("pt-BR"),
+          i.paid_at ? new Date(i.paid_at).toLocaleDateString("pt-BR") : "—",
+          i.paid_amount ? `R$ ${fmt(Number(i.paid_amount))}` : "—",
+          i.status === "paid" ? "Pago" : i.status === "overdue" ? "Atrasada" : "Pendente",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [20, 20, 25], fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 7.5 },
+        margin: { left: pg.x, right: pg.x },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 5) {
+            const v = data.cell.raw;
+            if (v === "Atrasada") data.cell.styles.textColor = [220, 50, 50];
+            else if (v === "Pago") data.cell.styles.textColor = [34, 139, 34];
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7);
+      doc.setTextColor(140, 140, 140);
+      doc.text(`Página ${p}/${pageCount}`, 105, 290, { align: "center" });
+      doc.text("Documento gerado automaticamente — System Juros", 105, 294, { align: "center" });
+    }
+
+    doc.save(`extrato_${(client?.name || "cliente").replace(/\s+/g, "_")}_${now.toISOString().split("T")[0]}.pdf`);
+    toast({ title: "PDF gerado!", description: "O download iniciou automaticamente." });
+  };
+
   // 12. Ativar/Inativar
   const toggleStatus = async () => {
     const s = client?.status === "Ativo" ? "Inativo" : "Ativo";
@@ -365,6 +520,7 @@ const ClienteDetalhe = () => {
     { icon: Mail, label: "E-mail", action: emailClient, color: "text-primary" },
     { icon: Copy, label: "Copiar Dados", action: copyClientInfo, color: "text-muted-foreground" },
     { icon: Download, label: "Exportar Resumo", action: exportSummary, color: "text-primary" },
+    { icon: Printer, label: "Gerar PDF", action: generatePDF, color: "text-primary" },
     { icon: Star, label: "Score +50", action: () => updateScore(50), color: "text-warning" },
     { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50), color: "text-destructive" },
     { icon: Ban, label: client?.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus, color: client?.status === "Ativo" ? "text-warning" : "text-success" },
