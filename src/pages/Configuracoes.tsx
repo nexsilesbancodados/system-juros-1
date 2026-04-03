@@ -162,18 +162,14 @@ const Configuracoes = () => {
             <h2 className="font-semibold text-foreground">Valores Padrão para Novos Contratos</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
-                <input type="number" value={form.default_interest_rate} onChange={(e) => setForm({ ...form, default_interest_rate: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa por Atraso (%)</label>
-                <input type="number" value={form.default_late_fee} onChange={(e) => setForm({ ...form, default_late_fee: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Juros Diário Atraso (%)</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
                 <input type="number" step="0.01" value={form.default_daily_interest} onChange={(e) => setForm({ ...form, default_daily_interest: e.target.value })} className={inputCls} />
               </div>
               <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
+                <input type="number" value={form.default_late_fee} onChange={(e) => setForm({ ...form, default_late_fee: e.target.value })} className={inputCls} />
+              </div>
+              <div className="col-span-2">
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequência Padrão</label>
                 <select value={form.default_frequency} onChange={(e) => setForm({ ...form, default_frequency: e.target.value })} className={inputCls}>
                   <option value="daily">Diário</option>
