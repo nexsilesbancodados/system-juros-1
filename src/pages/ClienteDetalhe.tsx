@@ -564,23 +564,7 @@ const ClienteDetalhe = () => {
     { key: "historico", label: "Histórico", icon: Clock },
   ] as const;
 
-  const toolButtons = [
-    { icon: Edit, label: "Editar Ficha", action: startEdit, color: "text-primary" },
-    { icon: MapPin, label: "Editar Endereço", action: startEditAddress, color: "text-primary" },
-    { icon: Plus, label: "Novo Empréstimo", action: () => setNewLoanMode(true), color: "text-success" },
-    { icon: CheckCircle, label: "Quitar Todas", action: payAllPending, color: "text-success" },
-    { icon: Send, label: "Cobrar Atrasadas", action: sendAllOverdue, color: "text-destructive" },
-    { icon: Phone, label: "Ligar", action: callClient, color: "text-primary" },
-    { icon: MessageSquare, label: "WhatsApp", action: openWhatsApp, color: "text-success" },
-    { icon: Mail, label: "E-mail", action: emailClient, color: "text-primary" },
-    { icon: Copy, label: "Copiar Dados", action: copyClientInfo, color: "text-muted-foreground" },
-    { icon: Download, label: "Exportar Resumo", action: exportSummary, color: "text-primary" },
-    { icon: Printer, label: "Gerar PDF", action: generatePDF, color: "text-primary" },
-    { icon: Star, label: "Score +50", action: () => updateScore(50), color: "text-warning" },
-    { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50), color: "text-destructive" },
-    { icon: Ban, label: client?.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus, color: client?.status === "Ativo" ? "text-warning" : "text-success" },
-    { icon: Trash2, label: "Excluir", action: handleDelete, color: "text-destructive" },
-  ];
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-24">
@@ -604,6 +588,42 @@ const ClienteDetalhe = () => {
                 <span className={`text-xs font-bold ${scoreColor}`}>Score: {client.credit_score || 0}</span>
               </div>
             </div>
+          </div>
+        </div>
+        {/* Header actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar Ficha">
+            <Edit size={16} />
+          </button>
+          <div className="relative">
+            <button onClick={() => setShowMoreActions(!showMoreActions)} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Mais ações">
+              <Activity size={16} />
+            </button>
+            {showMoreActions && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
+                <div className="absolute right-0 top-10 w-48 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden animate-scale-in py-1">
+                  {[
+                    { icon: Copy, label: "Copiar Dados", action: copyClientInfo },
+                    { icon: Download, label: "Exportar Resumo", action: exportSummary },
+                    { icon: Printer, label: "Gerar PDF", action: generatePDF },
+                    { icon: Star, label: "Score +50", action: () => updateScore(50) },
+                    { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50) },
+                    { icon: Ban, label: client?.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus },
+                    { icon: Trash2, label: "Excluir", action: handleDelete, destructive: true },
+                  ].map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => { item.action(); setShowMoreActions(false); }}
+                      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent transition-colors ${(item as any).destructive ? "text-destructive" : "text-foreground"}`}
+                    >
+                      <item.icon size={14} className={(item as any).destructive ? "text-destructive" : "text-muted-foreground"} />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -781,7 +801,7 @@ const ClienteDetalhe = () => {
 
       {/* ========== CONTENT ========== */}
 
-      {/* Contact Info */}
+      {/* Contact Info + Quick Contact Actions */}
       <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in" style={{ animationDelay: "80ms" }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -805,16 +825,31 @@ const ClienteDetalhe = () => {
             {address.street}{address.number ? `, ${address.number}` : ""} - {address.neighborhood} · {address.city}/{address.state} · CEP {address.cep}
           </p>
         )}
+        {/* Inline contact & address actions */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border flex-wrap">
+          <button onClick={callClient} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+            <Phone size={13} /> Ligar
+          </button>
+          <button onClick={openWhatsApp} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 text-success text-xs font-medium hover:bg-success/20 transition-colors">
+            <MessageSquare size={13} /> WhatsApp
+          </button>
+          <button onClick={emailClient} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+            <Mail size={13} /> E-mail
+          </button>
+          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs font-medium hover:bg-accent transition-colors ml-auto">
+            <MapPin size={13} /> Editar Endereço
+          </button>
+        </div>
       </div>
 
-      {/* Financial KPIs */}
+      {/* Financial KPIs + Action buttons */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "120ms" }}>
         {[
           { icon: DollarSign, label: "Capital na Rua", value: `R$ ${fmt(totalCapital)}`, color: "text-foreground", bg: "bg-primary/10" },
           { icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(totalPaid)}`, color: "text-success", bg: "bg-success/10" },
           { icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(totalOverdue)}`, color: "text-destructive", bg: "bg-destructive/10" },
           { icon: Wallet, label: "Restante", value: `R$ ${fmt(remaining)}`, color: "text-primary", bg: "bg-primary/10" },
-        ].map((s, idx) => (
+        ].map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-2xl p-3.5 card-hover">
             <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon size={16} className={s.color} />
@@ -825,19 +860,19 @@ const ClienteDetalhe = () => {
         ))}
       </div>
 
-      {/* Tool Buttons */}
-      <div className="animate-fade-in" style={{ animationDelay: "160ms" }}>
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ferramentas ({toolButtons.length})</p>
-        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-          {toolButtons.map((tool, idx) => (
-            <button key={idx} onClick={tool.action} className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border border-border bg-card hover:bg-accent/50 transition-all text-center card-hover" title={tool.label}>
-              <tool.icon size={16} className={tool.color} />
-              <span className="text-[9px] font-medium text-muted-foreground leading-tight">{tool.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
+      {/* Primary action bar */}
+      <div className="flex items-center gap-2 flex-wrap animate-fade-in" style={{ animationDelay: "140ms" }}>
+        <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
+          <Plus size={15} /> Novo Empréstimo
+        </button>
+        <button onClick={payAllPending} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-success/10 text-success border border-success/20 text-sm font-medium hover:bg-success/20 transition-colors">
+          <CheckCircle size={15} /> Quitar Todas
+        </button>
+        {overdueInst.length > 0 && (
+          <button onClick={sendAllOverdue} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 text-sm font-medium hover:bg-destructive/20 transition-colors">
+            <Send size={15} /> Cobrar Atrasadas ({overdueInst.length})
+          </button>
+        )}
       {/* Tabs */}
       <div className="flex gap-1 bg-muted/50 rounded-2xl p-1 animate-fade-in" style={{ animationDelay: "200ms" }}>
         {tabs.map(tab => (
