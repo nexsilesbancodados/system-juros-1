@@ -17,6 +17,12 @@ import {
   Database,
   Network,
   Info,
+  Target,
+  Calculator,
+  CheckSquare,
+  StickyNote,
+  Table,
+  ChevronDown,
 } from "lucide-react";
 
 interface MenuItem {
@@ -59,8 +65,15 @@ const sections: MenuSection[] = [
   },
 ];
 
+const ferramentasItems: MenuItem[] = [
+  { label: "Metas", icon: <Target size={18} />, path: "/ferramentas/metas" },
+  { label: "Simulador", icon: <Calculator size={18} />, path: "/ferramentas/simulador" },
+  { label: "Tarefas", icon: <CheckSquare size={18} />, path: "/ferramentas/tarefas" },
+  { label: "Anotações", icon: <StickyNote size={18} />, path: "/ferramentas/anotacoes" },
+  { label: "Planilha", icon: <Table size={18} />, path: "/ferramentas/planilha" },
+];
+
 const bottomItems: MenuItem[] = [
-  { label: "Ferramentas", icon: <Wrench size={18} />, path: "/ferramentas" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Network", icon: <Network size={18} />, path: "/network" },
@@ -70,6 +83,9 @@ const bottomItems: MenuItem[] = [
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [ferramentasOpen, setFerramentasOpen] = useState(
+    location.pathname.startsWith("/ferramentas")
+  );
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -110,8 +126,25 @@ const Sidebar = () => {
           </div>
         ))}
 
+        {/* Ferramentas collapsible */}
+        <div className="pt-2 border-t border-border">
+          <button
+            onClick={() => setFerramentasOpen(!ferramentasOpen)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <Wrench size={18} />
+            <span>Ferramentas</span>
+            <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+          </button>
+          {ferramentasOpen && (
+            <div className="ml-3 space-y-0.5 mt-0.5">
+              {ferramentasItems.map(renderItem)}
+            </div>
+          )}
+        </div>
+
         {/* Bottom items */}
-        <div className="space-y-0.5 pt-2 border-t border-border">
+        <div className="space-y-0.5 pt-2">
           {bottomItems.map(renderItem)}
         </div>
       </nav>
