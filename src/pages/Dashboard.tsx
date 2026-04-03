@@ -325,7 +325,7 @@ const Dashboard = () => {
           <div
             key={c.label}
             onClick={c.onClick}
-            className={`group glass-card rounded-2xl p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
+            className={`group premium-card p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
             style={{ animationDelay: `${(i + 8) * 60}ms` }}
           >
             <div className="flex items-start justify-between">
