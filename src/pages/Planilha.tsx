@@ -105,7 +105,7 @@ const Planilha = () => {
           { label: "Total Pago", value: `R$ ${fmt(totals.paid)}`, icon: DollarSign, color: "text-success" },
           { label: "Atrasadas", value: totals.overdue, icon: Filter, color: "text-destructive" },
         ].map(s => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 card-shine">
             <div className="flex items-center gap-2 mb-1">
               <s.icon size={14} className={s.color} />
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</span>
@@ -119,7 +119,7 @@ const Planilha = () => {
       <div className="relative">
         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input type="text" placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
+          className="w-full pl-10 pr-10 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
         {search && (
           <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
         )}
@@ -133,7 +133,7 @@ const Planilha = () => {
           <p className="text-muted-foreground">Nenhum cliente encontrado.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-x-auto bg-card">
+        <div className="rounded-2xl border border-border overflow-x-auto bg-card">
           <table className="w-full text-sm min-w-[900px]">
             <thead>
               <tr className="border-b border-border bg-muted/30">

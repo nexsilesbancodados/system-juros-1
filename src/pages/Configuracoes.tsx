@@ -104,7 +104,7 @@ const Configuracoes = () => {
     queryClient.invalidateQueries({ queryKey: ["message-templates"] });
   };
 
-  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
+  const inputCls = "w-full px-4 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
 
   const tabs = [
     { id: "empresa", label: "Empresa", icon: Building },
@@ -204,7 +204,7 @@ const Configuracoes = () => {
             </div>
             <div className="space-y-3">
               {templates.map((t: any) => (
-                <div key={t.id} className="flex items-start gap-3 p-4 rounded-xl bg-muted/20 border border-border group">
+                <div key={t.id} className="flex items-start gap-3 p-4 rounded-2xl bg-muted/20 border border-border group">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{t.name}</p>
                     <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{t.content}</p>
@@ -252,7 +252,7 @@ const Configuracoes = () => {
               <div className="w-8 h-8 rounded-lg bg-warning/8 flex items-center justify-center"><Bell size={16} className="text-warning" /></div>
               <h2 className="font-semibold text-foreground">Notificações Push</h2>
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/20 border border-border">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted/20 border border-border">
               <button
                 onClick={() => setForm({ ...form, push_notifications_enabled: !form.push_notifications_enabled })}
                 className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${form.push_notifications_enabled ? "bg-success" : "bg-muted"}`}

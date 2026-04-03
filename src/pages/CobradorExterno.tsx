@@ -86,7 +86,7 @@ const CobradorExterno = () => {
   if (!collectorData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <form onSubmit={handleAccess} className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-8">
+        <form onSubmit={handleAccess} className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8">
           <div className="text-center">
             <Lock size={32} className="mx-auto text-primary mb-3" />
             <h1 className="text-xl font-bold text-foreground">Portal do Cobrador</h1>
@@ -117,17 +117,17 @@ const CobradorExterno = () => {
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">Clientes</p>
             <p className="text-2xl font-bold text-foreground">{assignments.length}</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">Pendentes</p>
             <p className="text-2xl font-bold text-amber-500">
               {installments.filter((i: any) => i.status === "pending").length}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">Atrasadas</p>
             <p className="text-2xl font-bold text-red-500">
               {installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length}
@@ -139,7 +139,7 @@ const CobradorExterno = () => {
         {assignments.map((a: any) => {
           const clientInstallments = installments.filter((i: any) => i.client_id === a.client_id && i.status === "pending");
           return (
-            <div key={a.id} className="rounded-xl border border-border bg-card overflow-hidden">
+            <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden">
               <div className="px-5 py-3 border-b border-border flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-foreground">{a.clients?.name}</p>

@@ -116,7 +116,7 @@ const AgenteIA = () => {
       </div>
 
       {tab === "chat" && (
-        <div className="rounded-xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
+        <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -165,7 +165,7 @@ const AgenteIA = () => {
             { label: "Parcelas Atrasadas", value: overdue },
             { label: "Clientes", value: dashData?.clients.length || 0 },
           ].map((m) => (
-            <div key={m.label} className="rounded-xl border border-border bg-card p-5">
+            <div key={m.label} className="rounded-2xl border border-border bg-card p-5">
               <p className="text-xs text-muted-foreground">{m.label}</p>
               <p className="text-2xl font-bold text-foreground mt-1">{m.value}</p>
             </div>
@@ -174,7 +174,7 @@ const AgenteIA = () => {
       )}
 
       {tab === "relatorios" && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <h2 className="font-semibold text-foreground mb-4">Insights do Portfólio</h2>
           <div className="space-y-3">
             {[

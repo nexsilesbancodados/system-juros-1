@@ -591,7 +591,7 @@ const ClienteDetalhe = () => {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary shrink-0">
               {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -631,7 +631,7 @@ const ClienteDetalhe = () => {
               </div>
             ))}
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={saveEdit} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
             </div>
           </div>
@@ -665,7 +665,7 @@ const ClienteDetalhe = () => {
               </div>
             ))}
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditAddressMode(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => setEditAddressMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
               <button onClick={saveAddress} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
             </div>
           </div>
@@ -736,7 +736,7 @@ const ClienteDetalhe = () => {
               </div>
             )}
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setNewLoanMode(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => setNewLoanMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
               <button onClick={handleCreateLoan} disabled={loanLoading || !loanCalc} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
                 {loanLoading ? "Criando..." : "Criar Empréstimo"}
               </button>
@@ -782,7 +782,7 @@ const ClienteDetalhe = () => {
       {/* ========== CONTENT ========== */}
 
       {/* Contact Info */}
-      <div className="bg-card border border-border rounded-xl p-4 animate-fade-in" style={{ animationDelay: "80ms" }}>
+      <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in" style={{ animationDelay: "80ms" }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { icon: Phone, label: "Telefone", value: client.phone },
@@ -815,7 +815,7 @@ const ClienteDetalhe = () => {
           { icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(totalOverdue)}`, color: "text-destructive", bg: "bg-destructive/10" },
           { icon: Wallet, label: "Restante", value: `R$ ${fmt(remaining)}`, color: "text-primary", bg: "bg-primary/10" },
         ].map((s, idx) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 card-hover">
+          <div key={s.label} className="bg-card border border-border rounded-2xl p-3.5 card-hover">
             <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon size={16} className={s.color} />
             </div>
@@ -830,7 +830,7 @@ const ClienteDetalhe = () => {
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ferramentas ({toolButtons.length})</p>
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
           {toolButtons.map((tool, idx) => (
-            <button key={idx} onClick={tool.action} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-center card-hover" title={tool.label}>
+            <button key={idx} onClick={tool.action} className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border border-border bg-card hover:bg-accent/50 transition-all text-center card-hover" title={tool.label}>
               <tool.icon size={16} className={tool.color} />
               <span className="text-[9px] font-medium text-muted-foreground leading-tight">{tool.label}</span>
             </button>
@@ -839,7 +839,7 @@ const ClienteDetalhe = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-muted/50 rounded-xl p-1 animate-fade-in" style={{ animationDelay: "200ms" }}>
+      <div className="flex gap-1 bg-muted/50 rounded-2xl p-1 animate-fade-in" style={{ animationDelay: "200ms" }}>
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <tab.icon size={14} />
@@ -851,7 +851,7 @@ const ClienteDetalhe = () => {
       {/* Tab: Resumo */}
       {activeTab === "resumo" && (
         <div className="space-y-4 animate-fade-in">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
             <div className="grid grid-cols-4 gap-3 text-center">
               <div><p className="text-2xl font-bold text-foreground">{contracts.length}</p><p className="text-[10px] text-muted-foreground uppercase">Contratos</p></div>
@@ -865,7 +865,7 @@ const ClienteDetalhe = () => {
             const cPaid = cInst.filter((i: any) => i.status === "paid").length;
             const pct = Math.round((cPaid / (c.num_installments || 1)) * 100);
             return (
-              <div key={c.id} className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setActiveTab("parcelas")}>
+              <div key={c.id} className="bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setActiveTab("parcelas")}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-foreground">R$ {fmt(Number(c.capital))} · {c.num_installments}x</p>
                   <Badge variant="outline" className={c.status === "active" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{c.status === "active" ? "Ativo" : c.status}</Badge>
@@ -881,13 +881,13 @@ const ClienteDetalhe = () => {
       {/* Tab: Contratos */}
       {activeTab === "contratos" && (
         <div className="space-y-3 animate-fade-in">
-          <button onClick={() => setNewLoanMode(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors">
+          <button onClick={() => setNewLoanMode(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors">
             <Plus size={16} /> Novo Empréstimo
           </button>
           {contracts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
           ) : contracts.map((c: any) => (
-            <div key={c.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
+            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
@@ -913,7 +913,7 @@ const ClienteDetalhe = () => {
             const isPaid = inst.status === "paid";
             const partiallyPaid = !isPaid && Number(inst.paid_amount || 0) > 0;
             return (
-              <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"}`}>
+              <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"}`}>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isOverdue ? "bg-destructive/10 text-destructive" : isPaid ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                   {inst.installment_number}
                 </div>
@@ -956,7 +956,7 @@ const ClienteDetalhe = () => {
           {transactions.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-12">Nenhuma transação</p>
           ) : transactions.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border">
+            <div key={t.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
                 {t.type === "income" ? <TrendingUp size={14} className="text-success" /> : <DollarSign size={14} className="text-destructive" />}
               </div>

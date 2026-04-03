@@ -269,7 +269,7 @@ const NovoContrato = () => {
 
       {/* Step 1: Select or Create Client */}
       {step === 1 && (
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Dados do Cliente</h2>
           <p className="text-sm text-muted-foreground">Selecione um cliente existente ou cadastre um novo.</p>
 
@@ -349,11 +349,11 @@ const NovoContrato = () => {
       {step === 2 && (
         <div className="space-y-4">
           {/* Loan Mode */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-lg font-semibold text-foreground">Modo do Empréstimo</h2>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setLoanMode("installments")}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${loanMode === "installments" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${loanMode === "installments" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                 <Hash size={20} className={loanMode === "installments" ? "text-primary" : "text-muted-foreground"} />
                 <div className="text-left">
                   <p className={`text-sm font-semibold ${loanMode === "installments" ? "text-primary" : "text-foreground"}`}>Por Parcelas</p>
@@ -361,7 +361,7 @@ const NovoContrato = () => {
                 </div>
               </button>
               <button onClick={() => setLoanMode("percentage")}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${loanMode === "percentage" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${loanMode === "percentage" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                 <Percent size={20} className={loanMode === "percentage" ? "text-primary" : "text-muted-foreground"} />
                 <div className="text-left">
                   <p className={`text-sm font-semibold ${loanMode === "percentage" ? "text-primary" : "text-foreground"}`}>Por Porcentagem</p>
@@ -372,7 +372,7 @@ const NovoContrato = () => {
           </div>
 
           {/* Frequency */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
             <div className="grid grid-cols-3 gap-3">
               {([
@@ -381,7 +381,7 @@ const NovoContrato = () => {
                 { value: "daily" as Frequency, label: "Diário", icon: Clock },
               ]).map(f => (
                 <button key={f.value} onClick={() => setFrequency(f.value)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${frequency === f.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${frequency === f.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                   <f.icon size={18} className={frequency === f.value ? "text-primary" : "text-muted-foreground"} />
                   <p className={`text-xs font-semibold ${frequency === f.value ? "text-primary" : "text-foreground"}`}>{f.label}</p>
                 </button>
@@ -405,7 +405,7 @@ const NovoContrato = () => {
           </div>
 
           {/* Values */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Valores</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -466,7 +466,7 @@ const NovoContrato = () => {
 
       {/* Step 3: Review */}
       {step === 3 && calc && (
-        <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <h2 className="text-lg font-semibold text-foreground">Revisão do Contrato</h2>
 
           <div className="space-y-4">

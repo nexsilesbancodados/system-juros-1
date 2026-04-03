@@ -71,7 +71,7 @@ const Historico = () => {
     grouped[date].push(log);
   });
 
-  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
+  const inputCls = "w-full px-4 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 
   return (
     <div className="space-y-6">
@@ -119,7 +119,7 @@ const Historico = () => {
       </div>
 
       {/* Summary */}
-      <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between animate-fade-in">
+      <div className="rounded-2xl border border-border bg-card p-4 flex items-center justify-between animate-fade-in">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Activity size={20} className="text-primary" />
@@ -149,7 +149,7 @@ const Historico = () => {
                 <span className="w-2 h-2 rounded-full bg-primary" />
                 {date}
               </p>
-              <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              <div className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
                 {items.map((log: any) => (
                   <div key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-accent/50 transition-colors">
                     <div className="mt-0.5 p-2 rounded-lg bg-accent">

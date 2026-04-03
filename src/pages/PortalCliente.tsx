@@ -76,7 +76,7 @@ const PortalCliente = () => {
     toast({ title: `Bem-vindo, ${client.name}!` });
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 
   // ===== LOGIN SCREEN =====
   if (!clientData) {
@@ -132,7 +132,7 @@ const PortalCliente = () => {
       <div className="border-b border-border bg-card px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <User size={20} className="text-primary" />
             </div>
             <div>
@@ -155,7 +155,7 @@ const PortalCliente = () => {
             { icon: CheckCircle, label: "Pago", value: `R$ ${fmt(totalPaid)}`, color: "text-success", bg: "bg-success/10" },
             { icon: FileText, label: "Contratos", value: String(contracts.length), color: "text-primary", bg: "bg-primary/10" },
           ].map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-3 text-center">
+            <div key={s.label} className="bg-card border border-border rounded-2xl p-3 text-center">
               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mx-auto mb-1.5`}>
                 <s.icon size={16} className={s.color} />
               </div>
@@ -167,7 +167,7 @@ const PortalCliente = () => {
 
         {/* Overdue Alert */}
         {overdue.length > 0 && (
-          <div className="bg-destructive/5 border border-destructive/15 rounded-xl p-4 flex items-center gap-3">
+          <div className="bg-destructive/5 border border-destructive/15 rounded-2xl p-4 flex items-center gap-3">
             <AlertTriangle size={20} className="text-destructive shrink-0" />
             <div>
               <p className="text-sm font-semibold text-destructive">
@@ -188,7 +188,7 @@ const PortalCliente = () => {
           const freqLabel = c.frequency === "monthly" ? "Mensal" : c.frequency === "weekly" ? "Semanal" : c.frequency === "daily" ? "Diário" : "Quinzenal";
 
           return (
-            <div key={c.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Empréstimo R$ {fmt(Number(c.capital))}</p>
@@ -208,7 +208,7 @@ const PortalCliente = () => {
 
         {/* Overdue + Pending Installments */}
         {[...overdue, ...pending].length > 0 && (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Calendar size={16} className="text-primary" />
               <h2 className="font-semibold text-foreground text-sm">Parcelas a Pagar</h2>
@@ -239,7 +239,7 @@ const PortalCliente = () => {
 
         {/* Paid History */}
         {paid.length > 0 && (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <CheckCircle size={16} className="text-success" />
               <h2 className="font-semibold text-foreground text-sm">Pagamentos Realizados</h2>

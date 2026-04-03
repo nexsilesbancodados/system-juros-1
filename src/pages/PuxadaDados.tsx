@@ -59,7 +59,7 @@ const PuxadaDados = () => {
       </div>
 
       {/* Search */}
-      <div className="rounded-xl border border-border bg-card p-6 space-y-4 max-w-xl">
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4 max-w-xl">
         <div className="flex gap-2">
           <button
             onClick={() => { setTipo("cpf"); setDocumento(""); setResultado(null); }}
@@ -100,7 +100,7 @@ const PuxadaDados = () => {
 
       {/* Error */}
       {erro && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3">
           <AlertCircle size={18} className="text-red-500 shrink-0" />
           <p className="text-sm text-red-500">{erro}</p>
         </div>
@@ -110,9 +110,9 @@ const PuxadaDados = () => {
       {resultado && resultado.tipo === "cnpj" && resultado.dados && (
         <div className="space-y-4">
           {/* Header */}
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-2xl border border-border bg-card p-6">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Building2 size={24} className="text-primary" />
               </div>
               <div className="flex-1">
@@ -159,7 +159,7 @@ const PuxadaDados = () => {
 
           {/* Partners */}
           {resultado.dados.socios && resultado.dados.socios.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
               <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
                 <Users size={16} /> Quadro Societário
               </h3>
@@ -180,9 +180,9 @@ const PuxadaDados = () => {
       )}
 
       {resultado && resultado.tipo === "cpf" && resultado.dados && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
               <User size={24} className="text-primary" />
             </div>
             <div className="flex-1 space-y-3">
@@ -235,7 +235,7 @@ const PuxadaDados = () => {
 
       {/* Empty state */}
       {!resultado && !erro && !loading && (
-        <div className="rounded-xl border border-border bg-card p-6 text-center py-12">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center py-12">
           <Database size={48} className="mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Faça uma consulta para ver os resultados.</p>
           <p className="text-xs text-muted-foreground mt-2">CNPJ: dados completos via BrasilAPI (gratuito) · CPF: requer credenciais API Brasil</p>
@@ -246,7 +246,7 @@ const PuxadaDados = () => {
 };
 
 const InfoCard = ({ title, icon, items }: { title: string; icon: React.ReactNode; items: { label: string; value: any }[] }) => (
-  <div className="rounded-xl border border-border bg-card p-5">
+  <div className="rounded-2xl border border-border bg-card p-5">
     <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">{icon} {title}</h3>
     <div className="space-y-2">
       {items.filter((i) => i.value).map((item, idx) => (

@@ -81,7 +81,7 @@ const Lucros = () => {
     return acc;
   }, {} as Record<string, any[]>);
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -116,7 +116,7 @@ const Lucros = () => {
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={handleAdd} disabled={saving || !desc || !amount} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all disabled:opacity-50">
                 {saving ? "Salvando..." : "Registrar"}
               </button>
@@ -127,9 +127,9 @@ const Lucros = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-fade-in">
-        <div className="rounded-xl border border-border bg-card p-5 card-shine success-glow">
+        <div className="rounded-2xl border border-border bg-card p-5 card-shine success-glow">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 rounded-xl bg-success/10 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-2xl bg-success/10 flex items-center justify-center">
               <TrendingUp size={22} className="text-success" />
             </div>
             <div>
@@ -143,7 +143,7 @@ const Lucros = () => {
         </div>
 
         {/* Mini monthly chart */}
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <p className="text-label mb-3">Últimos 6 meses</p>
           <div className="flex items-end gap-2 h-14">
             {monthlyData.map((m, i) => (
@@ -164,7 +164,7 @@ const Lucros = () => {
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar lucros..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
+            className="w-full pl-8 pr-8 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
           {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2"><X size={14} className="text-muted-foreground" /></button>}
         </div>
         <div className="pill-tabs">
@@ -186,7 +186,7 @@ const Lucros = () => {
           <p className="text-sm text-muted-foreground mt-1">Registre seus lucros para acompanhar a evolução</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="max-h-[500px] overflow-y-auto">
             {Object.entries(grouped).map(([date, items]: [string, any[]]) => (
               <div key={date}>
@@ -197,7 +197,7 @@ const Lucros = () => {
                 <div className="divide-y divide-border/50">
                   {items.map((p: any) => (
                     <div key={p.id} className="data-row group">
-                      <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0">
                         <ArrowUpRight size={16} className="text-success" />
                       </div>
                       <div className="flex-1 min-w-0">

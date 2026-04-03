@@ -33,7 +33,7 @@ const Sobre = () => {
       {/* Features Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {features.map((f, idx) => (
-          <div key={f.title} className="rounded-xl border border-border bg-card p-5 animate-fade-in" style={{ animationDelay: `${idx * 80}ms` }}>
+          <div key={f.title} className="rounded-2xl border border-border bg-card p-5 animate-fade-in" style={{ animationDelay: `${idx * 80}ms` }}>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <f.icon size={20} className="text-primary" />
             </div>

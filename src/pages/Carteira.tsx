@@ -176,7 +176,7 @@ const Carteira = () => {
           { icon: ArrowUpRight, label: "Total Entradas", value: `R$ ${fmt(totalEntradas)}`, color: "text-success", bg: "bg-success/10", glow: "" },
           { icon: ArrowDownRight, label: "Total Saídas", value: `R$ ${fmt(totalSaidas)}`, color: "text-destructive", bg: "bg-destructive/10", glow: "" },
         ].map((s, idx) => (
-          <div key={s.label} className={`rounded-xl border border-border bg-card p-5 card-shine ${s.glow}`} style={{ animationDelay: `${idx * 100}ms` }}>
+          <div key={s.label} className={`rounded-2xl border border-border bg-card p-5 card-shine ${s.glow}`} style={{ animationDelay: `${idx * 100}ms` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center`}>
                 <s.icon size={20} className={s.color} />
@@ -189,7 +189,7 @@ const Carteira = () => {
       </div>
 
       {/* Balance Bar */}
-      <div className="rounded-xl border border-border bg-card p-5 animate-fade-in">
+      <div className="rounded-2xl border border-border bg-card p-5 animate-fade-in">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-foreground flex items-center gap-2">
             <TrendingUp size={16} className="text-primary" /> Proporção Entradas / Saídas
@@ -207,7 +207,7 @@ const Carteira = () => {
       </div>
 
       {/* Timeline */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
         <div className="px-5 py-4 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sticky-header">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <CreditCard size={18} className="text-primary" /> Histórico

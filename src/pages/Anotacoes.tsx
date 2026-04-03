@@ -85,7 +85,7 @@ const Anotacoes = () => {
         <div className="relative">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar anotações..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
+            className="w-full pl-10 pr-10 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground">
               <X size={14} />
@@ -95,12 +95,12 @@ const Anotacoes = () => {
       )}
 
       {showForm && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
           <div>
             <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Conteúdo</label>
             <textarea value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Lembrar de cobrar fulano amanhã..."
               rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced resize-none"
+              className="w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced resize-none"
               onKeyDown={(e) => e.key === "Enter" && e.metaKey && handleAdd()} />
             <p className="text-[10px] text-muted-foreground mt-1">Cmd+Enter para salvar</p>
           </div>
@@ -126,7 +126,7 @@ const Anotacoes = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
           {filtered.map((n, i) => (
-            <div key={n.id} className={`rounded-xl border p-5 group relative card-hover ${colors[i % colors.length]}`}>
+            <div key={n.id} className={`rounded-2xl border p-5 group relative card-hover ${colors[i % colors.length]}`}>
               {editingId === n.id ? (
                 <div className="space-y-2">
                   <textarea value={editTitle} onChange={(e) => setEditTitle(e.target.value)}

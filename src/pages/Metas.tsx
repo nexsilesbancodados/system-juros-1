@@ -26,7 +26,7 @@ const Metas = () => {
   useEffect(() => { fetchGoals(); }, []);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
   const handleAdd = async () => {
     if (!user || !desc.trim() || !target) return;
@@ -80,22 +80,22 @@ const Metas = () => {
       {/* Stats */}
       {goals.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
-          <div className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div className="rounded-2xl border border-border bg-card p-4 card-shine">
             <Trophy size={14} className="text-primary mb-1" />
             <p className="text-2xl font-bold text-foreground">{goals.length}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div className="rounded-2xl border border-border bg-card p-4 card-shine">
             <Target size={14} className="text-success mb-1" />
             <p className="text-2xl font-bold text-success">{completedGoals}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atingidas</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div className="rounded-2xl border border-border bg-card p-4 card-shine">
             <DollarSign size={14} className="text-primary mb-1" />
             <p className="text-lg font-bold text-foreground">R$ {fmt(totalCurrent)}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atual</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div className="rounded-2xl border border-border bg-card p-4 card-shine">
             <TrendingUp size={14} className="text-primary mb-1" />
             <p className="text-lg font-bold text-primary">{overallPct.toFixed(0)}%</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Progresso</p>
@@ -105,7 +105,7 @@ const Metas = () => {
 
       {/* Overall Progress */}
       {goals.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Trophy size={18} className="text-primary" />
@@ -121,7 +121,7 @@ const Metas = () => {
       )}
 
       {showForm && (
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+        <div className="rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
           <div>
             <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Descrição da Meta</label>
             <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Lucrar R$ 10.000 este mês" className={inputCls} />
@@ -170,7 +170,7 @@ const Metas = () => {
             const pct = g.target_amount > 0 ? Math.min((Number(g.current_amount) / Number(g.target_amount)) * 100, 100) : 0;
             const isComplete = pct >= 100;
             return (
-              <div key={g.id} className={`rounded-xl border bg-card p-5 relative group card-hover ${isComplete ? "border-success/30" : "border-border"}`}>
+              <div key={g.id} className={`rounded-2xl border bg-card p-5 relative group card-hover ${isComplete ? "border-success/30" : "border-border"}`}>
                 <button onClick={() => handleDelete(g.id)}
                   className="absolute top-3 right-3 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all">
                   <X size={14} />
