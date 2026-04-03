@@ -575,8 +575,8 @@
 
   /* Sticky header for scrollable lists */
   .sticky-header {
-    @apply sticky top-0 z-10 backdrop-blur-lg;
-    background: hsl(var(--card) / 0.9);
+    @apply sticky top-0 z-10;
+    background: hsl(var(--card) / 0.97);
   }
 
   /* Swipe hint for mobile */
