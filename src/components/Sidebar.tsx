@@ -38,9 +38,6 @@ const sections: MenuSection[] = [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
       { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
       { label: "Cobradores", icon: <UserCheck size={18} />, path: "/cobradores" },
-      { label: "Veículos", icon: <Car size={18} />, path: "/veiculos" },
-      { label: "Celulares", icon: <Smartphone size={18} />, path: "/celulares" },
-      { label: "Penhoras", icon: <Gavel size={18} />, path: "/penhoras" },
     ],
   },
   {
