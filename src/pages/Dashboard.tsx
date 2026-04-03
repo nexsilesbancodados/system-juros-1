@@ -449,17 +449,17 @@ const Dashboard = () => {
       {/* ─── Quick Actions ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "500ms" }}>
         {[
-          { label: "Novo Cliente", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/clientes/novo" },
+          { label: "Novo Contrato", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/clientes/novo" },
           { label: "Novo Cliente", icon: Users, color: "text-success", bg: "bg-success/8", path: "/clientes/novo" },
           { label: "Cobranças", icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8", path: "/cobrancas" },
           { label: "Relatórios", icon: PieChart, color: "text-info", bg: "bg-info/8", path: "/relatorios" },
-        ].map((action) => (
+        ].map((action, i) => (
           <button
-            key={action.label}
+            key={action.label + i}
             onClick={() => navigate(action.path)}
-            className="premium-card p-4 flex items-center gap-3 micro-press text-left group"
+            className="premium-card p-4 flex items-center gap-3 text-left group"
           >
-            <div className={`w-10 h-10 rounded-2xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+            <div className={`w-10 h-10 rounded-2xl ${action.bg} flex items-center justify-center shrink-0`}>
               <action.icon size={18} className={action.color} />
             </div>
             <span className="text-sm font-medium text-foreground">{action.label}</span>
