@@ -62,6 +62,11 @@ const Analises = () => {
     }
   };
 
+  useMultiTableRealtime(
+    ["contracts", "contract_installments", "clients", "transactions"],
+    [["analises-data", user?.id || ""]],
+  );
+
   const { data, isLoading } = useQuery({
     queryKey: ["analises-data", user?.id],
     queryFn: async () => {
