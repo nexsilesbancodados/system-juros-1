@@ -470,7 +470,7 @@ const Dashboard = () => {
 
       {/* ─── Goals ─── */}
       {metrics.goals.length > 0 && (
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in">
+        <div className="premium-card overflow-hidden animate-fade-in">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
