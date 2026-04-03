@@ -104,6 +104,7 @@ const sections: MenuSection[] = [
     collapsible: true,
     defaultOpen: false,
     items: [
+      { label: "Automações", icon: Zap, path: "/automacoes" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
