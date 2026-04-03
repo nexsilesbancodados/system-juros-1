@@ -27,6 +27,32 @@ interface MenuSection {
   defaultOpen?: boolean;
 }
 
+// Color map for each icon path
+const iconColorMap: Record<string, string> = {
+  "/dashboard": "text-blue-400",
+  "/analises": "text-indigo-400",
+  "/relatorios": "text-sky-400",
+  "/clientes": "text-emerald-400",
+  "/cobrancas": "text-orange-400",
+  "/cobradores": "text-teal-400",
+  "/carteira": "text-amber-400",
+  "/lucros": "text-green-400",
+  "/gastos": "text-red-400",
+  "/agente-ia": "text-violet-400",
+  "/ferramentas/simulador": "text-cyan-400",
+  "/ferramentas/metas": "text-rose-400",
+  "/ferramentas/tarefas": "text-lime-400",
+  "/ferramentas/anotacoes": "text-yellow-400",
+  "/ferramentas/planilha": "text-fuchsia-400",
+  "/puxada-dados": "text-purple-400",
+  "/qrcode": "text-pink-400",
+  "/historico": "text-slate-400",
+  "/auditoria": "text-red-300",
+  "/configuracoes": "text-zinc-400",
+  "/admin": "text-amber-300",
+  "/sobre": "text-blue-300",
+};
+
 const sections: MenuSection[] = [
   {
     title: "Visão Geral",
@@ -134,7 +160,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
         )}
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
-          active ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground group-hover:text-foreground group-hover:bg-accent/30"
+          active ? "bg-primary/15 text-primary shadow-sm" : `${iconColorMap[item.path] || "text-muted-foreground"} group-hover:brightness-125 group-hover:bg-accent/30`
         }`}>
           <Icon size={16} />
         </div>

@@ -8,6 +8,31 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+const mobileIconColor: Record<string, string> = {
+  "/dashboard": "text-blue-400",
+  "/clientes": "text-emerald-400",
+  "/cobrancas": "text-orange-400",
+  "/carteira": "text-amber-400",
+  "/analises": "text-indigo-400",
+  "/relatorios": "text-sky-400",
+  "/cobradores": "text-teal-400",
+  "/lucros": "text-green-400",
+  "/gastos": "text-red-400",
+  "/agente-ia": "text-violet-400",
+  "/ferramentas/simulador": "text-cyan-400",
+  "/ferramentas/metas": "text-rose-400",
+  "/ferramentas/tarefas": "text-lime-400",
+  "/ferramentas/anotacoes": "text-yellow-400",
+  "/ferramentas/planilha": "text-fuchsia-400",
+  "/puxada-dados": "text-purple-400",
+  "/qrcode": "text-pink-400",
+  "/historico": "text-slate-400",
+  "/auditoria": "text-red-300",
+  "/configuracoes": "text-zinc-400",
+  "/admin": "text-amber-300",
+  "/sobre": "text-blue-300",
+};
+
 const mainTabs = [
   { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Clientes", icon: Users, path: "/clientes" },
@@ -75,11 +100,11 @@ const MobileBottomNav = () => {
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
-                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                          isActive(item.path) ? "bg-primary/10 text-primary" : `${mobileIconColor[item.path] || "text-muted-foreground"} hover:bg-accent/40 hover:text-foreground active:scale-95`
                         }`}
                       >
                         <item.icon size={20} />
-                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive(item.path) ? "" : "text-muted-foreground"}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -92,11 +117,11 @@ const MobileBottomNav = () => {
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
-                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                          isActive(item.path) ? "bg-primary/10 text-primary" : `${mobileIconColor[item.path] || "text-muted-foreground"} hover:bg-accent/40 hover:text-foreground active:scale-95`
                         }`}
                       >
                         <item.icon size={20} />
-                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive(item.path) ? "" : "text-muted-foreground"}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -109,11 +134,11 @@ const MobileBottomNav = () => {
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
-                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                          isActive(item.path) ? "bg-primary/10 text-primary" : `${mobileIconColor[item.path] || "text-muted-foreground"} hover:bg-accent/40 hover:text-foreground active:scale-95`
                         }`}
                       >
                         <item.icon size={20} />
-                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive(item.path) ? "" : "text-muted-foreground"}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -144,17 +169,16 @@ const MobileBottomNav = () => {
                   }
                 }}
                 className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[3.5rem] active:scale-95 ${
-                  active ? "text-primary" : "text-muted-foreground"
+                  active ? "text-primary" : mobileIconColor[tab.path] || "text-muted-foreground"
                 }`}
               >
-                {/* Active indicator line */}
                 {active && (
                   <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-primary animate-scale-in" />
                 )}
                 <div className={`p-1 rounded-xl transition-all duration-200 ${active ? "bg-primary/15" : ""}`}>
                   <tab.icon size={20} strokeWidth={active ? 2.5 : 2} />
                 </div>
-                <span className={`text-[10px] font-semibold ${active ? "text-primary" : ""}`}>{tab.label}</span>
+                <span className={`text-[10px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
               </button>
             );
           })}
