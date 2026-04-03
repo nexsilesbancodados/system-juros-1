@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Search } from "lucide-react";
+import { Camera, Search, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -10,12 +10,6 @@ const NovoCliente = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-
-  const [metodoCalculo, setMetodoCalculo] = useState<"porcentagem" | "parcela">("porcentagem");
-  const [frequencia, setFrequencia] = useState("Mensal");
-  const [showFreqDropdown, setShowFreqDropdown] = useState(false);
-  const [tipoEmprestimo, setTipoEmprestimo] = useState("Pessoal");
-  const [showTipoDropdown, setShowTipoDropdown] = useState(false);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -28,14 +22,6 @@ const NovoCliente = () => {
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
-  const [valorEmprestimo, setValorEmprestimo] = useState("");
-  const [taxaOuParcela, setTaxaOuParcela] = useState("");
-  const [numParcelas, setNumParcelas] = useState("");
-  const [dataEmprestimo, setDataEmprestimo] = useState("");
-  const [primeiroVencimento, setPrimeiroVencimento] = useState("");
-
-  const frequencias = ["Diária", "Semanal", "Quinzenal", "Mensal", "Manual"];
-  const tiposEmprestimo = ["Pessoal", "Empresarial", "Veicular", "Imobiliário"];
 
   const buscarCep = async () => {
     if (cep.replace(/\D/g, "").length !== 8) return;
@@ -51,16 +37,6 @@ const NovoCliente = () => {
     } catch {}
   };
 
-  const getFrequencyDays = (freq: string): number => {
-    switch (freq) {
-      case "Diária": return 1;
-      case "Semanal": return 7;
-      case "Quinzenal": return 15;
-      case "Mensal": return 30;
-      default: return 30;
-    }
-  };
-
   const handleSave = async () => {
     if (!user) return;
     if (!nome.trim()) {
@@ -70,39 +46,8 @@ const NovoCliente = () => {
 
     setSaving(true);
 
-    const valor = parseFloat(valorEmprestimo) || 0;
-    const taxa = parseFloat(taxaOuParcela) || 0;
-    const parcelas = parseInt(numParcelas) || 1;
-
-    let valorParcela = 0;
-    let jurosTotal = 0;
-    if (metodoCalculo === "porcentagem") {
-      jurosTotal = valor * (taxa / 100) * parcelas;
-      valorParcela = (valor + jurosTotal) / parcelas;
-    } else {
-      valorParcela = taxa;
-      jurosTotal = (taxa * parcelas) - valor;
-    }
-
-    const loanData = valor > 0 ? {
-      amount: valor,
-      interest_rate: metodoCalculo === "porcentagem" ? taxa : null,
-      installment_value: valorParcela,
-      total_interest: jurosTotal,
-      total_amount: valor + jurosTotal,
-      installments: parcelas,
-      frequency: frequencia,
-      type: tipoEmprestimo,
-      calculation_method: metodoCalculo,
-      start_date: dataEmprestimo || null,
-      first_due_date: primeiroVencimento || null,
-      paid_installments: 0,
-    } : null;
-
-    const clientId = crypto.randomUUID();
-
     const { error } = await supabase.from("clients").insert({
-      id: clientId,
+      id: crypto.randomUUID(),
       user_id: user.id,
       name: nome.trim(),
       email: email.trim() || null,
@@ -111,47 +56,16 @@ const NovoCliente = () => {
       client_type: "loan",
       status: "Ativo",
       address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
-      loan: loanData,
     });
 
+    setSaving(false);
+
     if (error) {
-      setSaving(false);
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
       return;
     }
 
-    // Generate installments automatically
-    if (valor > 0 && primeiroVencimento) {
-      const freqDays = getFrequencyDays(frequencia);
-      const installments = [];
-      const baseDate = new Date(primeiroVencimento + "T12:00:00");
-
-      for (let i = 0; i < parcelas; i++) {
-        const dueDate = new Date(baseDate);
-        if (frequencia === "Mensal") {
-          dueDate.setMonth(dueDate.getMonth() + i);
-        } else {
-          dueDate.setDate(dueDate.getDate() + (freqDays * i));
-        }
-
-        installments.push({
-          client_id: clientId,
-          user_id: user.id,
-          installment_number: i + 1,
-          amount: valorParcela,
-          due_date: dueDate.toISOString(),
-          status: "pending",
-        });
-      }
-
-      const { error: installError } = await supabase.from("installments").insert(installments);
-      if (installError) {
-        console.error("Erro ao gerar parcelas:", installError);
-      }
-    }
-
-    setSaving(false);
-    toast({ title: "Sucesso!", description: `Cliente cadastrado com ${parcelas} parcela(s) gerada(s).` });
+    toast({ title: "Sucesso!", description: "Cliente cadastrado com sucesso." });
     navigate("/clientes");
   };
 
@@ -159,9 +73,14 @@ const NovoCliente = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Adicionar Novo Cliente de Empréstimo</h1>
-        <p className="text-sm text-muted-foreground mt-1">Preencha as informações do cliente e os detalhes do empréstimo.</p>
+      <div className="flex items-center gap-3">
+        <button onClick={() => navigate("/clientes")} className="p-2 rounded-lg hover:bg-accent text-muted-foreground">
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Cadastrar Novo Cliente</h1>
+          <p className="text-sm text-muted-foreground mt-1">Preencha as informações do cliente. Para criar um empréstimo, use Novo Contrato.</p>
+        </div>
       </div>
 
       {/* Identificação */}
@@ -246,120 +165,6 @@ const NovoCliente = () => {
             <input type="text" placeholder="SP" value={estado} onChange={(e) => setEstado(e.target.value)} className={inputClass} />
           </div>
         </div>
-      </section>
-
-      {/* Empréstimo */}
-      <section className="rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-base font-semibold text-foreground">Detalhes do Empréstimo</h2>
-        <div>
-          <label className="text-xs font-semibold text-foreground mb-1 block">Valor do Empréstimo (R$)</label>
-          <input type="number" placeholder="0" value={valorEmprestimo} onChange={(e) => setValorEmprestimo(e.target.value)} className={inputClass} />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-foreground mb-2 block">Método de Cálculo</label>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${metodoCalculo === "porcentagem" ? "border-foreground" : "border-muted-foreground"}`} onClick={() => setMetodoCalculo("porcentagem")}>
-                {metodoCalculo === "porcentagem" && <div className="w-2 h-2 rounded-full bg-foreground" />}
-              </div>
-              Por Porcentagem
-            </label>
-            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${metodoCalculo === "parcela" ? "border-foreground" : "border-muted-foreground"}`} onClick={() => setMetodoCalculo("parcela")}>
-                {metodoCalculo === "parcela" && <div className="w-2 h-2 rounded-full bg-foreground" />}
-              </div>
-              Por Valor da Parcela
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-foreground mb-1 block">
-            {metodoCalculo === "porcentagem" ? "Taxa de Juros (%)" : "Valor da Parcela (R$)"}
-          </label>
-          <input type="number" placeholder="0" value={taxaOuParcela} onChange={(e) => setTaxaOuParcela(e.target.value)} className={inputClass} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="relative">
-            <label className="text-xs font-semibold text-foreground mb-1 block">Frequência</label>
-            <button onClick={() => setShowFreqDropdown(!showFreqDropdown)} className="w-full px-3 py-2.5 rounded-lg bg-input/80 border border-border/50 text-foreground text-sm text-left flex items-center justify-between">
-              {frequencia}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            {showFreqDropdown && (
-              <div className="absolute z-10 mt-1 w-full rounded-lg bg-card border border-border shadow-lg py-1">
-                {frequencias.map((f) => (
-                  <button key={f} onClick={() => { setFrequencia(f); setShowFreqDropdown(false); }} className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${f === frequencia ? "text-foreground" : "text-muted-foreground"}`}>
-                    {f === frequencia && "✓ "}{f}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground mb-1 block">Nº de Parcelas</label>
-            <input type="number" placeholder="1" value={numParcelas} onChange={(e) => setNumParcelas(e.target.value)} className={inputClass} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-foreground mb-1 block">Data do Empréstimo</label>
-            <input type="date" value={dataEmprestimo} onChange={(e) => setDataEmprestimo(e.target.value)} className={`${inputClass} [color-scheme:dark]`} />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground mb-1 block">1º Vencimento</label>
-            <input type="date" value={primeiroVencimento} onChange={(e) => setPrimeiroVencimento(e.target.value)} className={`${inputClass} [color-scheme:dark]`} />
-          </div>
-        </div>
-
-        <div className="relative">
-          <label className="text-xs font-semibold text-foreground mb-1 block">Tipo de Empréstimo</label>
-          <button onClick={() => setShowTipoDropdown(!showTipoDropdown)} className="w-full px-3 py-2.5 rounded-lg bg-input/80 border border-border/50 text-foreground text-sm text-left flex items-center justify-between">
-            {tipoEmprestimo}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          {showTipoDropdown && (
-            <div className="absolute z-10 mt-1 w-full rounded-lg bg-card border border-border shadow-lg py-1">
-              {tiposEmprestimo.map((t) => (
-                <button key={t} onClick={() => { setTipoEmprestimo(t); setShowTipoDropdown(false); }} className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${t === tipoEmprestimo ? "text-foreground" : "text-muted-foreground"}`}>
-                  {t === tipoEmprestimo && "✓ "}{t}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Resumo */}
-        {parseFloat(valorEmprestimo) > 0 && (
-          <div className="rounded-lg bg-accent/30 border border-border p-4 space-y-1">
-            <p className="text-xs font-semibold text-foreground mb-2">Resumo do Empréstimo</p>
-            {(() => {
-              const valor = parseFloat(valorEmprestimo) || 0;
-              const taxa = parseFloat(taxaOuParcela) || 0;
-              const parcelas = parseInt(numParcelas) || 1;
-              let vParcela = 0, juros = 0;
-              if (metodoCalculo === "porcentagem") {
-                juros = valor * (taxa / 100) * parcelas;
-                vParcela = (valor + juros) / parcelas;
-              } else {
-                vParcela = taxa;
-                juros = (taxa * parcelas) - valor;
-              }
-              return (
-                <>
-                  <p className="text-sm text-muted-foreground">Capital: <span className="text-foreground font-medium">R$ {valor.toFixed(2)}</span></p>
-                  <p className="text-sm text-muted-foreground">Juros Total: <span className="text-foreground font-medium">R$ {juros.toFixed(2)}</span></p>
-                  <p className="text-sm text-muted-foreground">Total a Receber: <span className="text-green-400 font-medium">R$ {(valor + juros).toFixed(2)}</span></p>
-                  <p className="text-sm text-muted-foreground">Valor da Parcela: <span className="text-foreground font-medium">R$ {vParcela.toFixed(2)}</span></p>
-                  <p className="text-sm text-muted-foreground">Parcelas: <span className="text-foreground font-medium">{parcelas}x de R$ {vParcela.toFixed(2)}</span></p>
-                </>
-              );
-            })()}
-          </div>
-        )}
       </section>
 
       {/* Actions */}
