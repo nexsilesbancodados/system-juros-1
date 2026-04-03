@@ -58,6 +58,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/cobrador-externo" element={<CobradorExterno />} />
               <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/analises" element={<Analises />} />
