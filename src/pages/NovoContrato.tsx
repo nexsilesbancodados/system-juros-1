@@ -72,17 +72,18 @@ const NovoContrato = () => {
 
   // Calculations
   const calc = useMemo(() => {
+  const calc = useMemo(() => {
     const cap = parseFloat(capital) || 0;
-    const rate = parseFloat(interestRate) || 0;
+    const monthlyFee = parseFloat(lateFeePercent) || 0;
     const n = parseInt(numInstallments) || 0;
     if (!cap || !n) return null;
 
-    const totalInterest = cap * (rate / 100);
+    const totalInterest = cap * (monthlyFee / 100) * n;
     const totalAmount = cap + totalInterest;
     const installmentAmount = totalAmount / n;
 
     return { totalInterest, totalAmount, installmentAmount };
-  }, [capital, interestRate, numInstallments]);
+  }, [capital, lateFeePercent, numInstallments]);
 
   // Generate due dates
   const generateDueDates = (start: string, freq: string, count: number) => {
