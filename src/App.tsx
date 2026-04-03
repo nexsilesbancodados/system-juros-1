@@ -43,6 +43,8 @@ import Cobradores from "./pages/Cobradores.tsx";
 import PortalCliente from "./pages/PortalCliente.tsx";
 import QRCodePage from "./pages/QRCodePage.tsx";
 import AgenteIA from "./pages/AgenteIA.tsx";
+import CobradorExterno from "./pages/CobradorExterno.tsx";
+import Auditoria from "./pages/Auditoria.tsx";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/cobrador-externo" element={<CobradorExterno />} />
               <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/analises" element={<Analises />} />
@@ -91,6 +94,7 @@ const App = () => (
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/qrcode" element={<QRCodePage />} />
                 <Route path="/agente-ia" element={<AgenteIA />} />
+                <Route path="/auditoria" element={<Auditoria />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
