@@ -60,6 +60,15 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6 gap-4">
+      {/* Search */}
+      <button
+        onClick={onSearchClick}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      >
+        <Search size={14} />
+        <span className="hidden sm:inline">Buscar...</span>
+        <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded bg-muted font-mono ml-4">⌘K</kbd>
+      </button>
       <div className="flex-1" />
 
       <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
