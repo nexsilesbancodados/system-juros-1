@@ -35,6 +35,7 @@ import Relatorios from "./pages/Relatorios.tsx";
 import Contratos from "./pages/Contratos.tsx";
 import NovoContrato from "./pages/NovoContrato.tsx";
 import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
+import MesaCobranca from "./pages/MesaCobranca.tsx";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/contratos" element={<Contratos />} />
                 <Route path="/novo-contrato" element={<NovoContrato />} />
                 <Route path="/contratos/:id" element={<ContratoDetalhe />} />
+                <Route path="/mesa-cobranca" element={<MesaCobranca />} />
                 <Route path="/veiculos" element={<Veiculos />} />
                 <Route path="/celulares" element={<Celulares />} />
                 <Route path="/penhoras" element={<Penhoras />} />
