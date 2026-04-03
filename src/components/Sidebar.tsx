@@ -187,14 +187,14 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border/30">
         {!collapsed ? (
           <div className="flex items-center gap-2.5">
-            <img src={eagleLogo} alt="System Juros" width={28} height={28} className="rounded-full ring-1 ring-primary/20" />
-            <span className="font-display text-[11px] tracking-[0.2em] text-foreground">SYSTEM JUROS</span>
+            <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-2 ring-primary/20" />
+            <span className="font-display text-[11px] tracking-[0.2em] text-gradient-gold font-semibold">SYSTEM JUROS</span>
           </div>
         ) : (
-          <img src={eagleLogo} alt="System Juros" width={28} height={28} className="rounded-full ring-1 ring-primary/20 mx-auto" />
+          <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-2 ring-primary/20 mx-auto" />
         )}
       </div>
 
