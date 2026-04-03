@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import {
-  LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
-  TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
+  LayoutDashboard, BarChart3, Users, Receipt, Wallet,
+  TrendingUp, DollarSign, Wrench, Database, Info,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
   FileText, Crown, FileSignature, PhoneCall, Landmark, ClipboardList,
   Settings, Bot, QrCode, UserCheck, Shield,
@@ -89,16 +89,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       key={item.path}
       onClick={() => navigate(item.path)}
       title={collapsed ? item.label : undefined}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group ${
         isActive(item.path)
-          ? "bg-accent text-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-      } ${collapsed ? "justify-center" : ""}`}
+          ? "bg-primary/10 text-primary shadow-sm"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+      } ${collapsed ? "justify-center px-2" : ""}`}
     >
-      {item.icon}
+      <span className={`transition-colors ${isActive(item.path) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`}>
+        {item.icon}
+      </span>
       {!collapsed && <span>{item.label}</span>}
       {!collapsed && item.badge !== undefined && (
-        <span className="ml-auto text-xs text-muted-foreground">{item.badge}</span>
+        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{item.badge}</span>
       )}
     </button>
   );
@@ -108,33 +110,33 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       collapsed ? "w-16" : "w-60"
     }`}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-5 border-b border-border">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full" />
-            <span className="font-display text-sm tracking-widest text-foreground">URUS JURISTA</span>
+          <div className="flex items-center gap-2.5">
+            <img src={eagleLogo} alt="Urus Jurista" width={30} height={30} className="rounded-full ring-1 ring-primary/20" />
+            <span className="font-display text-xs tracking-[0.2em] text-foreground">URUS JURISTA</span>
           </div>
         )}
         {collapsed && (
-          <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full mx-auto" />
+          <img src={eagleLogo} alt="Urus Jurista" width={30} height={30} className="rounded-full ring-1 ring-primary/20 mx-auto" />
         )}
       </div>
 
-      {/* Collapse toggle button */}
+      {/* Collapse toggle */}
       <button
         onClick={onToggleCollapse}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shadow-sm"
+        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm"
         title={collapsed ? "Expandir menu" : "Minimizar menu"}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
       {/* Sections */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-6">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5">
         {sections.map((section) => (
           <div key={section.title}>
             {!collapsed && (
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.15em] px-3 mb-2">
                 {section.title}
               </p>
             )}
@@ -142,30 +144,30 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           </div>
         ))}
 
-        {/* Ferramentas collapsible */}
+        {/* Ferramentas */}
         <div className="pt-2 border-t border-border">
           <button
             onClick={() => !collapsed && setFerramentasOpen(!ferramentasOpen)}
             title={collapsed ? "Ferramentas" : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors ${
-              collapsed ? "justify-center" : ""
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all ${
+              collapsed ? "justify-center px-2" : ""
             }`}
           >
             <Wrench size={18} />
             {!collapsed && <span>Ferramentas</span>}
             {!collapsed && (
-              <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+              <ChevronDown size={14} className={`ml-auto transition-transform duration-200 ${ferramentasOpen ? "rotate-180" : ""}`} />
             )}
           </button>
           {ferramentasOpen && !collapsed && (
-            <div className="ml-3 space-y-0.5 mt-0.5">
+            <div className="ml-2 space-y-0.5 mt-1">
               {ferramentasItems.map(renderItem)}
             </div>
           )}
         </div>
 
         {/* Bottom items */}
-        <div className="space-y-0.5 pt-2">
+        <div className="space-y-0.5 pt-2 border-t border-border">
           {bottomItems.map(renderItem)}
         </div>
       </nav>
