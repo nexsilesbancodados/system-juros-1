@@ -8,6 +8,31 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+const mobileIconColor: Record<string, string> = {
+  "/dashboard": "text-blue-400",
+  "/clientes": "text-emerald-400",
+  "/cobrancas": "text-orange-400",
+  "/carteira": "text-amber-400",
+  "/analises": "text-indigo-400",
+  "/relatorios": "text-sky-400",
+  "/cobradores": "text-teal-400",
+  "/lucros": "text-green-400",
+  "/gastos": "text-red-400",
+  "/agente-ia": "text-violet-400",
+  "/ferramentas/simulador": "text-cyan-400",
+  "/ferramentas/metas": "text-rose-400",
+  "/ferramentas/tarefas": "text-lime-400",
+  "/ferramentas/anotacoes": "text-yellow-400",
+  "/ferramentas/planilha": "text-fuchsia-400",
+  "/puxada-dados": "text-purple-400",
+  "/qrcode": "text-pink-400",
+  "/historico": "text-slate-400",
+  "/auditoria": "text-red-300",
+  "/configuracoes": "text-zinc-400",
+  "/admin": "text-amber-300",
+  "/sobre": "text-blue-300",
+};
+
 const mainTabs = [
   { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Clientes", icon: Users, path: "/clientes" },
