@@ -1,10 +1,10 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Receipt, Wallet, MoreHorizontal,
-  BarChart3, FileSignature, TrendingUp, DollarSign, Bot,
-  Calculator, Target, CheckSquare, StickyNote, Table, Database,
-  QrCode, ClipboardList, Shield, Settings, Crown, Info,
-  UserCheck, FileText, X,
+  LayoutDashboard, Users, HandCoins, Wallet, MoreHorizontal,
+  TrendingUp, FileBarChart, ArrowUpRight, ArrowDownRight, BrainCircuit,
+  Sliders, Crosshair, ListChecks, NotebookPen, Sheet, SearchIcon,
+  Globe, History, ShieldCheck, Settings, Crown, Info,
+  UserRoundCheck, X,
 } from "lucide-react";
 import { useState } from "react";
 
