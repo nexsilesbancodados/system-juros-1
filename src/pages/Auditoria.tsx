@@ -71,7 +71,7 @@ const Auditoria = () => {
       )
     : logs;
 
-  const selectCls = "px-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
+  const selectCls = "px-3 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 
   const statItems = [
     { label: "Total de Ações", value: logs.length, icon: Activity, color: "text-primary", bg: "bg-primary/10" },
@@ -117,7 +117,7 @@ const Auditoria = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statItems.map((s, idx) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 animate-fade-in card-hover" style={{ animationDelay: `${(idx + 1) * 80}ms` }}>
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 animate-fade-in card-hover" style={{ animationDelay: `${(idx + 1) * 80}ms` }}>
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
                 <s.icon size={16} className={s.color} />
@@ -130,7 +130,7 @@ const Auditoria = () => {
       </div>
 
       {/* Log list */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
         {isLoading ? (
           <div className="p-5 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}

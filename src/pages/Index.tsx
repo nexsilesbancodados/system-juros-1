@@ -48,7 +48,7 @@ const Index = () => {
     }
   };
 
-  const inputCls = "w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
+  const inputCls = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-body">
@@ -131,7 +131,7 @@ const Index = () => {
                 </p>
                 <button
                   onClick={() => setIsRegister(true)}
-                  className="px-8 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
+                  className="px-8 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
                 >
                   Criar Conta
                 </button>
@@ -147,7 +147,7 @@ const Index = () => {
                 </p>
                 <button
                   onClick={() => setIsRegister(false)}
-                  className="px-8 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
+                  className="px-8 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
                 >
                   Fazer Login
                 </button>

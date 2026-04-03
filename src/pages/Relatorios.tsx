@@ -95,7 +95,7 @@ const Relatorios = () => {
           <p className="text-muted-foreground text-sm mt-0.5">Resumo mensal completo do seu negócio.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card border border-border">
             <Calendar size={14} className="text-muted-foreground shrink-0" />
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
               className="bg-transparent text-sm text-foreground focus:outline-none" />
@@ -131,7 +131,7 @@ const Relatorios = () => {
               { label: "Em Atraso", value: `R$ ${fmt(data.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", glow: data.totalOverdue > 0 ? "danger-glow" : "" },
               { label: "Clientes Ativos", value: String(data.activeClients), icon: Users, color: "text-primary", bg: "bg-primary/8", glow: "" },
             ].map((s) => (
-              <div key={s.label} className={`rounded-xl border border-border bg-card p-4 card-shine ${s.glow}`}>
+              <div key={s.label} className={`rounded-2xl border border-border bg-card p-4 card-shine ${s.glow}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
                     <s.icon size={16} className={s.color} />
@@ -144,7 +144,7 @@ const Relatorios = () => {
           </div>
 
           {/* Installments summary */}
-          <div className="rounded-xl border border-border bg-card p-5 animate-fade-in">
+          <div className="rounded-2xl border border-border bg-card p-5 animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
               <Receipt size={16} className="text-primary" />
               <h2 className="text-sm font-semibold text-foreground">Parcelas do Mês</h2>
@@ -179,7 +179,7 @@ const Relatorios = () => {
           </div>
 
           {/* Profit details */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky-header">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp size={14} className="text-success" /></div>
@@ -208,7 +208,7 @@ const Relatorios = () => {
           </div>
 
           {/* Expense details */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky-header">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center"><ArrowDownRight size={14} className="text-destructive" /></div>

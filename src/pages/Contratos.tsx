@@ -99,7 +99,7 @@ const Contratos = () => {
           { label: "Capital Ativo", value: `R$ ${fmt(stats.totalCapital)}`, color: "text-foreground", icon: DollarSign, isText: true },
           { label: "Lucro Previsto", value: `R$ ${fmt(stats.totalProfit)}`, color: "text-primary", icon: TrendingUp, isText: true },
         ].map((s: any) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-4 card-shine">
+          <div key={s.label} className="bg-card border border-border rounded-2xl p-4 card-shine">
             <div className="flex items-center gap-2 mb-2">
               <s.icon size={14} className={s.color} />
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
@@ -114,12 +114,12 @@ const Contratos = () => {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
+            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
           )}
         </div>
-        <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 overflow-x-auto">
+        <div className="flex items-center gap-1 bg-card border border-border rounded-2xl p-1 overflow-x-auto">
           {["all", "active", "overdue", "completed"].map((s) => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
@@ -130,7 +130,7 @@ const Contratos = () => {
           ))}
         </div>
         <button onClick={() => setSortBy(s => s === "date" ? "capital" : "date")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-all">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-card border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-all">
           <ArrowUpDown size={12} /> {sortBy === "date" ? "Por Data" : "Por Capital"}
         </button>
       </div>
@@ -156,7 +156,7 @@ const Contratos = () => {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
+          <div className="hidden md:block bg-card border border-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -198,7 +198,7 @@ const Contratos = () => {
           <div className="md:hidden space-y-2 stagger-fade-in">
             {sorted.map((c: any) => (
               <button key={c.id} onClick={() => navigate(`/contratos/${c.id}`)}
-                className="w-full p-4 rounded-xl bg-card border border-border hover:bg-accent/30 transition-all text-left active:scale-[0.99]">
+                className="w-full p-4 rounded-2xl bg-card border border-border hover:bg-accent/30 transition-all text-left active:scale-[0.99]">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-semibold text-foreground text-sm">{c.clients?.name || "—"}</p>
                   <Badge variant="outline" className={`text-[9px] ${statusColors[c.status] || ""}`}>{statusLabels[c.status] || c.status}</Badge>

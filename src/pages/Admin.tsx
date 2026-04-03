@@ -91,7 +91,7 @@ const Admin = () => {
           { label: "Plano Mensal", value: stats.monthly },
           { label: "Plano Anual", value: stats.yearly },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">{s.label}</p>
             <p className="text-2xl font-bold text-foreground mt-1">{s.value}</p>
           </div>
@@ -106,7 +106,7 @@ const Admin = () => {
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">Carregando...</div>
       ) : (
-        <div className="rounded-xl border border-border overflow-x-auto">
+        <div className="rounded-2xl border border-border overflow-x-auto">
           <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-accent/50">
               <tr>

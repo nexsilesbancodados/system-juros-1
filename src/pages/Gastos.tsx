@@ -86,7 +86,7 @@ const Gastos = () => {
     return acc;
   }, {} as Record<string, any[]>);
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -128,7 +128,7 @@ const Gastos = () => {
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={handleAdd} disabled={saving || !desc || !amount} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-destructive text-destructive-foreground hover:opacity-90 transition-all disabled:opacity-50">
                 {saving ? "Salvando..." : "Registrar"}
               </button>
@@ -139,9 +139,9 @@ const Gastos = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-fade-in">
-        <div className="rounded-xl border border-border bg-card p-5 card-shine danger-glow">
+        <div className="rounded-2xl border border-border bg-card p-5 card-shine danger-glow">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-2xl bg-destructive/10 flex items-center justify-center">
               <ArrowDownRight size={22} className="text-destructive" />
             </div>
             <div>
@@ -155,7 +155,7 @@ const Gastos = () => {
         </div>
 
         {/* Category breakdown */}
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-3">
             <PieChart size={14} className="text-primary" />
             <p className="text-label">Por Categoria</p>
@@ -185,7 +185,7 @@ const Gastos = () => {
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar gastos..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
+            className="w-full pl-8 pr-8 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
           {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2"><X size={14} className="text-muted-foreground" /></button>}
         </div>
         <div className="pill-tabs">
@@ -216,7 +216,7 @@ const Gastos = () => {
           <p className="text-sm text-muted-foreground mt-1">Registre seus gastos para controlar despesas</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="max-h-[500px] overflow-y-auto">
             {Object.entries(grouped).map(([date, items]: [string, any[]]) => (
               <div key={date}>
@@ -227,7 +227,7 @@ const Gastos = () => {
                 <div className="divide-y divide-border/50">
                   {items.map((e: any) => (
                     <div key={e.id} className="data-row group">
-                      <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-destructive/10 flex items-center justify-center shrink-0">
                         <ArrowDownRight size={16} className="text-destructive" />
                       </div>
                       <div className="flex-1 min-w-0">

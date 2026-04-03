@@ -119,7 +119,7 @@ const NovoCliente = () => {
     navigate("/clientes");
   };
 
-  const inputClass = (field?: string) => `w-full px-3.5 py-2.5 rounded-xl bg-card border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-all duration-200 input-enhanced ${
+  const inputClass = (field?: string) => `w-full px-3.5 py-2.5 rounded-2xl bg-card border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-all duration-200 input-enhanced ${
     field && isInvalid(field, field === "nome" ? nome : "") ? "border-destructive ring-1 ring-destructive/30" : "border-border focus:border-ring"
   }`;
 
@@ -234,7 +234,7 @@ const NovoCliente = () => {
           <button
             onClick={() => buscarCep()}
             disabled={cepLoading}
-            className="self-end px-4 py-2.5 rounded-xl bg-accent border border-border text-foreground hover:bg-accent/70 transition-all disabled:opacity-50 focus-ring"
+            className="self-end px-4 py-2.5 rounded-2xl bg-accent border border-border text-foreground hover:bg-accent/70 transition-all disabled:opacity-50 focus-ring"
           >
             {cepLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
           </button>

@@ -99,7 +99,7 @@ const Simulador = () => {
     setLoanMode(p.mode); setFrequency(p.freq);
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
   const hasValue = calc !== null;
 
@@ -167,7 +167,7 @@ const Simulador = () => {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setLoanMode("installments")}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
               loanMode === "installments"
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-muted-foreground/30"
@@ -181,7 +181,7 @@ const Simulador = () => {
           </button>
           <button
             onClick={() => setLoanMode("percentage")}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
               loanMode === "percentage"
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-muted-foreground/30"
@@ -208,7 +208,7 @@ const Simulador = () => {
             <button
               key={f.value}
               onClick={() => setFrequency(f.value)}
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
                 frequency === f.value
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-muted-foreground/30"

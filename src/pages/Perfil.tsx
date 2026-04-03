@@ -67,7 +67,7 @@ const Perfil = () => {
     navigate("/");
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto animate-fade-in">

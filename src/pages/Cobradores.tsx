@@ -121,7 +121,7 @@ const Cobradores = () => {
     assigned: new Set(assignments.map((a: any) => a.collector_id)).size,
   };
 
-  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
+  const inputCls = "w-full px-4 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -146,7 +146,7 @@ const Cobradores = () => {
           { label: "Ativos", value: stats.active, color: "text-success" },
           { label: "Com Clientes", value: stats.assigned, color: "text-primary" },
         ].map(s => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 card-shine">
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 card-shine">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
           </div>
@@ -162,7 +162,7 @@ const Cobradores = () => {
       )}
 
       {showForm && (
-        <form onSubmit={handleAdd} className="rounded-xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+        <form onSubmit={handleAdd} className="rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-foreground">Cadastrar Cobrador</h2>
             <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
@@ -214,7 +214,7 @@ const Cobradores = () => {
             const cAssignments = assignments.filter((a: any) => a.collector_id === c.id);
             const isActive = c.is_active !== false;
             return (
-              <div key={c.id} className={`rounded-xl border bg-card p-5 space-y-3 card-hover ${isActive ? "border-border" : "border-border/50 opacity-70"}`}>
+              <div key={c.id} className={`rounded-2xl border bg-card p-5 space-y-3 card-hover ${isActive ? "border-border" : "border-border/50 opacity-70"}`}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>

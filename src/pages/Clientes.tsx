@@ -86,7 +86,7 @@ const Clientes = () => {
           <button
             key={s.label}
             onClick={() => setStatusFilter(s.filter)}
-            className={`rounded-xl border p-4 card-hover card-shine text-left transition-all focus-ring ${
+            className={`rounded-2xl border p-4 card-hover card-shine text-left transition-all focus-ring ${
               statusFilter === s.filter ? "border-primary/30 bg-primary/3" : "border-border bg-card"
             }`}
           >
@@ -100,7 +100,7 @@ const Clientes = () => {
       <div className="relative animate-fade-in" style={{ animationDelay: "120ms" }}>
         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input type="text" placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-20 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
+          className="w-full pl-10 pr-20 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
         {search && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">{filtered.length} encontrado{filtered.length !== 1 ? "s" : ""}</span>
@@ -136,7 +136,7 @@ const Clientes = () => {
         /* Improvement #43: Card-based list for mobile, table for desktop */
         <>
           {/* Desktop table */}
-          <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-card animate-fade-in" style={{ animationDelay: "160ms" }}>
+          <div className="hidden md:block rounded-2xl border border-border overflow-hidden bg-card animate-fade-in" style={{ animationDelay: "160ms" }}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
@@ -156,7 +156,7 @@ const Clientes = () => {
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                        <div className="w-9 h-9 rounded-2xl bg-primary/8 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                           {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-9 h-9 rounded-xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
                         </div>
                         <div>
@@ -198,9 +198,9 @@ const Clientes = () => {
               <button
                 key={client.id}
                 onClick={() => navigate(`/clientes/${client.id}`)}
-                className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:bg-accent/30 transition-all text-left active:scale-[0.99]"
+                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border hover:bg-accent/30 transition-all text-left active:scale-[0.99]"
               >
-                <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-primary/8 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                   {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-11 h-11 rounded-xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">

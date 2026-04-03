@@ -79,7 +79,7 @@ const Tarefas = () => {
           { label: "Concluídas", value: done.length, accent: "text-success", f: "done" as const },
         ].map(s => (
           <button key={s.label} onClick={() => setFilter(s.f)}
-            className={`rounded-xl border p-4 text-center transition-all card-hover ${filter === s.f ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            className={`rounded-2xl border p-4 text-center transition-all card-hover ${filter === s.f ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
             <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
           </button>
@@ -94,7 +94,7 @@ const Tarefas = () => {
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="flex-1 px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced"
+          className="flex-1 px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced"
         />
         <button onClick={handleAdd}
           className="px-4 py-3 rounded-xl text-sm font-semibold text-primary-foreground shrink-0 transition-all hover:shadow-lg hover:shadow-primary/20"
@@ -134,7 +134,7 @@ const Tarefas = () => {
             const isDone = t.is_complete;
             return (
               <div key={t.id}
-                className={`rounded-xl border bg-card p-3.5 flex items-center gap-3 group card-hover animate-fade-in ${isDone ? "border-border/50 opacity-60" : "border-border"}`}
+                className={`rounded-2xl border bg-card p-3.5 flex items-center gap-3 group card-hover animate-fade-in ${isDone ? "border-border/50 opacity-60" : "border-border"}`}
                 style={{ animationDelay: `${i * 30}ms` }}>
                 <button onClick={() => handleToggle(t.id, t.is_complete)}
                   className={`shrink-0 transition-all duration-200 ${isDone ? "text-success" : "text-muted-foreground hover:text-primary"}`}>
@@ -158,7 +158,7 @@ const Tarefas = () => {
 
       {/* Productivity tip */}
       {pending.length > 5 && (
-        <div className="rounded-xl border border-warning/20 bg-warning/5 p-4 text-xs text-warning flex items-center gap-2 animate-fade-in">
+        <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4 text-xs text-warning flex items-center gap-2 animate-fade-in">
           <Filter size={14} />
           Você tem {pending.length} tarefas pendentes. Considere priorizar as mais importantes!
         </div>

@@ -167,7 +167,7 @@ const Cobrancas = () => {
           <button
             key={s.label}
             onClick={() => setFilter(s.filterKey)}
-            className={`rounded-xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
+            className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
               filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
             }`}
           >
@@ -185,7 +185,7 @@ const Cobrancas = () => {
 
       {/* Overdue Summary by Client */}
       {overdueByClient.length > 0 && filter !== "paid" && (
-        <div className="bg-destructive/5 border border-destructive/15 rounded-xl p-4 animate-fade-in">
+        <div className="bg-destructive/5 border border-destructive/15 rounded-2xl p-4 animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={14} className="text-destructive" />
             <span className="text-xs font-semibold text-destructive uppercase tracking-wider">Inadimplentes</span>
@@ -211,7 +211,7 @@ const Cobrancas = () => {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar por cliente..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
+            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
           {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>}
         </div>
         <div className="pill-tabs">
@@ -260,7 +260,7 @@ const Cobrancas = () => {
             return (
               <div
                 key={inst.id}
-                className={`rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm cursor-pointer ${
+                className={`rounded-2xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm cursor-pointer ${
                   isOverdue ? "border-destructive/20 bg-destructive/3 danger-glow" :
                   isPaid ? "border-success/15 bg-success/3 success-glow" :
                   "border-border bg-card"
@@ -342,7 +342,7 @@ const Cobrancas = () => {
               })()}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={() => handleMarkPaid(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
             </div>
           </div>

@@ -425,7 +425,7 @@ const Dashboard = () => {
                   const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
                   return (
                     <div key={item.id} className="data-row">
-                      <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0">
                         <ArrowUpRight size={15} className="text-success" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -457,7 +457,7 @@ const Dashboard = () => {
           <button
             key={action.label}
             onClick={() => navigate(action.path)}
-            className="glass-card rounded-xl p-4 flex items-center gap-3 micro-press text-left group"
+            className="glass-card rounded-2xl p-4 flex items-center gap-3 micro-press text-left group"
           >
             <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
               <action.icon size={18} className={action.color} />

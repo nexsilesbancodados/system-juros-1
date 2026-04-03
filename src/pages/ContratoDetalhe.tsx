@@ -197,7 +197,7 @@ const ContratoDetalhe = () => {
           { icon: AlertTriangle, label: "Atrasadas", value: String(overdue), color: "text-destructive", bg: "bg-destructive/10" },
           { icon: TrendingUp, label: "Lucro", value: `R$ ${fmt(Number(contract.total_interest))}`, color: "text-primary", bg: "bg-primary/10" },
         ].map((s, idx) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 animate-fade-in card-shine" style={{ animationDelay: `${idx * 60}ms` }}>
+          <div key={s.label} className="bg-card border border-border rounded-2xl p-3.5 animate-fade-in card-shine" style={{ animationDelay: `${idx * 60}ms` }}>
             <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon size={16} className={s.color} />
             </div>
@@ -218,7 +218,7 @@ const ContratoDetalhe = () => {
       </div>
 
       {/* Progress with ring visualization */}
-      <div className="bg-card border border-border rounded-xl p-4 animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in">
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 shrink-0">
             <svg className="progress-ring w-16 h-16" viewBox="0 0 64 64">
@@ -261,7 +261,7 @@ const ContratoDetalhe = () => {
       </div>
 
       {/* Contract details */}
-      <div className="bg-card border border-border rounded-xl p-4 animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in">
         <h3 className="text-sm font-semibold text-foreground mb-3">Detalhes do Contrato</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
@@ -290,7 +290,7 @@ const ContratoDetalhe = () => {
             </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5} className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none" placeholder="Adicione observações..." />
             <div className="flex gap-2">
-              <button onClick={() => setEditNotes(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setEditNotes(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={saveNotes} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
             </div>
           </div>
@@ -316,7 +316,7 @@ const ContratoDetalhe = () => {
               })()}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={() => handlePayInstallment(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
             </div>
           </div>
@@ -324,7 +324,7 @@ const ContratoDetalhe = () => {
       )}
 
       {/* Installments - Grouped by Month */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky-header">
           <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
             <FileText size={16} className="text-primary" /> Parcelas
@@ -405,7 +405,7 @@ const ContratoDetalhe = () => {
 
       {/* Notes display */}
       {contract.notes && (
-        <div className="bg-card border border-border rounded-xl p-4 animate-fade-in">
+        <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Notas</p>
           <p className="text-sm text-foreground whitespace-pre-wrap">{contract.notes}</p>
         </div>

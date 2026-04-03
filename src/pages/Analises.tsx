@@ -314,7 +314,7 @@ const Analises = () => {
           { label: "Contratos", value: charts.stats.totalContracts },
           { label: "Clientes", value: charts.stats.totalClients },
         ].map((s) => (
-          <div key={s.label} className="glass-card rounded-xl p-4">
+          <div key={s.label} className="glass-card rounded-2xl p-4">
             <p className="text-xs text-muted-foreground">{s.label}</p>
             <p className="text-xl font-bold text-foreground mt-1">{s.value}</p>
           </div>
@@ -323,7 +323,7 @@ const Analises = () => {
 
       {/* Row 1: Revenue + Default Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Recebido vs Emprestado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.monthlyRevenue}>
@@ -338,7 +338,7 @@ const Analises = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Taxa de Inadimplência Mensal</h2>
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={charts.defaultRate}>
@@ -354,7 +354,7 @@ const Analises = () => {
 
       {/* Row 2: Pie + Score */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Status das Parcelas</h2>
           {charts.installmentPie.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -372,7 +372,7 @@ const Analises = () => {
           )}
         </div>
 
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Distribuição de Score de Crédito</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.scoreDistribution}>
@@ -388,7 +388,7 @@ const Analises = () => {
 
       {/* Row 3: Aging + Frequency */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Aging do Portfólio</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.aging}>
@@ -403,7 +403,7 @@ const Analises = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="glass-card rounded-xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Frequência de Empréstimos</h2>
           {charts.loanFrequency.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>

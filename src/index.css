@@ -51,7 +51,7 @@
     --input: 0 0% 94%;
     --ring: 0 0% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --font-display: 'Cinzel', serif;
     --font-body: 'Inter', sans-serif;
@@ -166,6 +166,7 @@
     background: hsl(var(--card) / 0.7);
     border: 1px solid hsl(0 0% 100% / 0.06);
     box-shadow: var(--shadow-glass);
+    border-radius: 1.25rem;
   }
 
   .glass-strong {
@@ -212,7 +213,8 @@
 
   /* Bento */
   .bento-item {
-    @apply rounded-2xl overflow-hidden transition-all duration-300;
+    @apply overflow-hidden transition-all duration-300;
+    border-radius: 1.25rem;
   }
   .bento-item:hover {
     transform: translateY(-2px);

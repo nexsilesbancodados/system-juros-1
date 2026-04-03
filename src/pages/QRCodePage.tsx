@@ -40,7 +40,7 @@ const QRCodePage = () => {
         <p className="text-xs font-medium text-muted-foreground uppercase">Links Rápidos</p>
         <div className="grid grid-cols-2 gap-3">
           {presets.map((p) => (
-            <button key={p.label} onClick={() => generateQR(p.url)} className="rounded-xl border border-border bg-card p-4 text-left hover:bg-accent/50 transition-colors">
+            <button key={p.label} onClick={() => generateQR(p.url)} className="rounded-2xl border border-border bg-card p-4 text-left hover:bg-accent/50 transition-colors">
               <p className="text-sm font-medium text-foreground">{p.label}</p>
               <p className="text-xs text-muted-foreground mt-1 truncate">{p.url}</p>
             </button>
@@ -61,7 +61,7 @@ const QRCodePage = () => {
 
       {/* QR Result */}
       {qrUrl && (
-        <div className="rounded-xl border border-border bg-card p-6 text-center space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-4">
           <img src={qrUrl} alt="QR Code" className="mx-auto rounded-lg" width={250} height={250} />
           <div className="flex items-center gap-2 justify-center">
             <p className="text-xs text-muted-foreground truncate max-w-[250px]">{inputUrl}</p>
