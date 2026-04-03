@@ -25,7 +25,7 @@ const DashboardLayout = () => {
       <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
       <div className={`transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
         <TopBar onSearchClick={() => setSearchOpen(true)} />
-        <main className="p-4 lg:p-6">
+        <main className="p-4 lg:p-6 animate-fade-in">
           <Outlet />
         </main>
       </div>
