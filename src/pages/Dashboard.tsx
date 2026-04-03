@@ -351,8 +351,8 @@ const Dashboard = () => {
         <div className="premium-card overflow-hidden animate-fade-in">
           <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertCircle size={14} className="text-destructive" />
+              <div className="w-8 h-8 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <AlertCircle size={15} className="text-destructive" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Parcelas Atrasadas</h2>
               {metrics.overdueCount > 0 && (
