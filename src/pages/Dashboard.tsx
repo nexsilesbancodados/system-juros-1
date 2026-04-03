@@ -239,10 +239,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+              {(card as any).sub && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{(card as any).sub}</p>
+              )}
 
       {/* ─── Quick Stats Strip ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
