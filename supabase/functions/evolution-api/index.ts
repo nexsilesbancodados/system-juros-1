@@ -181,6 +181,36 @@ serve(async (req) => {
         });
       }
 
+      case "fetch_messages": {
+        const { remoteJid, count = 20 } = body;
+        // Fetch chats list
+        if (!remoteJid) {
+          const chatsResp = await fetch(`${apiUrl}/chat/findChats/${instanceName}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: apiKey },
+            body: JSON.stringify({}),
+          });
+          const chats = await chatsResp.json();
+          return new Response(JSON.stringify({ chats: Array.isArray(chats) ? chats.slice(0, 50) : [] }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Fetch messages for a specific chat
+        const msgsResp = await fetch(`${apiUrl}/chat/findMessages/${instanceName}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: apiKey },
+          body: JSON.stringify({
+            where: { key: { remoteJid } },
+            limit: count,
+          }),
+        });
+        const msgs = await msgsResp.json();
+        return new Response(JSON.stringify({ messages: Array.isArray(msgs) ? msgs : msgs?.messages || [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: `Ação desconhecida: ${action}` }), {
           status: 400,
