@@ -197,9 +197,18 @@ const ClienteDetalhe = () => {
       const { error: iErr } = await supabase.from("contract_installments").insert(insts);
       if (iErr) throw iErr;
 
+      // Register loan disbursement transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount: parseFloat(loanCapital), type: "loan",
+        description: `Empréstimo para ${client?.name} - ${n}x R$ ${fmt(loanCalc.installmentAmount)}`,
+        client_id: id, contract_id: contract.id,
+      });
+
       toast({ title: "Empréstimo criado!", description: `${n} parcelas geradas.` });
       setNewLoanMode(false); setLoanCapital(""); setLoanInstallments("");
-      inv("client-contracts"); inv("client-installments");
+      inv("client-contracts"); inv("client-installments"); inv("client-transactions");
+      qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally { setLoanLoading(false); }
