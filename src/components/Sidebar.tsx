@@ -61,6 +61,7 @@ const ferramentasItems: MenuItem[] = [
 ];
 
 const bottomItems: MenuItem[] = [
+  { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Network", icon: <Network size={18} />, path: "/network" },
