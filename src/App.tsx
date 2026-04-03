@@ -94,6 +94,7 @@ const App = () => (
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/qrcode" element={<QRCodePage />} />
                 <Route path="/agente-ia" element={<AgenteIA />} />
+                <Route path="/auditoria" element={<Auditoria />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
