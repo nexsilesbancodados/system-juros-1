@@ -44,8 +44,9 @@ const ClienteDetalhe = () => {
   const [loanInstallments, setLoanInstallments] = useState("");
   const [loanFreq, setLoanFreq] = useState("monthly");
   const [loanStart, setLoanStart] = useState(new Date().toISOString().split("T")[0]);
+  const [loanInterestRate, setLoanInterestRate] = useState("10");
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
-  const [loanMonthlyFee, setLoanMonthlyFee] = useState("2");
+  const [loanLateFee, setLoanLateFee] = useState("2");
   const [loanLoading, setLoanLoading] = useState(false);
 
   const inv = (key: string) => qc.invalidateQueries({ queryKey: [key, id] });
