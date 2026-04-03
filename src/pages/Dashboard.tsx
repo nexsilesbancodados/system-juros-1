@@ -330,7 +330,7 @@ const Dashboard = () => {
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-xl ${c.active ? c.bg : "bg-muted/40"} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
+                <div className={`w-11 h-11 rounded-2xl ${c.active ? c.bg : "bg-muted/40"} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
                   <c.icon size={19} className={c.active ? c.color : "text-muted-foreground"} />
                 </div>
                 <div>
