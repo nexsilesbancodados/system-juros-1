@@ -54,7 +54,7 @@ const moreItems = [
   { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
   { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
   { label: "Puxada Dados", icon: Database, path: "/puxada-dados" },
-  { label: "QR Code", icon: QrCode, path: "/qrcode" },
+  { label: "Portais", icon: QrCode, path: "/qrcode" },
   { label: "Histórico", icon: ClipboardList, path: "/historico" },
   { label: "Auditoria", icon: Shield, path: "/auditoria" },
   { label: "Config.", icon: Settings, path: "/configuracoes" },

@@ -94,7 +94,7 @@ const sections: MenuSection[] = [
       { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
       { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
       { label: "Puxada de Dados", icon: Database, path: "/puxada-dados" },
-      { label: "QR Code", icon: QrCode, path: "/qrcode" },
+      { label: "Portais", icon: QrCode, path: "/qrcode" },
     ],
   },
   {
