@@ -28,6 +28,7 @@ import Uruszap from "./pages/Uruszap.tsx";
 import PuxadaDados from "./pages/PuxadaDados.tsx";
 import NetworkPage from "./pages/NetworkPage.tsx";
 import Sobre from "./pages/Sobre.tsx";
+import Perfil from "./pages/Perfil.tsx";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/puxada-dados" element={<PuxadaDados />} />
               <Route path="/network" element={<NetworkPage />} />
               <Route path="/sobre" element={<Sobre />} />
+              <Route path="/perfil" element={<Perfil />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

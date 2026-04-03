@@ -2,27 +2,9 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import {
-  LayoutDashboard,
-  BarChart3,
-  Users,
-  Car,
-  Smartphone,
-  Gavel,
-  Receipt,
-  Wallet,
-  TrendingUp,
-  DollarSign,
-  Wrench,
-  MessageSquare,
-  Database,
-  Network,
-  Info,
-  Target,
-  Calculator,
-  CheckSquare,
-  StickyNote,
-  Table,
-  ChevronDown,
+  LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
+  TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, X,
 } from "lucide-react";
 
 interface MenuItem {
@@ -80,7 +62,12 @@ const bottomItems: MenuItem[] = [
   { label: "Sobre", icon: <Info size={18} />, path: "/sobre" },
 ];
 
-const Sidebar = () => {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar = ({ mobileOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [ferramentasOpen, setFerramentasOpen] = useState(
@@ -89,10 +76,15 @@ const Sidebar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    onClose?.();
+  };
+
   const renderItem = (item: MenuItem) => (
     <button
       key={item.path}
-      onClick={() => navigate(item.path)}
+      onClick={() => handleNavigate(item.path)}
       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
         isActive(item.path)
           ? "bg-accent text-foreground"
@@ -108,47 +100,61 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-60 bg-card border-r border-border flex flex-col z-30">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-border">
-        <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full" />
-        <span className="font-display text-sm tracking-widest text-foreground">URUS JURISTA</span>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
+      )}
 
-      {/* Sections */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {sections.map((section) => (
-          <div key={section.title}>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
-              {section.title}
-            </p>
-            <div className="space-y-0.5">{section.items.map(renderItem)}</div>
+      <aside className={`fixed left-0 top-0 h-screen w-60 bg-card border-r border-border flex flex-col z-50 transition-transform duration-300 ${
+        mobileOpen === undefined ? "hidden lg:flex" : mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      } lg:flex`}>
+        {/* Logo */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full" />
+            <span className="font-display text-sm tracking-widest text-foreground">URUS JURISTA</span>
           </div>
-        ))}
-
-        {/* Ferramentas collapsible */}
-        <div className="pt-2 border-t border-border">
-          <button
-            onClick={() => setFerramentasOpen(!ferramentasOpen)}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-          >
-            <Wrench size={18} />
-            <span>Ferramentas</span>
-            <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+          <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
+            <X size={18} />
           </button>
-          {ferramentasOpen && (
-            <div className="ml-3 space-y-0.5 mt-0.5">
-              {ferramentasItems.map(renderItem)}
-            </div>
-          )}
         </div>
 
-        {/* Bottom items */}
-        <div className="space-y-0.5 pt-2">
-          {bottomItems.map(renderItem)}
-        </div>
-      </nav>
-    </aside>
+        {/* Sections */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {sections.map((section) => (
+            <div key={section.title}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+                {section.title}
+              </p>
+              <div className="space-y-0.5">{section.items.map(renderItem)}</div>
+            </div>
+          ))}
+
+          {/* Ferramentas collapsible */}
+          <div className="pt-2 border-t border-border">
+            <button
+              onClick={() => setFerramentasOpen(!ferramentasOpen)}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            >
+              <Wrench size={18} />
+              <span>Ferramentas</span>
+              <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+            </button>
+            {ferramentasOpen && (
+              <div className="ml-3 space-y-0.5 mt-0.5">
+                {ferramentasItems.map(renderItem)}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom items */}
+          <div className="space-y-0.5 pt-2">
+            {bottomItems.map(renderItem)}
+          </div>
+        </nav>
+      </aside>
+    </>
   );
 };
 
