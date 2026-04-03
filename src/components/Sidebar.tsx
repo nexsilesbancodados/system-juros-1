@@ -11,6 +11,7 @@ import {
   Briefcase, PieChart, Cog, Sparkles, LogOut, User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 
 interface MenuItem {
   label: string;
@@ -94,6 +95,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const { config } = useWhiteLabel();
+  const logoSrc = config.companyLogo || eagleLogo;
+  const brandName = config.companyName || "SYSTEM JUROS";
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -206,16 +210,16 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       {/* Logo */}
       <div className={`flex items-center px-4 h-14 border-b border-border/20 shrink-0 ${collapsed ? "justify-center" : "gap-3"}`}>
         <img
-          src={eagleLogo}
-          alt="System Juros"
+          src={logoSrc}
+          alt={brandName}
           width={32}
           height={32}
           className="rounded-xl ring-1 ring-primary/20 shadow-sm shrink-0"
         />
         {!collapsed && (
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold tracking-wider text-gradient-gold leading-none">SYSTEM</span>
-            <span className="text-[9px] font-semibold tracking-[0.15em] text-muted-foreground/50 leading-tight">JUROS PRO</span>
+            <span className="text-xs font-bold tracking-wider text-gradient-gold leading-none truncate">{brandName.split(" ")[0] || brandName}</span>
+            <span className="text-[9px] font-semibold tracking-[0.15em] text-muted-foreground/50 leading-tight truncate">{brandName.split(" ").slice(1).join(" ") || "PRO"}</span>
           </div>
         )}
       </div>

@@ -818,6 +818,7 @@ export type Database = {
       }
       settings: {
         Row: {
+          accent_color: string | null
           company_cnpj: string | null
           company_logo_url: string | null
           company_name: string | null
@@ -828,13 +829,16 @@ export type Database = {
           default_late_fee: number | null
           id: string
           n8n_webhook_url: string | null
+          primary_color: string | null
           push_notifications_enabled: boolean | null
+          theme_mode: string | null
           user_id: string
           whatsapp_api_key: string | null
           whatsapp_api_url: string | null
           whatsapp_instance: string | null
         }
         Insert: {
+          accent_color?: string | null
           company_cnpj?: string | null
           company_logo_url?: string | null
           company_name?: string | null
@@ -845,13 +849,16 @@ export type Database = {
           default_late_fee?: number | null
           id?: string
           n8n_webhook_url?: string | null
+          primary_color?: string | null
           push_notifications_enabled?: boolean | null
+          theme_mode?: string | null
           user_id: string
           whatsapp_api_key?: string | null
           whatsapp_api_url?: string | null
           whatsapp_instance?: string | null
         }
         Update: {
+          accent_color?: string | null
           company_cnpj?: string | null
           company_logo_url?: string | null
           company_name?: string | null
@@ -862,7 +869,9 @@ export type Database = {
           default_late_fee?: number | null
           id?: string
           n8n_webhook_url?: string | null
+          primary_color?: string | null
           push_notifications_enabled?: boolean | null
+          theme_mode?: string | null
           user_id?: string
           whatsapp_api_key?: string | null
           whatsapp_api_url?: string | null
