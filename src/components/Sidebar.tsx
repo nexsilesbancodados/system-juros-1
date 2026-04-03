@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard, BarChart3, Users, Receipt, Wallet,
-  TrendingUp, DollarSign, Database, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronRight,
-  FileText, Crown, ClipboardList,
-  Settings, Bot, QrCode, UserCheck, Shield,
-  Briefcase, PieChart, Cog, Sparkles, LogOut, User,
+  LayoutDashboard, TrendingUp, Users, HandCoins, Wallet,
+  ArrowUpRight, ArrowDownRight, Search as SearchIcon, Info,
+  Crosshair, Sliders, ListChecks, NotebookPen, Sheet, ChevronDown, ChevronRight,
+  FileBarChart, Crown, History,
+  Settings, BrainCircuit, Globe, UserRoundCheck, ShieldCheck,
+  Landmark, Activity, Wrench, Wand2, LogOut, User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
@@ -56,55 +56,55 @@ const iconColorMap: Record<string, string> = {
 const sections: MenuSection[] = [
   {
     title: "Visão Geral",
-    sectionIcon: PieChart,
+    sectionIcon: Activity,
     items: [
       { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
-      { label: "Análises", icon: BarChart3, path: "/analises" },
-      { label: "Relatórios", icon: FileText, path: "/relatorios" },
+      { label: "Análises", icon: TrendingUp, path: "/analises" },
+      { label: "Relatórios", icon: FileBarChart, path: "/relatorios" },
     ],
   },
   {
     title: "Gestão",
-    sectionIcon: Briefcase,
+    sectionIcon: Landmark,
     items: [
       { label: "Clientes", icon: Users, path: "/clientes" },
-      { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
-      { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
+      { label: "Cobranças", icon: HandCoins, path: "/cobrancas" },
+      { label: "Cobradores", icon: UserRoundCheck, path: "/cobradores" },
     ],
   },
   {
     title: "Financeiro",
-    sectionIcon: DollarSign,
+    sectionIcon: Wallet,
     items: [
       { label: "Carteira", icon: Wallet, path: "/carteira" },
-      { label: "Lucros", icon: TrendingUp, path: "/lucros" },
-      { label: "Gastos", icon: DollarSign, path: "/gastos" },
+      { label: "Lucros", icon: ArrowUpRight, path: "/lucros" },
+      { label: "Gastos", icon: ArrowDownRight, path: "/gastos" },
     ],
   },
   {
     title: "Ferramentas",
-    sectionIcon: Sparkles,
+    sectionIcon: Wand2,
     collapsible: true,
     defaultOpen: false,
     items: [
-      { label: "Agente IA", icon: Bot, path: "/agente-ia" },
-      { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
-      { label: "Metas", icon: Target, path: "/ferramentas/metas" },
-      { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
-      { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
-      { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
-      { label: "Puxada de Dados", icon: Database, path: "/puxada-dados" },
-      { label: "Portais", icon: QrCode, path: "/qrcode" },
+      { label: "Agente IA", icon: BrainCircuit, path: "/agente-ia" },
+      { label: "Simulador", icon: Sliders, path: "/ferramentas/simulador" },
+      { label: "Metas", icon: Crosshair, path: "/ferramentas/metas" },
+      { label: "Tarefas", icon: ListChecks, path: "/ferramentas/tarefas" },
+      { label: "Anotações", icon: NotebookPen, path: "/ferramentas/anotacoes" },
+      { label: "Planilha", icon: Sheet, path: "/ferramentas/planilha" },
+      { label: "Puxada de Dados", icon: SearchIcon, path: "/puxada-dados" },
+      { label: "Portais", icon: Globe, path: "/qrcode" },
     ],
   },
   {
     title: "Sistema",
-    sectionIcon: Cog,
+    sectionIcon: Wrench,
     collapsible: true,
     defaultOpen: false,
     items: [
-      { label: "Histórico", icon: ClipboardList, path: "/historico" },
-      { label: "Auditoria", icon: Shield, path: "/auditoria" },
+      { label: "Histórico", icon: History, path: "/historico" },
+      { label: "Auditoria", icon: ShieldCheck, path: "/auditoria" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Admin", icon: Crown, path: "/admin" },
       { label: "Sobre", icon: Info, path: "/sobre" },
