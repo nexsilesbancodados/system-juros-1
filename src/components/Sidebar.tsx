@@ -160,7 +160,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
         )}
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
-          active ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground group-hover:text-foreground group-hover:bg-accent/30"
+          active ? "bg-primary/15 text-primary shadow-sm" : `${iconColorMap[item.path] || "text-muted-foreground"} group-hover:brightness-125 group-hover:bg-accent/30`
         }`}>
           <Icon size={16} />
         </div>
