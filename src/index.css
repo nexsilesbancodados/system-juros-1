@@ -221,12 +221,8 @@
 
   /* Bento */
   .bento-item {
-    @apply overflow-hidden transition-all duration-300;
+    @apply overflow-hidden transition-colors duration-200;
     border-radius: 1.5rem;
-  }
-  .bento-item:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
   }
 
   /* Bold Typography */
