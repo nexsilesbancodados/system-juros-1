@@ -126,8 +126,25 @@ const Sidebar = () => {
           </div>
         ))}
 
+        {/* Ferramentas collapsible */}
+        <div className="pt-2 border-t border-border">
+          <button
+            onClick={() => setFerramentasOpen(!ferramentasOpen)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <Wrench size={18} />
+            <span>Ferramentas</span>
+            <ChevronDown size={14} className={`ml-auto transition-transform ${ferramentasOpen ? "rotate-180" : ""}`} />
+          </button>
+          {ferramentasOpen && (
+            <div className="ml-3 space-y-0.5 mt-0.5">
+              {ferramentasItems.map(renderItem)}
+            </div>
+          )}
+        </div>
+
         {/* Bottom items */}
-        <div className="space-y-0.5 pt-2 border-t border-border">
+        <div className="space-y-0.5 pt-2">
           {bottomItems.map(renderItem)}
         </div>
       </nav>
