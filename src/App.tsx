@@ -38,6 +38,7 @@ import QRCodePage from "./pages/QRCodePage.tsx";
 import AgenteIA from "./pages/AgenteIA.tsx";
 import CobradorExterno from "./pages/CobradorExterno.tsx";
 import Auditoria from "./pages/Auditoria.tsx";
+import ClienteDetalhe from "./pages/ClienteDetalhe.tsx";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/analises" element={<Analises />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/clientes/novo" element={<NovoCliente />} />
+                <Route path="/clientes/:id" element={<ClienteDetalhe />} />
                 <Route path="/contratos" element={<Contratos />} />
                 <Route path="/novo-contrato" element={<NovoContrato />} />
                 <Route path="/contratos/:id" element={<ContratoDetalhe />} />

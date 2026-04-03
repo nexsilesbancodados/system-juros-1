@@ -147,7 +147,7 @@ const Clientes = () => {
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => handleViewClient(client)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Ver detalhes">
+                        <button onClick={() => navigate(`/clientes/${client.id}`)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Ver detalhes">
                           <Eye size={15} />
                         </button>
                         <button onClick={() => handleDelete(client.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Excluir">
