@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckSquare, Plus, Trash2, CheckCircle, Circle } from "lucide-react";
+import { CheckSquare, Plus, Trash2, CheckCircle, Circle, Calendar, GripVertical, Star, StarOff, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ const Tarefas = () => {
   const [todos, setTodos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState("");
+  const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
 
   const fetchTodos = async () => {
     const { data } = await supabase.from("todos").select("*").order("created_at", { ascending: false });
@@ -27,6 +28,7 @@ const Tarefas = () => {
     } else {
       setNewTask("");
       fetchTodos();
+      toast({ title: "✓ Tarefa adicionada!" });
     }
   };
 
@@ -40,27 +42,47 @@ const Tarefas = () => {
     fetchTodos();
   };
 
+  const handleClearDone = async () => {
+    if (!confirm("Limpar todas as tarefas concluídas?")) return;
+    const doneIds = todos.filter(t => t.is_complete).map(t => t.id);
+    for (const id of doneIds) await supabase.from("todos").delete().eq("id", id);
+    fetchTodos();
+    toast({ title: `${doneIds.length} tarefa(s) removida(s)` });
+  };
+
+  const all = todos;
   const pending = todos.filter((t) => !t.is_complete);
   const done = todos.filter((t) => t.is_complete);
+  const displayed = filter === "pending" ? pending : filter === "done" ? done : all;
+
+  const today = new Date().toLocaleDateString("pt-BR");
 
   return (
-    <div className="space-y-6 max-w-2xl animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
-        <p className="text-muted-foreground text-sm mt-1">Organize suas tarefas diárias.</p>
+    <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <CheckSquare size={24} className="text-primary" /> Tarefas
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Organize suas tarefas diárias.</p>
+        </div>
+        <span className="text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-1.5">
+          <Calendar size={12} className="inline mr-1" />{today}
+        </span>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 stagger-fade-in">
         {[
-          { label: "Total", value: todos.length, accent: "text-foreground" },
-          { label: "Pendentes", value: pending.length, accent: "text-warning" },
-          { label: "Concluídas", value: done.length, accent: "text-success" },
+          { label: "Total", value: all.length, accent: "text-foreground", f: "all" as const },
+          { label: "Pendentes", value: pending.length, accent: "text-warning", f: "pending" as const },
+          { label: "Concluídas", value: done.length, accent: "text-success", f: "done" as const },
         ].map(s => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 text-center">
+          <button key={s.label} onClick={() => setFilter(s.f)}
+            className={`rounded-xl border p-4 text-center transition-all card-hover ${filter === s.f ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
             <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -72,7 +94,7 @@ const Tarefas = () => {
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="flex-1 px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+          className="flex-1 px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced"
         />
         <button onClick={handleAdd}
           className="px-4 py-3 rounded-xl text-sm font-semibold text-primary-foreground shrink-0 transition-all hover:shadow-lg hover:shadow-primary/20"
@@ -81,48 +103,64 @@ const Tarefas = () => {
         </button>
       </div>
 
+      {/* Clear done */}
+      {done.length > 0 && (
+        <div className="flex justify-end">
+          <button onClick={handleClearDone} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
+            <Trash2 size={12} /> Limpar concluídas ({done.length})
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-2">
-          {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+          {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl skeleton-shimmer" />)}
         </div>
-      ) : todos.length === 0 ? (
+      ) : displayed.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <CheckSquare size={28} className="text-muted-foreground" />
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
+            <CheckSquare size={28} className="text-muted-foreground/40" />
           </div>
-          <p className="text-foreground font-medium">Nenhuma tarefa</p>
-          <p className="text-sm text-muted-foreground mt-1">Adicione uma tarefa acima para começar</p>
+          <p className="text-foreground font-medium">
+            {filter === "done" ? "Nenhuma tarefa concluída" : filter === "pending" ? "Nenhuma tarefa pendente" : "Nenhuma tarefa"}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filter === "all" ? "Adicione uma tarefa acima para começar" : "Mude o filtro para ver outras tarefas"}
+          </p>
         </div>
       ) : (
-        <div className="space-y-5">
-          {pending.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Pendentes ({pending.length})</p>
-              {pending.map((t, i) => (
-                <div key={t.id} className="rounded-xl border border-border bg-card p-3.5 flex items-center gap-3 group card-hover animate-fade-in" style={{ animationDelay: `${i * 40}ms` }}>
-                  <button onClick={() => handleToggle(t.id, t.is_complete)} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
-                    <Circle size={20} />
-                  </button>
-                  <span className="text-sm text-foreground flex-1">{t.task || "Sem título"}</span>
-                  <button onClick={() => handleDelete(t.id)} className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
-                </div>
-              ))}
-            </div>
-          )}
-          {done.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Concluídas ({done.length})</p>
-              {done.map((t) => (
-                <div key={t.id} className="rounded-xl border border-border bg-card/50 p-3.5 flex items-center gap-3 opacity-60 group">
-                  <button onClick={() => handleToggle(t.id, t.is_complete)} className="text-success shrink-0">
-                    <CheckCircle size={20} />
-                  </button>
-                  <span className="text-sm text-muted-foreground line-through flex-1">{t.task || "Sem título"}</span>
-                  <button onClick={() => handleDelete(t.id)} className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="space-y-1.5">
+          {displayed.map((t, i) => {
+            const isDone = t.is_complete;
+            return (
+              <div key={t.id}
+                className={`rounded-xl border bg-card p-3.5 flex items-center gap-3 group card-hover animate-fade-in ${isDone ? "border-border/50 opacity-60" : "border-border"}`}
+                style={{ animationDelay: `${i * 30}ms` }}>
+                <button onClick={() => handleToggle(t.id, t.is_complete)}
+                  className={`shrink-0 transition-all duration-200 ${isDone ? "text-success" : "text-muted-foreground hover:text-primary"}`}>
+                  {isDone ? <CheckCircle size={22} /> : <Circle size={22} />}
+                </button>
+                <span className={`text-sm flex-1 ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                  {t.task || "Sem título"}
+                </span>
+                <span className="text-[10px] text-muted-foreground/50 hidden sm:block">
+                  {new Date(t.created_at).toLocaleDateString("pt-BR")}
+                </span>
+                <button onClick={() => handleDelete(t.id)}
+                  className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-destructive/10">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Productivity tip */}
+      {pending.length > 5 && (
+        <div className="rounded-xl border border-warning/20 bg-warning/5 p-4 text-xs text-warning flex items-center gap-2 animate-fade-in">
+          <Filter size={14} />
+          Você tem {pending.length} tarefas pendentes. Considere priorizar as mais importantes!
         </div>
       )}
     </div>
