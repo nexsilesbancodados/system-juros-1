@@ -146,7 +146,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <button
             onClick={() => !collapsed && toggleSection(section.title)}
             title={collapsed ? section.title : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 focus-ring ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 focus-ring ${
               sectionHasActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             } hover:bg-accent/30 ${collapsed ? "justify-center px-2" : ""}`}
           >
