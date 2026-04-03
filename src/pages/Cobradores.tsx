@@ -554,7 +554,7 @@ const Cobradores = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary border border-primary/10">
+                  <div className="modal-icon w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary border border-primary/10">
                     {fichaData.name?.charAt(0)?.toUpperCase()}
                   </div>
                   <div>
