@@ -255,20 +255,27 @@ const ClienteDetalhe = () => {
     if (!val || val <= 0) { toast({ title: "Valor inválido", variant: "destructive" }); return; }
     const instAmount = Number(partialPayModal.amount);
     if (val >= instAmount) {
-      // Full payment
       await payFull(partialPayModal.id, instAmount);
     } else {
-      // Partial: update paid_amount, keep pending, reduce remaining
       const alreadyPaid = Number(partialPayModal.paid_amount || 0);
       const newPaid = alreadyPaid + val;
       if (newPaid >= instAmount) {
-        await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: instAmount }).eq("id", partialPayModal.id);
+        await payFull(partialPayModal.id, instAmount);
       } else {
         await supabase.from("contract_installments").update({ paid_amount: newPaid }).eq("id", partialPayModal.id);
+        // Register partial transaction
+        await supabase.from("transactions").insert({
+          user_id: user.id, amount: val, type: "partial_payment",
+          description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`,
+          client_id: id, contract_id: partialPayModal.contract_id,
+        });
       }
       toast({ title: `R$ ${fmt(val)} registrado!` });
     }
-    setPartialPayModal(null); inv("client-installments");
+    setPartialPayModal(null);
+    inv("client-installments"); inv("client-transactions");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 6. Estornar Pagamento
