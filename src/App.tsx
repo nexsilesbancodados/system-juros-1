@@ -100,12 +100,5 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
 
 export default App;
