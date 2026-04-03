@@ -5,11 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface TopBarProps {
-  onMenuClick?: () => void;
-}
-
-const TopBar = ({ onMenuClick }: TopBarProps) => {
+const TopBar = () => {
   const { user, profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
