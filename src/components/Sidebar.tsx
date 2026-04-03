@@ -83,6 +83,9 @@ const bottomItems: MenuItem[] = [
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [ferramentasOpen, setFerramentasOpen] = useState(
+    location.pathname.startsWith("/ferramentas")
+  );
 
   const isActive = (path: string) => location.pathname === path;
 
