@@ -4,7 +4,7 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard } from "lucide-react";
 
 const COLOR_PRESETS = [
   { label: "Âmbar", primary: "#d97706", accent: "#f59e0b" },
@@ -18,7 +18,7 @@ const COLOR_PRESETS = [
 ];
 
 const Configuracoes = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { refresh: refreshWhiteLabel } = useWhiteLabel();
@@ -48,20 +48,22 @@ const Configuracoes = () => {
 
   const [form, setForm] = useState({
     company_name: "", company_cnpj: "", company_logo_url: "",
-    primary_color: "#d97706", accent_color: "#f59e0b", theme_mode: "dark",
+    primary_color: "#4a86c8", accent_color: "#6ba3d6", theme_mode: "dark",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
+    pix_key: "", pix_key_type: "CPF", billing_message: "",
   });
 
   useEffect(() => {
     if (settings) {
-      setForm({
+      setForm(prev => ({
+        ...prev,
         company_name: settings.company_name || "",
         company_cnpj: settings.company_cnpj || "",
         company_logo_url: settings.company_logo_url || "",
-        primary_color: (settings as any).primary_color || "#d97706",
-        accent_color: (settings as any).accent_color || "#f59e0b",
+        primary_color: (settings as any).primary_color || "#4a86c8",
+        accent_color: (settings as any).accent_color || "#6ba3d6",
         theme_mode: (settings as any).theme_mode || "dark",
         default_interest_rate: String(settings.default_interest_rate || 10),
         default_late_fee: String(settings.default_late_fee || 2),
@@ -72,9 +74,20 @@ const Configuracoes = () => {
         whatsapp_instance: settings.whatsapp_instance || "",
         n8n_webhook_url: settings.n8n_webhook_url || "",
         push_notifications_enabled: settings.push_notifications_enabled || false,
-      });
+      }));
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (profile) {
+      setForm(prev => ({
+        ...prev,
+        pix_key: profile.pix_key || "",
+        pix_key_type: profile.pix_key_type || "CPF",
+        billing_message: profile.billing_message || "",
+      }));
+    }
+  }, [profile]);
 
   const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,6 +129,14 @@ const Configuracoes = () => {
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
       : await supabase.from("settings").insert(payload);
+
+    // Save PIX and billing message to profile
+    await supabase.from("profiles").update({
+      pix_key: form.pix_key.trim() || null,
+      pix_key_type: form.pix_key_type,
+      billing_message: form.billing_message.trim() || null,
+    }).eq("id", user.id);
+
     setSaving(false);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else {
@@ -151,6 +172,8 @@ const Configuracoes = () => {
   const tabs = [
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
+    { id: "pix", label: "PIX", icon: CreditCard },
+    { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
     { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
     { id: "templates", label: "Templates", icon: MessageSquare },
@@ -291,6 +314,82 @@ const Configuracoes = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="text-label mb-1.5 block">Nome da Empresa</label><input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Minha Empresa" className={inputCls} /></div>
               <div><label className="text-label mb-1.5 block">CNPJ</label><input value={form.company_cnpj} onChange={(e) => setForm({ ...form, company_cnpj: e.target.value })} placeholder="00.000.000/0001-00" className={inputCls} /></div>
+            </div>
+          </>
+        )}
+
+        {tab === "pix" && (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-success/8 flex items-center justify-center"><CreditCard size={16} className="text-success" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Chave PIX</h2>
+                <p className="text-xs text-muted-foreground">Configurar chave PIX para recebimentos</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-label mb-1.5 block">Tipo da Chave</label>
+                <select value={form.pix_key_type} onChange={(e) => setForm({ ...form, pix_key_type: e.target.value })} className={inputCls}>
+                  <option value="CPF">CPF</option>
+                  <option value="CNPJ">CNPJ</option>
+                  <option value="Email">Email</option>
+                  <option value="Telefone">Telefone</option>
+                  <option value="Aleatória">Chave Aleatória</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-label mb-1.5 block">Chave PIX</label>
+                <input value={form.pix_key} onChange={(e) => setForm({ ...form, pix_key: e.target.value })} placeholder="Sua chave PIX" className={inputCls} />
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-info/5 border border-info/20">
+              <p className="text-[11px] text-info">💡 A chave PIX será exibida no portal do cliente para facilitar o pagamento.</p>
+            </div>
+          </>
+        )}
+
+        {tab === "cobranca" && (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-warning/8 flex items-center justify-center"><MessageSquare size={16} className="text-warning" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Mensagem Padrão de Cobrança</h2>
+                <p className="text-xs text-muted-foreground">Mensagem enviada automaticamente nas cobranças</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Variáveis: <code className="text-primary font-mono bg-primary/5 px-1 rounded">[Nome da Empresa]</code> <code className="text-primary font-mono bg-primary/5 px-1 rounded">[Nome do Cliente]</code> <code className="text-primary font-mono bg-primary/5 px-1 rounded">[Valor da Parcela]</code>
+              </p>
+              <textarea
+                value={form.billing_message}
+                onChange={(e) => setForm({ ...form, billing_message: e.target.value })}
+                rows={5}
+                className={`${inputCls} resize-none`}
+                placeholder="[Nome da Empresa]: Sr(a) [Nome do Cliente], identificamos um atraso em sua parcela..."
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-label">Mensagens Prontas</p>
+              {[
+                { label: "Formal", text: "[Nome da Empresa]: Sr(a) [Nome do Cliente], identificamos um atraso em sua parcela de empréstimo. O valor pendente é de R$ [Valor da Parcela]. Por favor, entre em contato para regularizar." },
+                { label: "Amigável", text: "Olá [Nome do Cliente]! 😊 Aqui é da [Nome da Empresa]. Notamos que sua parcela de R$ [Valor da Parcela] ainda não foi paga. Podemos ajudar? Entre em contato conosco!" },
+                { label: "Urgente", text: "⚠️ [Nome da Empresa] informa: [Nome do Cliente], sua parcela de R$ [Valor da Parcela] está em atraso. Regularize imediatamente para evitar juros adicionais e restrições no seu CPF." },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => setForm({ ...form, billing_message: preset.text })}
+                  className={`w-full text-left p-3 rounded-xl border transition-colors ${
+                    form.billing_message === preset.text
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-border hover:border-primary/20 hover:bg-primary/5"
+                  }`}
+                >
+                  <p className="text-xs font-semibold text-foreground">{preset.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{preset.text}</p>
+                </button>
+              ))}
             </div>
           </>
         )}
