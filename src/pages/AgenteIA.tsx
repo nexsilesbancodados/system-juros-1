@@ -82,11 +82,7 @@ const AgenteIA = () => {
 
   // Check WhatsApp connection status on mount
   useEffect(() => {
-    if (!settings) return;
-    if (!settings.whatsapp_api_url || !settings.whatsapp_api_key) {
-      setWhatsappStatus("error");
-      return;
-    }
+    if (settings === undefined) return; // still loading
     checkStatus();
   }, [settings]);
 
@@ -251,7 +247,7 @@ const AgenteIA = () => {
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
   const totalConversas = messages.filter((m) => m.role === "user").length;
 
-  const hasApiConfig = settings?.whatsapp_api_url && settings?.whatsapp_api_key;
+  
 
   const StatusBadge = () => {
     const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
@@ -309,25 +305,7 @@ const AgenteIA = () => {
             )}
           </div>
 
-          {!hasApiConfig ? (
-            <div className="text-center py-10 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto">
-                <Settings size={28} className="text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-foreground font-medium">API Evolution não configurada</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Configure a URL e API Key da Evolution API nas Configurações para conectar o WhatsApp.
-                </p>
-              </div>
-              <button
-                onClick={() => navigate("/configuracoes")}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Ir para Configurações
-              </button>
-            </div>
-          ) : whatsappStatus === "connected" ? (
+          {whatsappStatus === "connected" ? (
             <div className="text-center py-10 space-y-4">
               <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
                 <CheckCircle2 size={40} className="text-green-500" />

@@ -35,23 +35,19 @@ serve(async (req) => {
       });
     }
 
-    // Get user's Evolution API settings
+    const DEFAULT_API_URL = "https://instaciasparalelas-evolution-api.y4cqrc.easypanel.host";
+    const DEFAULT_API_KEY = "429683C4C977415CAAFCCE10F7D57E11";
+
+    // Get user's Evolution API settings (fall back to defaults)
     const { data: settings } = await supabase
       .from("settings")
       .select("whatsapp_api_url, whatsapp_api_key, whatsapp_instance")
       .eq("user_id", user.id)
       .single();
 
-    if (!settings?.whatsapp_api_url || !settings?.whatsapp_api_key) {
-      return new Response(
-        JSON.stringify({ error: "Evolution API não configurada. Vá em Configurações > WhatsApp e preencha a URL e API Key." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const apiUrl = settings.whatsapp_api_url.replace(/\/$/, "");
-    const apiKey = settings.whatsapp_api_key;
-    const instanceName = settings.whatsapp_instance || `systemjuros_${user.id.substring(0, 8)}`;
+    const apiUrl = (settings?.whatsapp_api_url || DEFAULT_API_URL).replace(/\/$/, "");
+    const apiKey = settings?.whatsapp_api_key || DEFAULT_API_KEY;
+    const instanceName = settings?.whatsapp_instance || `systemjuros_${user.id.substring(0, 8)}`;
 
     const { action, ...body } = await req.json();
 
