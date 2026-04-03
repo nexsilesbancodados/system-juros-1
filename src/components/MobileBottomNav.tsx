@@ -19,7 +19,6 @@ const mainTabs = [
 const moreItems = [
   { label: "Análises", icon: BarChart3, path: "/analises" },
   { label: "Relatórios", icon: FileText, path: "/relatorios" },
-  { label: "Contratos", icon: FileSignature, path: "/contratos" },
   { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
   { label: "Lucros", icon: TrendingUp, path: "/lucros" },
   { label: "Gastos", icon: DollarSign, path: "/gastos" },
