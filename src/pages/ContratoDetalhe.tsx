@@ -35,6 +35,11 @@ const ContratoDetalhe = () => {
   const [notes, setNotes] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
 
+  useMultiTableRealtime(
+    ["contracts", "contract_installments"],
+    [["contract", id || ""], ["contract-installments", id || ""]],
+  );
+
   const { data: contract, isLoading } = useQuery({
     queryKey: ["contract", id],
     queryFn: async () => {

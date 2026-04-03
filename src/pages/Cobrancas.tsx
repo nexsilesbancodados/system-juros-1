@@ -19,6 +19,11 @@ const Cobrancas = () => {
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
 
+  useMultiTableRealtime(
+    ["contract_installments", "contracts"],
+    [["cobrancas-installments", user?.id || ""]],
+  );
+
   const { data: installments = [], isLoading: loading } = useQuery({
     queryKey: ["cobrancas-installments", user?.id],
     queryFn: async () => {
