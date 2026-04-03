@@ -743,9 +743,14 @@ const Cobradores = () => {
       <Dialog open={!!assignCobrancaModal} onOpenChange={() => { setAssignCobrancaModal(null); setCobrancaClientSearch(""); }}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign size={18} className="text-primary" />
-              Atribuir Cobranças
+            <DialogTitle className="flex items-center gap-3">
+              <div className="modal-icon modal-icon-primary">
+                <DollarSign size={18} />
+              </div>
+              <div>
+                <p className="text-lg font-bold">Atribuir Cobranças</p>
+                <p className="text-xs text-muted-foreground font-normal mt-0.5">Selecione clientes com cobranças pendentes</p>
+              </div>
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground -mt-2">
