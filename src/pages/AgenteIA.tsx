@@ -247,7 +247,7 @@ const AgenteIA = () => {
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
   const totalConversas = messages.filter((m) => m.role === "user").length;
 
-  const hasApiConfig = settings?.whatsapp_api_url && settings?.whatsapp_api_key;
+  
 
   const StatusBadge = () => {
     const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
