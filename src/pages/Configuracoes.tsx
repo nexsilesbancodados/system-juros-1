@@ -697,7 +697,7 @@ const Configuracoes = () => {
           </>
         )}
 
-
+        {tab === "mensagem" && (
           <>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-warning/8 flex items-center justify-center"><MessageSquare size={16} className="text-warning" /></div>
