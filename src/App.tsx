@@ -30,8 +30,6 @@ import Relatorios from "./pages/Relatorios.tsx";
 import Contratos from "./pages/Contratos.tsx";
 import NovoContrato from "./pages/NovoContrato.tsx";
 import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
-import MesaCobranca from "./pages/MesaCobranca.tsx";
-import Tesouraria from "./pages/Tesouraria.tsx";
 import Historico from "./pages/Historico.tsx";
 import Configuracoes from "./pages/Configuracoes.tsx";
 import Cobradores from "./pages/Cobradores.tsx";
@@ -62,7 +60,6 @@ const App = () => (
                 <Route path="/contratos" element={<Contratos />} />
                 <Route path="/novo-contrato" element={<NovoContrato />} />
                 <Route path="/contratos/:id" element={<ContratoDetalhe />} />
-                <Route path="/mesa-cobranca" element={<MesaCobranca />} />
                 <Route path="/cobrancas" element={<Cobrancas />} />
                 <Route path="/carteira" element={<Carteira />} />
                 <Route path="/lucros" element={<Lucros />} />
@@ -79,7 +76,6 @@ const App = () => (
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/relatorios" element={<Relatorios />} />
-                <Route path="/tesouraria" element={<Tesouraria />} />
                 <Route path="/historico" element={<Historico />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
                 <Route path="/cobradores" element={<Cobradores />} />
