@@ -208,24 +208,11 @@
 
   /* Microinteractions */
   .micro-bounce {
-    @apply transition-all duration-200 ease-out;
-  }
-  .micro-bounce:active {
-    transform: scale(0.97);
-  }
-  .micro-bounce:hover {
-    transform: translateY(-1px);
+    @apply transition-colors duration-150;
   }
 
   .micro-press {
-    @apply transition-all duration-200 ease-out;
-  }
-  .micro-press:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
-  }
-  .micro-press:active {
-    transform: translateY(1px) scale(0.98);
+    @apply transition-colors duration-150;
   }
 
   .hover-glow {
