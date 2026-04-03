@@ -1,164 +1,279 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  AlertCircle, Calendar, Landmark, TrendingUp, Users, Wallet, ArrowRight, HandCoins,
+  AlertCircle, Calendar, Landmark, TrendingUp, Users, Wallet, ArrowRight,
+  DollarSign, Percent, FileSignature, Clock, CheckCircle, BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [clients, setClients] = useState<any[]>([]);
-  const [profits, setProfits] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchAll = async () => {
-      const [c, p, e] = await Promise.all([
-        supabase.from("clients").select("*").eq("user_id", user.id),
-        supabase.from("profits").select("*").eq("user_id", user.id),
-        supabase.from("expenses").select("*").eq("user_id", user.id),
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-data", user?.id],
+    queryFn: async () => {
+      const [contracts, installments, clients, goals] = await Promise.all([
+        supabase.from("contracts").select("*, clients(name, cpf_cnpj)").eq("user_id", user!.id),
+        supabase.from("contract_installments").select("*").eq("user_id", user!.id),
+        supabase.from("clients").select("id, name, credit_score, status").eq("user_id", user!.id),
+        supabase.from("goals").select("*").eq("user_id", user!.id),
       ]);
-      setClients(c.data || []);
-      setProfits(p.data || []);
-      setExpenses(e.data || []);
-      setLoading(false);
-    };
-    fetchAll();
-  }, [user]);
-
-  const activeClients = clients.filter((c) => c.status === "Ativo");
-  const capitalNaRua = clients.reduce((acc, c) => {
-    const loan = c.loan as any;
-    if (loan?.amount) return acc + Number(loan.amount);
-    return acc;
-  }, 0);
-  const lucroTotal = profits.reduce((acc, p) => acc + Number(p.amount), 0);
-  const gastoTotal = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
-  const saldo = lucroTotal - gastoTotal;
-
-  const atrasados = clients.filter((c) => {
-    const loan = c.loan as any;
-    if (!loan?.first_due_date) return false;
-    return new Date(loan.first_due_date) < new Date() && (loan.paid_installments || 0) < (loan.installments || 1);
+      return {
+        contracts: contracts.data || [],
+        installments: installments.data || [],
+        clients: clients.data || [],
+        goals: goals.data || [],
+      };
+    },
+    enabled: !!user,
   });
 
-  const proximosVencimentos = clients.filter((c) => {
-    const loan = c.loan as any;
-    if (!loan?.first_due_date) return false;
-    const due = new Date(loan.first_due_date);
+  const metrics = useMemo(() => {
+    if (!data) return null;
+    const { contracts, installments, clients, goals } = data;
     const now = new Date();
+
+    const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
+    const capitalNaRua = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const completedContracts = contracts.filter((c: any) => c.status === "completed");
+    const lucroRecebido = completedContracts.reduce((s: number, c: any) => s + Number(c.total_interest), 0);
+    const lucroAReceber = activeContracts.reduce((s: number, c: any) => s + Number(c.total_interest), 0);
+
+    const totalInstallments = installments.length;
+    const overdueInstallments = installments.filter(
+      (i: any) => i.status === "pending" && new Date(i.due_date) < now
+    );
+    const paidInstallments = installments.filter((i: any) => i.status === "paid");
+    const taxaInadimplencia = totalInstallments > 0
+      ? (overdueInstallments.length / totalInstallments) * 100
+      : 0;
+
+    // Today's due
+    const todayStr = now.toISOString().split("T")[0];
+    const vencendoHoje = installments.filter(
+      (i: any) => i.status === "pending" && i.due_date.startsWith(todayStr)
+    );
+
+    // Next 7 days
     const in7days = new Date(now.getTime() + 7 * 86400000);
-    return due >= now && due <= in7days;
-  });
+    const proximos7 = installments.filter((i: any) => {
+      if (i.status !== "pending") return false;
+      const d = new Date(i.due_date);
+      return d > now && d <= in7days;
+    });
 
-  const totalAtrasado = atrasados.reduce((acc, c) => {
-    const loan = c.loan as any;
-    return acc + (Number(loan?.installment_value) || 0);
-  }, 0);
+    // Recent payments (last 10)
+    const recentPayments = paidInstallments
+      .sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
+      .slice(0, 8);
 
-  if (loading) {
+    // Overdue list with client info and days
+    const overdueList = overdueInstallments.map((i: any) => {
+      const contract = contracts.find((c: any) => c.id === i.contract_id);
+      const daysOverdue = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000);
+      return { ...i, clientName: contract?.clients?.name || "—", daysOverdue, contractId: i.contract_id };
+    }).sort((a: any, b: any) => b.daysOverdue - a.daysOverdue);
+
+    return {
+      capitalNaRua,
+      lucroRecebido,
+      lucroAReceber,
+      taxaInadimplencia,
+      contratosAtivos: activeContracts.length,
+      contratosAtraso: contracts.filter((c: any) => c.status === "overdue").length,
+      totalClientes: clients.length,
+      overdueCount: overdueInstallments.length,
+      vencendoHoje: vencendoHoje.length,
+      proximos7: proximos7.length,
+      overdueList,
+      recentPayments,
+      goals,
+      contracts,
+    };
+  }, [data]);
+
+  if (isLoading || !metrics) {
     return <div className="text-center py-12 text-muted-foreground">Carregando dados...</div>;
   }
 
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Painel de Controle</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Bem-vindo(a) de volta! Aqui está um resumo do seu negócio.
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Visão geral do seu negócio</p>
       </div>
 
-      {/* Attention */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-1">O Que Precisa da sua Atenção?</h2>
-        <p className="text-sm text-muted-foreground mb-4">Ações e pagamentos que necessitam de ação imediata.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className={`rounded-lg border p-4 ${atrasados.length > 0 ? "border-destructive/30 bg-destructive/5" : "border-border bg-accent/30"}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle size={20} className={atrasados.length > 0 ? "text-destructive" : "text-foreground"} />
-              <span className={`font-semibold text-sm ${atrasados.length > 0 ? "text-destructive" : "text-foreground"}`}>
-                {atrasados.length} Pagamento{atrasados.length !== 1 ? "s" : ""} Atrasado{atrasados.length !== 1 ? "s" : ""}
-              </span>
+      {/* Main Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { title: "Capital na Rua", value: `R$ ${fmt(metrics.capitalNaRua)}`, sub: "Total emprestado em contratos ativos", icon: <Landmark size={20} />, color: "text-foreground" },
+          { title: "Lucro Recebido", value: `R$ ${fmt(metrics.lucroRecebido)}`, sub: "Contratos já quitados", icon: <CheckCircle size={20} />, color: "text-emerald-500" },
+          { title: "Lucro a Receber", value: `R$ ${fmt(metrics.lucroAReceber)}`, sub: "Contratos ativos", icon: <TrendingUp size={20} />, color: "text-amber-500" },
+          { title: "Inadimplência", value: `${metrics.taxaInadimplencia.toFixed(1)}%`, sub: `${metrics.overdueCount} parcelas atrasadas`, icon: <Percent size={20} />, color: metrics.taxaInadimplencia > 20 ? "text-red-500" : "text-foreground" },
+        ].map((card) => (
+          <div key={card.title} className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{card.title}</span>
+              <span className="text-muted-foreground">{card.icon}</span>
             </div>
-            <p className="text-sm text-muted-foreground mb-3">Total de R$ {totalAtrasado.toFixed(2)} em aberto.</p>
-            <button className="flex items-center gap-1 text-sm font-medium text-foreground">Ver Cobranças <ArrowRight size={14} /></button>
+            <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>
           </div>
-          <div className="rounded-lg border border-border bg-accent/30 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar size={20} className="text-foreground" />
-              <span className="font-semibold text-sm text-foreground">{proximosVencimentos.length} Próximo{proximosVencimentos.length !== 1 ? "s" : ""} Vencimento{proximosVencimentos.length !== 1 ? "s" : ""}</span>
+        ))}
+      </div>
+
+      {/* Quick Counters */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Contratos Ativos", value: metrics.contratosAtivos, icon: <FileSignature size={16} />, color: "text-emerald-500" },
+          { label: "Em Atraso", value: metrics.contratosAtraso, icon: <AlertCircle size={16} />, color: "text-red-500" },
+          { label: "Clientes", value: metrics.totalClientes, icon: <Users size={16} />, color: "text-foreground" },
+          { label: "Parcelas Atrasadas", value: metrics.overdueCount, icon: <Clock size={16} />, color: "text-red-500" },
+        ].map((item) => (
+          <div key={item.label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+            <div className={`p-2 rounded-lg bg-accent ${item.color}`}>{item.icon}</div>
+            <div>
+              <p className={`text-xl font-bold ${item.color}`}>{item.value}</p>
+              <p className="text-xs text-muted-foreground">{item.label}</p>
             </div>
-            <p className="text-sm text-muted-foreground mb-3">Nos próximos 7 dias.</p>
-            <button className="flex items-center gap-1 text-sm font-medium text-foreground">Ver Cobranças <ArrowRight size={14} /></button>
           </div>
+        ))}
+      </div>
+
+      {/* Urgency Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={`rounded-xl border p-5 ${metrics.overdueCount > 0 ? "border-red-500/30 bg-red-500/5" : "border-border bg-card"}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle size={18} className={metrics.overdueCount > 0 ? "text-red-500" : "text-muted-foreground"} />
+            <span className={`font-semibold text-sm ${metrics.overdueCount > 0 ? "text-red-500" : "text-foreground"}`}>
+              {metrics.overdueCount} Atrasados
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">Parcelas com vencimento ultrapassado</p>
+        </div>
+        <div className={`rounded-xl border p-5 ${metrics.vencendoHoje > 0 ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-card"}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar size={18} className={metrics.vencendoHoje > 0 ? "text-amber-500" : "text-muted-foreground"} />
+            <span className={`font-semibold text-sm ${metrics.vencendoHoje > 0 ? "text-amber-500" : "text-foreground"}`}>
+              {metrics.vencendoHoje} Vencendo Hoje
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">Parcelas que vencem hoje</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={18} className="text-muted-foreground" />
+            <span className="font-semibold text-sm text-foreground">{metrics.proximos7} Próximos 7 dias</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Parcelas vencendo na próxima semana</p>
         </div>
       </div>
 
-      {/* Overview */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Visão Geral</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { title: "Capital na Rua", value: `R$ ${capitalNaRua.toFixed(2)}`, subtitle: "Total emprestado aos clientes", icon: <Landmark size={20} /> },
-            { title: "Lucro Total", value: `R$ ${lucroTotal.toFixed(2)}`, subtitle: "Total de lucros registrados", icon: <TrendingUp size={20} /> },
-            { title: "Clientes Ativos", value: String(activeClients.length), subtitle: "Clientes com contratos em aberto", icon: <Users size={20} /> },
-            { title: "Saldo em Caixa", value: `R$ ${saldo.toFixed(2)}`, subtitle: "Lucros - Gastos", icon: <Wallet size={20} /> },
-          ].map((card) => (
-            <div key={card.title} className="rounded-xl border border-border bg-card p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-muted-foreground">{card.title}</span>
-                <span className="text-muted-foreground">{card.icon}</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
+      {/* Two Columns: Overdue List + Recent Payments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Overdue List */}
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-foreground text-sm">Parcelas Atrasadas</h2>
+            <button onClick={() => navigate("/mesa-cobranca")} className="text-xs text-primary hover:underline flex items-center gap-1">
+              Ver todas <ArrowRight size={12} />
+            </button>
+          </div>
+          {metrics.overdueList.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma parcela atrasada 🎉</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {metrics.overdueList.slice(0, 6).map((item: any) => (
+                <div key={item.id} className="flex items-center gap-3 px-5 py-3 hover:bg-accent/30 cursor-pointer transition-colors" onClick={() => navigate(`/contratos/${item.contractId}`)}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{item.clientName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Parcela {item.installment_number} · R$ {fmt(Number(item.amount))}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 text-xs">
+                    {item.daysOverdue}d atraso
+                  </Badge>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+        </div>
+
+        {/* Recent Payments */}
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-foreground text-sm">Pagamentos Recentes</h2>
+          </div>
+          {metrics.recentPayments.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pagamento registrado</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {metrics.recentPayments.map((item: any) => {
+                const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
+                return (
+                  <div key={item.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                      <DollarSign size={14} className="text-emerald-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {contract?.clients?.name || "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Parcela {item.installment_number} · {item.paid_at ? new Date(item.paid_at).toLocaleDateString("pt-BR") : "—"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-500">
+                      +R$ {fmt(Number(item.paid_amount || item.amount))}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Recent clients */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Clientes Recentes</h2>
-        {clients.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-6 text-center">
-            <Users size={40} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm">Nenhum cliente cadastrado ainda.</p>
+      {/* Goals */}
+      {metrics.goals.length > 0 && (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+            <h2 className="font-semibold text-foreground text-sm">Metas</h2>
+            <button onClick={() => navigate("/ferramentas/metas")} className="text-xs text-primary hover:underline flex items-center gap-1">
+              Gerenciar <ArrowRight size={12} />
+            </button>
           </div>
-        ) : (
-          <div className="rounded-xl border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-accent/50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Nome</th>
-                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Empréstimo</th>
-                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Parcela</th>
-                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.slice(0, 5).map((c) => {
-                  const loan = c.loan as any;
-                  return (
-                    <tr key={c.id} className="border-t border-border">
-                      <td className="px-4 py-3 text-foreground">{c.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">R$ {Number(loan?.amount || 0).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">R$ {Number(loan?.installment_value || 0).toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${c.status === "Ativo" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"}`}>
-                          {c.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {metrics.goals.slice(0, 4).map((g: any) => {
+              const pct = Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100);
+              return (
+                <div key={g.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground">{g.description}</p>
+                    <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    R$ {fmt(Number(g.current_amount))} / R$ {fmt(Number(g.target_amount))}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
