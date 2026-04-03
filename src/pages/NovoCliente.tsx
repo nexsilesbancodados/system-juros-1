@@ -46,6 +46,8 @@ const NovoCliente = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
