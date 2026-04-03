@@ -13,7 +13,6 @@ interface SearchResult {
 
 const pages: SearchResult[] = [
   { type: "page", title: "Painel", path: "/dashboard" },
-  { type: "page", title: "Contratos", path: "/contratos" },
   { type: "page", title: "Clientes", path: "/clientes" },
   { type: "page", title: "Cobranças", path: "/cobrancas" },
   { type: "page", title: "Carteira", path: "/carteira" },
@@ -63,7 +62,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       setLoading(true);
       const [clientsRes, contractsRes] = await Promise.all([
         supabase.from("clients").select("id, name, cpf_cnpj").eq("user_id", user.id).or(`name.ilike.%${query}%,cpf_cnpj.ilike.%${query}%`).limit(5),
-        supabase.from("contracts").select("id, capital, clients(name)").eq("user_id", user.id).limit(5),
+        supabase.from("contracts").select("id, capital, client_id, clients(id, name)").eq("user_id", user.id).limit(5),
       ]);
 
       const clientResults: SearchResult[] = (clientsRes.data || []).map((c: any) => ({
@@ -73,7 +72,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       const contractResults: SearchResult[] = (contractsRes.data || [])
         .filter((c: any) => c.clients?.name?.toLowerCase().includes(q))
         .map((c: any) => ({
-          type: "contract", title: `Contrato - ${c.clients?.name}`, subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")}`, path: `/contratos/${c.id}`,
+          type: "client", title: `${c.clients?.name} — Contrato`, subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")}`, path: `/clientes/${c.clients?.id || ""}`,
         }));
 
       const combined = [...pageResults, ...clientResults, ...contractResults];

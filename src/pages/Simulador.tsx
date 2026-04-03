@@ -373,7 +373,7 @@ const Simulador = () => {
       {/* CTA to create contract */}
       {hasValue && (
         <button
-          onClick={() => navigate("/novo-contrato", { state: { valor, taxa, parcelas: calc?.numParcelas, loanMode, frequency, dailyMode } })}
+          onClick={() => navigate("/clientes/novo", { state: { valor, taxa, parcelas: calc?.numParcelas, loanMode, frequency, dailyMode } })}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground micro-press focus-ring animate-fade-in"
           style={{ background: "var(--gradient-button)" }}
         >

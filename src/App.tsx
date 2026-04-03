@@ -9,10 +9,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 
-// Eager-load the login page (first paint)
 import Index from "./pages/Index";
 
-// Lazy-load everything else
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -32,9 +30,6 @@ const Sobre = lazy(() => import("./pages/Sobre"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
-const Contratos = lazy(() => import("./pages/Contratos"));
-const NovoContrato = lazy(() => import("./pages/NovoContrato"));
-const ContratoDetalhe = lazy(() => import("./pages/ContratoDetalhe"));
 const Historico = lazy(() => import("./pages/Historico"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Cobradores = lazy(() => import("./pages/Cobradores"));
@@ -44,11 +39,12 @@ const AgenteIA = lazy(() => import("./pages/AgenteIA"));
 const CobradorExterno = lazy(() => import("./pages/CobradorExterno"));
 const Auditoria = lazy(() => import("./pages/Auditoria"));
 const ClienteDetalhe = lazy(() => import("./pages/ClienteDetalhe"));
+const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 min cache
+      staleTime: 1000 * 60 * 2,
       refetchOnWindowFocus: false,
     },
   },
@@ -79,9 +75,8 @@ const App = () => (
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/clientes/novo" element={<NovoCliente />} />
                   <Route path="/clientes/:id" element={<ClienteDetalhe />} />
-                  <Route path="/contratos" element={<Contratos />} />
-                  <Route path="/novo-contrato" element={<NovoContrato />} />
-                  <Route path="/contratos/:id" element={<ContratoDetalhe />} />
+                  {/* Redirect old contract routes to client detail */}
+                  <Route path="/contratos/:id" element={<ContractRedirect />} />
                   <Route path="/cobrancas" element={<Cobrancas />} />
                   <Route path="/carteira" element={<Carteira />} />
                   <Route path="/lucros" element={<Lucros />} />

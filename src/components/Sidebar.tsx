@@ -39,7 +39,6 @@ const sections: MenuSection[] = [
     sectionIcon: <Briefcase size={12} />,
     items: [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
-      { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
       { label: "Cobranças", icon: <Receipt size={18} />, path: "/cobrancas" },
       { label: "Cobradores", icon: <UserCheck size={18} />, path: "/cobradores" },
     ],
