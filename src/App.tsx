@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { WhiteLabelProvider } from "@/contexts/WhiteLabelContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 
