@@ -197,7 +197,7 @@ const Dashboard = () => {
                   <card.icon size={15} className={card.iconColor} />
                 </div>
               </div>
-              <p className={`text-headline text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
+              <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
             </div>
           </div>
         ))}
