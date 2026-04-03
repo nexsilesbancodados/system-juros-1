@@ -241,10 +241,10 @@ const Dashboard = () => {
         ].map((item, i) => (
           <div
             key={item.label}
-            className="glass-card rounded-2xl p-4 flex items-center gap-3 micro-press animate-fade-in"
+            className="premium-card p-4 flex items-center gap-3 micro-press animate-fade-in"
             style={{ animationDelay: `${(i + 4) * 60}ms` }}
           >
-            <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
+            <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
               <item.icon size={17} className={item.color} />
             </div>
             <div className="min-w-0">
