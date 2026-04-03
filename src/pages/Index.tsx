@@ -189,7 +189,7 @@ const Index = () => {
 
       {/* Footer */}
       <p className="relative z-10 text-white/20 text-[10px] mt-8 tracking-wider">
-        © 2025 URUS JURISTA · TODOS OS DIREITOS RESERVADOS
+        © 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS
       </p>
     </div>
   );

@@ -45,7 +45,7 @@ const Sobre = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground pb-4">
-        © 2026 Urus Jurista. Todos os direitos reservados.
+        © 2026 System Juros. Todos os direitos reservados.
       </div>
     </div>
   );

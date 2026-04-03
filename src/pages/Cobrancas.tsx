@@ -88,7 +88,7 @@ const Cobrancas = () => {
       .replace(/\{parcela\}/g, `${inst.installment_number}`)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
-      .replace(/\[Nome da Empresa\]/g, "Urus Jurista")
+      .replace(/\[Nome da Empresa\]/g, "System Juros")
       .replace(/Sr\(a\)\s*/g, "");
 
     const url = `https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`;

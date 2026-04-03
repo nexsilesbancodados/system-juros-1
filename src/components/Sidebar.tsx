@@ -113,12 +113,12 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       <div className="flex items-center justify-between px-4 py-5 border-b border-border">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <img src={eagleLogo} alt="Urus Jurista" width={30} height={30} className="rounded-full ring-1 ring-primary/20" />
-            <span className="font-display text-xs tracking-[0.2em] text-foreground">URUS JURISTA</span>
+            <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-1 ring-primary/20" />
+            <span className="font-display text-xs tracking-[0.2em] text-foreground">SYSTEM JUROS</span>
           </div>
         )}
         {collapsed && (
-          <img src={eagleLogo} alt="Urus Jurista" width={30} height={30} className="rounded-full ring-1 ring-primary/20 mx-auto" />
+          <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-1 ring-primary/20 mx-auto" />
         )}
       </div>
 
