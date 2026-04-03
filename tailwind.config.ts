@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         display: ['Cinzel', 'serif'],
         body: ['Inter', 'sans-serif'],
+        heading: ['Space Grotesk', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
