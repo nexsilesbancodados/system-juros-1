@@ -189,58 +189,114 @@ const AgenteIA = () => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const processQuery = (query: string): string => {
-    if (!dashData) return "Ainda carregando dados...";
-    const q = query.toLowerCase();
+  const buildContext = () => {
+    if (!dashData) return null;
     const { contracts, installments, clients } = dashData;
     const now = new Date();
+    const overdueInstallments = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
+    const activeContracts = contracts.filter((c: any) => c.status === "active");
+    const todayStr = now.toISOString().split("T")[0];
+    const dueToday = installments.filter((i: any) => i.status === "pending" && i.due_date?.startsWith(todayStr));
 
-    if (q.includes("quantos clientes") || q.includes("total de clientes")) {
-      return `Você tem **${clients.length}** clientes cadastrados. ${clients.filter((c: any) => c.status === "Ativo").length} ativos.`;
-    }
-    if (q.includes("quantos contratos") || q.includes("total de contratos")) {
-      const active = contracts.filter((c: any) => c.status === "active").length;
-      return `Você tem **${contracts.length}** contratos no total, sendo **${active}** ativos.`;
-    }
-    if (q.includes("inadimpl") || q.includes("atraso") || q.includes("atrasad")) {
-      const overdue = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
-      const total = overdue.reduce((s: number, i: any) => s + Number(i.amount), 0);
-      return `Há **${overdue.length}** parcelas atrasadas, totalizando **R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}**.`;
-    }
-    if (q.includes("capital") || q.includes("emprestado")) {
-      const capital = contracts.filter((c: any) => c.status === "active" || c.status === "overdue").reduce((s: number, c: any) => s + Number(c.capital), 0);
-      return `O capital na rua é de **R$ ${capital.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}**.`;
-    }
-    if (q.includes("lucro") || q.includes("juros")) {
-      const lucro = contracts.reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0);
-      return `O total de juros/lucro dos contratos é **R$ ${lucro.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}**.`;
-    }
-    if (q.includes("parcela") && (q.includes("hoje") || q.includes("vence"))) {
-      const todayStr = now.toISOString().split("T")[0];
-      const today = installments.filter((i: any) => i.status === "pending" && i.due_date.startsWith(todayStr));
-      return today.length > 0 ? `Há **${today.length}** parcelas vencendo hoje.` : "Nenhuma parcela vence hoje.";
-    }
-    if (q.includes("enviar") && q.includes("cobran")) {
-      if (whatsappStatus !== "connected") return "⚠️ O WhatsApp não está conectado. Vá na aba **WhatsApp** para conectar primeiro.";
-      const overdue = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
-      if (overdue.length === 0) return "✅ Nenhuma parcela atrasada para cobrar!";
-      return `Há **${overdue.length}** parcelas atrasadas. Use o Bot de Cobranças nas **Configurações** para envio automático, ou envie manualmente pela aba WhatsApp.`;
-    }
-    return "Posso responder sobre:\n- **Clientes** (quantos, buscar)\n- **Contratos** (quantos, ativos)\n- **Parcelas** (atrasadas, vencendo hoje)\n- **Capital na rua**\n- **Lucros/Juros**\n- **Enviar cobranças** via WhatsApp\n\nTente: \"Quantos contratos ativos?\" ou \"Parcelas atrasadas\"";
+    return {
+      totalClients: clients.length,
+      activeClients: clients.filter((c: any) => c.status === "Ativo").length,
+      totalContracts: contracts.length,
+      activeContracts: activeContracts.length,
+      overdueCount: overdueInstallments.length,
+      overdueAmount: overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount), 0).toFixed(2),
+      capitalOnStreet: activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0).toFixed(2),
+      totalProfit: contracts.reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0).toFixed(2),
+      dueTodayCount: dueToday.length,
+      clientsList: clients.slice(0, 20).map((c: any) => `- ${c.name} (Score: ${c.credit_score}, Status: ${c.status})`).join("\n"),
+      overdueDetails: overdueInstallments.slice(0, 15).map((i: any) => `- Parcela ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} venc. ${new Date(i.due_date).toLocaleDateString("pt-BR")}`).join("\n"),
+    };
   };
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
     const userMsg: Message = { role: "user", content: input, timestamp: new Date() };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput("");
     setLoading(true);
 
-    setTimeout(() => {
-      const response = processQuery(userMsg.content);
-      setMessages((prev) => [...prev, { role: "assistant", content: response, timestamp: new Date() }]);
+    const context = buildContext();
+    const apiMessages = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sem sessão");
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ messages: apiMessages, context }),
+        }
+      );
+
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.error || "Erro na API");
+      }
+
+      // Stream response
+      const reader = resp.body!.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      let textBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant") {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+                }
+                return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date() }];
+              });
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      if (!assistantContent) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Desculpe, não consegui processar sua pergunta. Tente novamente.", timestamp: new Date() }]);
+      }
+    } catch (err: any) {
+      console.error("Chat error:", err);
+      setMessages((prev) => [...prev, { role: "assistant", content: `❌ Erro: ${err.message}`, timestamp: new Date() }]);
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const now = new Date();
