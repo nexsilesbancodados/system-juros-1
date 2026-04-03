@@ -62,6 +62,12 @@ const Dashboard = () => {
       ? (overdueInstallments.length / totalInstallments) * 100
       : 0;
 
+    // Total received from paid installments
+    const totalReceived = paidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+
+    // Overdue amount
+    const totalOverdueAmount = overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+
     const todayStr = now.toISOString().split("T")[0];
     const vencendoHoje = installments.filter(
       (i: any) => i.status === "pending" && i.due_date.startsWith(todayStr)
@@ -101,8 +107,13 @@ const Dashboard = () => {
     // Total profit from profits table
     const totalProfitAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
 
+    // ROI
+    const totalCapitalEver = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const roi = totalCapitalEver > 0 ? ((totalProfitAmount / totalCapitalEver) * 100) : 0;
+
     return {
       capitalNaRua, lucroRecebido, lucroAReceber, taxaInadimplencia,
+      totalReceived, totalOverdueAmount, roi,
       contratosAtivos: activeContracts.length,
       contratosAtraso: contracts.filter((c: any) => c.status === "overdue").length,
       totalClientes: clients.length,
