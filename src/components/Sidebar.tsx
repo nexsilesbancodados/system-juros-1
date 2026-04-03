@@ -48,6 +48,7 @@ const iconColorMap: Record<string, string> = {
   "/qrcode": "text-cyan-400",
   "/historico": "text-slate-400",
   "/auditoria": "text-red-300",
+  "/automacoes": "text-amber-400",
   "/configuracoes": "text-zinc-400",
   "/admin": "text-amber-300",
   "/sobre": "text-blue-300",
