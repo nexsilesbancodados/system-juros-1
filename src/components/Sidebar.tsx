@@ -7,6 +7,7 @@ import {
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
   FileText, Crown, FileSignature, ClipboardList,
   Settings, Bot, QrCode, UserCheck, Shield,
+  Briefcase, PieChart, Cog, Sparkles,
 } from "lucide-react";
 
 interface MenuItem {
@@ -17,13 +18,16 @@ interface MenuItem {
 
 interface MenuSection {
   title: string;
+  sectionIcon?: React.ReactNode;
   items: MenuItem[];
   collapsible?: boolean;
+  defaultOpen?: boolean;
 }
 
 const sections: MenuSection[] = [
   {
-    title: "Início",
+    title: "Visão Geral",
+    sectionIcon: <PieChart size={12} />,
     items: [
       { label: "Painel", icon: <LayoutDashboard size={18} />, path: "/dashboard" },
       { label: "Análises", icon: <BarChart3 size={18} />, path: "/analises" },
@@ -31,7 +35,8 @@ const sections: MenuSection[] = [
     ],
   },
   {
-    title: "Operacional",
+    title: "Gestão",
+    sectionIcon: <Briefcase size={12} />,
     items: [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
       { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
@@ -41,6 +46,7 @@ const sections: MenuSection[] = [
   },
   {
     title: "Financeiro",
+    sectionIcon: <DollarSign size={12} />,
     items: [
       { label: "Carteira", icon: <Wallet size={18} />, path: "/carteira" },
       { label: "Lucros", icon: <TrendingUp size={18} />, path: "/lucros" },
@@ -49,7 +55,9 @@ const sections: MenuSection[] = [
   },
   {
     title: "Ferramentas",
+    sectionIcon: <Sparkles size={12} />,
     collapsible: true,
+    defaultOpen: false,
     items: [
       { label: "Agente IA", icon: <Bot size={18} />, path: "/agente-ia" },
       { label: "Simulador", icon: <Calculator size={18} />, path: "/ferramentas/simulador" },
@@ -63,6 +71,9 @@ const sections: MenuSection[] = [
   },
   {
     title: "Sistema",
+    sectionIcon: <Cog size={12} />,
+    collapsible: true,
+    defaultOpen: false,
     items: [
       { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
       { label: "Auditoria", icon: <Shield size={18} />, path: "/auditoria" },
@@ -86,7 +97,8 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
     const initial: Record<string, boolean> = {};
     sections.forEach((s) => {
       if (s.collapsible) {
-        initial[s.title] = s.items.some((i) => location.pathname === i.path || location.pathname.startsWith(i.path + "/"));
+        const hasActive = s.items.some((i) => location.pathname === i.path || location.pathname.startsWith(i.path + "/"));
+        initial[s.title] = hasActive || (s.defaultOpen ?? false);
       }
     });
     return initial;
@@ -118,6 +130,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
 
   const renderSection = (section: MenuSection) => {
     const isOpen = section.collapsible ? openSections[section.title] : true;
+    const sectionHasActive = section.items.some((i) => isActive(i.path));
 
     return (
       <div key={section.title}>
@@ -125,29 +138,30 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <button
             onClick={() => !collapsed && toggleSection(section.title)}
             title={collapsed ? section.title : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200 micro-bounce ${
-              collapsed ? "justify-center px-2" : ""
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 micro-bounce ${
+              sectionHasActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            } hover:bg-accent/30 ${collapsed ? "justify-center px-2" : ""}`}
           >
-            <Wrench size={18} className="shrink-0" />
+            {section.sectionIcon && <span className="shrink-0 opacity-60">{section.sectionIcon}</span>}
             {!collapsed && <span>{section.title}</span>}
             {!collapsed && (
               <ChevronDown
-                size={14}
-                className={`ml-auto transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                size={13}
+                className={`ml-auto transition-transform duration-300 opacity-50 ${isOpen ? "rotate-180" : ""}`}
               />
             )}
           </button>
         ) : (
           !collapsed && (
-            <p className="text-label px-3 mb-1.5">
-              {section.title}
-            </p>
+            <div className="flex items-center gap-2 px-3 mb-1.5">
+              {section.sectionIcon && <span className="text-muted-foreground/50">{section.sectionIcon}</span>}
+              <p className="text-label">{section.title}</p>
+            </div>
           )
         )}
 
         {isOpen && (
-          <div className={`space-y-0.5 ${section.collapsible && !collapsed ? "ml-2 mt-0.5" : ""}`}>
+          <div className={`space-y-0.5 ${section.collapsible && !collapsed ? "ml-1 mt-0.5 pl-2 border-l border-border/30" : ""}`}>
             {section.items.map(renderItem)}
           </div>
         )}
@@ -183,10 +197,10 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       </button>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-3">
         {sections.map((section, idx) => (
           <div key={section.title}>
-            {idx > 0 && <div className="border-t border-border/30 mb-3" />}
+            {idx > 0 && <div className="border-t border-border/20 mb-3" />}
             {renderSection(section)}
           </div>
         ))}
