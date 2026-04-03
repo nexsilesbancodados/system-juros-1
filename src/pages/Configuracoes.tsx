@@ -48,10 +48,11 @@ const Configuracoes = () => {
 
   const [form, setForm] = useState({
     company_name: "", company_cnpj: "", company_logo_url: "",
-    primary_color: "#d97706", accent_color: "#f59e0b", theme_mode: "dark",
+    primary_color: "#4a86c8", accent_color: "#6ba3d6", theme_mode: "dark",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
+    pix_key: "", pix_key_type: "CPF", billing_message: "",
   });
 
   useEffect(() => {
