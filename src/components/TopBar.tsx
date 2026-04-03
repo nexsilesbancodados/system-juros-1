@@ -1,5 +1,6 @@
-import { Bell, Wallet, TrendingUp, LogOut, Menu, User } from "lucide-react";
+import { Bell, Wallet, TrendingUp, LogOut, Menu, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,7 @@ interface TopBarProps {
 
 const TopBar = ({ onMenuClick }: TopBarProps) => {
   const { user, profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -72,6 +74,14 @@ const TopBar = ({ onMenuClick }: TopBarProps) => {
         <TrendingUp size={16} />
         <span>R$ {Number(profile?.profit_balance || 0).toFixed(2)}</span>
       </div>
+
+      <button
+        onClick={toggleTheme}
+        className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground"
+        title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+      >
+        {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
 
       <div className="relative">
         <button
