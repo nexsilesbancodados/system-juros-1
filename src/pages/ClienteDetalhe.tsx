@@ -873,7 +873,9 @@ const ClienteDetalhe = () => {
             <Send size={15} /> Cobrar Atrasadas ({overdueInst.length})
           </button>
         )}
-      {/* Tabs */}
+      </div>
+
+
       <div className="flex gap-1 bg-muted/50 rounded-2xl p-1 animate-fade-in" style={{ animationDelay: "200ms" }}>
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
