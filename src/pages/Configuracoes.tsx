@@ -169,6 +169,7 @@ const Configuracoes = () => {
       footer_text: form.footer_text || null,
       border_radius: form.border_radius,
       font_family: form.font_family,
+      default_interest_rate: parseFloat(form.default_interest_rate),
       default_late_fee: parseFloat(form.default_late_fee),
       default_daily_interest: parseFloat(form.default_daily_interest),
       default_frequency: form.default_frequency,
