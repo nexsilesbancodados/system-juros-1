@@ -77,7 +77,6 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/historico" element={<Historico />} />
-                <Route path="/historico" element={<Historico />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
                 <Route path="/cobradores" element={<Cobradores />} />
                 <Route path="/portal-cliente" element={<PortalCliente />} />
