@@ -14,7 +14,6 @@ interface SearchResult {
 const pages: SearchResult[] = [
   { type: "page", title: "Painel", path: "/dashboard" },
   { type: "page", title: "Clientes", path: "/clientes" },
-  { type: "page", title: "Clientes", path: "/clientes" },
   { type: "page", title: "Cobranças", path: "/cobrancas" },
   { type: "page", title: "Carteira", path: "/carteira" },
   { type: "page", title: "Análises", path: "/analises" },
