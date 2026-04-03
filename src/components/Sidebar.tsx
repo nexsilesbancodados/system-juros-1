@@ -65,9 +65,10 @@ const ferramentasItems: MenuItem[] = [
 
 const bottomItems: MenuItem[] = [
   { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
+  { label: "QR Code", icon: <QrCode size={18} />, path: "/qrcode" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
-  { label: "Network", icon: <Network size={18} />, path: "/network" },
+  { label: "Configurações", icon: <Settings size={18} />, path: "/configuracoes" },
   { label: "Admin", icon: <Crown size={18} />, path: "/admin" },
   { label: "Sobre", icon: <Info size={18} />, path: "/sobre" },
 ];
