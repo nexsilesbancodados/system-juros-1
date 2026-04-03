@@ -404,8 +404,8 @@ const Dashboard = () => {
         <div className="premium-card overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
-                <Activity size={14} className="text-success" />
+              <div className="w-8 h-8 rounded-2xl bg-success/10 flex items-center justify-center">
+                <Activity size={15} className="text-success" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Pagamentos Recentes</h2>
             </div>
