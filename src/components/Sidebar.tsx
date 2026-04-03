@@ -17,6 +17,12 @@ import {
   Database,
   Network,
   Info,
+  Target,
+  Calculator,
+  CheckSquare,
+  StickyNote,
+  Table,
+  ChevronDown,
 } from "lucide-react";
 
 interface MenuItem {
