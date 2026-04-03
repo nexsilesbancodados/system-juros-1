@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, FileText, Calendar, DollarSign, X, TrendingUp, AlertCircle, FileSignature, ArrowUpDown, ChevronRight, CheckCircle, Clock, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   active: { label: "Ativo", cls: "bg-success/10 text-success border-success/20" },

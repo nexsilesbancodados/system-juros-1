@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
