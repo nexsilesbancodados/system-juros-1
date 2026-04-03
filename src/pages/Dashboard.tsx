@@ -62,6 +62,12 @@ const Dashboard = () => {
       ? (overdueInstallments.length / totalInstallments) * 100
       : 0;
 
+    // Total received from paid installments
+    const totalReceived = paidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+
+    // Overdue amount
+    const totalOverdueAmount = overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+
     const todayStr = now.toISOString().split("T")[0];
     const vencendoHoje = installments.filter(
       (i: any) => i.status === "pending" && i.due_date.startsWith(todayStr)
@@ -101,8 +107,13 @@ const Dashboard = () => {
     // Total profit from profits table
     const totalProfitAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
 
+    // ROI
+    const totalCapitalEver = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const roi = totalCapitalEver > 0 ? ((totalProfitAmount / totalCapitalEver) * 100) : 0;
+
     return {
       capitalNaRua, lucroRecebido, lucroAReceber, taxaInadimplencia,
+      totalReceived, totalOverdueAmount, roi,
       contratosAtivos: activeContracts.length,
       contratosAtraso: contracts.filter((c: any) => c.status === "overdue").length,
       totalClientes: clients.length,
@@ -148,31 +159,33 @@ const Dashboard = () => {
       valueColor: "text-foreground",
     },
     {
-      title: "Lucro Recebido",
-      value: `R$ ${fmt(metrics.lucroRecebido)}`,
-      icon: CheckCircle,
+      title: "Total Recebido",
+      value: `R$ ${fmt(metrics.totalReceived)}`,
+      icon: Wallet,
       accent: "from-success/20 to-success/5",
       iconBg: "bg-success/10",
       iconColor: "text-success",
       valueColor: "text-success",
     },
     {
-      title: "Lucro a Receber",
-      value: `R$ ${fmt(metrics.lucroAReceber)}`,
+      title: "Lucro Gerado",
+      value: `R$ ${fmt(metrics.totalProfitAmount)}`,
       icon: TrendingUp,
-      accent: "from-warning/20 to-warning/5",
-      iconBg: "bg-warning/10",
-      iconColor: "text-warning",
-      valueColor: "text-warning",
+      accent: "from-primary/20 to-primary/5",
+      iconBg: "bg-primary/10",
+      iconColor: "text-primary",
+      valueColor: "text-primary",
+      sub: `ROI: ${metrics.roi.toFixed(1)}%`,
     },
     {
-      title: "Inadimplência",
-      value: `${metrics.taxaInadimplencia.toFixed(1)}%`,
-      icon: Percent,
-      accent: metrics.taxaInadimplencia > 20 ? "from-destructive/20 to-destructive/5" : "from-muted/30 to-muted/10",
-      iconBg: metrics.taxaInadimplencia > 20 ? "bg-destructive/10" : "bg-muted/30",
-      iconColor: metrics.taxaInadimplencia > 20 ? "text-destructive" : "text-muted-foreground",
-      valueColor: metrics.taxaInadimplencia > 20 ? "text-destructive" : "text-foreground",
+      title: "Em Atraso",
+      value: `R$ ${fmt(metrics.totalOverdueAmount)}`,
+      icon: AlertCircle,
+      accent: metrics.totalOverdueAmount > 0 ? "from-destructive/20 to-destructive/5" : "from-muted/30 to-muted/10",
+      iconBg: metrics.totalOverdueAmount > 0 ? "bg-destructive/10" : "bg-muted/30",
+      iconColor: metrics.totalOverdueAmount > 0 ? "text-destructive" : "text-muted-foreground",
+      valueColor: metrics.totalOverdueAmount > 0 ? "text-destructive" : "text-foreground",
+      sub: `${metrics.taxaInadimplencia.toFixed(1)}% inadimplência`,
     },
   ];
 
@@ -226,6 +239,9 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
+              {(card as any).sub && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{(card as any).sub}</p>
+              )}
             </div>
           </div>
         ))}
