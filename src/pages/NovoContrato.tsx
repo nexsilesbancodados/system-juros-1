@@ -349,10 +349,6 @@ const NovoContrato = () => {
               <input type="number" value={capital} onChange={(e) => setCapital(e.target.value)} placeholder="1000.00" className={inputCls} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
-              <input type="number" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} placeholder="10" className={inputCls} />
-            </div>
-            <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº de Parcelas</label>
               <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder="12" className={inputCls} />
             </div>
@@ -369,12 +365,12 @@ const NovoContrato = () => {
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa por Atraso (%)</label>
-              <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} className={inputCls} />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
+              <input type="number" step="0.01" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className={inputCls} />
             </div>
-            <div className="col-span-2">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Juros por Dia de Atraso (%)</label>
-              <input type="number" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} className={inputCls} step="0.01" />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
+              <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={inputCls} />
             </div>
           </div>
 
