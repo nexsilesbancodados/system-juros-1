@@ -16,6 +16,11 @@ const Index = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { config } = useWhiteLabel();
+  const logoSrc = config.companyLogo || eagleLogo;
+  const brandTitle = config.loginTitle || config.companyName || "SYSTEM JUROS";
+  const brandSubtitle = config.loginSubtitle || "SISTEMA DE GESTÃO DE EMPRÉSTIMOS";
+  const footerText = config.footerText || "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
