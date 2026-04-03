@@ -82,7 +82,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Track which collapsible sections are open
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     sections.forEach((s) => {
@@ -104,13 +103,13 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       key={item.path}
       onClick={() => navigate(item.path)}
       title={collapsed ? item.label : undefined}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 group ${
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 micro-bounce group ${
         isActive(item.path)
-          ? "bg-primary/10 text-primary shadow-sm"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+          ? "glass-card text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
       } ${collapsed ? "justify-center px-2" : ""}`}
     >
-      <span className={`shrink-0 transition-colors ${isActive(item.path) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`}>
+      <span className={`shrink-0 transition-colors duration-200 ${isActive(item.path) ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
         {item.icon}
       </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
@@ -126,7 +125,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <button
             onClick={() => !collapsed && toggleSection(section.title)}
             title={collapsed ? section.title : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200 micro-bounce ${
               collapsed ? "justify-center px-2" : ""
             }`}
           >
@@ -135,13 +134,13 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
             {!collapsed && (
               <ChevronDown
                 size={14}
-                className={`ml-auto transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                className={`ml-auto transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
               />
             )}
           </button>
         ) : (
           !collapsed && (
-            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em] px-3 mb-1.5">
+            <p className="text-label px-3 mb-1.5">
               {section.title}
             </p>
           )
@@ -158,12 +157,12 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-50 transition-all duration-300 ${
+      className={`fixed left-0 top-0 h-screen glass-strong flex flex-col z-50 transition-all duration-300 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
         {!collapsed ? (
           <div className="flex items-center gap-2.5">
             <img src={eagleLogo} alt="System Juros" width={28} height={28} className="rounded-full ring-1 ring-primary/20" />
@@ -177,7 +176,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       {/* Collapse toggle */}
       <button
         onClick={onToggleCollapse}
-        className="absolute -right-3 top-16 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm"
+        className="absolute -right-3 top-16 w-6 h-6 rounded-full glass-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-200 micro-bounce"
         title={collapsed ? "Expandir" : "Minimizar"}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -187,7 +186,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
         {sections.map((section, idx) => (
           <div key={section.title}>
-            {idx > 0 && <div className="border-t border-border mb-3" />}
+            {idx > 0 && <div className="border-t border-border/30 mb-3" />}
             {renderSection(section)}
           </div>
         ))}
