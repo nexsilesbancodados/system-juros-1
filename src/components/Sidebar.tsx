@@ -6,6 +6,7 @@ import {
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
   FileText, Crown, FileSignature, PhoneCall, Landmark, ClipboardList,
+  Settings, Bot, QrCode, UserCheck,
 } from "lucide-react";
 
 interface MenuItem {
