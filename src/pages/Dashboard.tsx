@@ -214,15 +214,15 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative bento-item glass-card overflow-hidden micro-press animate-fade-in"
+            className="group relative glow-card overflow-hidden micro-press card-shine animate-fade-in"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-60`} />
-            <div className="p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
+            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-80`} />
+            <div className="relative z-10 p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>
-                <div className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
-                  <card.icon size={15} className={card.iconColor} />
+                <div className={`w-9 h-9 rounded-2xl ${card.iconBg} flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
+                  <card.icon size={16} className={card.iconColor} />
                 </div>
               </div>
               <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
