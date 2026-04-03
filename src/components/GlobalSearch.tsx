@@ -62,7 +62,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       setLoading(true);
       const [clientsRes, contractsRes] = await Promise.all([
         supabase.from("clients").select("id, name, cpf_cnpj").eq("user_id", user.id).or(`name.ilike.%${query}%,cpf_cnpj.ilike.%${query}%`).limit(5),
-        supabase.from("contracts").select("id, capital, clients(name)").eq("user_id", user.id).limit(5),
+        supabase.from("contracts").select("id, capital, client_id, clients(id, name)").eq("user_id", user.id).limit(5),
       ]);
 
       const clientResults: SearchResult[] = (clientsRes.data || []).map((c: any) => ({
