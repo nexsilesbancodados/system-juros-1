@@ -11,6 +11,7 @@ import {
   Briefcase, PieChart, Cog, Sparkles, LogOut, User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 
 interface MenuItem {
   label: string;

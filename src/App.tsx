@@ -64,6 +64,7 @@ const App = () => (
       <Sonner />
       <ThemeProvider>
         <AuthProvider>
+          <WhiteLabelProvider>
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -76,7 +77,6 @@ const App = () => (
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/clientes/novo" element={<NovoCliente />} />
                   <Route path="/clientes/:id" element={<ClienteDetalhe />} />
-                  {/* Redirect old contract routes to client detail */}
                   <Route path="/contratos/:id" element={<ContractRedirect />} />
                   <Route path="/cobrancas" element={<Cobrancas />} />
                   <Route path="/carteira" element={<Carteira />} />
@@ -103,6 +103,7 @@ const App = () => (
               </Routes>
             </Suspense>
           </BrowserRouter>
+          </WhiteLabelProvider>
         </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
