@@ -213,7 +213,7 @@ const Clientes = () => {
               className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 cursor-pointer transition-all group relative">
               {/* Delete button */}
               <button onClick={(e) => handleDelete(c.id, e)}
-                className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                className="absolute top-3 right-3 icon-action-sm opacity-0 group-hover:opacity-100 hover:!bg-destructive/10 hover:!text-destructive transition-all"
                 title="Excluir">
                 <Trash2 size={13} />
               </button>
