@@ -1,22 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, Filter, CalendarDays } from "lucide-react";
+import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-
-interface Installment {
-  id: string;
-  client_id: string;
-  installment_number: number;
-  amount: number;
-  due_date: string;
-  paid_at: string | null;
-  status: string;
-  client_name?: string;
-  client_phone?: string;
-}
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -24,38 +13,90 @@ const Cobrancas = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [installments, setInstallments] = useState<Installment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | "pending" | "overdue" | "paid">("all");
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
 
-  const fetchInstallments = async () => {
-    if (!user) return;
-    const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp").eq("user_id", user.id);
-    const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone }]));
+  const { data: installments = [], isLoading: loading } = useQuery({
+    queryKey: ["cobrancas-installments", user?.id],
+    queryFn: async () => {
+      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp").eq("user_id", user!.id);
+      const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone }]));
 
-    const { data } = await supabase.from("installments").select("*").eq("user_id", user.id).order("due_date", { ascending: true });
+      const { data } = await supabase
+        .from("contract_installments")
+        .select("*, contracts(capital, frequency, interest_rate)")
+        .eq("user_id", user!.id)
+        .order("due_date", { ascending: true });
 
-    const enriched = (data || []).map((inst: any) => {
-      const client = clientMap.get(inst.client_id);
-      const isOverdue = inst.status === "pending" && new Date(inst.due_date) < new Date();
-      return { ...inst, status: isOverdue ? "overdue" : inst.status, client_name: client?.name || "—", client_phone: client?.phone || null };
-    });
-
-    setInstallments(enriched);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchInstallments(); }, [user]);
+      const now = new Date();
+      return (data || []).map((inst: any) => {
+        const client = clientMap.get(inst.client_id);
+        const isOverdue = inst.status === "pending" && new Date(inst.due_date) < now;
+        return {
+          ...inst,
+          status: isOverdue ? "overdue" : inst.status,
+          client_name: client?.name || "—",
+          client_phone: client?.phone || null,
+        };
+      });
+    },
+    enabled: !!user,
+  });
 
   const handleMarkPaid = async (id: string) => {
-    const { error } = await supabase.from("installments").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); }
-    else { toast({ title: "✓ Parcela marcada como paga!" }); setConfirmPayId(null); fetchInstallments(); }
+    const inst = installments.find((i: any) => i.id === id);
+    if (!inst || !user) return;
+
+    const { error } = await supabase.from("contract_installments").update({
+      status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount,
+    }).eq("id", id);
+
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Register profit (interest portion)
+    const contract = inst.contracts;
+    if (contract) {
+      const interestRate = Number(contract.interest_rate || 0) / 100;
+      const interestPortion = Number(inst.amount) * (interestRate / (1 + interestRate));
+      if (interestPortion > 0) {
+        await supabase.from("profits").insert({
+          user_id: user.id, amount: interestPortion,
+          description: `Juros parcela #${inst.installment_number} - ${inst.client_name}`,
+          client_id: inst.client_id,
+        });
+      }
+    }
+
+    // Register transaction
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: Number(inst.amount), type: "payment",
+      description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
+      client_id: inst.client_id, contract_id: inst.contract_id,
+    });
+
+    // Check if all installments for this contract are paid
+    const { data: remaining } = await supabase
+      .from("contract_installments")
+      .select("id")
+      .eq("contract_id", inst.contract_id)
+      .neq("status", "paid");
+
+    if (remaining && remaining.length === 0) {
+      await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
+    }
+
+    toast({ title: "✓ Parcela marcada como paga!" });
+    setConfirmPayId(null);
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
-  const handleWhatsApp = (inst: Installment) => {
+  const handleWhatsApp = (inst: any) => {
     if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
     const phone = inst.client_phone.replace(/\D/g, "");
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize.`;
@@ -69,13 +110,13 @@ const Cobrancas = () => {
   };
 
   const handleBulkWhatsApp = () => {
-    const overdue = filtered.filter(i => i.status === "overdue");
+    const overdue = filtered.filter((i: any) => i.status === "overdue");
     if (!overdue.length) { toast({ title: "Nenhuma parcela atrasada" }); return; }
     handleWhatsApp(overdue[0]);
     if (overdue.length > 1) toast({ title: `${overdue.length - 1} cobrança(s) restantes`, description: "Envie uma por uma clicando no botão Cobrar." });
   };
 
-  const filtered = installments.filter((inst) => {
+  const filtered = installments.filter((inst: any) => {
     if (filter !== "all" && inst.status !== filter) return false;
     if (search && !inst.client_name?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -83,17 +124,16 @@ const Cobrancas = () => {
 
   const stats = {
     total: installments.length,
-    pending: installments.filter((i) => i.status === "pending").length,
-    overdue: installments.filter((i) => i.status === "overdue").length,
-    paid: installments.filter((i) => i.status === "paid").length,
-    totalPending: installments.filter((i) => i.status === "pending" || i.status === "overdue").reduce((acc, i) => acc + Number(i.amount), 0),
-    totalOverdue: installments.filter((i) => i.status === "overdue").reduce((acc, i) => acc + Number(i.amount), 0),
+    pending: installments.filter((i: any) => i.status === "pending").length,
+    overdue: installments.filter((i: any) => i.status === "overdue").length,
+    paid: installments.filter((i: any) => i.status === "paid").length,
+    totalPending: installments.filter((i: any) => i.status === "pending" || i.status === "overdue").reduce((acc: number, i: any) => acc + Number(i.amount), 0),
+    totalOverdue: installments.filter((i: any) => i.status === "overdue").reduce((acc: number, i: any) => acc + Number(i.amount), 0),
   };
 
-  // Group overdue by client for summary
   const overdueByClient = useMemo(() => {
     const map = new Map<string, { name: string; count: number; total: number }>();
-    installments.filter(i => i.status === "overdue").forEach(i => {
+    installments.filter((i: any) => i.status === "overdue").forEach((i: any) => {
       const existing = map.get(i.client_id) || { name: i.client_name || "—", count: 0, total: 0 };
       existing.count++;
       existing.total += Number(i.amount);
@@ -154,7 +194,8 @@ const Cobrancas = () => {
             {overdueByClient.slice(0, 6).map(([clientId, info]) => (
               <div
                 key={clientId}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-xs"
+                onClick={() => navigate(`/clientes/${clientId}`)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-xs cursor-pointer hover:bg-accent/30 transition-colors"
               >
                 <span className="font-medium text-foreground">{info.name}</span>
                 <span className="text-destructive font-bold">{info.count}x</span>
@@ -208,7 +249,7 @@ const Cobrancas = () => {
         </div>
       ) : (
         <div className="space-y-2 stagger-fade-in">
-          {filtered.map((inst) => {
+          {filtered.map((inst: any) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
             const now = new Date();
@@ -219,11 +260,12 @@ const Cobrancas = () => {
             return (
               <div
                 key={inst.id}
-                className={`rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm ${
+                className={`rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm cursor-pointer ${
                   isOverdue ? "border-destructive/20 bg-destructive/3 danger-glow" :
                   isPaid ? "border-success/15 bg-success/3 success-glow" :
                   "border-border bg-card"
                 }`}
+                onClick={() => navigate(`/clientes/${inst.client_id}`)}
               >
                 <div className={`num-badge w-10 h-10 rounded-xl ${
                   isOverdue ? "bg-destructive/10 text-destructive" :
@@ -256,7 +298,7 @@ const Cobrancas = () => {
                   {!isPaid && (
                     <>
                       <button
-                        onClick={() => handleWhatsApp(inst)}
+                        onClick={(e) => { e.stopPropagation(); handleWhatsApp(inst); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-all active:scale-95 focus-ring"
                         title="Cobrar via WhatsApp"
                       >
@@ -264,7 +306,7 @@ const Cobrancas = () => {
                         <span className="hidden sm:inline">Cobrar</span>
                       </button>
                       <button
-                        onClick={() => setConfirmPayId(inst.id)}
+                        onClick={(e) => { e.stopPropagation(); setConfirmPayId(inst.id); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
                         title="Marcar como paga"
                       >
@@ -290,7 +332,7 @@ const Cobrancas = () => {
               </div>
               <h3 className="text-lg font-bold text-foreground">Confirmar Pagamento?</h3>
               {(() => {
-                const inst = installments.find(i => i.id === confirmPayId);
+                const inst = installments.find((i: any) => i.id === confirmPayId);
                 return inst ? (
                   <div className="mt-2">
                     <p className="text-sm font-medium text-foreground">{inst.client_name}</p>

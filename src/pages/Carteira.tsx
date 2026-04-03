@@ -29,7 +29,7 @@ const Carteira = () => {
     const [p, e, i] = await Promise.all([
       supabase.from("profits").select("*").eq("user_id", user.id).order("date", { ascending: false }),
       supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-      supabase.from("installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
+      supabase.from("contract_installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
     ]);
     setProfits(p.data || []);
     setExpenses(e.data || []);
