@@ -190,7 +190,7 @@ const Lucros = () => {
           <div className="max-h-[500px] overflow-y-auto">
             {Object.entries(grouped).map(([date, items]: [string, any[]]) => (
               <div key={date}>
-                <div className="divider-label px-4 py-2 sticky top-0 bg-card/90 backdrop-blur-sm z-[5]">
+                <div className="divider-label px-4 py-2 sticky top-0 bg-card/95 z-[5]">
                   <Calendar size={10} /> {date}
                   <span className="text-success font-semibold ml-1">+R$ {fmt(items.reduce((s: number, p: any) => s + Number(p.amount), 0))}</span>
                 </div>

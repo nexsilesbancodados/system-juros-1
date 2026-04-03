@@ -238,7 +238,7 @@ const Carteira = () => {
           <div className="max-h-[500px] overflow-y-auto">
             {Object.entries(grouped).map(([date, items]) => (
               <div key={date}>
-                <div className="divider-label px-5 py-2 text-muted-foreground sticky top-0 bg-card/90 backdrop-blur-sm z-[5]">
+                <div className="divider-label px-5 py-2 text-muted-foreground sticky top-0 bg-card/95 z-[5]">
                   <Calendar size={10} /> {date}
                 </div>
                 <div className="divide-y divide-border/50">

@@ -149,32 +149,24 @@
   }
 
   .card-hover {
-    @apply transition-all duration-300;
-  }
-
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
+    @apply transition-colors duration-200;
   }
 
   /* Glassmorphism — refined */
   .glass {
-    backdrop-filter: blur(24px) saturate(180%);
     background: var(--gradient-glass);
     border: 1px solid hsl(0 0% 100% / 0.08);
   }
 
   .glass-card {
-    backdrop-filter: blur(20px) saturate(160%);
-    background: hsl(var(--card) / 0.75);
+    background: hsl(var(--card) / 0.92);
     border: 1px solid hsl(var(--border) / 0.5);
     box-shadow: var(--shadow-card);
     border-radius: 1.25rem;
   }
 
   .glass-strong {
-    backdrop-filter: blur(28px) saturate(200%);
-    background: hsl(var(--card) / 0.88);
+    background: hsl(var(--card) / 0.96);
     border: 1px solid hsl(var(--border) / 0.6);
   }
 
@@ -184,34 +176,22 @@
     border: 1px solid hsl(var(--border) / 0.4);
     box-shadow: var(--shadow-card);
     border-radius: 1.5rem;
-    @apply transition-all duration-300;
+    @apply transition-colors duration-200;
   }
   .premium-card:hover {
-    box-shadow: var(--shadow-elevated);
     border-color: hsl(var(--primary) / 0.2);
-    transform: translateY(-2px);
   }
 
-  /* Accent glow card */
+  /* Accent glow card — lightweight */
   .glow-card {
-    @apply relative overflow-hidden;
     background: var(--gradient-card);
     border: 1px solid hsl(var(--border) / 0.4);
     border-radius: 1.5rem;
     box-shadow: var(--shadow-card);
-  }
-  .glow-card::before {
-    content: '';
-    @apply absolute -inset-px rounded-[1.5rem] opacity-0 transition-opacity duration-500;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.25), transparent 50%, hsl(var(--primary) / 0.1));
-  }
-  .glow-card:hover::before {
-    opacity: 1;
+    @apply transition-colors duration-200;
   }
   .glow-card:hover {
-    box-shadow: var(--shadow-glow);
-    transform: translateY(-2px);
-    @apply transition-all duration-300;
+    border-color: hsl(var(--primary) / 0.25);
   }
 
   .text-gradient-gold {
@@ -223,41 +203,21 @@
 
   /* Microinteractions */
   .micro-bounce {
-    @apply transition-all duration-200 ease-out;
-  }
-  .micro-bounce:active {
-    transform: scale(0.97);
-  }
-  .micro-bounce:hover {
-    transform: translateY(-1px);
+    @apply transition-colors duration-150;
   }
 
   .micro-press {
-    @apply transition-all duration-200 ease-out;
-  }
-  .micro-press:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
-  }
-  .micro-press:active {
-    transform: translateY(1px) scale(0.98);
+    @apply transition-colors duration-150;
   }
 
   .hover-glow {
-    @apply transition-all duration-300;
-  }
-  .hover-glow:hover {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2), var(--shadow-glow);
+    @apply transition-colors duration-200;
   }
 
   /* Bento */
   .bento-item {
-    @apply overflow-hidden transition-all duration-300;
+    @apply overflow-hidden transition-colors duration-200;
     border-radius: 1.5rem;
-  }
-  .bento-item:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
   }
 
   /* Bold Typography */
@@ -353,30 +313,8 @@
     border-color: hsl(var(--ring) / 0.5);
   }
 
-  /* Card shine effect */
-  .card-shine {
-    @apply relative overflow-hidden;
-  }
-  .card-shine::before {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      hsl(var(--primary) / 0.04) 45%,
-      hsl(var(--primary) / 0.08) 50%,
-      hsl(var(--primary) / 0.04) 55%,
-      transparent 60%
-    );
-  }
-  .card-shine:hover::before {
-    opacity: 1;
-    animation: shine 0.8s ease-out;
-  }
-  @keyframes shine {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(100%); }
-  }
+  /* Card shine — disabled for performance */
+  .card-shine {}
 
   /* Skeleton shimmer */
   .skeleton-shimmer {
@@ -497,18 +435,8 @@
     background-clip: text;
   }
 
-  /* Stat card with animated border */
-  .stat-card-glow {
-    @apply relative;
-  }
-  .stat-card-glow::before {
-    content: '';
-    @apply absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.3), transparent, hsl(var(--primary) / 0.1));
-  }
-  .stat-card-glow:hover::before {
-    opacity: 1;
-  }
+  /* Stat card */
+  .stat-card-glow {}
 
   /* Animated count */
   .count-up {
@@ -520,7 +448,6 @@
   .modal-backdrop {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4;
     background: hsl(0 0% 0% / 0.6);
-    backdrop-filter: blur(12px);
     animation: fadeIn 0.2s ease-out;
   }
   @keyframes fadeIn {
@@ -643,8 +570,8 @@
 
   /* Sticky header for scrollable lists */
   .sticky-header {
-    @apply sticky top-0 z-10 backdrop-blur-lg;
-    background: hsl(var(--card) / 0.9);
+    @apply sticky top-0 z-10;
+    background: hsl(var(--card) / 0.97);
   }
 
   /* Swipe hint for mobile */
