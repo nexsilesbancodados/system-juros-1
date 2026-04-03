@@ -400,15 +400,22 @@ const Lucros = () => {
       {/* Delete Dialog */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="sm:max-w-sm">
+          <div className="modal-delete-bar -mx-6 -mt-6 mb-4" />
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 size={18} /> Excluir Lucro
+            <DialogTitle className="flex items-center gap-3">
+              <div className="modal-icon modal-icon-destructive">
+                <Trash2 size={18} />
+              </div>
+              <div>
+                <p className="text-lg font-bold">Excluir Lucro</p>
+                <p className="text-xs text-muted-foreground font-normal mt-0.5">Esta ação não pode ser desfeita</p>
+              </div>
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este registro de lucro?</p>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="rounded-xl">Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="rounded-xl">
               <Trash2 size={14} className="mr-1.5" /> Excluir
             </Button>
           </DialogFooter>
