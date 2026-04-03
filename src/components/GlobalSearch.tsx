@@ -126,7 +126,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/60 z-[60] animate-fade-in" onClick={onClose} />
       <div className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg z-[61] px-4 animate-scale-in">
         <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
           {/* Improvement #19: Enhanced search input with clear button */}

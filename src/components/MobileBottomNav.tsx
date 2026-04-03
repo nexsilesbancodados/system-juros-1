@@ -56,7 +56,7 @@ const MobileBottomNav = () => {
       {/* Improvement #21: Better "more" menu with categories */}
       {showMore && (
         <>
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40" onClick={() => setShowMore(false)} />
+          <div className="fixed inset-0 bg-background/80 z-40" onClick={() => setShowMore(false)} />
           <div className="fixed bottom-[4.5rem] left-0 right-0 z-50 px-3 pb-2 animate-fade-in">
             <div className="glass-strong rounded-2xl border border-border/50 p-4 max-h-[65vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">

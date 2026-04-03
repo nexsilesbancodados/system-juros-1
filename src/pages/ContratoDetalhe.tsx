@@ -338,7 +338,7 @@ const ContratoDetalhe = () => {
         <div className="max-h-[500px] overflow-y-auto">
           {Object.entries(grouped).map(([key, group]: [string, any]) => (
             <div key={key}>
-              <div className="divider-label px-4 py-2 capitalize text-muted-foreground sticky top-0 bg-card/90 backdrop-blur-sm z-[5]">
+              <div className="divider-label px-4 py-2 capitalize text-muted-foreground sticky top-0 bg-card/95 z-[5]">
                 {group.label}
               </div>
               <div className="divide-y divide-border/50">
