@@ -7,7 +7,7 @@ import {
   TrendingUp, DollarSign, Database, Info,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronRight,
   FileText, Crown, ClipboardList,
-  Settings, Bot, QrCode, UserCheck, Shield,
+  Settings, Bot, QrCode, UserCheck, Shield, Zap,
   Briefcase, PieChart, Cog, Sparkles, LogOut, User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
