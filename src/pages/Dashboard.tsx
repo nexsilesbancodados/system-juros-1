@@ -190,7 +190,7 @@ const Dashboard = () => {
           >
             {/* Gradient accent top border */}
             <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-60`} />
-            <div className="p-5 flex flex-col justify-between min-h-[140px]">
+            <div className="p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>
                 <div className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
