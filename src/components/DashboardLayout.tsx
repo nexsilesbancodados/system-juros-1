@@ -41,7 +41,7 @@ const DashboardLayout = () => {
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
       )}
 
-      <div className={`transition-all duration-300 ${isMobile ? "ml-0" : collapsed ? "ml-16" : "ml-56"}`}>
+      <div className={`transition-[margin] duration-150 ${isMobile ? "ml-0" : collapsed ? "ml-16" : "ml-56"}`}>
         <TopBar onSearchClick={() => setSearchOpen(true)} />
         {/* Improvement #15: Page transition animation on route change */}
         <main className={`p-3 lg:p-6 ${isMobile ? "pb-24" : ""}`}>

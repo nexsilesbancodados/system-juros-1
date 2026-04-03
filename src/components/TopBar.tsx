@@ -48,9 +48,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     if (!user) return;
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    for (const id of unreadIds) {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    }
+    await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
   };

@@ -42,7 +42,7 @@ const ConstellationBackground = memo(() => {
     }
 
     let lastTime = 0;
-    const FPS_INTERVAL = 1000 / 30; // cap at 30fps
+    const FPS_INTERVAL = 1000 / 20; // cap at 20fps
 
     const draw = (timestamp: number) => {
       animationId = requestAnimationFrame(draw);
