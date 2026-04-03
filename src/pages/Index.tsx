@@ -17,7 +17,7 @@ const Index = () => {
 
       {/* Logo & Title */}
       <div className="relative z-10 flex flex-col items-center mb-8">
-        <img src={eagleLogo} alt="Urus Jurista" width={80} height={80} className="mb-3" />
+        <img src={eagleLogo} alt="Urus Jurista" width={80} height={80} className="mb-3 rounded-full" />
         <h1 className="font-display text-2xl tracking-[0.3em] text-foreground/80">
           URUS JURISTA
         </h1>

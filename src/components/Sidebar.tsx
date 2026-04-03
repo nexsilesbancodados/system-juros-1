@@ -95,7 +95,7 @@ const Sidebar = () => {
     <aside className="fixed left-0 top-0 h-screen w-60 bg-card border-r border-border flex flex-col z-30">
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-4 border-b border-border">
-        <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} />
+        <img src={eagleLogo} alt="Urus Jurista" width={28} height={28} className="rounded-full" />
         <span className="font-display text-sm tracking-widest text-foreground">URUS JURISTA</span>
       </div>
 
