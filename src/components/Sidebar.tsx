@@ -60,6 +60,7 @@ const bottomItems: MenuItem[] = [
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Network", icon: <Network size={18} />, path: "/network" },
+  { label: "Admin", icon: <Crown size={18} />, path: "/admin" },
   { label: "Sobre", icon: <Info size={18} />, path: "/sobre" },
 ];
 
