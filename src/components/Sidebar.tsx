@@ -24,6 +24,7 @@ const sections: MenuSection[] = [
     title: "Principal",
     items: [
       { label: "Painel", icon: <LayoutDashboard size={18} />, path: "/dashboard" },
+      { label: "Mesa de Cobrança", icon: <PhoneCall size={18} />, path: "/mesa-cobranca" },
       { label: "Análises", icon: <BarChart3 size={18} />, path: "/analises" },
       { label: "Relatórios", icon: <FileText size={18} />, path: "/relatorios" },
     ],
