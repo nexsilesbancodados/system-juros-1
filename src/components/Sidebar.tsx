@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import eagleLogo from "@/assets/eagle-logo.webp";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
   TrendingUp, DollarSign, Database, Info,
@@ -13,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface MenuItem {
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   path: string;
 }
 
