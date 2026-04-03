@@ -41,7 +41,7 @@ const NovoContrato = () => {
 
   // Step 2 – Loan config
   const [capital, setCapital] = useState("");
-  const [interestRate, setInterestRate] = useState("");
+  
   const [numInstallments, setNumInstallments] = useState("");
   const [frequency, setFrequency] = useState("monthly");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
@@ -72,17 +72,18 @@ const NovoContrato = () => {
 
   // Calculations
   const calc = useMemo(() => {
+  const calc = useMemo(() => {
     const cap = parseFloat(capital) || 0;
-    const rate = parseFloat(interestRate) || 0;
+    const monthlyFee = parseFloat(lateFeePercent) || 0;
     const n = parseInt(numInstallments) || 0;
     if (!cap || !n) return null;
 
-    const totalInterest = cap * (rate / 100);
+    const totalInterest = cap * (monthlyFee / 100) * n;
     const totalAmount = cap + totalInterest;
     const installmentAmount = totalAmount / n;
 
     return { totalInterest, totalAmount, installmentAmount };
-  }, [capital, interestRate, numInstallments]);
+  }, [capital, lateFeePercent, numInstallments]);
 
   // Generate due dates
   const generateDueDates = (start: string, freq: string, count: number) => {
@@ -158,7 +159,7 @@ const NovoContrato = () => {
           user_id: user.id,
           client_id: selectedClientId,
           capital: parseFloat(capital),
-          interest_rate: parseFloat(interestRate),
+          interest_rate: parseFloat(lateFeePercent),
           num_installments: n,
           installment_amount: calc.installmentAmount,
           frequency,
@@ -201,7 +202,7 @@ const NovoContrato = () => {
   };
 
   const canAdvance1 = !!selectedClientId;
-  const canAdvance2 = !!capital && !!interestRate && !!numInstallments && !!startDate && calc;
+  const canAdvance2 = !!capital && !!numInstallments && !!startDate && calc;
 
   const inputCls =
     "w-full px-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
@@ -349,10 +350,6 @@ const NovoContrato = () => {
               <input type="number" value={capital} onChange={(e) => setCapital(e.target.value)} placeholder="1000.00" className={inputCls} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
-              <input type="number" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} placeholder="10" className={inputCls} />
-            </div>
-            <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº de Parcelas</label>
               <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder="12" className={inputCls} />
             </div>
@@ -369,12 +366,12 @@ const NovoContrato = () => {
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa por Atraso (%)</label>
-              <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} className={inputCls} />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
+              <input type="number" step="0.01" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className={inputCls} />
             </div>
-            <div className="col-span-2">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Juros por Dia de Atraso (%)</label>
-              <input type="number" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} className={inputCls} step="0.01" />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
+              <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={inputCls} />
             </div>
           </div>
 
@@ -421,13 +418,12 @@ const NovoContrato = () => {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: "Capital", value: `R$ ${parseFloat(capital).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
-                { label: "Taxa de Juros", value: `${interestRate}%` },
                 { label: "Parcelas", value: `${numInstallments}x R$ ${calc.installmentAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
                 { label: "Frequência", value: frequencyOptions.find((f) => f.value === frequency)?.label },
                 { label: "1º Vencimento", value: new Date(startDate + "T12:00:00").toLocaleDateString("pt-BR") },
                 { label: "Total a Receber", value: `R$ ${calc.totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
-                { label: "Multa Atraso", value: `${lateFeePercent}%` },
-                { label: "Juros/Dia Atraso", value: `${dailyInterestPercent}%` },
+                { label: "Multa Diária", value: `${dailyInterestPercent}%` },
+                { label: "Multa Mensal", value: `${lateFeePercent}%` },
               ].map((item) => (
                 <div key={item.label} className="bg-muted/30 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{item.label}</p>
