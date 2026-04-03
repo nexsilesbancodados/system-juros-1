@@ -166,10 +166,10 @@ const Dashboard = () => {
               <span className="text-label opacity-50">·</span>
               <p className="text-label">{timeStr}</p>
             </div>
-            <h1 className="text-display text-4xl md:text-5xl text-foreground">
+            <h1 className="text-display text-3xl md:text-5xl text-foreground">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
-            <p className="text-xs text-muted-foreground capitalize mt-1">{dateStr}</p>
+            <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card">
@@ -181,7 +181,7 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Main Metric Cards ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
         {mainCards.map((card, i) => (
           <div
             key={card.title}
