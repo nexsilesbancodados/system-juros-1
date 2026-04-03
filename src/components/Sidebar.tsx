@@ -115,23 +115,21 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       key={item.path}
       onClick={() => navigate(item.path)}
       title={collapsed ? item.label : undefined}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
         isActive(item.path)
-          ? "glass-card text-foreground shadow-sm"
+          ? "premium-card text-foreground shadow-sm !border-primary/20"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
       } ${collapsed ? "justify-center px-2" : ""}`}
     >
-      {/* Improvement #25: Active indicator bar */}
       {isActive(item.path) && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ background: "var(--gradient-gold)" }} />
       )}
       <span className={`shrink-0 transition-all duration-200 ${isActive(item.path) ? "text-primary scale-110" : "text-muted-foreground group-hover:text-foreground"}`}>
         {item.icon}
       </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
-      {/* Improvement #26: Collapsed tooltip */}
       {collapsed && (
-        <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-popover border border-border text-xs text-foreground font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 shadow-lg z-50">
+        <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-xl bg-popover border border-border text-xs text-foreground font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 shadow-lg z-50">
           {item.label}
         </div>
       )}
