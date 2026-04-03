@@ -401,7 +401,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Payments */}
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
+        <div className="premium-card overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
