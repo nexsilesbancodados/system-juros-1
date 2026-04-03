@@ -453,7 +453,6 @@
   .modal-backdrop {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4;
     background: hsl(0 0% 0% / 0.6);
-    backdrop-filter: blur(12px);
     animation: fadeIn 0.2s ease-out;
   }
   @keyframes fadeIn {
