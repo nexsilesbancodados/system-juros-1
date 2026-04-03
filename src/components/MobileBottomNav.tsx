@@ -54,43 +54,78 @@ const MobileBottomNav = () => {
 
   return (
     <>
-      {/* More menu overlay */}
+      {/* Improvement #21: Better "more" menu with categories */}
       {showMore && (
         <>
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40" onClick={() => setShowMore(false)} />
           <div className="fixed bottom-[4.5rem] left-0 right-0 z-50 px-3 pb-2 animate-fade-in">
-            <div className="glass-strong rounded-2xl border border-border/50 p-4 max-h-[60vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-headline text-sm text-foreground">Menu</h3>
-                <button onClick={() => setShowMore(false)} className="p-1 rounded-lg hover:bg-accent/50">
+            <div className="glass-strong rounded-2xl border border-border/50 p-4 max-h-[65vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-headline text-sm text-foreground">Menu Completo</h3>
+                <button onClick={() => setShowMore(false)} className="p-1.5 rounded-lg hover:bg-accent/50 transition-colors">
                   <X size={18} className="text-muted-foreground" />
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {moreItems.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => {
-                      navigate(item.path);
-                      setShowMore(false);
-                    }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
-                      isActive(item.path)
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-                    }`}
-                  >
-                    <item.icon size={20} />
-                    <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
-                  </button>
-                ))}
+              {/* Improvement #22: Grouped items in more menu */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-label mb-2">Gestão & Análise</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {moreItems.slice(0, 6).map((item) => (
+                      <button
+                        key={item.path}
+                        onClick={() => { navigate(item.path); setShowMore(false); }}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
+                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                        }`}
+                      >
+                        <item.icon size={20} />
+                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-border/30 pt-3">
+                  <p className="text-label mb-2">Ferramentas</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {moreItems.slice(6, 14).map((item) => (
+                      <button
+                        key={item.path}
+                        onClick={() => { navigate(item.path); setShowMore(false); }}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
+                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                        }`}
+                      >
+                        <item.icon size={20} />
+                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-border/30 pt-3">
+                  <p className="text-label mb-2">Sistema</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {moreItems.slice(14).map((item) => (
+                      <button
+                        key={item.path}
+                        onClick={() => { navigate(item.path); setShowMore(false); }}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
+                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                        }`}
+                      >
+                        <item.icon size={20} />
+                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </>
       )}
 
-      {/* Bottom Navigation Bar */}
+      {/* Improvement #23: Enhanced bottom nav with active indicator line */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/40 safe-area-bottom">
         <div className="flex items-center justify-around px-2 py-1.5">
           {mainTabs.map((tab) => {
@@ -109,12 +144,14 @@ const MobileBottomNav = () => {
                     setShowMore(false);
                   }
                 }}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[3.5rem] ${
-                  active
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[3.5rem] active:scale-95 ${
+                  active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
+                {/* Active indicator line */}
+                {active && (
+                  <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-primary animate-scale-in" />
+                )}
                 <div className={`p-1 rounded-xl transition-all duration-200 ${active ? "bg-primary/15" : ""}`}>
                   <tab.icon size={20} strokeWidth={active ? 2.5 : 2} />
                 </div>
