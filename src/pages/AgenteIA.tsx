@@ -348,22 +348,37 @@ const AgenteIA = () => {
   // Fetch WhatsApp chats
   const loadChats = async () => {
     if (whatsappStatus !== "connected") return;
+
     setLoadingChats(true);
     try {
       const data = await callEvolutionApi("fetch_messages");
-      const chats: WhatsAppChat[] = (data.chats || [])
-        .filter((c: any) => c.id?.endsWith("@s.whatsapp.net"))
-        .map((c: any) => ({
-          id: c.id,
-          name: c.name || c.id?.split("@")[0],
-          remoteJid: c.id,
-          lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || "",
-          updatedAt: c.updatedAt ? new Date(c.updatedAt).toLocaleString("pt-BR") : "",
-          unreadCount: c.unreadCount || 0,
-        }));
+      const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
+      const uniqueChats = new Map<string, WhatsAppChat>();
+
+      rawChats.forEach((chat) => {
+        const remoteJid = chat.remoteJid?.trim();
+        if (!remoteJid || remoteJid === "status@broadcast") return;
+        if (uniqueChats.has(remoteJid)) return;
+
+        uniqueChats.set(remoteJid, {
+          id: remoteJid,
+          name: getChatDisplayName(chat),
+          remoteJid,
+          phone: getChatPhone(chat),
+          lastMessage: extractWhatsAppText(chat.lastMessage?.message) || "[mídia]",
+          updatedAt: chat.updatedAt || "",
+          unreadCount: chat.unreadCount ?? 0,
+        });
+      });
+
+      const chats = Array.from(uniqueChats.values()).sort(
+        (a, b) => getTimestampValue(b.updatedAt) - getTimestampValue(a.updatedAt)
+      );
+
       setWhatsappChats(chats);
-    } catch (err: any) {
-      toast({ title: "Erro ao carregar chats", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao carregar conversas";
+      toast({ title: "Erro ao carregar chats", description, variant: "destructive" });
     } finally {
       setLoadingChats(false);
     }
@@ -380,9 +395,13 @@ const AgenteIA = () => {
     setLoadingMsgs(true);
     try {
       const data = await callEvolutionApi("fetch_messages", { remoteJid: chat.remoteJid, count: 30 });
-      setChatMessages(data.messages || []);
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      const nextMessages = (Array.isArray(data.messages) ? (data.messages as WhatsAppMsg[]) : []).sort(
+        (a, b) => getTimestampValue(a.messageTimestamp) - getTimestampValue(b.messageTimestamp)
+      );
+      setChatMessages(nextMessages);
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao carregar mensagens";
+      toast({ title: "Erro", description, variant: "destructive" });
     } finally {
       setLoadingMsgs(false);
     }
@@ -397,7 +416,7 @@ const AgenteIA = () => {
     setSendingReply(true);
     try {
       await callEvolutionApi("send_message", {
-        phone: selectedChat.remoteJid.replace("@s.whatsapp.net", ""),
+        phone: selectedChat.phone || selectedChat.remoteJid,
         message: replyInput,
       });
       setChatMessages((prev) => [
@@ -410,8 +429,9 @@ const AgenteIA = () => {
       ]);
       setReplyInput("");
       toast({ title: "Mensagem enviada!" });
-    } catch (err: any) {
-      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao enviar mensagem";
+      toast({ title: "Erro ao enviar", description, variant: "destructive" });
     } finally {
       setSendingReply(false);
     }
