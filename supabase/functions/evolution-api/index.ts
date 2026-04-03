@@ -152,20 +152,33 @@ serve(async (req) => {
           });
         }
 
-        const cleanPhone = phone.replace(/\D/g, "");
-        const formattedPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+        const rawRecipient = String(phone);
+        const cleanPhone = rawRecipient.replace(/\D/g, "");
+        const recipient = rawRecipient.includes("@")
+          ? rawRecipient
+          : cleanPhone.startsWith("55")
+            ? cleanPhone
+            : `55${cleanPhone}`;
 
         const sendResp = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", apikey: apiKey },
           body: JSON.stringify({
-            number: formattedPhone,
+            number: recipient,
             text: message,
           }),
         });
 
         const sendData = await sendResp.json();
-        return new Response(JSON.stringify({ success: sendResp.ok, data: sendData }), {
+
+        if (!sendResp.ok) {
+          return new Response(JSON.stringify({ error: sendData?.message || "Erro ao enviar mensagem", data: sendData }), {
+            status: sendResp.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify({ success: true, data: sendData }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -183,20 +196,35 @@ serve(async (req) => {
 
       case "fetch_messages": {
         const { remoteJid, count = 20 } = body;
-        // Fetch chats list
+
         if (!remoteJid) {
           const chatsResp = await fetch(`${apiUrl}/chat/findChats/${instanceName}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", apikey: apiKey },
             body: JSON.stringify({}),
           });
-          const chats = await chatsResp.json();
-          return new Response(JSON.stringify({ chats: Array.isArray(chats) ? chats.slice(0, 50) : [] }), {
+          const chatsPayload = await chatsResp.json();
+
+          if (!chatsResp.ok) {
+            return new Response(JSON.stringify({ error: chatsPayload?.message || "Erro ao buscar conversas" }), {
+              status: chatsResp.status,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const chats = Array.isArray(chatsPayload)
+            ? chatsPayload
+            : Array.isArray(chatsPayload?.records)
+              ? chatsPayload.records
+              : Array.isArray(chatsPayload?.chats)
+                ? chatsPayload.chats
+                : [];
+
+          return new Response(JSON.stringify({ chats }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        // Fetch messages for a specific chat
         const msgsResp = await fetch(`${apiUrl}/chat/findMessages/${instanceName}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", apikey: apiKey },
@@ -205,8 +233,26 @@ serve(async (req) => {
             limit: count,
           }),
         });
-        const msgs = await msgsResp.json();
-        return new Response(JSON.stringify({ messages: Array.isArray(msgs) ? msgs : msgs?.messages || [] }), {
+        const msgsPayload = await msgsResp.json();
+
+        if (!msgsResp.ok) {
+          return new Response(JSON.stringify({ error: msgsPayload?.message || "Erro ao buscar mensagens" }), {
+            status: msgsResp.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const messages = Array.isArray(msgsPayload)
+          ? msgsPayload
+          : Array.isArray(msgsPayload?.records)
+            ? msgsPayload.records
+            : Array.isArray(msgsPayload?.messages)
+              ? msgsPayload.messages
+              : Array.isArray(msgsPayload?.messages?.records)
+                ? msgsPayload.messages.records
+                : [];
+
+        return new Response(JSON.stringify({ messages }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }

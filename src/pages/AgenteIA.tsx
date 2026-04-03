@@ -556,7 +556,7 @@ const AgenteIA = () => {
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
 
   const getMessageText = (msg: WhatsAppMsg) =>
-    msg.message?.conversation || msg.message?.extendedTextMessage?.text || "[mídia]";
+    extractWhatsAppText(msg.message) || "[mídia]";
 
   const ToggleSwitch = ({ enabled, onToggle, label, description }: { enabled: boolean; onToggle: () => void; label: string; description: string }) => (
     <div className="flex items-center justify-between py-3">
