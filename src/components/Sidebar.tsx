@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard, BarChart3, Users, Receipt, Wallet,
-  TrendingUp, DollarSign, Database, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronRight,
-  FileText, Crown, ClipboardList,
-  Settings, Bot, QrCode, UserCheck, Shield,
-  Briefcase, PieChart, Cog, Sparkles, LogOut, User,
+  LayoutDashboard, TrendingUp, Users, HandCoins, Wallet,
+  ArrowUpRight, ArrowDownRight, Search as SearchIcon, Info,
+  Crosshair, Sliders, ListChecks, NotebookPen, Sheet, ChevronDown, ChevronRight,
+  FileBarChart, Crown, History,
+  Settings, BrainCircuit, Globe, UserRoundCheck, ShieldCheck,
+  Landmark, Activity, Wrench, Wand2, LogOut, User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
