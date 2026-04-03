@@ -457,7 +457,7 @@ const Dashboard = () => {
           <button
             key={action.label}
             onClick={() => navigate(action.path)}
-            className="glass-card rounded-2xl p-4 flex items-center gap-3 micro-press text-left group"
+            className="premium-card p-4 flex items-center gap-3 micro-press text-left group"
           >
             <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
               <action.icon size={18} className={action.color} />
