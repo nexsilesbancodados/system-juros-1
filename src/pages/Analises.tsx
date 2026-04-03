@@ -1,11 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Download } from "lucide-react";
+import { Download, CalendarIcon } from "lucide-react";
+import { format, subMonths, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area,
+  PieChart, Pie, Cell, Legend, AreaChart, Area,
 } from "recharts";
 
 const COLORS = ["hsl(142,71%,45%)", "hsl(0,84%,60%)", "hsl(45,93%,47%)", "hsl(210,80%,55%)", "hsl(280,60%,55%)"];
@@ -17,8 +23,43 @@ const tooltipStyle = {
   color: "hsl(var(--foreground))",
 };
 
+type PresetKey = "7d" | "30d" | "3m" | "6m" | "12m" | "custom";
+
+const presets: { key: PresetKey; label: string }[] = [
+  { key: "7d", label: "7 dias" },
+  { key: "30d", label: "30 dias" },
+  { key: "3m", label: "3 meses" },
+  { key: "6m", label: "6 meses" },
+  { key: "12m", label: "12 meses" },
+  { key: "custom", label: "Personalizado" },
+];
+
+function getPresetRange(key: PresetKey): { from: Date; to: Date } {
+  const now = new Date();
+  switch (key) {
+    case "7d": return { from: subDays(now, 7), to: now };
+    case "30d": return { from: subDays(now, 30), to: now };
+    case "3m": return { from: subMonths(now, 3), to: now };
+    case "6m": return { from: subMonths(now, 6), to: now };
+    case "12m": return { from: subMonths(now, 12), to: now };
+    default: return { from: subMonths(now, 6), to: now };
+  }
+}
+
 const Analises = () => {
   const { user } = useAuth();
+  const [activePreset, setActivePreset] = useState<PresetKey>("6m");
+  const [dateFrom, setDateFrom] = useState<Date>(subMonths(new Date(), 6));
+  const [dateTo, setDateTo] = useState<Date>(new Date());
+
+  const handlePreset = (key: PresetKey) => {
+    setActivePreset(key);
+    if (key !== "custom") {
+      const { from, to } = getPresetRange(key);
+      setDateFrom(from);
+      setDateTo(to);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["analises-data", user?.id],
@@ -41,41 +82,65 @@ const Analises = () => {
 
   const charts = useMemo(() => {
     if (!data) return null;
-    const { contracts, installments, clients, transactions } = data;
+    const { contracts, installments, clients } = data;
     const now = new Date();
+    const rangeStart = startOfDay(dateFrom);
+    const rangeEnd = endOfDay(dateTo);
 
-    // 1. Monthly revenue (last 6 months)
-    const monthlyRevenue = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+    // Filter data by date range
+    const filteredInstallments = installments.filter((i: any) => {
+      const d = new Date(i.due_date);
+      return d >= rangeStart && d <= rangeEnd;
+    });
 
-      const received = installments
-        .filter((inst: any) => inst.status === "paid" && inst.paid_at) 
-        .filter((inst: any) => { const pd = new Date(inst.paid_at); return pd.getMonth() === m && pd.getFullYear() === y; })
-        .reduce((s: number, inst: any) => s + Number(inst.paid_amount || inst.amount), 0);
+    const filteredContracts = contracts.filter((c: any) => {
+      const d = new Date(c.created_at);
+      return d >= rangeStart && d <= rangeEnd;
+    });
 
-      const lent = contracts
-        .filter((c: any) => { const cd = new Date(c.created_at); return cd.getMonth() === m && cd.getFullYear() === y; })
-        .reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const filteredPaidInstallments = installments.filter((i: any) => {
+      if (i.status !== "paid" || !i.paid_at) return false;
+      const d = new Date(i.paid_at);
+      return d >= rangeStart && d <= rangeEnd;
+    });
 
-      monthlyRevenue.push({ name: label, recebido: received, emprestado: lent });
+    // Build monthly buckets from range
+    const months: { month: number; year: number; label: string }[] = [];
+    const cursor = new Date(startOfMonth(rangeStart));
+    const endMonth = endOfMonth(rangeEnd);
+    while (cursor <= endMonth) {
+      months.push({
+        month: cursor.getMonth(),
+        year: cursor.getFullYear(),
+        label: format(cursor, "MMM/yy", { locale: ptBR }),
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
     }
 
-    // 2. Installment status pie
-    const paid = installments.filter((i: any) => i.status === "paid").length;
-    const overdue = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length;
-    const pending = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) >= now).length;
+    // 1. Monthly revenue
+    const monthlyRevenue = months.map((m) => {
+      const received = filteredPaidInstallments
+        .filter((inst: any) => { const pd = new Date(inst.paid_at); return pd.getMonth() === m.month && pd.getFullYear() === m.year; })
+        .reduce((s: number, inst: any) => s + Number(inst.paid_amount || inst.amount), 0);
+
+      const lent = filteredContracts
+        .filter((c: any) => { const cd = new Date(c.created_at); return cd.getMonth() === m.month && cd.getFullYear() === m.year; })
+        .reduce((s: number, c: any) => s + Number(c.capital), 0);
+
+      return { name: m.label, recebido: received, emprestado: lent };
+    });
+
+    // 2. Installment status pie (within range)
+    const paid = filteredInstallments.filter((i: any) => i.status === "paid").length;
+    const overdue = filteredInstallments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length;
+    const pending = filteredInstallments.filter((i: any) => i.status === "pending" && new Date(i.due_date) >= now).length;
     const installmentPie = [
       { name: "Pagas", value: paid },
       { name: "Atrasadas", value: overdue },
       { name: "Pendentes", value: pending },
     ].filter((d) => d.value > 0);
 
-    // 3. Credit score distribution
+    // 3. Credit score distribution (all clients)
     const scoreRanges = [
       { range: "0-20", min: 0, max: 20 },
       { range: "21-40", min: 21, max: 40 },
@@ -91,15 +156,15 @@ const Analises = () => {
       }).length,
     }));
 
-    // 4. Portfolio aging (days overdue)
+    // 4. Portfolio aging
     const agingBuckets = [
-      { label: "1-7 dias", min: 1, max: 7 },
-      { label: "8-15 dias", min: 8, max: 15 },
-      { label: "16-30 dias", min: 16, max: 30 },
-      { label: "31-60 dias", min: 31, max: 60 },
-      { label: "60+ dias", min: 61, max: 9999 },
+      { label: "1-7d", min: 1, max: 7 },
+      { label: "8-15d", min: 8, max: 15 },
+      { label: "16-30d", min: 16, max: 30 },
+      { label: "31-60d", min: 31, max: 60 },
+      { label: "60+d", min: 61, max: 9999 },
     ];
-    const overdueInsts = installments.filter(
+    const overdueInsts = filteredInstallments.filter(
       (i: any) => i.status === "pending" && new Date(i.due_date) < now
     );
     const aging = agingBuckets.map((b) => ({
@@ -115,26 +180,19 @@ const Analises = () => {
     }));
 
     // 5. Monthly default rate
-    const defaultRate = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-
-      const monthInsts = installments.filter((inst: any) => {
+    const defaultRate = months.map((m) => {
+      const monthInsts = filteredInstallments.filter((inst: any) => {
         const dd = new Date(inst.due_date);
-        return dd.getMonth() === m && dd.getFullYear() === y;
+        return dd.getMonth() === m.month && dd.getFullYear() === m.year;
       });
       const monthOverdue = monthInsts.filter((inst: any) => inst.status === "pending" && new Date(inst.due_date) < now);
       const rate = monthInsts.length > 0 ? (monthOverdue.length / monthInsts.length) * 100 : 0;
-      defaultRate.push({ name: label, taxa: parseFloat(rate.toFixed(1)) });
-    }
+      return { name: m.label, taxa: parseFloat(rate.toFixed(1)) };
+    });
 
-    // 6. Loan frequency
+    // 6. Loan frequency (within range)
     const freqMap: Record<string, number> = {};
-    contracts.forEach((c: any) => {
+    filteredContracts.forEach((c: any) => {
       const f = c.frequency || "monthly";
       const labels: Record<string, string> = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };
       const label = labels[f] || f;
@@ -142,16 +200,17 @@ const Analises = () => {
     });
     const loanFrequency = Object.entries(freqMap).map(([name, value]) => ({ name, value }));
 
-    // Stats
-    const totalCapital = contracts.filter((c: any) => c.status === "active" || c.status === "overdue").reduce((s: number, c: any) => s + Number(c.capital), 0);
-    const totalReceived = installments.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
-    const inadRate = installments.length > 0 ? (overdue / installments.length) * 100 : 0;
+    // Stats (within range)
+    const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
+    const totalCapital = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const totalReceived = filteredPaidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
+    const inadRate = filteredInstallments.length > 0 ? (overdue / filteredInstallments.length) * 100 : 0;
 
     return {
       monthlyRevenue, installmentPie, scoreDistribution, aging, defaultRate, loanFrequency,
-      stats: { totalCapital, totalReceived, inadRate, totalContracts: contracts.length, totalClients: clients.length, overdue },
+      stats: { totalCapital, totalReceived, inadRate, totalContracts: filteredContracts.length, totalClients: clients.length, overdue },
     };
-  }, [data]);
+  }, [data, dateFrom, dateTo]);
 
   const handleExport = () => {
     if (!data) return;
@@ -184,6 +243,68 @@ const Analises = () => {
         </button>
       </div>
 
+      {/* ─── Period Selector ─── */}
+      <div className="glass-card rounded-2xl p-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <span className="text-label shrink-0">Período</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {presets.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => handlePreset(p.key)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                  activePreset === p.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date pickers - always visible */}
+          <div className="flex items-center gap-2 ml-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal text-xs h-8 gap-1.5", !dateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yy") : "Início"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={(d) => { if (d) { setDateFrom(d); setActivePreset("custom"); } }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">até</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal text-xs h-8 gap-1.5", !dateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {dateTo ? format(dateTo, "dd/MM/yy") : "Fim"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={(d) => { if (d) { setDateTo(d); setActivePreset("custom"); } }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
@@ -193,7 +314,7 @@ const Analises = () => {
           { label: "Contratos", value: charts.stats.totalContracts },
           { label: "Clientes", value: charts.stats.totalClients },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+          <div key={s.label} className="glass-card rounded-xl p-4">
             <p className="text-xs text-muted-foreground">{s.label}</p>
             <p className="text-xl font-bold text-foreground mt-1">{s.value}</p>
           </div>
@@ -202,12 +323,12 @@ const Analises = () => {
 
       {/* Row 1: Revenue + Default Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Recebido vs Emprestado (6 meses)</h2>
+        <div className="glass-card rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Recebido vs Emprestado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.monthlyRevenue}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${fmt(v)}`} />
               <Legend />
@@ -217,12 +338,12 @@ const Analises = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="glass-card rounded-xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Taxa de Inadimplência Mensal</h2>
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={charts.defaultRate}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} unit="%" />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
               <Area type="monotone" dataKey="taxa" name="Inadimplência" stroke="hsl(0,84%,60%)" fill="hsl(0,84%,60%)" fillOpacity={0.15} />
@@ -233,7 +354,7 @@ const Analises = () => {
 
       {/* Row 2: Pie + Score */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="glass-card rounded-xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Status das Parcelas</h2>
           {charts.installmentPie.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -251,7 +372,7 @@ const Analises = () => {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="glass-card rounded-xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Distribuição de Score de Crédito</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.scoreDistribution}>
@@ -267,7 +388,7 @@ const Analises = () => {
 
       {/* Row 3: Aging + Frequency */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="glass-card rounded-xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Aging do Portfólio</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={charts.aging}>
@@ -282,7 +403,7 @@ const Analises = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="glass-card rounded-xl p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Frequência de Empréstimos</h2>
           {charts.loanFrequency.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
