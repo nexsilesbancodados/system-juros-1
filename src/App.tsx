@@ -43,6 +43,8 @@ import Cobradores from "./pages/Cobradores.tsx";
 import PortalCliente from "./pages/PortalCliente.tsx";
 import QRCodePage from "./pages/QRCodePage.tsx";
 import AgenteIA from "./pages/AgenteIA.tsx";
+import CobradorExterno from "./pages/CobradorExterno.tsx";
+import Auditoria from "./pages/Auditoria.tsx";
 
 const queryClient = new QueryClient();
 
