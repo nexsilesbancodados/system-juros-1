@@ -440,18 +440,8 @@
     background-clip: text;
   }
 
-  /* Stat card with animated border */
-  .stat-card-glow {
-    @apply relative;
-  }
-  .stat-card-glow::before {
-    content: '';
-    @apply absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.3), transparent, hsl(var(--primary) / 0.1));
-  }
-  .stat-card-glow:hover::before {
-    opacity: 1;
-  }
+  /* Stat card */
+  .stat-card-glow {}
 
   /* Animated count */
   .count-up {

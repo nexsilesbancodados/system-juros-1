@@ -203,8 +203,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         collapsed ? "w-[68px]" : "w-60"
       }`}
       style={{
-        background: "hsl(var(--card) / 0.95)",
-        backdropFilter: "blur(24px) saturate(180%)",
+        background: "hsl(var(--card) / 0.98)",
       }}
     >
       {/* Logo */}
