@@ -48,7 +48,7 @@ const Index = () => {
     }
   };
 
-  const inputCls = "w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(38,75%,50%)]/40 focus:border-[hsl(38,75%,50%)]/40 transition-all duration-200";
+  const inputCls = "w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-body">
@@ -58,7 +58,7 @@ const Index = () => {
       <div className="relative z-10 flex flex-col items-center mb-10 animate-fade-in">
         <div className="relative">
           <div className="absolute inset-0 rounded-full gold-glow" />
-          <img src={eagleLogo} alt="Urus Jurista" width={88} height={88} className="relative rounded-full ring-2 ring-[hsl(38,75%,50%)]/30" />
+          <img src={eagleLogo} alt="Urus Jurista" width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
         </div>
         <h1 className="font-display text-2xl tracking-[0.35em] mt-4 text-gradient-gold">
           URUS JURISTA
@@ -105,14 +105,14 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <p className="text-right text-xs text-white/30 cursor-pointer hover:text-[hsl(38,75%,50%)] transition-colors">
+                  <p className="text-right text-xs text-white/30 cursor-pointer hover:text-white/70 transition-colors">
                     Esqueceu a senha?
                   </p>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(38,75%,50%)]/20 flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
                     style={{ background: "var(--gradient-button)", color: "white" }}
                   >
                     {loading ? "Entrando..." : <>Entrar no Sistema <ArrowRight size={16} /></>}
@@ -121,9 +121,9 @@ const Index = () => {
               </div>
 
               {/* Right - Register CTA */}
-              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-[hsl(38,75%,50%)]/[0.03] border-t md:border-t-0 md:border-l border-white/[0.06]">
-                <div className="w-16 h-16 rounded-2xl bg-[hsl(38,75%,50%)]/10 flex items-center justify-center mb-5">
-                  <ArrowRight size={28} className="text-[hsl(38,75%,55%)]" />
+              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-white/[0.02] border-t md:border-t-0 md:border-l border-white/[0.06]">
+                <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-5">
+                  <ArrowRight size={28} className="text-white/70" />
                 </div>
                 <h2 className="font-display text-xl font-bold text-white mb-2">Primeira vez?</h2>
                 <p className="text-white/40 text-sm text-center mb-6 max-w-[240px]">
@@ -131,7 +131,7 @@ const Index = () => {
                 </p>
                 <button
                   onClick={() => setIsRegister(true)}
-                  className="px-8 py-2.5 rounded-xl border border-[hsl(38,75%,50%)]/30 text-[hsl(38,75%,55%)] text-sm font-medium hover:bg-[hsl(38,75%,50%)]/10 transition-all duration-300"
+                  className="px-8 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
                 >
                   Criar Conta
                 </button>
@@ -140,14 +140,14 @@ const Index = () => {
           ) : (
             <div className="flex flex-col md:flex-row">
               {/* Left - Back to Login CTA */}
-              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-[hsl(38,75%,50%)]/[0.03] border-b md:border-b-0 md:border-r border-white/[0.06]">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-10 glass bg-white/[0.02] border-b md:border-b-0 md:border-r border-white/[0.06]">
                 <h2 className="font-display text-xl font-bold text-white mb-2">Já tem conta?</h2>
                 <p className="text-white/40 text-sm text-center mb-6 max-w-[240px]">
                   Entre com suas credenciais e acesse o sistema.
                 </p>
                 <button
                   onClick={() => setIsRegister(false)}
-                  className="px-8 py-2.5 rounded-xl border border-[hsl(38,75%,50%)]/30 text-[hsl(38,75%,55%)] text-sm font-medium hover:bg-[hsl(38,75%,50%)]/10 transition-all duration-300"
+                  className="px-8 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all duration-300"
                 >
                   Fazer Login
                 </button>
@@ -175,7 +175,7 @@ const Index = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(38,75%,50%)]/20"
+                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-white/10"
                     style={{ background: "var(--gradient-button)", color: "white" }}
                   >
                     {loading ? "Criando conta..." : "Criar Conta"}

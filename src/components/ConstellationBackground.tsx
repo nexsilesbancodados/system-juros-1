@@ -51,12 +51,12 @@ const ConstellationBackground = () => {
         canvas.width / 2, canvas.height / 2, 0,
         canvas.width / 2, canvas.height / 2, canvas.width * 0.7
       );
-      grd.addColorStop(0, "rgba(180, 140, 60, 0.03)");
+      grd.addColorStop(0, "rgba(180, 180, 190, 0.03)");
       grd.addColorStop(1, "rgba(0, 0, 0, 0)");
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const goldR = 200, goldG = 160, goldB = 60;
+      const goldR = 180, goldG = 185, goldB = 195;
 
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i];
@@ -100,7 +100,7 @@ const ConstellationBackground = () => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0"
-      style={{ background: "linear-gradient(160deg, hsl(220 16% 5%), hsl(220 20% 8%), hsl(220 16% 5%))" }}
+      style={{ background: "linear-gradient(160deg, hsl(0 0% 4%), hsl(0 0% 7%), hsl(0 0% 4%))" }}
     />
   );
 };
