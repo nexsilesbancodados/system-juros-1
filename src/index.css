@@ -187,26 +187,16 @@
     border-color: hsl(var(--primary) / 0.2);
   }
 
-  /* Accent glow card */
+  /* Accent glow card — lightweight */
   .glow-card {
-    @apply relative overflow-hidden;
     background: var(--gradient-card);
     border: 1px solid hsl(var(--border) / 0.4);
     border-radius: 1.5rem;
     box-shadow: var(--shadow-card);
-  }
-  .glow-card::before {
-    content: '';
-    @apply absolute -inset-px rounded-[1.5rem] opacity-0 transition-opacity duration-500;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.25), transparent 50%, hsl(var(--primary) / 0.1));
-  }
-  .glow-card:hover::before {
-    opacity: 1;
+    @apply transition-colors duration-200;
   }
   .glow-card:hover {
-    box-shadow: var(--shadow-glow);
-    transform: translateY(-2px);
-    @apply transition-all duration-300;
+    border-color: hsl(var(--primary) / 0.25);
   }
 
   .text-gradient-gold {
