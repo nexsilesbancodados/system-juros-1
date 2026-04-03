@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery } from "@tanstack/react-query";
 
 interface TopBarProps {
   onSearchClick?: () => void;
@@ -18,6 +19,22 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+
+  const { data: financials } = useQuery({
+    queryKey: ["topbar-financials", user?.id],
+    queryFn: async () => {
+      const [contractsRes, profitsRes] = await Promise.all([
+        supabase.from("contracts").select("capital, status").eq("user_id", user!.id),
+        supabase.from("profits").select("amount").eq("user_id", user!.id).eq("status", "available"),
+      ]);
+      const activeContracts = (contractsRes.data || []).filter((c: any) => c.status === "active" || c.status === "overdue");
+      const carteira = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+      const lucro = (profitsRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      return { carteira, lucro };
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -102,11 +119,11 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
         <div className="hidden md:flex items-center gap-1.5">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 border border-border/30">
             <Wallet size={13} className="text-primary/60" />
-            <span className="text-[11px] font-semibold text-muted-foreground">R$ {fmt(Number(profile?.loan_balance || 0))}</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">R$ {fmt(financials?.carteira ?? 0)}</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10">
             <TrendingUp size={13} className="text-success/70" />
-            <span className="text-[11px] font-semibold text-success">R$ {fmt(Number(profile?.profit_balance || 0))}</span>
+            <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
           </div>
         </div>
       )}
