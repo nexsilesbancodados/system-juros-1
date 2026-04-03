@@ -166,6 +166,7 @@
     background: hsl(var(--card) / 0.7);
     border: 1px solid hsl(0 0% 100% / 0.06);
     box-shadow: var(--shadow-glass);
+    border-radius: 1.25rem;
   }
 
   .glass-strong {
