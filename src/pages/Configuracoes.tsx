@@ -1,17 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image } from "lucide-react";
+
+const COLOR_PRESETS = [
+  { label: "Âmbar", primary: "#d97706", accent: "#f59e0b" },
+  { label: "Azul", primary: "#2563eb", accent: "#3b82f6" },
+  { label: "Verde", primary: "#059669", accent: "#10b981" },
+  { label: "Roxo", primary: "#7c3aed", accent: "#8b5cf6" },
+  { label: "Rosa", primary: "#db2777", accent: "#ec4899" },
+  { label: "Vermelho", primary: "#dc2626", accent: "#ef4444" },
+  { label: "Ciano", primary: "#0891b2", accent: "#06b6d4" },
+  { label: "Laranja", primary: "#ea580c", accent: "#f97316" },
+];
 
 const Configuracoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refresh: refreshWhiteLabel } = useWhiteLabel();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState("empresa");
+  const [tab, setTab] = useState("marca");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
@@ -32,7 +47,8 @@ const Configuracoes = () => {
   });
 
   const [form, setForm] = useState({
-    company_name: "", company_cnpj: "",
+    company_name: "", company_cnpj: "", company_logo_url: "",
+    primary_color: "#d97706", accent_color: "#f59e0b", theme_mode: "dark",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
@@ -43,6 +59,10 @@ const Configuracoes = () => {
       setForm({
         company_name: settings.company_name || "",
         company_cnpj: settings.company_cnpj || "",
+        company_logo_url: settings.company_logo_url || "",
+        primary_color: (settings as any).primary_color || "#d97706",
+        accent_color: (settings as any).accent_color || "#f59e0b",
+        theme_mode: (settings as any).theme_mode || "dark",
         default_interest_rate: String(settings.default_interest_rate || 10),
         default_late_fee: String(settings.default_late_fee || 2),
         default_daily_interest: String(settings.default_daily_interest || 0.33),
@@ -56,12 +76,33 @@ const Configuracoes = () => {
     }
   }, [settings]);
 
+  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingLogo(true);
+    const ext = file.name.split(".").pop();
+    const path = `logos/${user.id}/logo.${ext}`;
+    const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
+    if (error) {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+    } else {
+      const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
+      setForm({ ...form, company_logo_url: urlData.publicUrl });
+      toast({ title: "✓ Logo enviado!" });
+    }
+    setUploadingLogo(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const payload = {
+    const payload: any = {
       user_id: user.id,
       company_name: form.company_name || null, company_cnpj: form.company_cnpj || null,
+      company_logo_url: form.company_logo_url || null,
+      primary_color: form.primary_color,
+      accent_color: form.accent_color,
+      theme_mode: form.theme_mode,
       default_interest_rate: parseFloat(form.default_interest_rate),
       default_late_fee: parseFloat(form.default_late_fee),
       default_daily_interest: parseFloat(form.default_daily_interest),
@@ -81,6 +122,7 @@ const Configuracoes = () => {
       setSaved(true); setTimeout(() => setSaved(false), 2000);
       toast({ title: "✓ Configurações salvas!" });
       queryClient.invalidateQueries({ queryKey: ["settings"] });
+      refreshWhiteLabel();
     }
   };
 
@@ -107,6 +149,7 @@ const Configuracoes = () => {
   const inputCls = "w-full px-4 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
 
   const tabs = [
+    { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
     { id: "padroes", label: "Padrões", icon: Percent },
     { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
@@ -144,6 +187,101 @@ const Configuracoes = () => {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5 animate-fade-in card-shine">
+        {tab === "marca" && (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><Palette size={16} className="text-primary" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">White Label</h2>
+                <p className="text-xs text-muted-foreground">Personalize nome, logo e cores do sistema</p>
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div className="space-y-3">
+              <label className="text-label mb-1.5 block">Logo da Empresa</label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-muted/30 border border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {form.company_logo_url ? (
+                    <img src={form.company_logo_url} alt="Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <Image size={24} className="text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <input ref={logoInputRef} type="file" accept="image/*" onChange={handleUploadLogo} className="hidden" />
+                  <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                    <Upload size={14} /> {uploadingLogo ? "Enviando..." : "Enviar Logo"}
+                  </button>
+                  {form.company_logo_url && (
+                    <button onClick={() => setForm({ ...form, company_logo_url: "" })}
+                      className="text-xs text-destructive hover:underline">Remover logo</button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="text-label mb-1.5 block">Nome do Sistema</label>
+              <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
+              <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral e login</p>
+            </div>
+
+            {/* Color presets */}
+            <div>
+              <label className="text-label mb-2 block">Cor Principal</label>
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => setForm({ ...form, primary_color: preset.primary, accent_color: preset.accent })}
+                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all ${
+                      form.primary_color === preset.primary ? "border-primary bg-primary/10 scale-105" : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="w-6 h-6 rounded-full shadow-sm" style={{ background: `linear-gradient(135deg, ${preset.primary}, ${preset.accent})` }} />
+                    <span className="text-[9px] font-medium text-muted-foreground">{preset.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">Principal:</label>
+                  <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                    className="w-8 h-8 rounded-lg border border-border cursor-pointer" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">Destaque:</label>
+                  <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
+                    className="w-8 h-8 rounded-lg border border-border cursor-pointer" />
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="p-4 rounded-2xl border border-border bg-muted/20">
+              <p className="text-label mb-2">Pré-visualização</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})` }}>
+                  {form.company_logo_url && <img src={form.company_logo_url} alt="" className="w-full h-full object-cover" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {form.company_name || "SYSTEM JUROS"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Seu sistema personalizado</p>
+                </div>
+                <div className="ml-auto flex gap-1.5">
+                  <div className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style={{ background: form.primary_color }}>Botão</div>
+                  <div className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style={{ background: form.accent_color }}>Ação</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {tab === "empresa" && (
           <>
             <div className="flex items-center gap-2.5">
