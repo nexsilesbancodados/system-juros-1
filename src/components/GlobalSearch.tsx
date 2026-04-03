@@ -72,7 +72,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       const contractResults: SearchResult[] = (contractsRes.data || [])
         .filter((c: any) => c.clients?.name?.toLowerCase().includes(q))
         .map((c: any) => ({
-          type: "contract", title: `Contrato - ${c.clients?.name}`, subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")}`, path: `/contratos/${c.id}`,
+          type: "client", title: `${c.clients?.name} — Contrato`, subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")}`, path: `/clientes/${c.clients?.id || ""}`,
         }));
 
       const combined = [...pageResults, ...clientResults, ...contractResults];
