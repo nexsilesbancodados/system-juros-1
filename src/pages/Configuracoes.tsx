@@ -7,14 +7,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt } from "lucide-react";
 
 const COLOR_PRESETS = [
-  { label: "Âmbar", primary: "#d97706", accent: "#f59e0b" },
-  { label: "Azul", primary: "#2563eb", accent: "#3b82f6" },
-  { label: "Verde", primary: "#059669", accent: "#10b981" },
-  { label: "Roxo", primary: "#7c3aed", accent: "#8b5cf6" },
-  { label: "Rosa", primary: "#db2777", accent: "#ec4899" },
-  { label: "Vermelho", primary: "#dc2626", accent: "#ef4444" },
-  { label: "Ciano", primary: "#0891b2", accent: "#06b6d4" },
-  { label: "Laranja", primary: "#ea580c", accent: "#f97316" },
+  { label: "Azul Steel", primary: "#4a86c8", accent: "#6ba3d6", emoji: "🔷" },
+  { label: "Âmbar", primary: "#d97706", accent: "#f59e0b", emoji: "🟡" },
+  { label: "Azul Royal", primary: "#2563eb", accent: "#3b82f6", emoji: "💎" },
+  { label: "Esmeralda", primary: "#059669", accent: "#10b981", emoji: "💚" },
+  { label: "Roxo", primary: "#7c3aed", accent: "#8b5cf6", emoji: "💜" },
+  { label: "Rosa", primary: "#db2777", accent: "#ec4899", emoji: "💖" },
+  { label: "Vermelho", primary: "#dc2626", accent: "#ef4444", emoji: "❤️" },
+  { label: "Ciano", primary: "#0891b2", accent: "#06b6d4", emoji: "🩵" },
+  { label: "Laranja", primary: "#ea580c", accent: "#f97316", emoji: "🟠" },
+  { label: "Índigo", primary: "#4f46e5", accent: "#6366f1", emoji: "🔮" },
+  { label: "Teal", primary: "#0d9488", accent: "#14b8a6", emoji: "🌊" },
+  { label: "Dourado", primary: "#b45309", accent: "#d97706", emoji: "👑" },
 ];
 
 const Configuracoes = () => {
