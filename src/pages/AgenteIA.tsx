@@ -20,20 +20,131 @@ interface WhatsAppChat {
   id: string;
   name?: string;
   remoteJid: string;
+  phone?: string;
   lastMessage?: string;
   updatedAt?: string;
   unreadCount?: number;
 }
 
+interface WhatsAppMessageKey {
+  id?: string;
+  fromMe?: boolean;
+  remoteJid?: string;
+  remoteJidAlt?: string;
+}
+
 interface WhatsAppMsg {
-  key: { id: string; fromMe: boolean; remoteJid: string };
-  message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+  id?: string;
+  key?: WhatsAppMessageKey;
+  message?: Record<string, unknown>;
   messageTimestamp?: number;
-  pushName?: string;
+  pushName?: string | null;
+}
+
+interface EvolutionChatRecord {
+  id?: string | null;
+  remoteJid?: string | null;
+  pushName?: string | null;
+  updatedAt?: string | null;
+  unreadCount?: number | null;
+  lastMessage?: {
+    key?: WhatsAppMessageKey;
+    message?: Record<string, unknown>;
+    pushName?: string | null;
+  };
 }
 
 type ConnectionStatus = "checking" | "disconnected" | "qr_ready" | "connecting" | "connected" | "error";
 type TabType = "chat" | "whatsapp" | "mensagens" | "config" | "metricas" | "relatorios";
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const extractWhatsAppText = (value: unknown, depth = 0): string => {
+  if (depth > 6 || value == null) return "";
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const text = extractWhatsAppText(item, depth + 1);
+      if (text) return text;
+    }
+    return "";
+  }
+
+  if (!isRecord(value)) {
+    return "";
+  }
+
+  const directFields = [
+    "conversation",
+    "text",
+    "caption",
+    "contentText",
+    "hydratedContentText",
+    "displayText",
+    "selectedDisplayText",
+    "title",
+    "description",
+  ] as const;
+
+  for (const field of directFields) {
+    const candidate = value[field];
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const text = extractWhatsAppText(nestedValue, depth + 1);
+    if (text) return text;
+  }
+
+  return "";
+};
+
+const getJidLabel = (jid?: string | null) => (jid ? jid.split("@")[0] : undefined);
+
+const getTimestampValue = (value?: string | number | null) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value) return new Date(value).getTime();
+  return 0;
+};
+
+const getChatPhone = (chat: EvolutionChatRecord): string | undefined => {
+  const candidates = [chat.lastMessage?.key?.remoteJidAlt, chat.remoteJid];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (candidate.endsWith("@s.whatsapp.net")) {
+      const phone = candidate.replace(/\D/g, "");
+      if (phone) return phone;
+    }
+
+    if (candidate.endsWith("@g.us") || candidate.endsWith("@lid")) {
+      return candidate;
+    }
+
+    const phone = candidate.replace(/\D/g, "");
+    if (phone) return phone;
+
+    return candidate;
+  }
+
+  return undefined;
+};
+
+const getChatDisplayName = (chat: EvolutionChatRecord) =>
+  chat.pushName?.trim() ||
+  chat.lastMessage?.pushName?.trim() ||
+  getJidLabel(chat.lastMessage?.key?.remoteJidAlt) ||
+  getJidLabel(chat.remoteJid) ||
+  "Conversa sem nome";
 
 const AgenteIA = () => {
   const { user } = useAuth();
