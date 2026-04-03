@@ -156,7 +156,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-4 md:space-y-5 pb-8">
       {/* ─── Hero Header ─── */}
       <div className="animate-fade-in">
         <div className="flex items-end justify-between gap-4">
