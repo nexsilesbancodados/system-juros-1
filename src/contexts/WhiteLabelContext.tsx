@@ -19,8 +19,8 @@ interface WhiteLabelContextType {
 const defaults: WhiteLabelConfig = {
   companyName: "SYSTEM JUROS",
   companyLogo: null,
-  primaryColor: "#d97706",
-  accentColor: "#f59e0b",
+  primaryColor: "#4a86c8",
+  accentColor: "#6ba3d6",
   themeMode: "dark",
 };
 
