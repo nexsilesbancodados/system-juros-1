@@ -117,11 +117,11 @@ const MobileBottomNav = () => {
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
-                          isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+                          isActive(item.path) ? "bg-primary/10 text-primary" : `${mobileIconColor[item.path] || "text-muted-foreground"} hover:bg-accent/40 hover:text-foreground active:scale-95`
                         }`}
                       >
                         <item.icon size={20} />
-                        <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive(item.path) ? "" : "text-muted-foreground"}`}>{item.label}</span>
                       </button>
                     ))}
                   </div>
