@@ -15,7 +15,7 @@ const AgenteIA = () => {
   const [tab, setTab] = useState<"chat" | "metricas" | "relatorios">("chat");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Olá! Sou o assistente IA do Urus Jurista. Posso ajudá-lo a consultar dados de clientes, parcelas, contratos e muito mais. Como posso ajudar?", timestamp: new Date() },
+    { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Posso ajudá-lo a consultar dados de clientes, parcelas, contratos e muito mais. Como posso ajudar?", timestamp: new Date() },
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
