@@ -48,6 +48,7 @@ const ClienteDetalhe = () => {
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
   const [loanLateFee, setLoanLateFee] = useState("2");
   const [loanLoading, setLoanLoading] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   const inv = (key: string) => qc.invalidateQueries({ queryKey: [key, id] });
 
