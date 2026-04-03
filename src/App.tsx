@@ -103,9 +103,9 @@ const App = () => (
               </Routes>
             </Suspense>
           </BrowserRouter>
-          </WhiteLabelProvider>
-        </AuthProvider>
-      </ThemeProvider>
+          </ThemeProvider>
+        </WhiteLabelProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
