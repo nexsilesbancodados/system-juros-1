@@ -197,9 +197,18 @@ const ClienteDetalhe = () => {
       const { error: iErr } = await supabase.from("contract_installments").insert(insts);
       if (iErr) throw iErr;
 
+      // Register loan disbursement transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount: parseFloat(loanCapital), type: "loan",
+        description: `Empréstimo para ${client?.name} - ${n}x R$ ${fmt(loanCalc.installmentAmount)}`,
+        client_id: id, contract_id: contract.id,
+      });
+
       toast({ title: "Empréstimo criado!", description: `${n} parcelas geradas.` });
       setNewLoanMode(false); setLoanCapital(""); setLoanInstallments("");
-      inv("client-contracts"); inv("client-installments");
+      inv("client-contracts"); inv("client-installments"); inv("client-transactions");
+      qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally { setLoanLoading(false); }
@@ -207,9 +216,44 @@ const ClienteDetalhe = () => {
 
   // 4. Quitar Parcela (total)
   const payFull = async (instId: string, amount: number) => {
+    if (!user) return;
     const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Parcela quitada!" }); inv("client-installments");
+
+    // Find the installment to get contract info
+    const inst = installments.find((i: any) => i.id === instId);
+    if (inst) {
+      // Register profit (interest portion)
+      const contract = contracts.find((c: any) => c.id === inst.contract_id);
+      if (contract) {
+        const interestRate = Number(contract.interest_rate || 0) / 100;
+        const interestPortion = amount * (interestRate / (1 + interestRate));
+        if (interestPortion > 0) {
+          await supabase.from("profits").insert({
+            user_id: user.id, amount: interestPortion,
+            description: `Juros parcela #${inst.installment_number} - ${client?.name}`,
+            client_id: id,
+          });
+        }
+      }
+      // Register transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount, type: "payment",
+        description: `Pagamento parcela #${inst.installment_number} - ${client?.name}`,
+        client_id: id, contract_id: inst.contract_id,
+      });
+
+      // Check if all installments for this contract are paid
+      const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
+      if (otherUnpaid.length === 0 && contract) {
+        await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
+        inv("client-contracts");
+      }
+    }
+
+    toast({ title: "Parcela quitada!" }); inv("client-installments"); inv("client-transactions"); inv("client-profits");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 5. Pagamento Parcial
@@ -220,27 +264,37 @@ const ClienteDetalhe = () => {
     if (!val || val <= 0) { toast({ title: "Valor inválido", variant: "destructive" }); return; }
     const instAmount = Number(partialPayModal.amount);
     if (val >= instAmount) {
-      // Full payment
       await payFull(partialPayModal.id, instAmount);
     } else {
-      // Partial: update paid_amount, keep pending, reduce remaining
       const alreadyPaid = Number(partialPayModal.paid_amount || 0);
       const newPaid = alreadyPaid + val;
       if (newPaid >= instAmount) {
-        await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: instAmount }).eq("id", partialPayModal.id);
+        await payFull(partialPayModal.id, instAmount);
       } else {
         await supabase.from("contract_installments").update({ paid_amount: newPaid }).eq("id", partialPayModal.id);
+        // Register partial transaction
+        await supabase.from("transactions").insert({
+          user_id: user.id, amount: val, type: "partial_payment",
+          description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`,
+          client_id: id, contract_id: partialPayModal.contract_id,
+        });
       }
       toast({ title: `R$ ${fmt(val)} registrado!` });
     }
-    setPartialPayModal(null); inv("client-installments");
+    setPartialPayModal(null);
+    inv("client-installments"); inv("client-transactions");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 6. Estornar Pagamento
   const reversePayment = async (instId: string) => {
     if (!confirm("Estornar pagamento desta parcela?")) return;
     await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
-    toast({ title: "Estornado!" }); inv("client-installments");
+    toast({ title: "Estornado!" });
+    inv("client-installments"); inv("client-contracts"); inv("client-transactions"); inv("client-profits");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 7. Enviar Cobrança Individual
@@ -267,9 +321,9 @@ const ClienteDetalhe = () => {
     if (!unpaid.length) { toast({ title: "Todas as parcelas já estão pagas!" }); return; }
     if (!confirm(`Quitar ${unpaid.length} parcela(s)?`)) return;
     for (const inst of unpaid) {
-      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount }).eq("id", inst.id);
+      await payFull(inst.id, Number(inst.amount));
     }
-    toast({ title: `${unpaid.length} parcelas quitadas!` }); inv("client-installments");
+    toast({ title: `${unpaid.length} parcelas quitadas!` });
   };
 
   // 10. Copiar Dados

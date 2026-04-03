@@ -29,7 +29,7 @@ const Carteira = () => {
     const [p, e, i] = await Promise.all([
       supabase.from("profits").select("*").eq("user_id", user.id).order("date", { ascending: false }),
       supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-      supabase.from("installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
+      supabase.from("contract_installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
     ]);
     setProfits(p.data || []);
     setExpenses(e.data || []);
@@ -63,7 +63,7 @@ const Carteira = () => {
     setLoading(true); fetchAll();
   };
 
-  const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.amount), 0);
+  const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.paid_amount || i.amount), 0);
   const totalSaidas = expenses.reduce((a, e) => a + Number(e.amount), 0);
   const saldo = totalEntradas - totalSaidas;
 
