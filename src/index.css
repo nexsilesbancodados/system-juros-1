@@ -436,6 +436,7 @@
   .modal-backdrop {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4;
     background: hsl(0 0% 0% / 0.6);
+    backdrop-filter: blur(4px);
     animation: fadeIn 0.2s ease-out;
   }
   @keyframes fadeIn {
@@ -443,14 +444,60 @@
     to { opacity: 1; }
   }
 
-  /* Modal content */
+  /* Modal content — premium glass look */
   .modal-content {
-    @apply w-full max-h-[85vh] overflow-y-auto rounded-3xl border border-border bg-card shadow-lg;
-    animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: hsl(var(--card) / 0.97);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow:
+      0 0 0 1px hsl(var(--border) / 0.1),
+      0 24px 64px -16px hsl(0 0% 0% / 0.35),
+      0 8px 20px -8px hsl(0 0% 0% / 0.2),
+      inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    border-radius: 1.25rem;
   }
-  @keyframes modalSlideUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+
+  .dark .modal-content {
+    background: hsl(var(--card) / 0.95);
+    border-color: hsl(var(--border) / 0.4);
+    box-shadow:
+      0 0 0 1px hsl(0 0% 100% / 0.03),
+      0 24px 64px -16px hsl(0 0% 0% / 0.6),
+      0 8px 20px -8px hsl(0 0% 0% / 0.4),
+      inset 0 1px 0 hsl(0 0% 100% / 0.04);
+  }
+
+  /* Modal header icon containers */
+  .modal-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center shrink-0;
+  }
+  .modal-icon-primary {
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+  }
+  .modal-icon-success {
+    background: hsl(var(--success) / 0.1);
+    color: hsl(var(--success));
+  }
+  .modal-icon-destructive {
+    background: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+  }
+  .modal-icon-warning {
+    background: hsl(var(--warning) / 0.1);
+    color: hsl(var(--warning));
+  }
+
+  /* Modal form field */
+  .modal-field-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider mb-1.5 block;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Delete confirmation modal special style */
+  .modal-delete-bar {
+    @apply w-full h-1 rounded-t-2xl;
+    background: linear-gradient(90deg, hsl(var(--destructive)), hsl(var(--destructive) / 0.5));
   }
 
   /* Pill tabs */
