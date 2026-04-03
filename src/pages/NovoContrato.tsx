@@ -418,13 +418,12 @@ const NovoContrato = () => {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: "Capital", value: `R$ ${parseFloat(capital).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
-                { label: "Taxa de Juros", value: `${interestRate}%` },
                 { label: "Parcelas", value: `${numInstallments}x R$ ${calc.installmentAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
                 { label: "Frequência", value: frequencyOptions.find((f) => f.value === frequency)?.label },
                 { label: "1º Vencimento", value: new Date(startDate + "T12:00:00").toLocaleDateString("pt-BR") },
                 { label: "Total a Receber", value: `R$ ${calc.totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
-                { label: "Multa Atraso", value: `${lateFeePercent}%` },
-                { label: "Juros/Dia Atraso", value: `${dailyInterestPercent}%` },
+                { label: "Multa Diária", value: `${dailyInterestPercent}%` },
+                { label: "Multa Mensal", value: `${lateFeePercent}%` },
               ].map((item) => (
                 <div key={item.label} className="bg-muted/30 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{item.label}</p>
