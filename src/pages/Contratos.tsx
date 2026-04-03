@@ -31,6 +31,12 @@ const Contratos = () => {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
+  // Realtime: re-fetch when contracts or installments change
+  useMultiTableRealtime(
+    ["contracts", "contract_installments"],
+    [["contracts", user?.id || ""], ["contracts-installments-progress", user?.id || ""]],
+  );
+
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["contracts", user?.id],
     queryFn: async () => {

@@ -22,6 +22,12 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Realtime: re-fetch when any relevant table changes
+  useMultiTableRealtime(
+    ["contracts", "contract_installments", "profits", "clients", "goals"],
+    [["dashboard-data", user?.id || ""]],
+  );
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-data", user?.id],
     queryFn: async () => {
