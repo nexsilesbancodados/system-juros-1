@@ -473,8 +473,8 @@ const Dashboard = () => {
         <div className="premium-card overflow-hidden animate-fade-in">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Target size={14} className="text-primary" />
+              <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Target size={15} className="text-primary" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Metas</h2>
             </div>
