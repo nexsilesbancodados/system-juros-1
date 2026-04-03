@@ -316,8 +316,7 @@ const NovoContrato = () => {
                 </div>
               )}
               <button onClick={handleCreateClient} disabled={savingClient || !newClient.nome.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
-                style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
+                className="action-btn-primary w-full">
                 {savingClient ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
                 {savingClient ? "Salvando..." : "Cadastrar e Selecionar"}
               </button>
@@ -499,14 +498,12 @@ const NovoContrato = () => {
         {step < 3 ? (
           <button onClick={() => setStep(step + 1)}
             disabled={(step === 1 && !selectedClientId) || (step === 2 && !calc)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
-            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
+            className="action-btn-primary">
             Próximo <ArrowRight size={16} />
           </button>
         ) : (
           <button onClick={handleSubmit} disabled={loading}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
-            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
+            className="action-btn-primary">
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {loading ? "Criando..." : "Confirmar Contrato"}
           </button>

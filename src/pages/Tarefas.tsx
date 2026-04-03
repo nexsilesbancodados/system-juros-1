@@ -97,8 +97,7 @@ const Tarefas = () => {
           className="flex-1 px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced"
         />
         <button onClick={handleAdd}
-          className="px-4 py-3 rounded-xl text-sm font-semibold text-primary-foreground shrink-0 transition-all hover:shadow-lg hover:shadow-primary/20"
-          style={{ background: "var(--gradient-button)" }}>
+          className="action-btn-primary">
           <Plus size={18} />
         </button>
       </div>

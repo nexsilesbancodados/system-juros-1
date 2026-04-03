@@ -91,8 +91,7 @@ const Planilha = () => {
           <p className="text-muted-foreground text-sm mt-0.5">Visão completa dos dados de todos os clientes.</p>
         </div>
         <button onClick={handleExportCSV}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg"
-          style={{ background: "var(--gradient-button)" }}>
+          className="action-btn-primary">
           <Download size={16} /> Exportar CSV
         </button>
       </div>

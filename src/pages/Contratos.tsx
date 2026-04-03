@@ -78,8 +78,7 @@ const Contratos = () => {
           <p className="text-sm text-muted-foreground">Gerencie todos os contratos de empréstimo</p>
         </div>
         <button onClick={() => navigate("/novo-contrato")}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
-          style={{ background: "var(--gradient-button)" }}>
+          className="action-btn-primary">
           <Plus size={16} /> Novo Contrato
         </button>
       </div>
