@@ -77,7 +77,7 @@ const App = () => (
                 <Route path="/ferramentas/tarefas" element={<Tarefas />} />
                 <Route path="/ferramentas/anotacoes" element={<Anotacoes />} />
                 <Route path="/ferramentas/planilha" element={<Planilha />} />
-                <Route path="/uruszap" element={<Uruszap />} />
+                
                 <Route path="/puxada-dados" element={<PuxadaDados />} />
                 <Route path="/network" element={<NetworkPage />} />
                 <Route path="/sobre" element={<Sobre />} />
