@@ -99,6 +99,7 @@ const App = () => (
                   <Route path="/qrcode" element={<QRCodePage />} />
                   <Route path="/agente-ia" element={<AgenteIA />} />
                   <Route path="/auditoria" element={<Auditoria />} />
+                  <Route path="/automacoes" element={<Automacoes />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
