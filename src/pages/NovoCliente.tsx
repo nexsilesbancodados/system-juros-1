@@ -167,8 +167,21 @@ const NovoCliente = () => {
 
     setSaving(true);
 
+    const clientId = crypto.randomUUID();
+    let avatar_url: string | null = null;
+
+    if (avatarFile) {
+      const ext = avatarFile.name.split(".").pop();
+      const path = `client-avatars/${clientId}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
+        avatar_url = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("clients").insert({
-      id: crypto.randomUUID(),
+      id: clientId,
       user_id: user.id,
       name: nome.trim(),
       email: email.trim() || null,
@@ -177,6 +190,7 @@ const NovoCliente = () => {
       cpf_cnpj: cpfCnpj.trim() || null,
       client_type: "loan",
       status: "Ativo",
+      avatar_url,
       address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
     });
 
