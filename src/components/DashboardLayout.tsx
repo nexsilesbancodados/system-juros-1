@@ -4,13 +4,13 @@ import TopBar from "@/components/TopBar";
 import { Outlet } from "react-router-dom";
 
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:ml-60">
-        <TopBar onMenuClick={() => setSidebarOpen(true)} />
+      <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      <div className={`transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
+        <TopBar />
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
