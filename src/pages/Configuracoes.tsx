@@ -97,6 +97,7 @@ const Configuracoes = () => {
         footer_text: s.footer_text || "",
         border_radius: s.border_radius || "16",
         font_family: s.font_family || "default",
+        default_interest_rate: String(s.default_interest_rate || 10),
         default_late_fee: String(s.default_late_fee || 2),
         default_daily_interest: String(s.default_daily_interest || 0.33),
         default_frequency: s.default_frequency || "monthly",
