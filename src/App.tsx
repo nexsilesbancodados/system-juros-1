@@ -68,9 +68,6 @@ const App = () => (
                 <Route path="/novo-contrato" element={<NovoContrato />} />
                 <Route path="/contratos/:id" element={<ContratoDetalhe />} />
                 <Route path="/mesa-cobranca" element={<MesaCobranca />} />
-                <Route path="/veiculos" element={<Veiculos />} />
-                <Route path="/celulares" element={<Celulares />} />
-                <Route path="/penhoras" element={<Penhoras />} />
                 <Route path="/cobrancas" element={<Cobrancas />} />
                 <Route path="/carteira" element={<Carteira />} />
                 <Route path="/lucros" element={<Lucros />} />
@@ -80,9 +77,9 @@ const App = () => (
                 <Route path="/ferramentas/tarefas" element={<Tarefas />} />
                 <Route path="/ferramentas/anotacoes" element={<Anotacoes />} />
                 <Route path="/ferramentas/planilha" element={<Planilha />} />
-                <Route path="/uruszap" element={<Uruszap />} />
+                
                 <Route path="/puxada-dados" element={<PuxadaDados />} />
-                <Route path="/network" element={<NetworkPage />} />
+                
                 <Route path="/sobre" element={<Sobre />} />
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/admin" element={<Admin />} />

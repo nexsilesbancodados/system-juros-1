@@ -38,9 +38,6 @@ const sections: MenuSection[] = [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
       { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
       { label: "Cobradores", icon: <UserCheck size={18} />, path: "/cobradores" },
-      { label: "Veículos", icon: <Car size={18} />, path: "/veiculos" },
-      { label: "Celulares", icon: <Smartphone size={18} />, path: "/celulares" },
-      { label: "Penhoras", icon: <Gavel size={18} />, path: "/penhoras" },
     ],
   },
   {
@@ -67,7 +64,6 @@ const bottomItems: MenuItem[] = [
   { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
   { label: "Auditoria", icon: <Shield size={18} />, path: "/auditoria" },
   { label: "QR Code", icon: <QrCode size={18} />, path: "/qrcode" },
-  { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Configurações", icon: <Settings size={18} />, path: "/configuracoes" },
   { label: "Admin", icon: <Crown size={18} />, path: "/admin" },
