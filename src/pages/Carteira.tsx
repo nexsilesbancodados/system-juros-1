@@ -1,31 +1,92 @@
 import { useState, useEffect } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, TrendingUp, Banknote, CreditCard } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, TrendingUp, Banknote, CreditCard, Plus, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const Carteira = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profits, setProfits] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<"in" | "out">("in");
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchAll = async () => {
+    if (!user) return;
+    const [p, e, i] = await Promise.all([
+      supabase.from("profits").select("*").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
+    ]);
+    setProfits(p.data || []);
+    setExpenses(e.data || []);
+    setInstallments(i.data || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!user) return;
-    const fetchAll = async () => {
-      const [p, e, i] = await Promise.all([
-        supabase.from("profits").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-        supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-        supabase.from("installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
-      ]);
-      setProfits(p.data || []);
-      setExpenses(e.data || []);
-      setInstallments(i.data || []);
-      setLoading(false);
-    };
     fetchAll();
   }, [user]);
+
+  const handleSave = async () => {
+    if (!user || !amount || !description) return;
+    setSaving(true);
+    const now = new Date().toISOString();
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) {
+      toast({ title: "Valor inválido", variant: "destructive" });
+      setSaving(false);
+      return;
+    }
+
+    if (dialogType === "in") {
+      const { error } = await supabase.from("profits").insert({
+        user_id: user.id,
+        amount: val,
+        description,
+        date: now,
+      });
+      if (error) {
+        toast({ title: "Erro ao adicionar entrada", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+    } else {
+      const { error } = await supabase.from("expenses").insert({
+        user_id: user.id,
+        amount: val,
+        description,
+        date: now,
+        category: "Retirada manual",
+      });
+      if (error) {
+        toast({ title: "Erro ao registrar saída", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+    }
+
+    toast({ title: dialogType === "in" ? "Entrada adicionada!" : "Saída registrada!" });
+    setAmount("");
+    setDescription("");
+    setDialogOpen(false);
+    setSaving(false);
+    setLoading(true);
+    fetchAll();
+  };
 
   const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.amount), 0);
   const totalSaidas = expenses.reduce((a, e) => a + Number(e.amount), 0);
@@ -75,17 +136,83 @@ const Carteira = () => {
     },
   ];
 
-  // Progress bar
   const total = totalEntradas + totalSaidas || 1;
   const entradasPct = Math.round((totalEntradas / total) * 100);
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Banknote size={24} className="text-primary" /> Carteira
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">Visão geral do seu saldo e movimentações.</p>
+      <div className="animate-fade-in flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Banknote size={24} className="text-primary" /> Carteira
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Visão geral do seu saldo e movimentações.</p>
+        </div>
+        <div className="flex gap-2">
+          <Dialog open={dialogOpen && dialogType === "in"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("in"); }}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-medium text-sm transition-colors">
+                <Plus size={16} /> Entrada
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-emerald-500">
+                  <ArrowUpRight size={20} /> Adicionar Entrada
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label>Descrição</Label>
+                  <Input placeholder="Ex: Depósito, Recebimento..." value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Valor (R$)</Label>
+                  <Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                </div>
+                <button
+                  disabled={saving || !amount || !description}
+                  onClick={handleSave}
+                  className="w-full py-2.5 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                >
+                  {saving ? "Salvando..." : "Confirmar Entrada"}
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={dialogOpen && dialogType === "out"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("out"); }}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 font-medium text-sm transition-colors">
+                <Minus size={16} /> Saída
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive">
+                  <ArrowDownRight size={20} /> Registrar Saída
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label>Descrição</Label>
+                  <Input placeholder="Ex: Saque, Pagamento..." value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Valor (R$)</Label>
+                  <Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                </div>
+                <button
+                  disabled={saving || !amount || !description}
+                  onClick={handleSave}
+                  className="w-full py-2.5 rounded-lg bg-destructive text-white font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? "Salvando..." : "Confirmar Saída"}
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
