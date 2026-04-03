@@ -176,19 +176,23 @@
     background-clip: text;
   }
 
-  /* Microinteractions */
+  /* Microinteractions — Improvement #1: smoother transitions */
   .micro-bounce {
-    @apply transition-transform duration-200;
+    @apply transition-all duration-200 ease-out;
   }
   .micro-bounce:active {
     transform: scale(0.97);
   }
+  .micro-bounce:hover {
+    transform: translateY(-1px);
+  }
 
   .micro-press {
-    @apply transition-all duration-150 ease-out;
+    @apply transition-all duration-200 ease-out;
   }
   .micro-press:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
   }
   .micro-press:active {
     transform: translateY(1px) scale(0.98);
@@ -234,9 +238,140 @@
     color: hsl(var(--muted-foreground));
   }
 
+  /* Improvement #2: Focus ring styles for accessibility */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Improvement #3: Animated gradient shimmer for loading */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Improvement #4: Staggered fade-in animation */
+  .stagger-fade-in > * {
+    animation: fadeInUp 0.4s ease-out both;
+  }
+  .stagger-fade-in > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-fade-in > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger-fade-in > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger-fade-in > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger-fade-in > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger-fade-in > *:nth-child(6) { animation-delay: 300ms; }
+  .stagger-fade-in > *:nth-child(7) { animation-delay: 360ms; }
+  .stagger-fade-in > *:nth-child(8) { animation-delay: 420ms; }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Improvement #5: Pulse dot animation for status indicators */
+  .pulse-dot {
+    @apply relative;
+  }
+  .pulse-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full;
+    animation: pulseDot 2s ease-in-out infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 0; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(2.5); }
+  }
+
+  /* Improvement #6: Better input focus animations */
+  .input-enhanced {
+    @apply transition-all duration-200 ease-out;
+  }
+  .input-enhanced:focus {
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
+    border-color: hsl(var(--ring) / 0.5);
+  }
+
+  /* Improvement #7: Card shine effect on hover */
+  .card-shine {
+    @apply relative overflow-hidden;
+  }
+  .card-shine::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      hsl(0 0% 100% / 0.03) 45%,
+      hsl(0 0% 100% / 0.06) 50%,
+      hsl(0 0% 100% / 0.03) 55%,
+      transparent 60%
+    );
+  }
+  .card-shine:hover::before {
+    opacity: 1;
+    animation: shine 0.8s ease-out;
+  }
+  @keyframes shine {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+
+  /* Improvement #8: Skeleton loading with shimmer */
+  .skeleton-shimmer {
+    @apply rounded-xl;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.06) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+
   /* Safe area for bottom nav */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Improvement #9: Smooth page transition */
+  .page-enter {
+    animation: pageEnter 0.35s ease-out;
+  }
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Improvement #10: Badge pulse for urgent items */
+  .badge-pulse {
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.4); }
+    50% { box-shadow: 0 0 0 6px hsl(var(--destructive) / 0); }
   }
 
   /* Mobile optimizations */
@@ -245,5 +380,31 @@
       transform: none;
       box-shadow: var(--shadow-glass);
     }
+    .micro-press:hover {
+      transform: none;
+    }
+    .micro-bounce:hover {
+      transform: none;
+    }
+  }
+
+  /* Improvement #11: Tooltip arrow styles */
+  .tooltip-arrow {
+    @apply absolute w-2 h-2 bg-popover rotate-45 border-b border-r border-border;
+  }
+
+  /* Improvement #12: Number counter animation */
+  .counter-animate {
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Improvement #13: Divider with label */
+  .divider-label {
+    @apply flex items-center gap-3 text-xs text-muted-foreground;
+  }
+  .divider-label::before,
+  .divider-label::after {
+    content: '';
+    @apply flex-1 h-px bg-border;
   }
 }
