@@ -20,7 +20,7 @@ interface MenuItem {
 
 interface MenuSection {
   title: string;
-  sectionIcon?: React.ComponentType<{ size?: number; className?: string }>;
+  sectionIcon?: LucideIcon;
   items: MenuItem[];
   collapsible?: boolean;
   defaultOpen?: boolean;
