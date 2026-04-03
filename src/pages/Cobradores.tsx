@@ -354,8 +354,7 @@ const Cobradores = () => {
           </p>
           {!search && (
             <button onClick={() => { resetForm(); setShowForm(true); }}
-              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-button)" }}>
+              className="action-btn-primary">
               <Plus size={14} /> Cadastrar Primeiro Cobrador
             </button>
           )}

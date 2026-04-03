@@ -142,8 +142,7 @@ const Metas = () => {
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={saving}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-all hover:shadow-lg"
-              style={{ background: "var(--gradient-button)" }}>
+              className="action-btn-primary disabled:opacity-50">
               {saving ? "Salvando..." : "Criar Meta"}
             </button>
             <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>

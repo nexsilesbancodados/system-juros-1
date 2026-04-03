@@ -106,8 +106,7 @@ const QRCodePage = () => {
           <button
             onClick={() => generateQR(inputUrl)}
             disabled={!inputUrl}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground shrink-0 disabled:opacity-40 transition-opacity"
-            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}
+            className="action-btn-primary disabled:opacity-50"
           >
             Gerar
           </button>
