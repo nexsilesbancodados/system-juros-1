@@ -117,13 +117,13 @@ const ClienteDetalhe = () => {
   // Loan calc
   const loanCalc = useMemo(() => {
     const cap = parseFloat(loanCapital) || 0;
-    const fee = parseFloat(loanMonthlyFee) || 0;
+    const rate = parseFloat(loanInterestRate) || 0;
     const n = parseInt(loanInstallments) || 0;
     if (!cap || !n) return null;
-    const totalInterest = cap * (fee / 100) * n;
+    const totalInterest = cap * (rate / 100) * n;
     const total = cap + totalInterest;
     return { totalInterest, total, installmentAmount: total / n };
-  }, [loanCapital, loanMonthlyFee, loanInstallments]);
+  }, [loanCapital, loanInterestRate, loanInstallments]);
 
   // ===== TOOL FUNCTIONS (all usable within the page) =====
 
