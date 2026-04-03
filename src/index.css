@@ -645,4 +645,88 @@
     background: var(--gradient-gold);
     opacity: 0.6;
   }
+
+  /* ── Enhanced Action Buttons ── */
+
+  /* Icon container — wraps icon in a tinted circle */
+  .icon-box {
+    @apply flex items-center justify-center shrink-0 rounded-xl transition-all duration-200;
+  }
+  .icon-box-sm {
+    @apply w-8 h-8;
+  }
+  .icon-box-md {
+    @apply w-10 h-10;
+  }
+  .icon-box-lg {
+    @apply w-12 h-12;
+  }
+
+  /* Action button — used inline in cards/toolbars */
+  .action-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold
+           px-4 py-2.5 transition-all duration-200
+           border border-border/60 bg-card/80 text-foreground
+           hover:bg-accent/60 hover:border-primary/30 hover:shadow-sm
+           active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Action button — primary gradient */
+  .action-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold
+           px-5 py-2.5 transition-all duration-200
+           text-primary-foreground shadow-sm
+           hover:shadow-md hover:brightness-110
+           active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    background: var(--gradient-button);
+  }
+
+  /* Action button — destructive */
+  .action-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold
+           px-4 py-2.5 transition-all duration-200
+           border border-destructive/20 bg-destructive/10 text-destructive
+           hover:bg-destructive/20 hover:border-destructive/40 hover:shadow-sm
+           active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Action button — success */
+  .action-btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold
+           px-4 py-2.5 transition-all duration-200
+           border border-success/20 bg-success/10 text-success
+           hover:bg-success/20 hover:border-success/40 hover:shadow-sm
+           active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Icon-only action — subtle circle button */
+  .icon-action {
+    @apply inline-flex items-center justify-center rounded-xl w-9 h-9 text-muted-foreground
+           transition-all duration-200 border border-transparent
+           hover:bg-accent/60 hover:text-foreground hover:border-border/50
+           active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+  .icon-action-sm {
+    @apply w-7 h-7 rounded-lg;
+  }
+  .icon-action-lg {
+    @apply w-11 h-11 rounded-xl;
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply fixed z-40 rounded-2xl shadow-lg
+           flex items-center justify-center
+           text-primary-foreground
+           hover:shadow-xl hover:scale-105
+           active:scale-95
+           transition-all duration-200;
+    background: var(--gradient-button);
+  }
+  .fab-md {
+    @apply w-14 h-14 bottom-24 right-5;
+  }
+  .fab-sm {
+    @apply w-11 h-11 bottom-24 right-4;
+  }
 }
