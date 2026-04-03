@@ -79,7 +79,7 @@ const App = () => (
                 <Route path="/ferramentas/planilha" element={<Planilha />} />
                 
                 <Route path="/puxada-dados" element={<PuxadaDados />} />
-                <Route path="/network" element={<NetworkPage />} />
+                
                 <Route path="/sobre" element={<Sobre />} />
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/admin" element={<Admin />} />
