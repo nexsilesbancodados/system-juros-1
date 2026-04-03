@@ -833,9 +833,14 @@ const Cobradores = () => {
       <Dialog open={!!assignModal} onOpenChange={() => { setAssignModal(null); setClientSearch(""); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users size={18} className="text-primary" />
-              Atribuir Cliente
+            <DialogTitle className="flex items-center gap-3">
+              <div className="modal-icon modal-icon-primary">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-lg font-bold">Atribuir Cliente</p>
+                <p className="text-xs text-muted-foreground font-normal mt-0.5">Vincule um cliente ao cobrador</p>
+              </div>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
