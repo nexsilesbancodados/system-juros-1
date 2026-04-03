@@ -105,7 +105,7 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <p className="text-right text-xs text-white/30 cursor-pointer hover:text-[hsl(38,75%,50%)] transition-colors">
+                  <p className="text-right text-xs text-white/30 cursor-pointer hover:text-white/70 transition-colors">
                     Esqueceu a senha?
                   </p>
 
