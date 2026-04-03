@@ -204,7 +204,7 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Quick Stats Strip ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
         {[
           { label: "Contratos Ativos", value: metrics.contratosAtivos, icon: FileSignature, color: "text-success", bg: "bg-success/8" },
           { label: "Em Atraso", value: metrics.contratosAtraso, icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8" },
