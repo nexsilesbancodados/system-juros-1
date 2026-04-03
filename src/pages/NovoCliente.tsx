@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Search, Upload } from "lucide-react";
+import { Camera, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,16 @@ const NovoCliente = () => {
     } catch {}
   };
 
+  const getFrequencyDays = (freq: string): number => {
+    switch (freq) {
+      case "Diária": return 1;
+      case "Semanal": return 7;
+      case "Quinzenal": return 15;
+      case "Mensal": return 30;
+      default: return 30;
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     if (!nome.trim()) {
@@ -89,7 +99,10 @@ const NovoCliente = () => {
       paid_installments: 0,
     } : null;
 
+    const clientId = crypto.randomUUID();
+
     const { error } = await supabase.from("clients").insert({
+      id: clientId,
       user_id: user.id,
       name: nome.trim(),
       email: email.trim() || null,
@@ -101,14 +114,45 @@ const NovoCliente = () => {
       loan: loanData,
     });
 
-    setSaving(false);
-
     if (error) {
+      setSaving(false);
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Sucesso!", description: "Cliente cadastrado com sucesso." });
-      navigate("/clientes");
+      return;
     }
+
+    // Generate installments automatically
+    if (valor > 0 && primeiroVencimento) {
+      const freqDays = getFrequencyDays(frequencia);
+      const installments = [];
+      const baseDate = new Date(primeiroVencimento + "T12:00:00");
+
+      for (let i = 0; i < parcelas; i++) {
+        const dueDate = new Date(baseDate);
+        if (frequencia === "Mensal") {
+          dueDate.setMonth(dueDate.getMonth() + i);
+        } else {
+          dueDate.setDate(dueDate.getDate() + (freqDays * i));
+        }
+
+        installments.push({
+          client_id: clientId,
+          user_id: user.id,
+          installment_number: i + 1,
+          amount: valorParcela,
+          due_date: dueDate.toISOString(),
+          status: "pending",
+        });
+      }
+
+      const { error: installError } = await supabase.from("installments").insert(installments);
+      if (installError) {
+        console.error("Erro ao gerar parcelas:", installError);
+      }
+    }
+
+    setSaving(false);
+    toast({ title: "Sucesso!", description: `Cliente cadastrado com ${parcelas} parcela(s) gerada(s).` });
+    navigate("/clientes");
   };
 
   const inputClass = "w-full px-3 py-2.5 rounded-lg bg-input/80 border border-border/50 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring";
@@ -288,7 +332,7 @@ const NovoCliente = () => {
           )}
         </div>
 
-        {/* Resumo do cálculo */}
+        {/* Resumo */}
         {parseFloat(valorEmprestimo) > 0 && (
           <div className="rounded-lg bg-accent/30 border border-border p-4 space-y-1">
             <p className="text-xs font-semibold text-foreground mb-2">Resumo do Empréstimo</p>
@@ -296,12 +340,12 @@ const NovoCliente = () => {
               const valor = parseFloat(valorEmprestimo) || 0;
               const taxa = parseFloat(taxaOuParcela) || 0;
               const parcelas = parseInt(numParcelas) || 1;
-              let valorParcela = 0, juros = 0;
+              let vParcela = 0, juros = 0;
               if (metodoCalculo === "porcentagem") {
                 juros = valor * (taxa / 100) * parcelas;
-                valorParcela = (valor + juros) / parcelas;
+                vParcela = (valor + juros) / parcelas;
               } else {
-                valorParcela = taxa;
+                vParcela = taxa;
                 juros = (taxa * parcelas) - valor;
               }
               return (
@@ -309,7 +353,8 @@ const NovoCliente = () => {
                   <p className="text-sm text-muted-foreground">Capital: <span className="text-foreground font-medium">R$ {valor.toFixed(2)}</span></p>
                   <p className="text-sm text-muted-foreground">Juros Total: <span className="text-foreground font-medium">R$ {juros.toFixed(2)}</span></p>
                   <p className="text-sm text-muted-foreground">Total a Receber: <span className="text-green-400 font-medium">R$ {(valor + juros).toFixed(2)}</span></p>
-                  <p className="text-sm text-muted-foreground">Valor da Parcela: <span className="text-foreground font-medium">R$ {valorParcela.toFixed(2)}</span></p>
+                  <p className="text-sm text-muted-foreground">Valor da Parcela: <span className="text-foreground font-medium">R$ {vParcela.toFixed(2)}</span></p>
+                  <p className="text-sm text-muted-foreground">Parcelas: <span className="text-foreground font-medium">{parcelas}x de R$ {vParcela.toFixed(2)}</span></p>
                 </>
               );
             })()}
@@ -319,9 +364,7 @@ const NovoCliente = () => {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
-        <button onClick={() => navigate("/clientes")} className="px-5 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          Cancelar
-        </button>
+        <button onClick={() => navigate("/clientes")} className="px-5 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
         <button onClick={handleSave} disabled={saving} className="px-5 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
           {saving ? "Salvando..." : "Salvar Cliente"}
         </button>
