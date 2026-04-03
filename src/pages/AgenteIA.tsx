@@ -660,7 +660,7 @@ const AgenteIA = () => {
             <>
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <h2 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Conversas</h2>
-                <button onClick={loadChats} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
                 </button>
               </div>
