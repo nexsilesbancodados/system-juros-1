@@ -95,6 +95,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const { config } = useWhiteLabel();
+  const logoSrc = config.companyLogo || eagleLogo;
+  const brandName = config.companyName || "SYSTEM JUROS";
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
