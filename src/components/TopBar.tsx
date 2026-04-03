@@ -89,7 +89,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
       ) : (
         <button
           onClick={onSearchClick}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-accent/50 border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-accent transition-all duration-200 micro-bounce"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-accent/50 border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-accent transition-all duration-200 micro-bounce"
         >
           <Search size={14} />
           <span className="hidden sm:inline text-[13px]">Buscar...</span>
@@ -190,7 +190,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           <>
             <button
               onClick={() => navigate("/perfil")}
-              className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary hover:ring-2 hover:ring-primary/30 transition-all duration-200 ml-1 micro-bounce"
+              className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary hover:ring-2 hover:ring-primary/30 transition-all duration-200 ml-1 micro-bounce"
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-xl object-cover" />
