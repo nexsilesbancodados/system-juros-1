@@ -309,9 +309,9 @@ const ClienteDetalhe = () => {
     if (!unpaid.length) { toast({ title: "Todas as parcelas já estão pagas!" }); return; }
     if (!confirm(`Quitar ${unpaid.length} parcela(s)?`)) return;
     for (const inst of unpaid) {
-      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount }).eq("id", inst.id);
+      await payFull(inst.id, Number(inst.amount));
     }
-    toast({ title: `${unpaid.length} parcelas quitadas!` }); inv("client-installments");
+    toast({ title: `${unpaid.length} parcelas quitadas!` });
   };
 
   // 10. Copiar Dados
