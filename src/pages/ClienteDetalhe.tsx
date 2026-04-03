@@ -815,7 +815,7 @@ const ClienteDetalhe = () => {
           {contracts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
           ) : contracts.map((c: any) => (
-            <div key={c.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
+            <div key={c.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
