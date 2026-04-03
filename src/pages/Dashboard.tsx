@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -20,6 +21,12 @@ const Dashboard = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Realtime: re-fetch when any relevant table changes
+  useMultiTableRealtime(
+    ["contracts", "contract_installments", "profits", "clients", "goals"],
+    [["dashboard-data", user?.id || ""]],
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-data", user?.id],

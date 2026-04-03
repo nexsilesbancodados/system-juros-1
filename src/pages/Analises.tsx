@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { Download, CalendarIcon } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,6 +61,11 @@ const Analises = () => {
       setDateTo(to);
     }
   };
+
+  useMultiTableRealtime(
+    ["contracts", "contract_installments", "clients", "transactions"],
+    [["analises-data", user?.id || ""]],
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: ["analises-data", user?.id],

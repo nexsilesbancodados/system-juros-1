@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const STATUS: Record<string, { label: string; icon: any; cls: string }> = {
   pending: { label: "Pendente", icon: Clock, cls: "bg-warning/10 text-warning border-warning/20" },
@@ -33,6 +34,11 @@ const ContratoDetalhe = () => {
   const [editNotes, setEditNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+
+  useMultiTableRealtime(
+    ["contracts", "contract_installments"],
+    [["contract", id || ""], ["contract-installments", id || ""]],
+  );
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["contract", id],

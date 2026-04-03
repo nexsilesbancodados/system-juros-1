@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -17,6 +18,11 @@ const Cobrancas = () => {
   const [filter, setFilter] = useState<"all" | "pending" | "overdue" | "paid">("all");
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+
+  useMultiTableRealtime(
+    ["contract_installments", "contracts"],
+    [["cobrancas-installments", user?.id || ""]],
+  );
 
   const { data: installments = [], isLoading: loading } = useQuery({
     queryKey: ["cobrancas-installments", user?.id],
