@@ -20,6 +20,22 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  const { data: financials } = useQuery({
+    queryKey: ["topbar-financials", user?.id],
+    queryFn: async () => {
+      const [contractsRes, profitsRes] = await Promise.all([
+        supabase.from("contracts").select("capital, status").eq("user_id", user!.id),
+        supabase.from("profits").select("amount").eq("user_id", user!.id).eq("status", "available"),
+      ]);
+      const activeContracts = (contractsRes.data || []).filter((c: any) => c.status === "active" || c.status === "overdue");
+      const carteira = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+      const lucro = (profitsRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      return { carteira, lucro };
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (!user) return;
     const fetchNotifications = async () => {
