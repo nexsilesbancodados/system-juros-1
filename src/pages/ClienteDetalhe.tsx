@@ -181,10 +181,10 @@ const ClienteDetalhe = () => {
       const n = parseInt(loanInstallments);
       const { data: contract, error: cErr } = await supabase.from("contracts").insert({
         user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
-        interest_rate: parseFloat(loanMonthlyFee), num_installments: n,
+        interest_rate: parseFloat(loanInterestRate), num_installments: n,
         installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
         start_date: new Date(loanStart + "T12:00:00").toISOString(),
-        late_fee_percent: parseFloat(loanMonthlyFee), daily_interest_percent: parseFloat(loanDailyFee),
+        late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
         total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
       }).select().single();
       if (cErr) throw cErr;
