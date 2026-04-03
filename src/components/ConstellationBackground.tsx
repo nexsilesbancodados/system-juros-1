@@ -20,8 +20,8 @@ const ConstellationBackground = memo(() => {
 
     let animationId: number;
     const stars: Star[] = [];
-    const STAR_COUNT = 50; // reduced from 100
-    const MAX_DIST = 120;
+    const STAR_COUNT = 30;
+    const MAX_DIST = 100;
 
     const resize = () => {
       canvas.width = window.innerWidth;
