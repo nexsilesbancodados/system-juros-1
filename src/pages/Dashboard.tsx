@@ -116,7 +116,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-label mb-1">{greeting}</p>
+            <p className="text-label mb-1">{greeting} · {currentTime}</p>
             <h1 className="text-display text-4xl md:text-5xl text-foreground">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
