@@ -345,11 +345,11 @@ const AgenteIA = () => {
     }
   };
 
-  // Fetch WhatsApp chats
-  const loadChats = async () => {
+  // Fetch WhatsApp chats (silent = no loading spinner, used for polling)
+  const loadChats = async (silent = false) => {
     if (whatsappStatus !== "connected") return;
 
-    setLoadingChats(true);
+    if (!silent) setLoadingChats(true);
     try {
       const data = await callEvolutionApi("fetch_messages");
       const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
@@ -377,35 +377,78 @@ const AgenteIA = () => {
 
       setWhatsappChats(chats);
     } catch (err: unknown) {
-      const description = err instanceof Error ? err.message : "Erro ao carregar conversas";
-      toast({ title: "Erro ao carregar chats", description, variant: "destructive" });
+      if (!silent) {
+        const description = err instanceof Error ? err.message : "Erro ao carregar conversas";
+        toast({ title: "Erro ao carregar chats", description, variant: "destructive" });
+      }
     } finally {
-      setLoadingChats(false);
+      if (!silent) setLoadingChats(false);
     }
   };
 
+  // Auto-load chats on tab switch
   useEffect(() => {
     if (tab === "mensagens" && whatsappStatus === "connected") {
       loadChats();
     }
   }, [tab, whatsappStatus]);
 
-  const openChat = async (chat: WhatsAppChat) => {
-    setSelectedChat(chat);
-    setLoadingMsgs(true);
+  // Auto-poll chats list every 10s when on mensagens tab
+  const chatsPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (tab === "mensagens" && whatsappStatus === "connected") {
+      chatsPollingRef.current = setInterval(() => loadChats(true), 10000);
+    }
+    return () => {
+      if (chatsPollingRef.current) {
+        clearInterval(chatsPollingRef.current);
+        chatsPollingRef.current = null;
+      }
+    };
+  }, [tab, whatsappStatus]);
+
+  // Fetch messages for a specific chat (silent = no loading spinner)
+  const refreshChatMessages = async (remoteJid: string, silent = false) => {
+    if (!silent) setLoadingMsgs(true);
     try {
-      const data = await callEvolutionApi("fetch_messages", { remoteJid: chat.remoteJid, count: 30 });
+      const data = await callEvolutionApi("fetch_messages", { remoteJid, count: 50 });
       const nextMessages = (Array.isArray(data.messages) ? (data.messages as WhatsAppMsg[]) : []).sort(
         (a, b) => getTimestampValue(a.messageTimestamp) - getTimestampValue(b.messageTimestamp)
       );
       setChatMessages(nextMessages);
     } catch (err: unknown) {
-      const description = err instanceof Error ? err.message : "Erro ao carregar mensagens";
-      toast({ title: "Erro", description, variant: "destructive" });
+      if (!silent) {
+        const description = err instanceof Error ? err.message : "Erro ao carregar mensagens";
+        toast({ title: "Erro", description, variant: "destructive" });
+      }
     } finally {
-      setLoadingMsgs(false);
+      if (!silent) setLoadingMsgs(false);
     }
   };
+
+  const openChat = async (chat: WhatsAppChat) => {
+    setSelectedChat(chat);
+    await refreshChatMessages(chat.remoteJid);
+  };
+
+  // Auto-poll messages every 5s when a chat is open
+  const msgsPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (selectedChat && tab === "mensagens" && whatsappStatus === "connected") {
+      msgsPollingRef.current = setInterval(
+        () => refreshChatMessages(selectedChat.remoteJid, true),
+        5000
+      );
+    }
+    return () => {
+      if (msgsPollingRef.current) {
+        clearInterval(msgsPollingRef.current);
+        msgsPollingRef.current = null;
+      }
+    };
+  }, [selectedChat, tab, whatsappStatus]);
 
   useEffect(() => {
     chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -617,7 +660,7 @@ const AgenteIA = () => {
             <>
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <h2 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Conversas</h2>
-                <button onClick={loadChats} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
                 </button>
               </div>
