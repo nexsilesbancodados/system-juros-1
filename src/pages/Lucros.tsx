@@ -1,8 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
-import { TrendingUp, Plus, X, DollarSign, Search, Calendar, ArrowUpRight, ChevronRight } from "lucide-react";
+import { TrendingUp, Plus, X, Search, Calendar, ArrowUpRight, Edit2, Check, Download, Trash2, MoreVertical, BarChart3, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Lucros = () => {
   const { user } = useAuth();
@@ -10,11 +20,14 @@ const Lucros = () => {
   const [profits, setProfits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const fetchProfits = async () => {
     const { data } = await supabase.from("profits").select("*").order("date", { ascending: false });
@@ -24,21 +37,53 @@ const Lucros = () => {
 
   useEffect(() => { fetchProfits(); }, []);
 
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const resetForm = () => {
+    setDesc(""); setAmount(""); setDate(new Date().toISOString().slice(0, 10));
+    setEditingId(null); setShowForm(false);
+  };
 
-  const handleAdd = async () => {
+  const handleEdit = (p: any) => {
+    setDesc(p.description); setAmount(String(p.amount));
+    setDate(new Date(p.date).toISOString().slice(0, 10));
+    setEditingId(p.id); setShowForm(true);
+  };
+
+  const handleSubmit = async () => {
     if (!user || !desc.trim() || !amount) return;
     setSaving(true);
-    const { error } = await supabase.from("profits").insert({ user_id: user.id, description: desc.trim(), amount: parseFloat(amount) });
-    setSaving(false);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "✓ Lucro registrado!" }); setDesc(""); setAmount(""); setShowForm(false); fetchProfits(); }
+
+    if (editingId) {
+      const { error } = await supabase.from("profits")
+        .update({ description: desc.trim(), amount: parseFloat(amount), date: new Date(date).toISOString() })
+        .eq("id", editingId);
+      setSaving(false);
+      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      else { toast({ title: "✓ Lucro atualizado!" }); resetForm(); fetchProfits(); }
+    } else {
+      const { error } = await supabase.from("profits")
+        .insert({ user_id: user.id, description: desc.trim(), amount: parseFloat(amount), date: new Date(date).toISOString() });
+      setSaving(false);
+      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      else { toast({ title: "✓ Lucro registrado!" }); resetForm(); fetchProfits(); }
+    }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este lucro?")) return;
     await supabase.from("profits").delete().eq("id", id);
+    setDeleteConfirm(null);
     fetchProfits();
+    toast({ title: "Lucro excluído" });
+  };
+
+  const handleExportCSV = () => {
+    const header = "Data,Descrição,Valor\n";
+    const rows = filtered.map(p =>
+      `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description}",${Number(p.amount).toFixed(2)}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "lucros.csv"; a.click();
+    toast({ title: "CSV exportado!" });
   };
 
   const filtered = useMemo(() => {
@@ -58,12 +103,12 @@ const Lucros = () => {
   const total = filtered.reduce((acc, p) => acc + Number(p.amount), 0);
   const totalAll = profits.reduce((acc, p) => acc + Number(p.amount), 0);
 
-  // Monthly mini chart (last 6 months)
+  // Monthly data (last 6 months)
   const monthlyData = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-      const monthStr = d.toLocaleDateString("pt-BR", { month: "short" }).slice(0, 3);
+      const monthStr = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
       const amount = profits.filter(p => {
         const pd = new Date(p.date);
         return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
@@ -73,6 +118,23 @@ const Lucros = () => {
   }, [profits]);
   const maxMonthly = Math.max(...monthlyData.map(m => m.amount), 1);
 
+  // Current vs previous month comparison
+  const currentMonthTotal = monthlyData[5]?.amount || 0;
+  const prevMonthTotal = monthlyData[4]?.amount || 0;
+  const monthlyChange = prevMonthTotal > 0
+    ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal * 100).toFixed(1)
+    : currentMonthTotal > 0 ? "+100" : "0";
+
+  // Average per entry
+  const avgPerEntry = profits.length > 0 ? totalAll / profits.length : 0;
+
+  // Today's total
+  const todayTotal = profits.filter(p => {
+    const d = new Date(p.date);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
+  }).reduce((s, p) => s + Number(p.amount), 0);
+
   // Group by date
   const grouped = filtered.reduce((acc, p) => {
     const key = new Date(p.date).toLocaleDateString("pt-BR");
@@ -81,130 +143,210 @@ const Lucros = () => {
     return acc;
   }, {} as Record<string, any[]>);
 
-  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";
+  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/50 outline-none transition-all";
 
   return (
     <div className="space-y-5 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Lucros</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Registre e acompanhe seus lucros.</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center">
+              <TrendingUp size={20} className="text-success" />
+            </div>
+            Lucros
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Registre e acompanhe seus lucros</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/20 focus-ring"
-          style={{ background: "var(--gradient-button)" }}>
-          <Plus size={16} /> Novo Lucro
-        </button>
+        <div className="flex items-center gap-2">
+          {filtered.length > 0 && (
+            <button onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium border border-border bg-card text-foreground hover:bg-accent transition-colors">
+              <Download size={14} /> CSV
+            </button>
+          )}
+          <button onClick={() => { resetForm(); setShowForm(true); }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: "var(--gradient-button)" }}>
+            <Plus size={16} /> Novo Lucro
+          </button>
+        </div>
       </div>
 
-      {/* Add form modal */}
-      {showForm && (
-        <div className="modal-backdrop" onClick={() => setShowForm(false)}>
-          <div className="modal-content max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <ArrowUpRight size={20} className="text-success" /> Novo Lucro
-              </h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div>
-              <label className="text-label mb-1.5 block">Descrição</label>
-              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Juros do cliente X" className={inputCls} autoFocus />
-            </div>
-            <div>
-              <label className="text-label mb-1.5 block">Valor (R$)</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={handleAdd} disabled={saving || !desc || !amount} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all disabled:opacity-50">
-                {saving ? "Salvando..." : "Registrar"}
-              </button>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-2xl border border-border bg-card p-4 card-shine">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+              <TrendingUp size={14} className="text-success" />
             </div>
           </div>
+          <p className="text-xl font-bold text-success">R$ {fmt(totalAll)}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Total Geral</p>
         </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-fade-in">
-        <div className="rounded-2xl border border-border bg-card p-5 card-shine success-glow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 rounded-2xl bg-success/10 flex items-center justify-center">
-              <TrendingUp size={22} className="text-success" />
-            </div>
-            <div>
-              <p className="text-label">Total de Lucros</p>
-              <p className="text-2xl font-bold text-success">R$ {fmt(totalAll)}</p>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Calendar size={14} className="text-primary" />
             </div>
           </div>
-          {timeFilter !== "all" && (
-            <p className="text-xs text-muted-foreground">Filtrado: <span className="text-success font-semibold">R$ {fmt(total)}</span></p>
-          )}
+          <p className="text-xl font-bold text-foreground">R$ {fmt(currentMonthTotal)}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Este Mês</p>
+            {prevMonthTotal > 0 && (
+              <Badge variant="outline" className={`text-[9px] px-1 py-0 ${
+                Number(monthlyChange) >= 0 ? "text-success bg-success/10 border-success/20" : "text-destructive bg-destructive/10 border-destructive/20"
+              }`}>
+                {Number(monthlyChange) >= 0 ? "+" : ""}{monthlyChange}%
+              </Badge>
+            )}
+          </div>
         </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/50 flex items-center justify-center">
+              <Wallet size={14} className="text-foreground" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-foreground">R$ {fmt(todayTotal)}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Hoje</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/50 flex items-center justify-center">
+              <BarChart3 size={14} className="text-foreground" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-foreground">R$ {fmt(avgPerEntry)}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Média p/ Registro</p>
+        </div>
+      </div>
 
-        {/* Mini monthly chart */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-label mb-3">Últimos 6 meses</p>
-          <div className="flex items-end gap-2 h-14">
-            {monthlyData.map((m, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+      {/* Monthly chart */}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <BarChart3 size={13} className="text-primary" /> Evolução Mensal
+          </p>
+          <p className="text-[10px] text-muted-foreground">Últimos 6 meses</p>
+        </div>
+        <div className="flex items-end gap-2 h-24">
+          {monthlyData.map((m, i) => {
+            const heightPct = Math.max(4, (m.amount / maxMonthly) * 100);
+            const isCurrentMonth = i === 5;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group relative">
+                {/* Tooltip */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-[10px] font-semibold text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  R$ {fmt(m.amount)}
+                </div>
                 <div
-                  className="w-full rounded-t-md bg-success/50 transition-all duration-500"
-                  style={{ height: `${Math.max(3, (m.amount / maxMonthly) * 44)}px` }}
+                  className={`w-full rounded-lg transition-all duration-500 cursor-pointer ${
+                    isCurrentMonth
+                      ? "bg-gradient-to-t from-success/80 to-success/40"
+                      : "bg-success/20 hover:bg-success/30"
+                  }`}
+                  style={{ height: `${heightPct}%` }}
                 />
-                <span className="text-[9px] text-muted-foreground">{m.month}</span>
+                <span className={`text-[10px] ${isCurrentMonth ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+                  {m.month}
+                </span>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar lucros..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced" />
-          {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2"><X size={14} className="text-muted-foreground" /></button>}
+            className={`${inputCls} pl-9`} />
+          {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={14} /></button>}
         </div>
-        <div className="pill-tabs">
+        <div className="flex rounded-xl border border-border bg-card overflow-hidden">
           {(["all", "7d", "30d", "90d"] as const).map(f => (
-            <button key={f} onClick={() => setTimeFilter(f)} className={`pill-tab text-[10px] px-3 py-1.5 ${timeFilter === f ? "pill-tab-active" : "pill-tab-inactive"}`}>
+            <button key={f} onClick={() => setTimeFilter(f)}
+              className={`px-4 py-2.5 text-xs font-medium transition-colors ${
+                timeFilter === f
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}>
               {f === "all" ? "Todos" : f}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Filtered total indicator */}
+      {timeFilter !== "all" && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-success/5 border border-success/15">
+          <TrendingUp size={14} className="text-success" />
+          <span className="text-xs text-muted-foreground">Período filtrado:</span>
+          <span className="text-sm font-bold text-success">R$ {fmt(total)}</span>
+          <span className="text-[10px] text-muted-foreground">({filtered.length} registros)</span>
+        </div>
+      )}
+
       {/* List grouped by date */}
       {loading ? (
-        <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 rounded-xl skeleton-shimmer" />)}</div>
+        <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon"><TrendingUp size={28} className="text-muted-foreground/30" /></div>
-          <p className="text-foreground font-medium">{search ? `Sem resultados para "${search}"` : "Nenhum lucro registrado"}</p>
-          <p className="text-sm text-muted-foreground mt-1">Registre seus lucros para acompanhar a evolução</p>
+        <div className="text-center py-20 rounded-2xl border border-dashed border-border bg-card/50">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-5">
+            <TrendingUp size={32} className="text-muted-foreground/40" />
+          </div>
+          <p className="text-foreground font-semibold text-lg">{search ? `Sem resultados para "${search}"` : "Nenhum lucro registrado"}</p>
+          <p className="text-sm text-muted-foreground mt-2">Registre seus lucros para acompanhar a evolução financeira</p>
+          {!search && (
+            <button onClick={() => { resetForm(); setShowForm(true); }}
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
+              style={{ background: "var(--gradient-button)" }}>
+              <Plus size={14} /> Registrar Primeiro Lucro
+            </button>
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="max-h-[500px] overflow-y-auto">
-            {Object.entries(grouped).map(([date, items]: [string, any[]]) => (
-              <div key={date}>
-                <div className="divider-label px-4 py-2 sticky top-0 bg-card/95 z-[5]">
-                  <Calendar size={10} /> {date}
-                  <span className="text-success font-semibold ml-1">+R$ {fmt(items.reduce((s: number, p: any) => s + Number(p.amount), 0))}</span>
+            {Object.entries(grouped).map(([dateStr, items]: [string, any[]]) => (
+              <div key={dateStr}>
+                <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky top-0 bg-card/95 backdrop-blur-sm z-[5] border-b border-border/50">
+                  <Calendar size={10} /> {dateStr}
+                  <span className="text-success font-bold ml-auto text-xs normal-case">
+                    +R$ {fmt(items.reduce((s: number, p: any) => s + Number(p.amount), 0))}
+                  </span>
                 </div>
-                <div className="divide-y divide-border/50">
+                <div className="divide-y divide-border/30">
                   {items.map((p: any) => (
-                    <div key={p.id} className="data-row group">
-                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0">
+                    <div key={p.id} className="flex items-center gap-3 px-4 py-3 group hover:bg-accent/20 transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-success/10 border border-success/10 flex items-center justify-center shrink-0">
                         <ArrowUpRight size={16} className="text-success" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{p.description}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(p.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                        </p>
                       </div>
-                      <span className="text-sm font-bold text-success">+R$ {fmt(Number(p.amount))}</span>
-                      <button onClick={() => handleDelete(p.id)} className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 p-1"><X size={14} /></button>
+                      <span className="text-sm font-bold text-success shrink-0">+R$ {fmt(Number(p.amount))}</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 opacity-0 group-hover:opacity-100 transition-all">
+                            <MoreVertical size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => handleEdit(p)} className="gap-2 text-xs">
+                            <Edit2 size={12} /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setDeleteConfirm(p.id)} className="gap-2 text-xs text-destructive focus:text-destructive">
+                            <Trash2 size={12} /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   ))}
                 </div>
@@ -213,6 +355,60 @@ const Lucros = () => {
           </div>
         </div>
       )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpRight size={18} className="text-success" />
+              {editingId ? "Editar Lucro" : "Novo Lucro"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição *</label>
+              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Juros do cliente X" className={inputCls} autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$) *</label>
+                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={saving || !desc || !amount}
+              className="bg-success hover:bg-success/90 text-success-foreground">
+              {editingId ? <Check size={14} className="mr-1.5" /> : <Plus size={14} className="mr-1.5" />}
+              {saving ? "Salvando..." : editingId ? "Salvar" : "Registrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 size={18} /> Excluir Lucro
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este registro de lucro?</p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
+              <Trash2 size={14} className="mr-1.5" /> Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
