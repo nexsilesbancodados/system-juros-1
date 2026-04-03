@@ -72,7 +72,6 @@ const NovoContrato = () => {
 
   // Calculations
   const calc = useMemo(() => {
-  const calc = useMemo(() => {
     const cap = parseFloat(capital) || 0;
     const monthlyFee = parseFloat(lateFeePercent) || 0;
     const n = parseInt(numInstallments) || 0;
