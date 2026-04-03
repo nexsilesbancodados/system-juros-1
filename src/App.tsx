@@ -38,6 +38,7 @@ import QRCodePage from "./pages/QRCodePage.tsx";
 import AgenteIA from "./pages/AgenteIA.tsx";
 import CobradorExterno from "./pages/CobradorExterno.tsx";
 import Auditoria from "./pages/Auditoria.tsx";
+import ClienteDetalhe from "./pages/ClienteDetalhe.tsx";
 
 const queryClient = new QueryClient();
 
