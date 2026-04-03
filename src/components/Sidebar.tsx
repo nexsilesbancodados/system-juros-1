@@ -225,7 +225,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 border-r border-border/20 ${
+      className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-[width] duration-150 border-r border-border/20 ${
         collapsed ? "w-[68px]" : "w-60"
       }`}
       style={{

@@ -20,8 +20,8 @@ const ConstellationBackground = memo(() => {
 
     let animationId: number;
     const stars: Star[] = [];
-    const STAR_COUNT = 50; // reduced from 100
-    const MAX_DIST = 120;
+    const STAR_COUNT = 30;
+    const MAX_DIST = 100;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -42,7 +42,7 @@ const ConstellationBackground = memo(() => {
     }
 
     let lastTime = 0;
-    const FPS_INTERVAL = 1000 / 30; // cap at 30fps
+    const FPS_INTERVAL = 1000 / 20; // cap at 20fps
 
     const draw = (timestamp: number) => {
       animationId = requestAnimationFrame(draw);
