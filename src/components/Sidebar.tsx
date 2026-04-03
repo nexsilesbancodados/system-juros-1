@@ -43,6 +43,7 @@ const sections: MenuSection[] = [
   {
     title: "Financeiro",
     items: [
+      { label: "Tesouraria", icon: <Landmark size={18} />, path: "/tesouraria" },
       { label: "Cobranças", icon: <Receipt size={18} />, path: "/cobrancas" },
       { label: "Carteira", icon: <Wallet size={18} />, path: "/carteira" },
       { label: "Lucros", icon: <TrendingUp size={18} />, path: "/lucros" },
