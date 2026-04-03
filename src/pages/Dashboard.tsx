@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   AlertCircle, Calendar, Landmark, TrendingUp, Users, ArrowRight,
   DollarSign, Percent, FileSignature, Clock, CheckCircle, Sparkles,
-  ArrowUpRight, Activity, Wallet, Target, ChevronRight,
+  ArrowUpRight, Activity, Wallet, Target, ChevronRight, Zap,
+  BarChart3, PieChart,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,17 +24,19 @@ const Dashboard = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-data", user?.id],
     queryFn: async () => {
-      const [contracts, installments, clients, goals] = await Promise.all([
+      const [contracts, installments, clients, goals, profits] = await Promise.all([
         supabase.from("contracts").select("*, clients(name, cpf_cnpj)").eq("user_id", user!.id),
         supabase.from("contract_installments").select("*").eq("user_id", user!.id),
         supabase.from("clients").select("id, name, credit_score, status").eq("user_id", user!.id),
         supabase.from("goals").select("*").eq("user_id", user!.id),
+        supabase.from("profits").select("amount, date").eq("user_id", user!.id).order("date", { ascending: false }).limit(30),
       ]);
       return {
         contracts: contracts.data || [],
         installments: installments.data || [],
         clients: clients.data || [],
         goals: goals.data || [],
+        profits: profits.data || [],
       };
     },
     enabled: !!user,
@@ -41,7 +44,7 @@ const Dashboard = () => {
 
   const metrics = useMemo(() => {
     if (!data) return null;
-    const { contracts, installments, clients, goals } = data;
+    const { contracts, installments, clients, goals, profits } = data;
     const now = new Date();
 
     const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
@@ -71,6 +74,16 @@ const Dashboard = () => {
       return d > now && d <= in7days;
     });
 
+    // Weekly payment activity (last 7 days)
+    const weeklyActivity = Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(now);
+      day.setDate(day.getDate() - (6 - i));
+      const dayStr = day.toISOString().split("T")[0];
+      const count = paidInstallments.filter((p: any) => p.paid_at?.startsWith(dayStr)).length;
+      return { day: day.toLocaleDateString("pt-BR", { weekday: "short" }).slice(0, 3), count };
+    });
+    const maxActivity = Math.max(...weeklyActivity.map(w => w.count), 1);
+
     const recentPayments = paidInstallments
       .sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
       .slice(0, 6);
@@ -81,6 +94,13 @@ const Dashboard = () => {
       return { ...i, clientName: contract?.clients?.name || "—", daysOverdue, contractId: i.contract_id };
     }).sort((a: any, b: any) => b.daysOverdue - a.daysOverdue);
 
+    // Total paid today
+    const paidToday = paidInstallments.filter((p: any) => p.paid_at?.startsWith(todayStr));
+    const paidTodayAmount = paidToday.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
+
+    // Total profit from profits table
+    const totalProfitAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
+
     return {
       capitalNaRua, lucroRecebido, lucroAReceber, taxaInadimplencia,
       contratosAtivos: activeContracts.length,
@@ -90,21 +110,22 @@ const Dashboard = () => {
       vencendoHoje: vencendoHoje.length,
       proximos7: proximos7.length,
       overdueList, recentPayments, goals, contracts,
+      weeklyActivity, maxActivity, paidTodayAmount, totalProfitAmount,
     };
   }, [data]);
 
   if (isLoading || !metrics) {
     return (
       <div className="space-y-6 p-1">
-        <div className="h-28 rounded-2xl bg-muted/30 animate-pulse" />
+        <div className="h-28 rounded-2xl skeleton-shimmer" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-36 rounded-2xl bg-muted/20 animate-pulse" style={{ animationDelay: `${i * 120}ms` }} />
+            <div key={i} className="h-36 rounded-2xl skeleton-shimmer" style={{ animationDelay: `${i * 120}ms` }} />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="h-72 rounded-2xl bg-muted/20 animate-pulse" />
-          <div className="h-72 rounded-2xl bg-muted/20 animate-pulse" />
+          <div className="h-72 rounded-2xl skeleton-shimmer" />
+          <div className="h-72 rounded-2xl skeleton-shimmer" />
         </div>
       </div>
     );
@@ -172,8 +193,16 @@ const Dashboard = () => {
             <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
+            {metrics.paidTodayAmount > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card animate-slide-in-right">
+                <Zap size={12} className="text-success" />
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  Hoje: <span className="text-success font-bold">+R$ {fmt(metrics.paidTodayAmount)}</span>
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card">
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span className="status-dot status-dot-success animate-pulse" />
               <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Online</span>
             </div>
           </div>
@@ -188,7 +217,6 @@ const Dashboard = () => {
             className="group relative bento-item glass-card overflow-hidden micro-press animate-fade-in"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            {/* Gradient accent top border */}
             <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-60`} />
             <div className="p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
@@ -227,6 +255,33 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* ─── Weekly Activity Bar ─── */}
+      <div className="glass-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <BarChart3 size={14} className="text-primary" />
+            </div>
+            <h2 className="text-headline text-sm text-foreground">Atividade Semanal</h2>
+          </div>
+          <span className="text-[10px] text-muted-foreground">Pagamentos recebidos</span>
+        </div>
+        <div className="flex items-end gap-2 h-16">
+          {metrics.weeklyActivity.map((w: any, i: number) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className={`w-full rounded-t-md transition-all duration-700 ${w.count > 0 ? 'bg-primary/60' : 'bg-muted/40'}`}
+                style={{
+                  height: `${Math.max(4, (w.count / metrics.maxActivity) * 48)}px`,
+                  animationDelay: `${i * 80}ms`
+                }}
+              />
+              <span className="text-[9px] text-muted-foreground font-medium">{w.day}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ─── Urgency Cards ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
@@ -239,6 +294,7 @@ const Dashboard = () => {
             color: "text-destructive",
             bg: "bg-destructive/8",
             border: "border-destructive/20",
+            glow: "danger-glow",
             onClick: () => navigate("/cobrancas"),
           },
           {
@@ -250,6 +306,7 @@ const Dashboard = () => {
             color: "text-warning",
             bg: "bg-warning/8",
             border: "border-warning/20",
+            glow: "",
             onClick: () => navigate("/cobrancas"),
           },
           {
@@ -261,13 +318,14 @@ const Dashboard = () => {
             color: "text-info",
             bg: "bg-info/8",
             border: "border-info/20",
+            glow: "",
             onClick: () => navigate("/cobrancas"),
           },
         ].map((c, i) => (
           <div
             key={c.label}
             onClick={c.onClick}
-            className={`group glass-card rounded-2xl p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border}` : ""}`}
+            className={`group glass-card rounded-2xl p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
             style={{ animationDelay: `${(i + 8) * 60}ms` }}
           >
             <div className="flex items-start justify-between">
@@ -291,12 +349,15 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Overdue List */}
         <div className="glass-card rounded-2xl overflow-hidden animate-fade-in">
-          <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
                 <AlertCircle size={14} className="text-destructive" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Parcelas Atrasadas</h2>
+              {metrics.overdueCount > 0 && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">{metrics.overdueCount}</span>
+              )}
             </div>
             <button
               onClick={() => navigate("/cobrancas")}
@@ -307,8 +368,8 @@ const Dashboard = () => {
           </div>
           <div className="border-t border-border/40">
             {metrics.overdueList.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-success/8 flex items-center justify-center mx-auto mb-4">
+              <div className="empty-state">
+                <div className="empty-state-icon">
                   <Sparkles size={24} className="text-success/40" />
                 </div>
                 <p className="text-sm font-medium text-muted-foreground">Tudo em dia!</p>
@@ -319,17 +380,17 @@ const Dashboard = () => {
                 {metrics.overdueList.slice(0, 5).map((item: any) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-accent/30 cursor-pointer transition-all duration-200 micro-bounce"
+                    className="data-row cursor-pointer micro-bounce"
                     onClick={() => navigate(`/contratos/${item.contractId}`)}
                   >
-                    <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive shrink-0">
+                    <div className="num-badge bg-destructive/10 text-destructive">
                       {item.installment_number}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{item.clientName}</p>
                       <p className="text-xs text-muted-foreground">R$ {fmt(Number(item.amount))}</p>
                     </div>
-                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold rounded-lg px-2">
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold rounded-lg px-2 badge-pulse">
                       {item.daysOverdue}d
                     </Badge>
                   </div>
@@ -341,7 +402,7 @@ const Dashboard = () => {
 
         {/* Recent Payments */}
         <div className="glass-card rounded-2xl overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
-          <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
                 <Activity size={14} className="text-success" />
@@ -351,8 +412,8 @@ const Dashboard = () => {
           </div>
           <div className="border-t border-border/40">
             {metrics.recentPayments.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto mb-4">
+              <div className="empty-state">
+                <div className="empty-state-icon">
                   <DollarSign size={24} className="text-muted-foreground/30" />
                 </div>
                 <p className="text-sm font-medium text-muted-foreground">Sem pagamentos</p>
@@ -363,7 +424,7 @@ const Dashboard = () => {
                 {metrics.recentPayments.map((item: any) => {
                   const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
                   return (
-                    <div key={item.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-accent/30 transition-all duration-200">
+                    <div key={item.id} className="data-row">
                       <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
                         <ArrowUpRight size={15} className="text-success" />
                       </div>
@@ -383,6 +444,28 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ─── Quick Actions ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "500ms" }}>
+        {[
+          { label: "Novo Contrato", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/novo-contrato" },
+          { label: "Novo Cliente", icon: Users, color: "text-success", bg: "bg-success/8", path: "/clientes/novo" },
+          { label: "Cobranças", icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8", path: "/cobrancas" },
+          { label: "Relatórios", icon: PieChart, color: "text-info", bg: "bg-info/8", path: "/relatorios" },
+        ].map((action) => (
+          <button
+            key={action.label}
+            onClick={() => navigate(action.path)}
+            className="glass-card rounded-xl p-4 flex items-center gap-3 micro-press text-left group"
+          >
+            <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+              <action.icon size={18} className={action.color} />
+            </div>
+            <span className="text-sm font-medium text-foreground">{action.label}</span>
+            <ChevronRight size={14} className="text-muted-foreground/30 ml-auto group-hover:text-muted-foreground transition-colors" />
+          </button>
+        ))}
       </div>
 
       {/* ─── Goals ─── */}

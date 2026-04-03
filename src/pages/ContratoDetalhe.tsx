@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, CheckCircle, Clock, AlertTriangle, DollarSign, FileText, User, Calendar,
-  Send, RotateCcw, Copy, Edit, Trash2, Ban, Download, MessageSquare, TrendingUp
+  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 const statusLabels: Record<string, string> = { pending: "Pendente", paid: "Pago", overdue: "Atrasado" };
 const statusIcons: Record<string, any> = { pending: <Clock size={14} />, paid: <CheckCircle size={14} />, overdue: <AlertTriangle size={14} /> };
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  pending: "bg-warning/10 text-warning border-warning/20",
+  paid: "bg-success/10 text-success border-success/20",
   overdue: "bg-destructive/10 text-destructive border-destructive/20",
 };
 const freqLabels: Record<string, string> = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };
@@ -28,6 +28,7 @@ const ContratoDetalhe = () => {
   const queryClient = useQueryClient();
   const [editNotes, setEditNotes] = useState(false);
   const [notes, setNotes] = useState("");
+  const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["contract", id],
@@ -69,7 +70,8 @@ const ContratoDetalhe = () => {
       .update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: inst?.amount })
       .eq("id", instId);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Parcela paga!" });
+    toast({ title: "✓ Parcela paga!" });
+    setConfirmPayId(null);
     queryClient.invalidateQueries({ queryKey: ["contract-installments", id] });
   };
 
@@ -137,9 +139,9 @@ const ContratoDetalhe = () => {
   );
 
   if (!contract) return (
-    <div className="text-center py-16">
-      <FileText size={48} className="mx-auto text-muted-foreground/20 mb-4" />
-      <p className="text-muted-foreground">Contrato não encontrado</p>
+    <div className="empty-state">
+      <div className="empty-state-icon"><FileText size={28} className="text-muted-foreground/30" /></div>
+      <p className="text-muted-foreground font-medium">Contrato não encontrado</p>
     </div>
   );
 
@@ -159,6 +161,16 @@ const ContratoDetalhe = () => {
     { icon: Trash2, label: "Excluir", action: deleteContract, color: "text-destructive" },
   ];
 
+  // Group installments by month
+  const grouped = installments.reduce((acc: any, inst: any) => {
+    const d = new Date(inst.due_date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    if (!acc[key]) acc[key] = { label, items: [] };
+    acc[key].items.push(inst);
+    return acc;
+  }, {} as Record<string, { label: string; items: any[] }>);
+
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-24">
       {/* Header */}
@@ -172,20 +184,20 @@ const ContratoDetalhe = () => {
           </h1>
           <p className="text-xs text-muted-foreground">{contract.clients?.cpf_cnpj || "—"} · {freqLabels[contract.frequency] || contract.frequency}</p>
         </div>
-        <Badge variant="outline" className={contract.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+        <Badge variant="outline" className={contract.status === "active" ? "bg-success/10 text-success border-success/20" : contract.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-muted text-muted-foreground"}>
           {contract.status === "active" ? "Ativo" : contract.status === "cancelled" ? "Cancelado" : contract.status}
         </Badge>
       </div>
 
-      {/* Stats */}
+      {/* Stats with Progress Ring */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { icon: DollarSign, label: "Capital", value: `R$ ${fmt(Number(contract.capital))}`, color: "text-foreground", bg: "bg-primary/10" },
-          { icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(totalPaid)}`, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(totalPaid)}`, color: "text-success", bg: "bg-success/10" },
           { icon: AlertTriangle, label: "Atrasadas", value: String(overdue), color: "text-destructive", bg: "bg-destructive/10" },
           { icon: TrendingUp, label: "Lucro", value: `R$ ${fmt(Number(contract.total_interest))}`, color: "text-primary", bg: "bg-primary/10" },
         ].map((s, idx) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 animate-fade-in card-hover" style={{ animationDelay: `${idx * 60}ms` }}>
+          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 animate-fade-in card-shine" style={{ animationDelay: `${idx * 60}ms` }}>
             <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon size={16} className={s.color} />
             </div>
@@ -196,25 +208,55 @@ const ContratoDetalhe = () => {
       </div>
 
       {/* Tools */}
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 animate-fade-in">
+      <div className="toolbar grid-cols-4 sm:grid-cols-7 animate-fade-in">
         {tools.map((tool, idx) => (
-          <button key={idx} onClick={tool.action} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all card-hover" title={tool.label}>
+          <button key={idx} onClick={tool.action} className="toolbar-btn" title={tool.label}>
             <tool.icon size={16} className={tool.color} />
             <span className="text-[9px] font-medium text-muted-foreground leading-tight text-center">{tool.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Progress */}
+      {/* Progress with ring visualization */}
       <div className="bg-card border border-border rounded-xl p-4 animate-fade-in">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Calendar size={16} className="text-primary" /> Progresso
-          </span>
-          <span className="text-xs text-muted-foreground">{paid}/{contract.num_installments} · {paidPct}%</span>
-        </div>
-        <div className="h-3 rounded-full bg-muted overflow-hidden">
-          <div className="h-full rounded-full bg-emerald-500 transition-all duration-700" style={{ width: `${paidPct}%` }} />
+        <div className="flex items-center gap-4">
+          <div className="relative w-16 h-16 shrink-0">
+            <svg className="progress-ring w-16 h-16" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="28" fill="none" strokeWidth="4" stroke="hsl(var(--muted))" />
+              <circle
+                cx="32" cy="32" r="28" fill="none" strokeWidth="4"
+                stroke="hsl(var(--success))"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 28}`}
+                strokeDashoffset={`${2 * Math.PI * 28 * (1 - paidPct / 100)}`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-bold text-foreground">{paidPct}%</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Calendar size={14} className="text-primary" /> Progresso
+              </span>
+              <span className="text-xs text-muted-foreground">{paid}/{contract.num_installments} parcelas</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="flex items-center gap-1.5">
+                <span className="status-dot status-dot-success" />
+                <span className="text-[10px] text-muted-foreground">Pagas: {paid}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="status-dot status-dot-danger" />
+                <span className="text-[10px] text-muted-foreground">Atraso: {overdue}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="status-dot status-dot-warning" />
+                <span className="text-[10px] text-muted-foreground">Pend.: {pending}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -238,67 +280,123 @@ const ContratoDetalhe = () => {
         </div>
       </div>
 
-      {/* Notes */}
+      {/* Notes Modal */}
       {editNotes && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 space-y-4">
-            <h3 className="text-lg font-bold text-foreground">Notas do Contrato</h3>
+        <div className="modal-backdrop" onClick={() => setEditNotes(false)}>
+          <div className="modal-content max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-foreground">Notas do Contrato</h3>
+              <button onClick={() => setEditNotes(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5} className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none" placeholder="Adicione observações..." />
             <div className="flex gap-2">
-              <button onClick={() => setEditNotes(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => setEditNotes(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
               <button onClick={saveNotes} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Installments */}
+      {/* Pay Confirmation Modal */}
+      {confirmPayId && (
+        <div className="modal-backdrop" onClick={() => setConfirmPayId(null)}>
+          <div className="modal-content max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle size={28} className="text-success" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Confirmar Pagamento?</h3>
+              {(() => {
+                const inst = installments.find((i: any) => i.id === confirmPayId);
+                return inst ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Parcela #{inst.installment_number} · R$ {fmt(Number(inst.amount))}
+                  </p>
+                ) : null;
+              })()}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => handlePayInstallment(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Installments - Grouped by Month */}
       <div className="bg-card border border-border rounded-xl overflow-hidden animate-fade-in">
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky-header">
           <h2 className="font-semibold text-foreground flex items-center gap-2 text-sm">
             <FileText size={16} className="text-primary" /> Parcelas
           </h2>
-          <span className="text-xs text-muted-foreground">{installments.length} parcelas</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success font-bold">{paid} pagas</span>
+            {overdue > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold badge-pulse">{overdue} atrasadas</span>}
+            <span className="text-xs text-muted-foreground">{installments.length} total</span>
+          </div>
         </div>
-        <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-          {installments.map((inst: any) => (
-            <div key={inst.id} className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                inst.status === "paid" ? "bg-emerald-500/10 text-emerald-500" :
-                inst.status === "overdue" ? "bg-destructive/10 text-destructive" :
-                "bg-amber-500/10 text-amber-500"
-              }`}>
-                {inst.installment_number}
+        <div className="max-h-[500px] overflow-y-auto">
+          {Object.entries(grouped).map(([key, group]: [string, any]) => (
+            <div key={key}>
+              <div className="divider-label px-4 py-2 capitalize text-muted-foreground sticky top-0 bg-card/90 backdrop-blur-sm z-[5]">
+                {group.label}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Vence: {new Date(inst.due_date).toLocaleDateString("pt-BR")}
-                  {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
-                </p>
-              </div>
-              <Badge variant="outline" className={`gap-1 text-[10px] ${statusColors[inst.status]}`}>
-                {statusIcons[inst.status]}
-                {statusLabels[inst.status]}
-              </Badge>
-              <div className="flex items-center gap-1 shrink-0">
-                {inst.status === "paid" ? (
-                  <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar">
-                    <RotateCcw size={14} />
-                  </button>
-                ) : (
-                  <>
-                    <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Enviar cobrança">
-                      <Send size={14} />
-                    </button>
-                    <button
-                      onClick={() => handlePayInstallment(inst.id)}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all"
+              <div className="divide-y divide-border/50">
+                {group.items.map((inst: any) => {
+                  const dueDate = new Date(inst.due_date);
+                  const now = new Date();
+                  const daysDiff = Math.floor((now.getTime() - dueDate.getTime()) / 86400000);
+                  const isOverdue = inst.status === "overdue";
+                  const isPaid = inst.status === "paid";
+
+                  return (
+                    <div
+                      key={inst.id}
+                      className={`data-row ${isOverdue ? "bg-destructive/3" : isPaid ? "bg-success/3" : ""}`}
                     >
-                      Pagar
-                    </button>
-                  </>
-                )}
+                      <div className={`num-badge ${
+                        isPaid ? "bg-success/10 text-success" :
+                        isOverdue ? "bg-destructive/10 text-destructive" :
+                        "bg-warning/10 text-warning"
+                      }`}>
+                        {inst.installment_number}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
+                          {isOverdue && <span className="text-[9px] text-destructive font-bold">{daysDiff}d atrasada</span>}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {dueDate.toLocaleDateString("pt-BR")}
+                          {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className={`gap-1 text-[10px] ${statusColors[inst.status]}`}>
+                        {statusIcons[inst.status]}
+                        {statusLabels[inst.status]}
+                      </Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isPaid ? (
+                          <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar">
+                            <RotateCcw size={14} />
+                          </button>
+                        ) : (
+                          <>
+                            <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Enviar cobrança">
+                              <Send size={14} />
+                            </button>
+                            <button
+                              onClick={() => setConfirmPayId(inst.id)}
+                              className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-all"
+                            >
+                              Pagar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
