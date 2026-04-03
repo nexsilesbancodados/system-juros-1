@@ -175,7 +175,7 @@ const Index = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(38,75%,50%)]/20"
+                    className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-white/10"
                     style={{ background: "var(--gradient-button)", color: "white" }}
                   >
                     {loading ? "Criando conta..." : "Criar Conta"}
