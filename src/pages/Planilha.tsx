@@ -1,118 +1,190 @@
-import { useState, useEffect } from "react";
-import { Table, Download, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Table, Download, Search, X, ArrowUpDown, Filter, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+
+const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
 const Planilha = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [clients, setClients] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<"name" | "capital" | "status">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
-      const [c, i] = await Promise.all([
+      const [c, ct, i] = await Promise.all([
         supabase.from("clients").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("installments").select("*").eq("user_id", user.id),
+        supabase.from("contracts").select("*").eq("user_id", user.id),
+        supabase.from("contract_installments").select("*").eq("user_id", user.id),
       ]);
       setClients(c.data || []);
+      setContracts(ct.data || []);
       setInstallments(i.data || []);
       setLoading(false);
     };
     fetch();
   }, [user]);
 
-  const getClientInstallments = (clientId: string) => {
-    return installments.filter((i) => i.client_id === clientId);
-  };
+  const enriched = useMemo(() => {
+    return clients.map(c => {
+      const cContracts = contracts.filter(ct => ct.client_id === c.id);
+      const cInstallments = installments.filter(i => i.client_id === c.id);
+      const totalCapital = cContracts.reduce((s, ct) => s + Number(ct.capital || 0), 0);
+      const totalAmount = cContracts.reduce((s, ct) => s + Number(ct.total_amount || 0), 0);
+      const paid = cInstallments.filter(i => i.status === "paid");
+      const overdue = cInstallments.filter(i => i.status !== "paid" && new Date(i.due_date) < new Date());
+      const totalPaid = paid.reduce((s, i) => s + Number(i.paid_amount || i.amount || 0), 0);
+      return { ...c, totalCapital, totalAmount, totalPaid, paidCount: paid.length, overdueCount: overdue.length, totalInstallments: cInstallments.length, contractCount: cContracts.length };
+    });
+  }, [clients, contracts, installments]);
 
-  const filtered = clients.filter((c) =>
+  const filtered = enriched.filter((c) =>
     `${c.name} ${c.cpf_cnpj || ""} ${c.phone || ""}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    if (sortBy === "name") return a.name.localeCompare(b.name) * dir;
+    if (sortBy === "capital") return (a.totalCapital - b.totalCapital) * dir;
+    return (a.overdueCount - b.overdueCount) * dir;
+  });
+
+  const toggleSort = (col: typeof sortBy) => {
+    if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("asc"); }
+  };
+
+  const totals = useMemo(() => ({
+    capital: enriched.reduce((s, c) => s + c.totalCapital, 0),
+    amount: enriched.reduce((s, c) => s + c.totalAmount, 0),
+    paid: enriched.reduce((s, c) => s + c.totalPaid, 0),
+    overdue: enriched.reduce((s, c) => s + c.overdueCount, 0),
+  }), [enriched]);
+
   const handleExportCSV = () => {
-    const header = "Nome,CPF/CNPJ,Telefone,Status,Empréstimo,Parcela,Parcelas Pagas,Parcelas Totais\n";
-    const rows = filtered.map((c) => {
-      const loan = c.loan as any;
-      const inst = getClientInstallments(c.id);
-      const paid = inst.filter((i) => i.status === "paid").length;
-      return `"${c.name}","${c.cpf_cnpj || ""}","${c.phone || ""}","${c.status}","${Number(loan?.amount || 0).toFixed(2)}","${Number(loan?.installment_value || 0).toFixed(2)}","${paid}","${inst.length}"`;
-    }).join("\n");
+    const header = "Nome,CPF/CNPJ,Telefone,Status,Capital,Total,Pago,Contratos,Parcelas Pagas,Parcelas Total,Atrasadas\n";
+    const rows = sorted.map(c =>
+      `"${c.name}","${c.cpf_cnpj || ""}","${c.phone || ""}","${c.status}","${c.totalCapital.toFixed(2)}","${c.totalAmount.toFixed(2)}","${c.totalPaid.toFixed(2)}","${c.contractCount}","${c.paidCount}","${c.totalInstallments}","${c.overdueCount}"`
+    ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "clientes.csv";
-    a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "planilha-clientes.csv"; a.click();
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Planilha</h1>
-          <p className="text-muted-foreground text-sm mt-1">Visualize todos os dados dos clientes.</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Table size={24} className="text-primary" /> Planilha
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Visão completa dos dados de todos os clientes.</p>
         </div>
-        <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
+        <button onClick={handleExportCSV}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg"
+          style={{ background: "var(--gradient-button)" }}>
           <Download size={16} /> Exportar CSV
         </button>
       </div>
 
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input type="text" placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-input/80 border border-border/50 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+      {/* Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
+        {[
+          { label: "Clientes", value: enriched.length, icon: Users, color: "text-foreground" },
+          { label: "Capital Total", value: `R$ ${fmt(totals.capital)}`, icon: DollarSign, color: "text-primary" },
+          { label: "Total Pago", value: `R$ ${fmt(totals.paid)}`, icon: DollarSign, color: "text-success" },
+          { label: "Atrasadas", value: totals.overdue, icon: Filter, color: "text-destructive" },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl border border-border bg-card p-4 card-shine">
+            <div className="flex items-center gap-2 mb-1">
+              <s.icon size={14} className={s.color} />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</span>
+            </div>
+            <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <Table size={48} className="mx-auto text-muted-foreground mb-4" />
+      {/* Search */}
+      <div className="relative">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input type="text" placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
+        {search && (
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-14 rounded-xl skeleton-shimmer" />)}</div>
+      ) : sorted.length === 0 ? (
+        <div className="text-center py-16">
+          <Table size={48} className="mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">Nenhum cliente encontrado.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
-            <thead className="bg-accent/50">
-              <tr>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Nome</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">CPF/CNPJ</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Telefone</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Empréstimo</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Parcela</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Progresso</th>
+        <div className="rounded-xl border border-border overflow-x-auto bg-card">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                {[
+                  { key: "name" as const, label: "Cliente" },
+                  { key: "capital" as const, label: "Capital" },
+                  { key: "status" as const, label: "Status" },
+                ].map(col => (
+                  <th key={col.key} className="text-left px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => toggleSort(col.key)}>
+                    <span className="flex items-center gap-1">{col.label} <ArrowUpDown size={10} className={sortBy === col.key ? "text-primary" : "opacity-30"} /></span>
+                  </th>
+                ))}
+                <th className="text-left px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
+                <th className="text-left px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Pago</th>
+                <th className="text-left px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Progresso</th>
+                <th className="text-left px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Atraso</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c) => {
-                const loan = c.loan as any;
-                const inst = getClientInstallments(c.id);
-                const paid = inst.filter((i) => i.status === "paid").length;
-                const total = inst.length;
-                const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
+              {sorted.map((c) => {
+                const pct = c.totalInstallments > 0 ? Math.round((c.paidCount / c.totalInstallments) * 100) : 0;
                 return (
-                  <tr key={c.id} className="border-t border-border hover:bg-accent/30 transition-colors">
-                    <td className="px-4 py-3 text-foreground font-medium">{c.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.cpf_cnpj || "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.phone || "-"}</td>
+                  <tr key={c.id} onClick={() => navigate(`/clientes/${c.id}`)}
+                    className="border-t border-border hover:bg-accent/30 cursor-pointer transition-colors group">
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${c.status === "Ativo" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"}`}>
-                        {c.status}
-                      </span>
+                      <p className="font-medium text-foreground group-hover:text-primary transition-colors">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.cpf_cnpj || c.phone || "—"}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">R$ {Number(loan?.amount || 0).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">R$ {Number(loan?.installment_value || 0).toFixed(2)}</td>
+                    <td className="px-4 py-3 font-semibold text-foreground">R$ {fmt(c.totalCapital)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className={c.status === "Ativo" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+                        {c.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">R$ {fmt(c.totalAmount)}</td>
+                    <td className="px-4 py-3 text-success font-medium">R$ {fmt(c.totalPaid)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-muted">
-                          <div className="h-1.5 rounded-full bg-green-400" style={{ width: `${pct}%` }} />
+                        <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-xs text-muted-foreground">{paid}/{total}</span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{c.paidCount}/{c.totalInstallments}</span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.overdueCount > 0 ? (
+                        <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-md">{c.overdueCount}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
                     </td>
                   </tr>
                 );
