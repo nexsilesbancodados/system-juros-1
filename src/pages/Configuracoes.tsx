@@ -129,6 +129,14 @@ const Configuracoes = () => {
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
       : await supabase.from("settings").insert(payload);
+
+    // Save PIX and billing message to profile
+    await supabase.from("profiles").update({
+      pix_key: form.pix_key.trim() || null,
+      pix_key_type: form.pix_key_type,
+      billing_message: form.billing_message.trim() || null,
+    }).eq("id", user.id);
+
     setSaving(false);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else {
