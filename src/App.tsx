@@ -36,6 +36,8 @@ import Contratos from "./pages/Contratos.tsx";
 import NovoContrato from "./pages/NovoContrato.tsx";
 import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
 import MesaCobranca from "./pages/MesaCobranca.tsx";
+import Tesouraria from "./pages/Tesouraria.tsx";
+import Historico from "./pages/Historico.tsx";
 
 const queryClient = new QueryClient();
 
