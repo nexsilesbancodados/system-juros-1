@@ -32,6 +32,9 @@ import Sobre from "./pages/Sobre.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import Admin from "./pages/Admin.tsx";
 import Relatorios from "./pages/Relatorios.tsx";
+import Contratos from "./pages/Contratos.tsx";
+import NovoContrato from "./pages/NovoContrato.tsx";
+import ContratoDetalhe from "./pages/ContratoDetalhe.tsx";
 
 const queryClient = new QueryClient();
 
