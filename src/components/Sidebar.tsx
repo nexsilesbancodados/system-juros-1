@@ -6,6 +6,7 @@ import {
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight,
   FileText, Crown, FileSignature, PhoneCall, Landmark, ClipboardList,
+  Settings, Bot, QrCode, UserCheck,
 } from "lucide-react";
 
 interface MenuItem {
@@ -26,6 +27,7 @@ const sections: MenuSection[] = [
     items: [
       { label: "Painel", icon: <LayoutDashboard size={18} />, path: "/dashboard" },
       { label: "Mesa de Cobrança", icon: <PhoneCall size={18} />, path: "/mesa-cobranca" },
+      { label: "Agente IA", icon: <Bot size={18} />, path: "/agente-ia" },
       { label: "Análises", icon: <BarChart3 size={18} />, path: "/analises" },
       { label: "Relatórios", icon: <FileText size={18} />, path: "/relatorios" },
     ],
@@ -35,8 +37,9 @@ const sections: MenuSection[] = [
     items: [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
       { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
+      { label: "Cobradores", icon: <UserCheck size={18} />, path: "/cobradores" },
       { label: "Veículos", icon: <Car size={18} />, path: "/veiculos" },
-      { label: "Venda de Celulares", icon: <Smartphone size={18} />, path: "/celulares" },
+      { label: "Celulares", icon: <Smartphone size={18} />, path: "/celulares" },
       { label: "Penhoras", icon: <Gavel size={18} />, path: "/penhoras" },
     ],
   },
@@ -62,9 +65,10 @@ const ferramentasItems: MenuItem[] = [
 
 const bottomItems: MenuItem[] = [
   { label: "Histórico", icon: <ClipboardList size={18} />, path: "/historico" },
+  { label: "QR Code", icon: <QrCode size={18} />, path: "/qrcode" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
-  { label: "Network", icon: <Network size={18} />, path: "/network" },
+  { label: "Configurações", icon: <Settings size={18} />, path: "/configuracoes" },
   { label: "Admin", icon: <Crown size={18} />, path: "/admin" },
   { label: "Sobre", icon: <Info size={18} />, path: "/sobre" },
 ];
