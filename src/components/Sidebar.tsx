@@ -115,23 +115,21 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       key={item.path}
       onClick={() => navigate(item.path)}
       title={collapsed ? item.label : undefined}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
         isActive(item.path)
-          ? "glass-card text-foreground shadow-sm"
+          ? "premium-card text-foreground shadow-sm !border-primary/20"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
       } ${collapsed ? "justify-center px-2" : ""}`}
     >
-      {/* Improvement #25: Active indicator bar */}
       {isActive(item.path) && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ background: "var(--gradient-gold)" }} />
       )}
       <span className={`shrink-0 transition-all duration-200 ${isActive(item.path) ? "text-primary scale-110" : "text-muted-foreground group-hover:text-foreground"}`}>
         {item.icon}
       </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
-      {/* Improvement #26: Collapsed tooltip */}
       {collapsed && (
-        <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-popover border border-border text-xs text-foreground font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 shadow-lg z-50">
+        <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-xl bg-popover border border-border text-xs text-foreground font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 shadow-lg z-50">
           {item.label}
         </div>
       )}
@@ -148,7 +146,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
           <button
             onClick={() => !collapsed && toggleSection(section.title)}
             title={collapsed ? section.title : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 focus-ring ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 focus-ring ${
               sectionHasActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             } hover:bg-accent/30 ${collapsed ? "justify-center px-2" : ""}`}
           >
@@ -189,21 +187,21 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border/30">
         {!collapsed ? (
           <div className="flex items-center gap-2.5">
-            <img src={eagleLogo} alt="System Juros" width={28} height={28} className="rounded-full ring-1 ring-primary/20" />
-            <span className="font-display text-[11px] tracking-[0.2em] text-foreground">SYSTEM JUROS</span>
+            <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-2 ring-primary/20" />
+            <span className="font-display text-[11px] tracking-[0.2em] text-gradient-gold font-semibold">SYSTEM JUROS</span>
           </div>
         ) : (
-          <img src={eagleLogo} alt="System Juros" width={28} height={28} className="rounded-full ring-1 ring-primary/20 mx-auto" />
+          <img src={eagleLogo} alt="System Juros" width={30} height={30} className="rounded-full ring-2 ring-primary/20 mx-auto" />
         )}
       </div>
 
       {/* Improvement #28: Better collapse toggle with animation */}
       <button
         onClick={onToggleCollapse}
-        className="absolute -right-3 top-16 w-6 h-6 rounded-full glass-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:scale-110 transition-all duration-200 focus-ring"
+        className="absolute -right-3 top-16 w-6 h-6 rounded-full premium-card flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all duration-200 focus-ring"
         title={collapsed ? "Expandir" : "Minimizar"}
       >
         <span className={`transition-transform duration-300 ${collapsed ? "rotate-0" : "rotate-180"}`}>

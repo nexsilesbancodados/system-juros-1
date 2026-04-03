@@ -214,15 +214,15 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative bento-item glass-card overflow-hidden micro-press animate-fade-in"
+            className="group relative glow-card overflow-hidden micro-press card-shine animate-fade-in"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-60`} />
-            <div className="p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
+            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-80`} />
+            <div className="relative z-10 p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>
-                <div className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
-                  <card.icon size={15} className={card.iconColor} />
+                <div className={`w-9 h-9 rounded-2xl ${card.iconBg} flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
+                  <card.icon size={16} className={card.iconColor} />
                 </div>
               </div>
               <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
@@ -241,10 +241,10 @@ const Dashboard = () => {
         ].map((item, i) => (
           <div
             key={item.label}
-            className="glass-card rounded-2xl p-4 flex items-center gap-3 micro-press animate-fade-in"
+            className="premium-card p-4 flex items-center gap-3 micro-press animate-fade-in"
             style={{ animationDelay: `${(i + 4) * 60}ms` }}
           >
-            <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
+            <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
               <item.icon size={17} className={item.color} />
             </div>
             <div className="min-w-0">
@@ -256,21 +256,21 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Weekly Activity Bar ─── */}
-      <div className="glass-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
+      <div className="premium-card p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
               <BarChart3 size={14} className="text-primary" />
             </div>
             <h2 className="text-headline text-sm text-foreground">Atividade Semanal</h2>
           </div>
           <span className="text-[10px] text-muted-foreground">Pagamentos recebidos</span>
         </div>
-        <div className="flex items-end gap-2 h-16">
+        <div className="flex items-end gap-2.5 h-16">
           {metrics.weeklyActivity.map((w: any, i: number) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
               <div
-                className={`w-full rounded-t-md transition-all duration-700 ${w.count > 0 ? 'bg-primary/60' : 'bg-muted/40'}`}
+                className={`w-full rounded-lg transition-all duration-700 ${w.count > 0 ? 'bg-gradient-to-t from-primary/40 to-primary/70' : 'bg-muted/30'}`}
                 style={{
                   height: `${Math.max(4, (w.count / metrics.maxActivity) * 48)}px`,
                   animationDelay: `${i * 80}ms`
@@ -325,12 +325,12 @@ const Dashboard = () => {
           <div
             key={c.label}
             onClick={c.onClick}
-            className={`group glass-card rounded-2xl p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
+            className={`group premium-card p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
             style={{ animationDelay: `${(i + 8) * 60}ms` }}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-xl ${c.active ? c.bg : "bg-muted/40"} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
+                <div className={`w-11 h-11 rounded-2xl ${c.active ? c.bg : "bg-muted/40"} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
                   <c.icon size={19} className={c.active ? c.color : "text-muted-foreground"} />
                 </div>
                 <div>
@@ -348,11 +348,11 @@ const Dashboard = () => {
       {/* ─── Two-Column Detail ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Overdue List */}
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in">
+        <div className="premium-card overflow-hidden animate-fade-in">
           <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertCircle size={14} className="text-destructive" />
+              <div className="w-8 h-8 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <AlertCircle size={15} className="text-destructive" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Parcelas Atrasadas</h2>
               {metrics.overdueCount > 0 && (
@@ -401,11 +401,11 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Payments */}
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
+        <div className="premium-card overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between px-5 py-4 sticky-header">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
-                <Activity size={14} className="text-success" />
+              <div className="w-8 h-8 rounded-2xl bg-success/10 flex items-center justify-center">
+                <Activity size={15} className="text-success" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Pagamentos Recentes</h2>
             </div>
@@ -425,7 +425,7 @@ const Dashboard = () => {
                   const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
                   return (
                     <div key={item.id} className="data-row">
-                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0 group-hover:bg-success/15 transition-colors">
                         <ArrowUpRight size={15} className="text-success" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -457,9 +457,9 @@ const Dashboard = () => {
           <button
             key={action.label}
             onClick={() => navigate(action.path)}
-            className="glass-card rounded-2xl p-4 flex items-center gap-3 micro-press text-left group"
+            className="premium-card p-4 flex items-center gap-3 micro-press text-left group"
           >
-            <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+            <div className={`w-10 h-10 rounded-2xl ${action.bg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}>
               <action.icon size={18} className={action.color} />
             </div>
             <span className="text-sm font-medium text-foreground">{action.label}</span>
@@ -470,11 +470,11 @@ const Dashboard = () => {
 
       {/* ─── Goals ─── */}
       {metrics.goals.length > 0 && (
-        <div className="glass-card rounded-2xl overflow-hidden animate-fade-in">
+        <div className="premium-card overflow-hidden animate-fade-in">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Target size={14} className="text-primary" />
+              <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Target size={15} className="text-primary" />
               </div>
               <h2 className="text-headline text-sm text-foreground">Metas</h2>
             </div>
