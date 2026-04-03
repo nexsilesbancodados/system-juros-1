@@ -41,7 +41,7 @@ const NovoContrato = () => {
 
   // Step 2 – Loan config
   const [capital, setCapital] = useState("");
-  const [interestRate, setInterestRate] = useState("");
+  
   const [numInstallments, setNumInstallments] = useState("");
   const [frequency, setFrequency] = useState("monthly");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
