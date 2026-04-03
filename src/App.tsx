@@ -28,6 +28,7 @@ import Uruszap from "./pages/Uruszap.tsx";
 import PuxadaDados from "./pages/PuxadaDados.tsx";
 import NetworkPage from "./pages/NetworkPage.tsx";
 import Sobre from "./pages/Sobre.tsx";
+import Perfil from "./pages/Perfil.tsx";
 
 const queryClient = new QueryClient();
 
