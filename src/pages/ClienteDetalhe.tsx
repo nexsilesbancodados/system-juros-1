@@ -207,9 +207,44 @@ const ClienteDetalhe = () => {
 
   // 4. Quitar Parcela (total)
   const payFull = async (instId: string, amount: number) => {
+    if (!user) return;
     const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Parcela quitada!" }); inv("client-installments");
+
+    // Find the installment to get contract info
+    const inst = installments.find((i: any) => i.id === instId);
+    if (inst) {
+      // Register profit (interest portion)
+      const contract = contracts.find((c: any) => c.id === inst.contract_id);
+      if (contract) {
+        const interestRate = Number(contract.interest_rate || 0) / 100;
+        const interestPortion = amount * (interestRate / (1 + interestRate));
+        if (interestPortion > 0) {
+          await supabase.from("profits").insert({
+            user_id: user.id, amount: interestPortion,
+            description: `Juros parcela #${inst.installment_number} - ${client?.name}`,
+            client_id: id,
+          });
+        }
+      }
+      // Register transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount, type: "payment",
+        description: `Pagamento parcela #${inst.installment_number} - ${client?.name}`,
+        client_id: id, contract_id: inst.contract_id,
+      });
+
+      // Check if all installments for this contract are paid
+      const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
+      if (otherUnpaid.length === 0 && contract) {
+        await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
+        inv("client-contracts");
+      }
+    }
+
+    toast({ title: "Parcela quitada!" }); inv("client-installments"); inv("client-transactions"); inv("client-profits");
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+    qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   };
 
   // 5. Pagamento Parcial

@@ -63,7 +63,7 @@ const Carteira = () => {
     setLoading(true); fetchAll();
   };
 
-  const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.amount), 0);
+  const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.paid_amount || i.amount), 0);
   const totalSaidas = expenses.reduce((a, e) => a + Number(e.amount), 0);
   const saldo = totalEntradas - totalSaidas;
 
