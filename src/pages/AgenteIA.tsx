@@ -20,20 +20,131 @@ interface WhatsAppChat {
   id: string;
   name?: string;
   remoteJid: string;
+  phone?: string;
   lastMessage?: string;
   updatedAt?: string;
   unreadCount?: number;
 }
 
+interface WhatsAppMessageKey {
+  id?: string;
+  fromMe?: boolean;
+  remoteJid?: string;
+  remoteJidAlt?: string;
+}
+
 interface WhatsAppMsg {
-  key: { id: string; fromMe: boolean; remoteJid: string };
-  message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+  id?: string;
+  key?: WhatsAppMessageKey;
+  message?: Record<string, unknown>;
   messageTimestamp?: number;
-  pushName?: string;
+  pushName?: string | null;
+}
+
+interface EvolutionChatRecord {
+  id?: string | null;
+  remoteJid?: string | null;
+  pushName?: string | null;
+  updatedAt?: string | null;
+  unreadCount?: number | null;
+  lastMessage?: {
+    key?: WhatsAppMessageKey;
+    message?: Record<string, unknown>;
+    pushName?: string | null;
+  };
 }
 
 type ConnectionStatus = "checking" | "disconnected" | "qr_ready" | "connecting" | "connected" | "error";
 type TabType = "chat" | "whatsapp" | "mensagens" | "config" | "metricas" | "relatorios";
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const extractWhatsAppText = (value: unknown, depth = 0): string => {
+  if (depth > 6 || value == null) return "";
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const text = extractWhatsAppText(item, depth + 1);
+      if (text) return text;
+    }
+    return "";
+  }
+
+  if (!isRecord(value)) {
+    return "";
+  }
+
+  const directFields = [
+    "conversation",
+    "text",
+    "caption",
+    "contentText",
+    "hydratedContentText",
+    "displayText",
+    "selectedDisplayText",
+    "title",
+    "description",
+  ] as const;
+
+  for (const field of directFields) {
+    const candidate = value[field];
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const text = extractWhatsAppText(nestedValue, depth + 1);
+    if (text) return text;
+  }
+
+  return "";
+};
+
+const getJidLabel = (jid?: string | null) => (jid ? jid.split("@")[0] : undefined);
+
+const getTimestampValue = (value?: string | number | null) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value) return new Date(value).getTime();
+  return 0;
+};
+
+const getChatPhone = (chat: EvolutionChatRecord): string | undefined => {
+  const candidates = [chat.lastMessage?.key?.remoteJidAlt, chat.remoteJid];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (candidate.endsWith("@s.whatsapp.net")) {
+      const phone = candidate.replace(/\D/g, "");
+      if (phone) return phone;
+    }
+
+    if (candidate.endsWith("@g.us") || candidate.endsWith("@lid")) {
+      return candidate;
+    }
+
+    const phone = candidate.replace(/\D/g, "");
+    if (phone) return phone;
+
+    return candidate;
+  }
+
+  return undefined;
+};
+
+const getChatDisplayName = (chat: EvolutionChatRecord) =>
+  chat.pushName?.trim() ||
+  chat.lastMessage?.pushName?.trim() ||
+  getJidLabel(chat.lastMessage?.key?.remoteJidAlt) ||
+  getJidLabel(chat.remoteJid) ||
+  "Conversa sem nome";
 
 const AgenteIA = () => {
   const { user } = useAuth();
@@ -237,22 +348,37 @@ const AgenteIA = () => {
   // Fetch WhatsApp chats
   const loadChats = async () => {
     if (whatsappStatus !== "connected") return;
+
     setLoadingChats(true);
     try {
       const data = await callEvolutionApi("fetch_messages");
-      const chats: WhatsAppChat[] = (data.chats || [])
-        .filter((c: any) => c.id?.endsWith("@s.whatsapp.net"))
-        .map((c: any) => ({
-          id: c.id,
-          name: c.name || c.id?.split("@")[0],
-          remoteJid: c.id,
-          lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || "",
-          updatedAt: c.updatedAt ? new Date(c.updatedAt).toLocaleString("pt-BR") : "",
-          unreadCount: c.unreadCount || 0,
-        }));
+      const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
+      const uniqueChats = new Map<string, WhatsAppChat>();
+
+      rawChats.forEach((chat) => {
+        const remoteJid = chat.remoteJid?.trim();
+        if (!remoteJid || remoteJid === "status@broadcast") return;
+        if (uniqueChats.has(remoteJid)) return;
+
+        uniqueChats.set(remoteJid, {
+          id: remoteJid,
+          name: getChatDisplayName(chat),
+          remoteJid,
+          phone: getChatPhone(chat),
+          lastMessage: extractWhatsAppText(chat.lastMessage?.message) || "[mídia]",
+          updatedAt: chat.updatedAt || "",
+          unreadCount: chat.unreadCount ?? 0,
+        });
+      });
+
+      const chats = Array.from(uniqueChats.values()).sort(
+        (a, b) => getTimestampValue(b.updatedAt) - getTimestampValue(a.updatedAt)
+      );
+
       setWhatsappChats(chats);
-    } catch (err: any) {
-      toast({ title: "Erro ao carregar chats", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao carregar conversas";
+      toast({ title: "Erro ao carregar chats", description, variant: "destructive" });
     } finally {
       setLoadingChats(false);
     }
@@ -269,9 +395,13 @@ const AgenteIA = () => {
     setLoadingMsgs(true);
     try {
       const data = await callEvolutionApi("fetch_messages", { remoteJid: chat.remoteJid, count: 30 });
-      setChatMessages(data.messages || []);
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      const nextMessages = (Array.isArray(data.messages) ? (data.messages as WhatsAppMsg[]) : []).sort(
+        (a, b) => getTimestampValue(a.messageTimestamp) - getTimestampValue(b.messageTimestamp)
+      );
+      setChatMessages(nextMessages);
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao carregar mensagens";
+      toast({ title: "Erro", description, variant: "destructive" });
     } finally {
       setLoadingMsgs(false);
     }
@@ -286,7 +416,7 @@ const AgenteIA = () => {
     setSendingReply(true);
     try {
       await callEvolutionApi("send_message", {
-        phone: selectedChat.remoteJid.replace("@s.whatsapp.net", ""),
+        phone: selectedChat.phone || selectedChat.remoteJid,
         message: replyInput,
       });
       setChatMessages((prev) => [
@@ -299,8 +429,9 @@ const AgenteIA = () => {
       ]);
       setReplyInput("");
       toast({ title: "Mensagem enviada!" });
-    } catch (err: any) {
-      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Erro ao enviar mensagem";
+      toast({ title: "Erro ao enviar", description, variant: "destructive" });
     } finally {
       setSendingReply(false);
     }
@@ -425,7 +556,7 @@ const AgenteIA = () => {
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
 
   const getMessageText = (msg: WhatsAppMsg) =>
-    msg.message?.conversation || msg.message?.extendedTextMessage?.text || "[mídia]";
+    extractWhatsAppText(msg.message) || "[mídia]";
 
   const ToggleSwitch = ({ enabled, onToggle, label, description }: { enabled: boolean; onToggle: () => void; label: string; description: string }) => (
     <div className="flex items-center justify-between py-3">
