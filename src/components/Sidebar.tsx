@@ -4,7 +4,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import {
   LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown, FileSignature,
 } from "lucide-react";
 
 interface MenuItem {
@@ -32,6 +32,7 @@ const sections: MenuSection[] = [
     title: "Gestão",
     items: [
       { label: "Clientes", icon: <Users size={18} />, path: "/clientes" },
+      { label: "Contratos", icon: <FileSignature size={18} />, path: "/contratos" },
       { label: "Veículos", icon: <Car size={18} />, path: "/veiculos" },
       { label: "Venda de Celulares", icon: <Smartphone size={18} />, path: "/celulares" },
       { label: "Penhoras", icon: <Gavel size={18} />, path: "/penhoras" },
