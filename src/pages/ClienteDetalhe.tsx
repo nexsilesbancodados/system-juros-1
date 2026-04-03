@@ -6,11 +6,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
-  Calendar, Receipt, Activity, Search, X, ArrowRight, Check, Percent, Wallet
+  Calendar, Receipt, Activity, Search, X, ArrowRight, Check, Percent, Wallet, Printer
 } from "lucide-react";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
