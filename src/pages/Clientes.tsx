@@ -168,10 +168,10 @@ const Clientes = () => {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="p-2 rounded-lg hover:bg-accent text-muted-foreground" title="Ver">
+                        <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="icon-action" title="Ver">
                           <Eye size={15} />
                         </button>
-                        <button onClick={(e) => handleDelete(c.id, e)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title="Excluir">
+                        <button onClick={(e) => handleDelete(c.id, e)} className="icon-action hover:!bg-destructive/10 hover:!text-destructive" title="Excluir">
                           <Trash2 size={15} />
                         </button>
                       </div>
