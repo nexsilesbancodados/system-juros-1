@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          messages: Json
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          messages?: Json
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -53,6 +110,41 @@ export type Database = {
         }
         Relationships: []
       }
+      client_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: Json | null
@@ -61,6 +153,7 @@ export type Database = {
           client_type: string
           cpf_cnpj: string | null
           created_at: string
+          credit_score: number | null
           documents: Json | null
           email: string | null
           id: string
@@ -69,6 +162,7 @@ export type Database = {
           phone: string | null
           status: string
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           address?: Json | null
@@ -77,6 +171,7 @@ export type Database = {
           client_type?: string
           cpf_cnpj?: string | null
           created_at?: string
+          credit_score?: number | null
           documents?: Json | null
           email?: string | null
           id?: string
@@ -85,6 +180,7 @@ export type Database = {
           phone?: string | null
           status?: string
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           address?: Json | null
@@ -93,6 +189,7 @@ export type Database = {
           client_type?: string
           cpf_cnpj?: string | null
           created_at?: string
+          credit_score?: number | null
           documents?: Json | null
           email?: string | null
           id?: string
@@ -101,14 +198,91 @@ export type Database = {
           phone?: string | null
           status?: string
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
+      }
+      collector_assignments: {
+        Row: {
+          client_id: string
+          collector_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          collector_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          collector_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collector_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collector_assignments_collector_id_fkey"
+            columns: ["collector_id"]
+            isOneToOne: false
+            referencedRelation: "collectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collector_tokens: {
+        Row: {
+          collector_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          collector_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          collector_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collector_tokens_collector_id_fkey"
+            columns: ["collector_id"]
+            isOneToOne: false
+            referencedRelation: "collectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       collectors: {
         Row: {
           city: string
           created_at: string
+          email: string | null
           id: string
+          is_active: boolean | null
           name: string
           phone: string
           state: string
@@ -117,7 +291,9 @@ export type Database = {
         Insert: {
           city: string
           created_at?: string
+          email?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
           phone: string
           state: string
@@ -126,13 +302,140 @@ export type Database = {
         Update: {
           city?: string
           created_at?: string
+          email?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
           phone?: string
           state?: string
           user_id?: string
         }
         Relationships: []
+      }
+      contract_installments: {
+        Row: {
+          amount: number
+          client_id: string
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          late_fee: number | null
+          paid_amount: number | null
+          paid_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          late_fee?: number | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          late_fee?: number | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_installments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_installments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          capital: number
+          client_id: string
+          created_at: string
+          daily_interest_percent: number
+          frequency: string
+          id: string
+          installment_amount: number
+          interest_rate: number
+          late_fee_percent: number
+          notes: string | null
+          num_installments: number
+          start_date: string
+          status: string
+          total_amount: number
+          total_interest: number
+          user_id: string
+        }
+        Insert: {
+          capital: number
+          client_id: string
+          created_at?: string
+          daily_interest_percent?: number
+          frequency?: string
+          id?: string
+          installment_amount: number
+          interest_rate?: number
+          late_fee_percent?: number
+          notes?: string | null
+          num_installments: number
+          start_date?: string
+          status?: string
+          total_amount?: number
+          total_interest?: number
+          user_id: string
+        }
+        Update: {
+          capital?: number
+          client_id?: string
+          created_at?: string
+          daily_interest_percent?: number
+          frequency?: string
+          id?: string
+          installment_amount?: number
+          interest_rate?: number
+          late_fee_percent?: number
+          notes?: string | null
+          num_installments?: number
+          start_date?: string
+          status?: string
+          total_amount?: number
+          total_interest?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -240,6 +543,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          trigger_days: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          trigger_days?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          trigger_days?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       notes: {
         Row: {
@@ -483,6 +816,60 @@ export type Database = {
           },
         ]
       }
+      settings: {
+        Row: {
+          company_cnpj: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          created_at: string
+          default_daily_interest: number | null
+          default_frequency: string | null
+          default_interest_rate: number | null
+          default_late_fee: number | null
+          id: string
+          n8n_webhook_url: string | null
+          push_notifications_enabled: boolean | null
+          user_id: string
+          whatsapp_api_key: string | null
+          whatsapp_api_url: string | null
+          whatsapp_instance: string | null
+        }
+        Insert: {
+          company_cnpj?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          default_daily_interest?: number | null
+          default_frequency?: string | null
+          default_interest_rate?: number | null
+          default_late_fee?: number | null
+          id?: string
+          n8n_webhook_url?: string | null
+          push_notifications_enabled?: boolean | null
+          user_id: string
+          whatsapp_api_key?: string | null
+          whatsapp_api_url?: string | null
+          whatsapp_instance?: string | null
+        }
+        Update: {
+          company_cnpj?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          default_daily_interest?: number | null
+          default_frequency?: string | null
+          default_interest_rate?: number | null
+          default_late_fee?: number | null
+          id?: string
+          n8n_webhook_url?: string | null
+          push_notifications_enabled?: boolean | null
+          user_id?: string
+          whatsapp_api_key?: string | null
+          whatsapp_api_url?: string | null
+          whatsapp_instance?: string | null
+        }
+        Relationships: []
+      }
       stock_items: {
         Row: {
           color: string
@@ -543,6 +930,78 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          date: string
+          description: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           brand: string
@@ -587,10 +1046,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "operator" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -717,6 +1182,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "operator", "viewer"],
+    },
   },
 } as const
