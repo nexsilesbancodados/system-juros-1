@@ -51,7 +51,7 @@ const ConstellationBackground = () => {
         canvas.width / 2, canvas.height / 2, 0,
         canvas.width / 2, canvas.height / 2, canvas.width * 0.7
       );
-      grd.addColorStop(0, "rgba(180, 140, 60, 0.03)");
+      grd.addColorStop(0, "rgba(180, 180, 190, 0.03)");
       grd.addColorStop(1, "rgba(0, 0, 0, 0)");
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
