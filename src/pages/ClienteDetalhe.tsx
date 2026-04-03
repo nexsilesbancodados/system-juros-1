@@ -637,6 +637,10 @@ const ClienteDetalhe = () => {
                 <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder="12" className={inputCls} />
               </div>
               <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
+                <input type="number" step="0.1" value={loanInterestRate} onChange={e => setLoanInterestRate(e.target.value)} placeholder="10" className={inputCls} />
+              </div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequência</label>
                 <select value={loanFreq} onChange={e => setLoanFreq(e.target.value)} className={inputCls}>
                   {freqOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -652,7 +656,7 @@ const ClienteDetalhe = () => {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
-                <input type="number" value={loanMonthlyFee} onChange={e => setLoanMonthlyFee(e.target.value)} className={inputCls} />
+                <input type="number" step="0.1" value={loanLateFee} onChange={e => setLoanLateFee(e.target.value)} className={inputCls} />
               </div>
             </div>
             {loanCalc && (
