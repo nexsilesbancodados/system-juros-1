@@ -4,7 +4,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import {
   LayoutDashboard, BarChart3, Users, Car, Smartphone, Gavel, Receipt, Wallet,
   TrendingUp, DollarSign, Wrench, MessageSquare, Database, Network, Info,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown, FileSignature,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronLeft, ChevronRight, FileText, Crown, FileSignature, PhoneCall,
 } from "lucide-react";
 
 interface MenuItem {
