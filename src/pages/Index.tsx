@@ -58,10 +58,10 @@ const Index = () => {
       <div className="relative z-10 flex flex-col items-center mb-10 animate-fade-in">
         <div className="relative">
           <div className="absolute inset-0 rounded-full gold-glow" />
-          <img src={eagleLogo} alt="Urus Jurista" width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
+          <img src={eagleLogo} alt="System Juros" width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
         </div>
         <h1 className="font-display text-2xl tracking-[0.35em] mt-4 text-gradient-gold">
-          URUS JURISTA
+          SYSTEM JUROS
         </h1>
         <p className="text-white/40 text-xs mt-1.5 tracking-wider">SISTEMA DE GESTÃO DE EMPRÉSTIMOS</p>
       </div>
@@ -189,7 +189,7 @@ const Index = () => {
 
       {/* Footer */}
       <p className="relative z-10 text-white/20 text-[10px] mt-8 tracking-wider">
-        © 2025 URUS JURISTA · TODOS OS DIREITOS RESERVADOS
+        © 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS
       </p>
     </div>
   );

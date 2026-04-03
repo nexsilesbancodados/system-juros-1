@@ -19,9 +19,9 @@ const Sobre = () => {
         <div className="relative">
           <div className="relative inline-block mb-5">
             <div className="absolute inset-0 rounded-full gold-glow" />
-            <img src={eagleLogo} alt="Urus Jurista" width={96} height={96} className="relative rounded-full ring-2 ring-primary/20" />
+            <img src={eagleLogo} alt="System Juros" width={96} height={96} className="relative rounded-full ring-2 ring-primary/20" />
           </div>
-          <h1 className="font-display text-3xl tracking-[0.3em] text-gradient-gold mb-2">URUS JURISTA</h1>
+          <h1 className="font-display text-3xl tracking-[0.3em] text-gradient-gold mb-2">SYSTEM JUROS</h1>
           <p className="text-muted-foreground text-sm tracking-wider">SISTEMA COMPLETO DE GESTÃO FINANCEIRA</p>
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-muted/50 text-sm text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -45,7 +45,7 @@ const Sobre = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground pb-4">
-        © 2026 Urus Jurista. Todos os direitos reservados.
+        © 2026 System Juros. Todos os direitos reservados.
       </div>
     </div>
   );
