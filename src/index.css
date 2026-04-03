@@ -318,30 +318,8 @@
     border-color: hsl(var(--ring) / 0.5);
   }
 
-  /* Card shine effect */
-  .card-shine {
-    @apply relative overflow-hidden;
-  }
-  .card-shine::before {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      hsl(var(--primary) / 0.04) 45%,
-      hsl(var(--primary) / 0.08) 50%,
-      hsl(var(--primary) / 0.04) 55%,
-      transparent 60%
-    );
-  }
-  .card-shine:hover::before {
-    opacity: 1;
-    animation: shine 0.8s ease-out;
-  }
-  @keyframes shine {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(100%); }
-  }
+  /* Card shine — disabled for performance */
+  .card-shine {}
 
   /* Skeleton shimmer */
   .skeleton-shimmer {
