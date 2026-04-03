@@ -218,7 +218,7 @@ const Gastos = () => {
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="max-h-[500px] overflow-y-auto">
-            {Object.entries(grouped).map(([date, items]) => (
+            {Object.entries(grouped).map(([date, items]: [string, any[]]) => (
               <div key={date}>
                 <div className="divider-label px-4 py-2 sticky top-0 bg-card/90 backdrop-blur-sm z-[5]">
                   <Calendar size={10} /> {date}
