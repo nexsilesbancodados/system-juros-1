@@ -202,7 +202,7 @@ const NovoContrato = () => {
   };
 
   const canAdvance1 = !!selectedClientId;
-  const canAdvance2 = !!capital && !!interestRate && !!numInstallments && !!startDate && calc;
+  const canAdvance2 = !!capital && !!numInstallments && !!startDate && calc;
 
   const inputCls =
     "w-full px-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
