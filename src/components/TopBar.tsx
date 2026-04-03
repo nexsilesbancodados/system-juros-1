@@ -119,11 +119,11 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
         <div className="hidden md:flex items-center gap-1.5">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 border border-border/30">
             <Wallet size={13} className="text-primary/60" />
-            <span className="text-[11px] font-semibold text-muted-foreground">R$ {fmt(Number(profile?.loan_balance || 0))}</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">R$ {fmt(financials?.carteira ?? 0)}</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10">
             <TrendingUp size={13} className="text-success/70" />
-            <span className="text-[11px] font-semibold text-success">R$ {fmt(Number(profile?.profit_balance || 0))}</span>
+            <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
           </div>
         </div>
       )}
