@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import eagleLogo from "@/assets/eagle-logo.png";
+import eagleLogo from "@/assets/eagle-logo.webp";
 import {
   LayoutDashboard,
   BarChart3,
