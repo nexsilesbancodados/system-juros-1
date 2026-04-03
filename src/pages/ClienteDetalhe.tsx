@@ -44,8 +44,9 @@ const ClienteDetalhe = () => {
   const [loanInstallments, setLoanInstallments] = useState("");
   const [loanFreq, setLoanFreq] = useState("monthly");
   const [loanStart, setLoanStart] = useState(new Date().toISOString().split("T")[0]);
+  const [loanInterestRate, setLoanInterestRate] = useState("10");
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
-  const [loanMonthlyFee, setLoanMonthlyFee] = useState("2");
+  const [loanLateFee, setLoanLateFee] = useState("2");
   const [loanLoading, setLoanLoading] = useState(false);
 
   const inv = (key: string) => qc.invalidateQueries({ queryKey: [key, id] });
@@ -116,13 +117,13 @@ const ClienteDetalhe = () => {
   // Loan calc
   const loanCalc = useMemo(() => {
     const cap = parseFloat(loanCapital) || 0;
-    const fee = parseFloat(loanMonthlyFee) || 0;
+    const rate = parseFloat(loanInterestRate) || 0;
     const n = parseInt(loanInstallments) || 0;
     if (!cap || !n) return null;
-    const totalInterest = cap * (fee / 100) * n;
+    const totalInterest = cap * (rate / 100) * n;
     const total = cap + totalInterest;
     return { totalInterest, total, installmentAmount: total / n };
-  }, [loanCapital, loanMonthlyFee, loanInstallments]);
+  }, [loanCapital, loanInterestRate, loanInstallments]);
 
   // ===== TOOL FUNCTIONS (all usable within the page) =====
 
@@ -180,10 +181,10 @@ const ClienteDetalhe = () => {
       const n = parseInt(loanInstallments);
       const { data: contract, error: cErr } = await supabase.from("contracts").insert({
         user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
-        interest_rate: parseFloat(loanMonthlyFee), num_installments: n,
+        interest_rate: parseFloat(loanInterestRate), num_installments: n,
         installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
         start_date: new Date(loanStart + "T12:00:00").toISOString(),
-        late_fee_percent: parseFloat(loanMonthlyFee), daily_interest_percent: parseFloat(loanDailyFee),
+        late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
         total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
       }).select().single();
       if (cErr) throw cErr;
@@ -636,6 +637,10 @@ const ClienteDetalhe = () => {
                 <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder="12" className={inputCls} />
               </div>
               <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
+                <input type="number" step="0.1" value={loanInterestRate} onChange={e => setLoanInterestRate(e.target.value)} placeholder="10" className={inputCls} />
+              </div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequência</label>
                 <select value={loanFreq} onChange={e => setLoanFreq(e.target.value)} className={inputCls}>
                   {freqOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -651,7 +656,7 @@ const ClienteDetalhe = () => {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
-                <input type="number" value={loanMonthlyFee} onChange={e => setLoanMonthlyFee(e.target.value)} className={inputCls} />
+                <input type="number" step="0.1" value={loanLateFee} onChange={e => setLoanLateFee(e.target.value)} className={inputCls} />
               </div>
             </div>
             {loanCalc && (
