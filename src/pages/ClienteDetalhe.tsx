@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,25 +7,48 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, DollarSign,
+  ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
-  MessageSquare, Star, Ban, RotateCcw, Download, Eye, TrendingUp,
-  Calendar, Shield, Hash, Wallet, Receipt, Activity
+  MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
+  Calendar, Receipt, Activity, Search, X, ArrowRight, Check, Percent, Wallet
 } from "lucide-react";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+const freqOpts = [
+  { value: "daily", label: "Diário" },
+  { value: "weekly", label: "Semanal" },
+  { value: "biweekly", label: "Quinzenal" },
+  { value: "monthly", label: "Mensal" },
+];
 
 const ClienteDetalhe = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<"resumo" | "contratos" | "parcelas" | "historico">("resumo");
+  // Modals
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<any>({});
+  const [editAddressMode, setEditAddressMode] = useState(false);
+  const [addrData, setAddrData] = useState<any>({});
+  const [newLoanMode, setNewLoanMode] = useState(false);
+  const [partialPayModal, setPartialPayModal] = useState<any>(null);
+  const [partialAmount, setPartialAmount] = useState("");
+  // New loan inline
+  const [loanCapital, setLoanCapital] = useState("");
+  const [loanInstallments, setLoanInstallments] = useState("");
+  const [loanFreq, setLoanFreq] = useState("monthly");
+  const [loanStart, setLoanStart] = useState(new Date().toISOString().split("T")[0]);
+  const [loanDailyFee, setLoanDailyFee] = useState("0.33");
+  const [loanMonthlyFee, setLoanMonthlyFee] = useState("2");
+  const [loanLoading, setLoanLoading] = useState(false);
 
-  // Fetch client
+  const inv = (key: string) => qc.invalidateQueries({ queryKey: [key, id] });
+
+  // ===== QUERIES =====
   const { data: client, isLoading } = useQuery({
     queryKey: ["client-detail", id],
     queryFn: async () => {
@@ -36,7 +59,6 @@ const ClienteDetalhe = () => {
     enabled: !!id && !!user,
   });
 
-  // Fetch contracts
   const { data: contracts = [] } = useQuery({
     queryKey: ["client-contracts", id],
     queryFn: async () => {
@@ -46,7 +68,6 @@ const ClienteDetalhe = () => {
     enabled: !!id && !!user,
   });
 
-  // Fetch all installments
   const { data: installments = [] } = useQuery({
     queryKey: ["client-installments", id],
     queryFn: async () => {
@@ -60,7 +81,6 @@ const ClienteDetalhe = () => {
     enabled: !!id && !!user,
   });
 
-  // Fetch transactions
   const { data: transactions = [] } = useQuery({
     queryKey: ["client-transactions", id],
     queryFn: async () => {
@@ -70,7 +90,6 @@ const ClienteDetalhe = () => {
     enabled: !!id && !!user,
   });
 
-  // Fetch profits
   const { data: profits = [] } = useQuery({
     queryKey: ["client-profits", id],
     queryFn: async () => {
@@ -80,163 +99,238 @@ const ClienteDetalhe = () => {
     enabled: !!id && !!user,
   });
 
-  // Financial calculations
+  // ===== CALCULATIONS =====
   const totalCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
   const totalAmount = contracts.reduce((s: number, c: any) => s + Number(c.total_amount || 0), 0);
-  const totalInterest = contracts.reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0);
-  const paidInstallments = installments.filter((i: any) => i.status === "paid");
-  const overdueInstallments = installments.filter((i: any) => i.status === "overdue");
-  const pendingInstallments = installments.filter((i: any) => i.status === "pending");
-  const totalPaid = paidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
-  const totalOverdue = overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
-  const totalPending = pendingInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+  const paidInst = installments.filter((i: any) => i.status === "paid");
+  const overdueInst = installments.filter((i: any) => i.status === "overdue");
+  const pendingInst = installments.filter((i: any) => i.status === "pending");
+  const totalPaid = paidInst.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+  const totalOverdue = overdueInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+  const totalPending = pendingInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
   const totalProfit = profits.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const remaining = totalAmount - totalPaid;
 
-  // ===== TOOL FUNCTIONS =====
+  // Loan calc
+  const loanCalc = useMemo(() => {
+    const cap = parseFloat(loanCapital) || 0;
+    const fee = parseFloat(loanMonthlyFee) || 0;
+    const n = parseInt(loanInstallments) || 0;
+    if (!cap || !n) return null;
+    const totalInterest = cap * (fee / 100) * n;
+    const total = cap + totalInterest;
+    return { totalInterest, total, installmentAmount: total / n };
+  }, [loanCapital, loanMonthlyFee, loanInstallments]);
 
-  // 1. Edit client
+  // ===== TOOL FUNCTIONS (all usable within the page) =====
+
+  // 1. Editar Ficha
   const startEdit = () => {
-    setEditData({
-      name: client?.name || "",
-      phone: client?.phone || "",
-      email: client?.email || "",
-      cpf_cnpj: client?.cpf_cnpj || "",
-      whatsapp: client?.whatsapp || "",
-      status: client?.status || "Ativo",
-    });
+    setEditData({ name: client?.name || "", phone: client?.phone || "", email: client?.email || "", cpf_cnpj: client?.cpf_cnpj || "", whatsapp: client?.whatsapp || "" });
     setEditMode(true);
   };
-
   const saveEdit = async () => {
     const { error } = await supabase.from("clients").update(editData).eq("id", id!);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Cliente atualizado!" });
-    setEditMode(false);
-    queryClient.invalidateQueries({ queryKey: ["client-detail", id] });
+    toast({ title: "Cliente atualizado!" }); setEditMode(false); inv("client-detail");
   };
 
-  // 2. Delete client
-  const handleDelete = async () => {
-    if (!confirm("Excluir este cliente e todos os dados relacionados?")) return;
-    await supabase.from("contract_installments").delete().eq("client_id", id!);
-    await supabase.from("contracts").delete().eq("client_id", id!);
-    await supabase.from("installments").delete().eq("client_id", id!);
-    await supabase.from("transactions").delete().eq("client_id", id!);
-    const { error } = await supabase.from("clients").delete().eq("id", id!);
+  // 2. Editar Endereço
+  const startEditAddress = () => {
+    const a = (client?.address as any) || {};
+    setAddrData({ cep: a.cep || "", street: a.street || "", number: a.number || "", neighborhood: a.neighborhood || "", city: a.city || "", state: a.state || "" });
+    setEditAddressMode(true);
+  };
+  const buscarCep = async () => {
+    if ((addrData.cep || "").replace(/\D/g, "").length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${addrData.cep.replace(/\D/g, "")}/json/`);
+      const data = await res.json();
+      if (!data.erro) setAddrData({ ...addrData, street: data.logradouro || "", neighborhood: data.bairro || "", city: data.localidade || "", state: data.uf || "" });
+    } catch {}
+  };
+  const saveAddress = async () => {
+    await supabase.from("clients").update({ address: addrData }).eq("id", id!);
+    toast({ title: "Endereço atualizado!" }); setEditAddressMode(false); inv("client-detail");
+  };
+
+  // 3. Novo Empréstimo (inline)
+  const generateDueDates = (start: string, freq: string, count: number) => {
+    const dates: string[] = [];
+    const d = new Date(start + "T12:00:00");
+    for (let i = 0; i < count; i++) {
+      const nd = new Date(d);
+      switch (freq) {
+        case "daily": nd.setDate(d.getDate() + (i + 1)); break;
+        case "weekly": nd.setDate(d.getDate() + (i + 1) * 7); break;
+        case "biweekly": nd.setDate(d.getDate() + (i + 1) * 14); break;
+        case "monthly": nd.setMonth(d.getMonth() + (i + 1)); break;
+      }
+      dates.push(nd.toISOString());
+    }
+    return dates;
+  };
+
+  const handleCreateLoan = async () => {
+    if (!user || !loanCalc) return;
+    setLoanLoading(true);
+    try {
+      const n = parseInt(loanInstallments);
+      const { data: contract, error: cErr } = await supabase.from("contracts").insert({
+        user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
+        interest_rate: parseFloat(loanMonthlyFee), num_installments: n,
+        installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
+        start_date: new Date(loanStart + "T12:00:00").toISOString(),
+        late_fee_percent: parseFloat(loanMonthlyFee), daily_interest_percent: parseFloat(loanDailyFee),
+        total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
+      }).select().single();
+      if (cErr) throw cErr;
+
+      const dueDates = generateDueDates(loanStart, loanFreq, n);
+      const insts = dueDates.map((dd, i) => ({
+        user_id: user.id, contract_id: contract.id, client_id: id!,
+        installment_number: i + 1, amount: loanCalc.installmentAmount, due_date: dd, status: "pending",
+      }));
+      const { error: iErr } = await supabase.from("contract_installments").insert(insts);
+      if (iErr) throw iErr;
+
+      toast({ title: "Empréstimo criado!", description: `${n} parcelas geradas.` });
+      setNewLoanMode(false); setLoanCapital(""); setLoanInstallments("");
+      inv("client-contracts"); inv("client-installments");
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally { setLoanLoading(false); }
+  };
+
+  // 4. Quitar Parcela (total)
+  const payFull = async (instId: string, amount: number) => {
+    const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Cliente excluído!" });
-    navigate("/clientes");
+    toast({ title: "Parcela quitada!" }); inv("client-installments");
   };
 
-  // 3. Pay installment
-  const handlePayInstallment = async (instId: string, amount: number) => {
-    const { error } = await supabase.from("contract_installments").update({
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: amount,
-    }).eq("id", instId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Parcela paga!" });
-    queryClient.invalidateQueries({ queryKey: ["client-installments", id] });
+  // 5. Pagamento Parcial
+  const openPartialPay = (inst: any) => { setPartialPayModal(inst); setPartialAmount(""); };
+  const handlePartialPay = async () => {
+    if (!partialPayModal || !user) return;
+    const val = parseFloat(partialAmount);
+    if (!val || val <= 0) { toast({ title: "Valor inválido", variant: "destructive" }); return; }
+    const instAmount = Number(partialPayModal.amount);
+    if (val >= instAmount) {
+      // Full payment
+      await payFull(partialPayModal.id, instAmount);
+    } else {
+      // Partial: update paid_amount, keep pending, reduce remaining
+      const alreadyPaid = Number(partialPayModal.paid_amount || 0);
+      const newPaid = alreadyPaid + val;
+      if (newPaid >= instAmount) {
+        await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: instAmount }).eq("id", partialPayModal.id);
+      } else {
+        await supabase.from("contract_installments").update({ paid_amount: newPaid }).eq("id", partialPayModal.id);
+      }
+      toast({ title: `R$ ${fmt(val)} registrado!` });
+    }
+    setPartialPayModal(null); inv("client-installments");
   };
 
-  // 4. Send billing via WhatsApp
-  const handleSendBilling = (inst: any) => {
-    const phone = client?.whatsapp || client?.phone;
-    if (!phone) { toast({ title: "Sem telefone", description: "Cliente não possui telefone cadastrado.", variant: "destructive" }); return; }
-    const cleanPhone = phone.replace(/\D/g, "");
-    const msg = encodeURIComponent(
-      `Olá ${client?.name}, sua parcela #${inst.installment_number} no valor de R$ ${fmt(Number(inst.amount))} venceu em ${new Date(inst.due_date).toLocaleDateString("pt-BR")}. Por favor, regularize o pagamento.`
-    );
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
-    toast({ title: "WhatsApp aberto!" });
+  // 6. Estornar Pagamento
+  const reversePayment = async (instId: string) => {
+    if (!confirm("Estornar pagamento desta parcela?")) return;
+    await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
+    toast({ title: "Estornado!" }); inv("client-installments");
   };
 
-  // 5. Send all overdue billings
-  const handleSendAllOverdue = () => {
-    if (overdueInstallments.length === 0) { toast({ title: "Sem parcelas atrasadas" }); return; }
+  // 7. Enviar Cobrança Individual
+  const sendBilling = (inst: any) => {
     const phone = client?.whatsapp || client?.phone;
     if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    const cleanPhone = phone.replace(/\D/g, "");
-    const total = overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount), 0);
-    const msg = encodeURIComponent(
-      `Olá ${client?.name}, você possui ${overdueInstallments.length} parcela(s) em atraso totalizando R$ ${fmt(total)}. Entre em contato para regularizar.`
-    );
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
+    const msg = encodeURIComponent(`Olá ${client?.name}, sua parcela #${inst.installment_number} no valor de R$ ${fmt(Number(inst.amount))} venceu em ${new Date(inst.due_date).toLocaleDateString("pt-BR")}. Por favor, regularize o pagamento.`);
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
   };
 
-  // 6. Copy client info
+  // 8. Cobrar Todas Atrasadas
+  const sendAllOverdue = () => {
+    if (!overdueInst.length) { toast({ title: "Sem parcelas atrasadas" }); return; }
+    const phone = client?.whatsapp || client?.phone;
+    if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const total = overdueInst.reduce((s: number, i: any) => s + Number(i.amount), 0);
+    const msg = encodeURIComponent(`Olá ${client?.name}, você possui ${overdueInst.length} parcela(s) em atraso totalizando R$ ${fmt(total)}. Entre em contato para regularizar.`);
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
+  };
+
+  // 9. Quitar Todas Pendentes
+  const payAllPending = async () => {
+    const unpaid = installments.filter((i: any) => i.status !== "paid");
+    if (!unpaid.length) { toast({ title: "Todas as parcelas já estão pagas!" }); return; }
+    if (!confirm(`Quitar ${unpaid.length} parcela(s)?`)) return;
+    for (const inst of unpaid) {
+      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount }).eq("id", inst.id);
+    }
+    toast({ title: `${unpaid.length} parcelas quitadas!` }); inv("client-installments");
+  };
+
+  // 10. Copiar Dados
   const copyClientInfo = () => {
-    const text = `Nome: ${client?.name}\nCPF/CNPJ: ${client?.cpf_cnpj || "—"}\nTelefone: ${client?.phone || "—"}\nEmail: ${client?.email || "—"}`;
-    navigator.clipboard.writeText(text);
-    toast({ title: "Dados copiados!" });
+    const text = `Nome: ${client?.name}\nCPF/CNPJ: ${client?.cpf_cnpj || "—"}\nTelefone: ${client?.phone || "—"}\nWhatsApp: ${client?.whatsapp || "—"}\nEmail: ${client?.email || "—"}`;
+    navigator.clipboard.writeText(text); toast({ title: "Dados copiados!" });
   };
 
-  // 7. Toggle status (Ativo/Inativo)
+  // 11. Exportar Resumo Financeiro
+  const exportSummary = () => {
+    const lines = [
+      `=== FICHA: ${client?.name} ===`, `CPF: ${client?.cpf_cnpj || "—"}`, `Score: ${client?.credit_score || 0}`,
+      ``, `=== FINANCEIRO ===`, `Capital: R$ ${fmt(totalCapital)}`, `Recebido: R$ ${fmt(totalPaid)}`,
+      `Em atraso: R$ ${fmt(totalOverdue)}`, `Pendente: R$ ${fmt(totalPending)}`, `Restante: R$ ${fmt(remaining)}`,
+      `Contratos: ${contracts.length}`, `Pagas: ${paidInst.length}`, `Atrasadas: ${overdueInst.length}`,
+    ];
+    navigator.clipboard.writeText(lines.join("\n")); toast({ title: "Resumo copiado!" });
+  };
+
+  // 12. Ativar/Inativar
   const toggleStatus = async () => {
-    const newStatus = client?.status === "Ativo" ? "Inativo" : "Ativo";
-    await supabase.from("clients").update({ status: newStatus }).eq("id", id!);
-    toast({ title: `Status: ${newStatus}` });
-    queryClient.invalidateQueries({ queryKey: ["client-detail", id] });
+    const s = client?.status === "Ativo" ? "Inativo" : "Ativo";
+    await supabase.from("clients").update({ status: s }).eq("id", id!);
+    toast({ title: `Status: ${s}` }); inv("client-detail");
   };
 
-  // 8. Update credit score
-  const updateCreditScore = async (delta: number) => {
-    const newScore = Math.max(0, Math.min(1000, (client?.credit_score || 100) + delta));
-    await supabase.from("clients").update({ credit_score: newScore }).eq("id", id!);
-    toast({ title: `Score atualizado: ${newScore}` });
-    queryClient.invalidateQueries({ queryKey: ["client-detail", id] });
+  // 13. Alterar Score
+  const updateScore = async (delta: number) => {
+    const ns = Math.max(0, Math.min(1000, (client?.credit_score || 100) + delta));
+    await supabase.from("clients").update({ credit_score: ns }).eq("id", id!);
+    toast({ title: `Score: ${ns}` }); inv("client-detail");
   };
 
-  // 9. New contract for this client
-  const newContract = () => navigate("/novo-contrato", { state: { clientId: id } });
-
-  // 10. Call client
+  // 14. Ligar
   const callClient = () => {
-    const phone = client?.phone;
-    if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    window.open(`tel:${phone.replace(/\D/g, "")}`, "_self");
+    const p = client?.phone; if (!p) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    window.open(`tel:${p.replace(/\D/g, "")}`, "_self");
   };
 
-  // 11. Email client
+  // 15. WhatsApp
+  const openWhatsApp = () => {
+    const p = (client?.whatsapp || client?.phone || "").replace(/\D/g, "");
+    if (!p) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    window.open(`https://wa.me/${p}`, "_blank");
+  };
+
+  // 16. Email
   const emailClient = () => {
     if (!client?.email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
     window.open(`mailto:${client.email}`, "_blank");
   };
 
-  // 12. Reverse payment
-  const reversePayment = async (instId: string) => {
-    if (!confirm("Estornar pagamento desta parcela?")) return;
-    await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
-    toast({ title: "Pagamento estornado!" });
-    queryClient.invalidateQueries({ queryKey: ["client-installments", id] });
+  // 17. Excluir Cliente
+  const handleDelete = async () => {
+    if (!confirm("Excluir este cliente e todos os dados?")) return;
+    await supabase.from("contract_installments").delete().eq("client_id", id!);
+    await supabase.from("contracts").delete().eq("client_id", id!);
+    await supabase.from("installments").delete().eq("client_id", id!);
+    await supabase.from("transactions").delete().eq("client_id", id!);
+    await supabase.from("clients").delete().eq("id", id!);
+    toast({ title: "Cliente excluído!" }); navigate("/clientes");
   };
 
-  // 13. Generate financial summary text
-  const exportSummary = () => {
-    const text = [
-      `=== FICHA DO CLIENTE ===`,
-      `Nome: ${client?.name}`,
-      `CPF/CNPJ: ${client?.cpf_cnpj || "—"}`,
-      `Telefone: ${client?.phone || "—"}`,
-      `Score: ${client?.credit_score || 0}`,
-      ``,
-      `=== FINANCEIRO ===`,
-      `Capital emprestado: R$ ${fmt(totalCapital)}`,
-      `Total a receber: R$ ${fmt(totalAmount)}`,
-      `Total pago: R$ ${fmt(totalPaid)}`,
-      `Total em atraso: R$ ${fmt(totalOverdue)}`,
-      `Contratos: ${contracts.length}`,
-      `Parcelas pagas: ${paidInstallments.length}`,
-      `Parcelas atrasadas: ${overdueInstallments.length}`,
-      `Parcelas pendentes: ${pendingInstallments.length}`,
-    ].join("\n");
-    navigator.clipboard.writeText(text);
-    toast({ title: "Resumo copiado!" });
-  };
-
-  // 14. View contract detail
-  const viewContract = (contractId: string) => navigate(`/contratos/${contractId}`);
-
-  const inputCls = "w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+  const inputCls = "w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
 
   if (isLoading) return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -247,10 +341,7 @@ const ClienteDetalhe = () => {
   );
 
   if (!client) return (
-    <div className="text-center py-16">
-      <User size={48} className="mx-auto text-muted-foreground/20 mb-4" />
-      <p className="text-muted-foreground">Cliente não encontrado</p>
-    </div>
+    <div className="text-center py-16"><User size={48} className="mx-auto text-muted-foreground/20 mb-4" /><p className="text-muted-foreground">Cliente não encontrado</p></div>
   );
 
   const address = client.address as any;
@@ -263,24 +354,20 @@ const ClienteDetalhe = () => {
     { key: "historico", label: "Histórico", icon: Clock },
   ] as const;
 
-  // 17 tool buttons
   const toolButtons = [
     { icon: Edit, label: "Editar Ficha", action: startEdit, color: "text-primary" },
-    { icon: Plus, label: "Novo Contrato", action: newContract, color: "text-success" },
-    { icon: Send, label: "Cobrar Atrasadas", action: handleSendAllOverdue, color: "text-destructive" },
-    { icon: Phone, label: "Ligar", action: callClient, color: "text-info" },
-    { icon: MessageSquare, label: "WhatsApp", action: () => { const p = (client?.whatsapp || client?.phone || "").replace(/\D/g, ""); if (p) window.open(`https://wa.me/${p}`, "_blank"); }, color: "text-success" },
-    { icon: Mail, label: "E-mail", action: emailClient, color: "text-info" },
+    { icon: MapPin, label: "Editar Endereço", action: startEditAddress, color: "text-primary" },
+    { icon: Plus, label: "Novo Empréstimo", action: () => setNewLoanMode(true), color: "text-success" },
+    { icon: CheckCircle, label: "Quitar Todas", action: payAllPending, color: "text-success" },
+    { icon: Send, label: "Cobrar Atrasadas", action: sendAllOverdue, color: "text-destructive" },
+    { icon: Phone, label: "Ligar", action: callClient, color: "text-primary" },
+    { icon: MessageSquare, label: "WhatsApp", action: openWhatsApp, color: "text-success" },
+    { icon: Mail, label: "E-mail", action: emailClient, color: "text-primary" },
     { icon: Copy, label: "Copiar Dados", action: copyClientInfo, color: "text-muted-foreground" },
     { icon: Download, label: "Exportar Resumo", action: exportSummary, color: "text-primary" },
-    { icon: Star, label: "Score +50", action: () => updateCreditScore(50), color: "text-warning" },
-    { icon: TrendingUp, label: "Score -50", action: () => updateCreditScore(-50), color: "text-destructive" },
+    { icon: Star, label: "Score +50", action: () => updateScore(50), color: "text-warning" },
+    { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50), color: "text-destructive" },
     { icon: Ban, label: client?.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus, color: client?.status === "Ativo" ? "text-warning" : "text-success" },
-    { icon: Shield, label: "Portal Cliente", action: () => navigate("/portal-cliente"), color: "text-primary" },
-    { icon: Eye, label: "Auditoria", action: () => navigate("/auditoria"), color: "text-muted-foreground" },
-    { icon: Calendar, label: "Histórico", action: () => setActiveTab("historico"), color: "text-info" },
-    { icon: Wallet, label: "Tesouraria", action: () => navigate("/carteira"), color: "text-primary" },
-    { icon: Hash, label: "QR Code", action: () => navigate("/qrcode"), color: "text-success" },
     { icon: Trash2, label: "Excluir", action: handleDelete, color: "text-destructive" },
   ];
 
@@ -310,17 +397,22 @@ const ClienteDetalhe = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* ========== MODALS ========== */}
+
+      {/* Edit Client Modal */}
       {editMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
-            <h2 className="text-lg font-bold text-foreground">Editar Cliente</h2>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Editar Cliente</h2>
+              <button onClick={() => setEditMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
             {[
               { key: "name", label: "Nome", type: "text" },
               { key: "phone", label: "Telefone", type: "tel" },
+              { key: "whatsapp", label: "WhatsApp", type: "tel" },
               { key: "email", label: "E-mail", type: "email" },
               { key: "cpf_cnpj", label: "CPF/CNPJ", type: "text" },
-              { key: "whatsapp", label: "WhatsApp", type: "tel" },
             ].map(f => (
               <div key={f.key}>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">{f.label}</label>
@@ -335,7 +427,133 @@ const ClienteDetalhe = () => {
         </div>
       )}
 
-      {/* Contact Info Card */}
+      {/* Edit Address Modal */}
+      {editAddressMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Editar Endereço</h2>
+              <button onClick={() => setEditAddressMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+                <input type="text" placeholder="00000-000" value={addrData.cep || ""} onChange={e => setAddrData({ ...addrData, cep: e.target.value })} className={inputCls} />
+              </div>
+              <button onClick={buscarCep} className="self-end px-3 py-2.5 rounded-lg bg-accent border border-border text-foreground hover:bg-accent/70 transition-colors">
+                <Search size={16} />
+              </button>
+            </div>
+            {[
+              { key: "street", label: "Rua" }, { key: "number", label: "Número" },
+              { key: "neighborhood", label: "Bairro" }, { key: "city", label: "Cidade" }, { key: "state", label: "Estado" },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{f.label}</label>
+                <input type="text" value={addrData[f.key] || ""} onChange={e => setAddrData({ ...addrData, [f.key]: e.target.value })} className={inputCls} />
+              </div>
+            ))}
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setEditAddressMode(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={saveAddress} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Loan Modal */}
+      {newLoanMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Novo Empréstimo</h2>
+              <button onClick={() => setNewLoanMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <p className="text-xs text-muted-foreground">Para: <strong className="text-foreground">{client.name}</strong></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
+                <input type="number" value={loanCapital} onChange={e => setLoanCapital(e.target.value)} placeholder="1000" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Parcelas</label>
+                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder="12" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequência</label>
+                <select value={loanFreq} onChange={e => setLoanFreq(e.target.value)} className={inputCls}>
+                  {freqOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
+                <input type="date" value={loanStart} onChange={e => setLoanStart(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
+                <input type="number" step="0.01" value={loanDailyFee} onChange={e => setLoanDailyFee(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
+                <input type="number" value={loanMonthlyFee} onChange={e => setLoanMonthlyFee(e.target.value)} className={inputCls} />
+              </div>
+            </div>
+            {loanCalc && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Parcela</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setNewLoanMode(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={handleCreateLoan} disabled={loanLoading || !loanCalc} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+                {loanLoading ? "Criando..." : "Criar Empréstimo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Partial Payment Modal */}
+      {partialPayModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Pagamento</h2>
+              <button onClick={() => setPartialPayModal(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Parcela #{partialPayModal.installment_number}</p>
+              <p className="text-lg font-bold text-foreground">R$ {fmt(Number(partialPayModal.amount))}</p>
+              {partialPayModal.paid_amount > 0 && (
+                <p className="text-xs text-success">Já pago: R$ {fmt(Number(partialPayModal.paid_amount))}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor do pagamento (R$)</label>
+              <input type="number" step="0.01" value={partialAmount} onChange={e => setPartialAmount(e.target.value)} placeholder={fmt(Number(partialPayModal.amount))} className={inputCls} autoFocus />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setPartialAmount(String(partialPayModal.amount)); }} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">
+                Valor Total
+              </button>
+              <button onClick={() => { setPartialAmount(String(Number(partialPayModal.amount) / 2)); }} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">
+                Metade
+              </button>
+            </div>
+            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0} className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+              Confirmar Pagamento
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========== CONTENT ========== */}
+
+      {/* Contact Info */}
       <div className="bg-card border border-border rounded-xl p-4 animate-fade-in" style={{ animationDelay: "80ms" }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -365,11 +583,11 @@ const ClienteDetalhe = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "120ms" }}>
         {[
           { icon: DollarSign, label: "Capital na Rua", value: `R$ ${fmt(totalCapital)}`, color: "text-foreground", bg: "bg-primary/10" },
-          { icon: CheckCircle, label: "Total Recebido", value: `R$ ${fmt(totalPaid)}`, color: "text-success", bg: "bg-success/10" },
+          { icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(totalPaid)}`, color: "text-success", bg: "bg-success/10" },
           { icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(totalOverdue)}`, color: "text-destructive", bg: "bg-destructive/10" },
-          { icon: TrendingUp, label: "Lucro Total", value: `R$ ${fmt(totalProfit)}`, color: "text-primary", bg: "bg-primary/10" },
+          { icon: Wallet, label: "Restante", value: `R$ ${fmt(remaining)}`, color: "text-primary", bg: "bg-primary/10" },
         ].map((s, idx) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 card-hover" style={{ animationDelay: `${120 + idx * 60}ms` }}>
+          <div key={s.label} className="bg-card border border-border rounded-xl p-3.5 card-hover">
             <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon size={16} className={s.color} />
             </div>
@@ -379,19 +597,14 @@ const ClienteDetalhe = () => {
         ))}
       </div>
 
-      {/* 17 Tool Buttons */}
+      {/* Tool Buttons */}
       <div className="animate-fade-in" style={{ animationDelay: "160ms" }}>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ferramentas ({toolButtons.length})</p>
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
           {toolButtons.map((tool, idx) => (
-            <button
-              key={idx}
-              onClick={tool.action}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-center card-hover"
-              title={tool.label}
-            >
-              <tool.icon size={18} className={tool.color} />
-              <span className="text-[10px] font-medium text-muted-foreground leading-tight">{tool.label}</span>
+            <button key={idx} onClick={tool.action} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-center card-hover" title={tool.label}>
+              <tool.icon size={16} className={tool.color} />
+              <span className="text-[9px] font-medium text-muted-foreground leading-tight">{tool.label}</span>
             </button>
           ))}
         </div>
@@ -400,13 +613,7 @@ const ClienteDetalhe = () => {
       {/* Tabs */}
       <div className="flex gap-1 bg-muted/50 rounded-xl p-1 animate-fade-in" style={{ animationDelay: "200ms" }}>
         {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <tab.icon size={14} />
             {tab.label}
           </button>
@@ -416,43 +623,26 @@ const ClienteDetalhe = () => {
       {/* Tab: Resumo */}
       {activeTab === "resumo" && (
         <div className="space-y-4 animate-fade-in">
-          {/* Summary stats */}
           <div className="bg-card border border-border rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Activity size={16} className="text-primary" /> Visão Geral
-            </h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-foreground">{contracts.length}</p>
-                <p className="text-[10px] text-muted-foreground uppercase">Contratos</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-success">{paidInstallments.length}</p>
-                <p className="text-[10px] text-muted-foreground uppercase">Pagas</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-destructive">{overdueInstallments.length}</p>
-                <p className="text-[10px] text-muted-foreground uppercase">Atrasadas</p>
-              </div>
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div><p className="text-2xl font-bold text-foreground">{contracts.length}</p><p className="text-[10px] text-muted-foreground uppercase">Contratos</p></div>
+              <div><p className="text-2xl font-bold text-success">{paidInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pagas</p></div>
+              <div><p className="text-2xl font-bold text-destructive">{overdueInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Atrasadas</p></div>
+              <div><p className="text-2xl font-bold text-foreground">{pendingInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pendentes</p></div>
             </div>
           </div>
-
-          {/* Progress bars per contract */}
           {contracts.map((c: any) => {
             const cInst = installments.filter((i: any) => i.contract_id === c.id);
             const cPaid = cInst.filter((i: any) => i.status === "paid").length;
             const pct = Math.round((cPaid / (c.num_installments || 1)) * 100);
             return (
-              <div key={c.id} className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => viewContract(c.id)}>
+              <div key={c.id} className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate(`/contratos/${c.id}`)}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-foreground">R$ {fmt(Number(c.capital))} · {c.num_installments}x</p>
-                  <Badge variant="outline" className={c.status === "active" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>
-                    {c.status === "active" ? "Ativo" : c.status}
-                  </Badge>
+                  <Badge variant="outline" className={c.status === "active" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{c.status === "active" ? "Ativo" : c.status}</Badge>
                 </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-success transition-all duration-500" style={{ width: `${pct}%` }} />
-                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-success transition-all duration-500" style={{ width: `${pct}%` }} /></div>
                 <p className="text-[10px] text-muted-foreground mt-1">{cPaid}/{c.num_installments} pagas · {pct}%</p>
               </div>
             );
@@ -463,18 +653,17 @@ const ClienteDetalhe = () => {
       {/* Tab: Contratos */}
       {activeTab === "contratos" && (
         <div className="space-y-3 animate-fade-in">
+          <button onClick={() => setNewLoanMode(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors">
+            <Plus size={16} /> Novo Empréstimo
+          </button>
           {contracts.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText size={32} className="mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">Nenhum contrato</p>
-              <button onClick={newContract} className="mt-3 text-sm text-primary hover:underline">+ Novo Contrato</button>
-            </div>
+            <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
           ) : contracts.map((c: any) => (
-            <div key={c.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => viewContract(c.id)}>
-              <div className="flex items-center justify-between mb-2">
+            <div key={c.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
-                  <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {c.frequency === "monthly" ? "Mensal" : c.frequency === "weekly" ? "Semanal" : c.frequency === "daily" ? "Diário" : "Quinzenal"}</p>
+                  <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {freqOpts.find(f => f.value === c.frequency)?.label || c.frequency}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">{new Date(c.start_date).toLocaleDateString("pt-BR")}</p>
@@ -494,37 +683,35 @@ const ClienteDetalhe = () => {
           ) : installments.map((inst: any) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
+            const partiallyPaid = !isPaid && Number(inst.paid_amount || 0) > 0;
             return (
-              <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"
-              }`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                  isOverdue ? "bg-destructive/10 text-destructive" : isPaid ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                }`}>
+              <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isOverdue ? "bg-destructive/10 text-destructive" : isPaid ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                   {inst.installment_number}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    Vence: {new Date(inst.due_date).toLocaleDateString("pt-BR")}
+                    {new Date(inst.due_date).toLocaleDateString("pt-BR")}
                     {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
+                    {partiallyPaid && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {isPaid ? (
-                    <button onClick={(e) => { e.stopPropagation(); reversePayment(inst.id); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar">
+                    <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar">
                       <RotateCcw size={14} />
                     </button>
                   ) : (
                     <>
-                      <button onClick={(e) => { e.stopPropagation(); handleSendBilling(inst); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Enviar cobrança">
+                      <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Cobrar">
                         <Send size={14} />
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handlePayInstallment(inst.id, Number(inst.amount)); }}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-all"
-                      >
-                        Pagar
+                      <button onClick={() => openPartialPay(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Pgto Parcial">
+                        <Percent size={14} />
+                      </button>
+                      <button onClick={() => payFull(inst.id, Number(inst.amount))} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-all">
+                        Quitar
                       </button>
                     </>
                   )}
