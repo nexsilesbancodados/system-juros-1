@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Send, Bot, User, BarChart3, FileText, Wifi, WifiOff,
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
-  Loader2, AlertTriangle, Settings
+  Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
+  ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,16 +16,33 @@ interface Message {
   timestamp: Date;
 }
 
+interface WhatsAppChat {
+  id: string;
+  name?: string;
+  remoteJid: string;
+  lastMessage?: string;
+  updatedAt?: string;
+  unreadCount?: number;
+}
+
+interface WhatsAppMsg {
+  key: { id: string; fromMe: boolean; remoteJid: string };
+  message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+  messageTimestamp?: number;
+  pushName?: string;
+}
+
 type ConnectionStatus = "checking" | "disconnected" | "qr_ready" | "connecting" | "connected" | "error";
+type TabType = "chat" | "whatsapp" | "mensagens" | "config" | "metricas" | "relatorios";
 
 const AgenteIA = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<"chat" | "whatsapp" | "metricas" | "relatorios">("chat");
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<TabType>("chat");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Posso ajudá-lo a consultar dados de clientes, parcelas, contratos e muito mais. Como posso ajudar?", timestamp: new Date() },
+    { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Como posso ajudar?", timestamp: new Date() },
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -35,16 +52,59 @@ const AgenteIA = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string>("");
   const [pollingQr, setPollingQr] = useState(false);
-  const qrIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const qrIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Messages state
+  const [whatsappChats, setWhatsappChats] = useState<WhatsAppChat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<WhatsAppChat | null>(null);
+  const [chatMessages, setChatMessages] = useState<WhatsAppMsg[]>([]);
+  const [replyInput, setReplyInput] = useState("");
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Agent config state
+  const [agentConfig, setAgentConfig] = useState({
+    chatbotEnabled: true,
+    autoCollections: true,
+    autoReply: true,
+    sendPix: true,
+    notifyOwner: true,
+    maxMessagesPerDay: 50,
+    workHourStart: 8,
+    workHourEnd: 20,
+    tone: "formal" as "formal" | "casual" | "firme",
+  });
 
   const { data: settings } = useQuery({
-    queryKey: ["settings-whatsapp", user?.id],
+    queryKey: ["settings-agent", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("whatsapp_api_url, whatsapp_api_key, whatsapp_instance").eq("user_id", user!.id).single();
+      const { data } = await supabase
+        .from("settings")
+        .select("bot_enabled, bot_auto_send, bot_send_pix, bot_notify_owner, bot_max_messages_per_day, bot_send_hour, bot_send_minute, bot_tone, whatsapp_instance")
+        .eq("user_id", user!.id)
+        .single();
       return data;
     },
     enabled: !!user,
   });
+
+  // Sync config from DB
+  useEffect(() => {
+    if (settings) {
+      setAgentConfig((prev) => ({
+        ...prev,
+        chatbotEnabled: settings.bot_enabled ?? true,
+        autoCollections: settings.bot_auto_send ?? true,
+        sendPix: settings.bot_send_pix ?? true,
+        notifyOwner: settings.bot_notify_owner ?? true,
+        maxMessagesPerDay: settings.bot_max_messages_per_day ?? 50,
+        workHourStart: settings.bot_send_hour ?? 8,
+        tone: (settings.bot_tone as any) ?? "formal",
+      }));
+    }
+  }, [settings]);
 
   const { data: dashData } = useQuery({
     queryKey: ["agent-context", user?.id],
@@ -62,27 +122,22 @@ const AgenteIA = () => {
   const callEvolutionApi = useCallback(async (action: string, extra: Record<string, any> = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Sem sessão");
-
     const resp = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-api`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ action, ...extra }),
       }
     );
-
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || "Erro na API");
     return data;
   }, []);
 
-  // Check WhatsApp connection status on mount
+  // Check WhatsApp status
   useEffect(() => {
-    if (settings === undefined) return; // still loading
+    if (settings === undefined) return;
     checkStatus();
   }, [settings]);
 
@@ -110,7 +165,7 @@ const AgenteIA = () => {
       setInstanceName(data.instance || "");
       if (data.status === "connected") {
         setWhatsappStatus("connected");
-        toast({ title: "WhatsApp conectado!", description: "Instância já estava ativa." });
+        toast({ title: "WhatsApp conectado!" });
         return;
       }
       if (data.status === "qr_ready" && data.qrcode) {
@@ -119,7 +174,6 @@ const AgenteIA = () => {
         startPolling();
         return;
       }
-      // Need to fetch QR separately
       await fetchQr();
     } catch (err: any) {
       setWhatsappStatus("error");
@@ -136,7 +190,6 @@ const AgenteIA = () => {
         startPolling();
       } else {
         setWhatsappStatus("connecting");
-        // Retry after 2s
         setTimeout(fetchQr, 2000);
       }
     } catch {
@@ -154,11 +207,9 @@ const AgenteIA = () => {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
-          toast({ title: "✅ WhatsApp Conectado!", description: "Instância pronta para uso." });
+          toast({ title: "✅ WhatsApp Conectado!" });
         }
-      } catch {
-        // Keep polling
-      }
+      } catch {}
     }, 4000);
   };
 
@@ -170,18 +221,108 @@ const AgenteIA = () => {
     setPollingQr(false);
   };
 
-  useEffect(() => {
-    return () => stopPolling();
-  }, []);
+  useEffect(() => () => stopPolling(), []);
 
   const handleLogout = async () => {
     try {
       await callEvolutionApi("logout");
       setWhatsappStatus("disconnected");
       setQrCode(null);
-      toast({ title: "Desconectado", description: "WhatsApp desconectado com sucesso." });
+      toast({ title: "Desconectado" });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  // Fetch WhatsApp chats
+  const loadChats = async () => {
+    if (whatsappStatus !== "connected") return;
+    setLoadingChats(true);
+    try {
+      const data = await callEvolutionApi("fetch_messages");
+      const chats: WhatsAppChat[] = (data.chats || [])
+        .filter((c: any) => c.id?.endsWith("@s.whatsapp.net"))
+        .map((c: any) => ({
+          id: c.id,
+          name: c.name || c.id?.split("@")[0],
+          remoteJid: c.id,
+          lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || "",
+          updatedAt: c.updatedAt ? new Date(c.updatedAt).toLocaleString("pt-BR") : "",
+          unreadCount: c.unreadCount || 0,
+        }));
+      setWhatsappChats(chats);
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar chats", description: err.message, variant: "destructive" });
+    } finally {
+      setLoadingChats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "mensagens" && whatsappStatus === "connected") {
+      loadChats();
+    }
+  }, [tab, whatsappStatus]);
+
+  const openChat = async (chat: WhatsAppChat) => {
+    setSelectedChat(chat);
+    setLoadingMsgs(true);
+    try {
+      const data = await callEvolutionApi("fetch_messages", { remoteJid: chat.remoteJid, count: 30 });
+      setChatMessages(data.messages || []);
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setLoadingMsgs(false);
+    }
+  };
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  const sendReply = async () => {
+    if (!replyInput.trim() || !selectedChat || sendingReply) return;
+    setSendingReply(true);
+    try {
+      await callEvolutionApi("send_message", {
+        phone: selectedChat.remoteJid.replace("@s.whatsapp.net", ""),
+        message: replyInput,
+      });
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          key: { id: Date.now().toString(), fromMe: true, remoteJid: selectedChat.remoteJid },
+          message: { conversation: replyInput },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      ]);
+      setReplyInput("");
+      toast({ title: "Mensagem enviada!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  // Save agent config
+  const saveConfig = async () => {
+    if (!user) return;
+    try {
+      await supabase.from("settings").update({
+        bot_enabled: agentConfig.chatbotEnabled,
+        bot_auto_send: agentConfig.autoCollections,
+        bot_send_pix: agentConfig.sendPix,
+        bot_notify_owner: agentConfig.notifyOwner,
+        bot_max_messages_per_day: agentConfig.maxMessagesPerDay,
+        bot_send_hour: agentConfig.workHourStart,
+        bot_tone: agentConfig.tone,
+      }).eq("user_id", user.id);
+      queryClient.invalidateQueries({ queryKey: ["settings-agent"] });
+      toast({ title: "Configurações salvas!" });
+    } catch {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
     }
   };
 
@@ -197,7 +338,6 @@ const AgenteIA = () => {
     const activeContracts = contracts.filter((c: any) => c.status === "active");
     const todayStr = now.toISOString().split("T")[0];
     const dueToday = installments.filter((i: any) => i.status === "pending" && i.due_date?.startsWith(todayStr));
-
     return {
       totalClients: clients.length,
       activeClients: clients.filter((c: any) => c.status === "Ativo").length,
@@ -220,42 +360,28 @@ const AgenteIA = () => {
     setMessages(updatedMessages);
     setInput("");
     setLoading(true);
-
     const context = buildContext();
     const apiMessages = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Sem sessão");
-
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ messages: apiMessages, context }),
-        }
-      );
-
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ messages: apiMessages, context }),
+      });
       if (!resp.ok) {
         const errData = await resp.json();
         throw new Error(errData.error || "Erro na API");
       }
-
-      // Stream response
       const reader = resp.body!.getReader();
       const decoder = new TextDecoder();
       let assistantContent = "";
       let textBuffer = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         textBuffer += decoder.decode(value, { stream: true });
-
         let newlineIndex: number;
         while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
@@ -263,10 +389,8 @@ const AgenteIA = () => {
           if (line.endsWith("\r")) line = line.slice(0, -1);
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
-
           const jsonStr = line.slice(6).trim();
           if (jsonStr === "[DONE]") break;
-
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content;
@@ -286,12 +410,10 @@ const AgenteIA = () => {
           }
         }
       }
-
       if (!assistantContent) {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Desculpe, não consegui processar sua pergunta. Tente novamente.", timestamp: new Date() }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: "Desculpe, não consegui processar. Tente novamente.", timestamp: new Date() }]);
       }
     } catch (err: any) {
-      console.error("Chat error:", err);
       setMessages((prev) => [...prev, { role: "assistant", content: `❌ Erro: ${err.message}`, timestamp: new Date() }]);
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
@@ -301,26 +423,25 @@ const AgenteIA = () => {
 
   const now = new Date();
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
-  const totalConversas = messages.filter((m) => m.role === "user").length;
 
-  
+  const getMessageText = (msg: WhatsAppMsg) =>
+    msg.message?.conversation || msg.message?.extendedTextMessage?.text || "[mídia]";
 
-  const StatusBadge = () => {
-    const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-      checking: { color: "text-muted-foreground", icon: <Loader2 size={12} className="animate-spin" />, label: "Verificando..." },
-      disconnected: { color: "text-orange-400", icon: <WifiOff size={12} />, label: "Desconectado" },
-      qr_ready: { color: "text-blue-400", icon: <QrCode size={12} />, label: "Escaneie o QR" },
-      connecting: { color: "text-yellow-400", icon: <Loader2 size={12} className="animate-spin" />, label: "Conectando..." },
-      connected: { color: "text-green-400", icon: <Wifi size={12} />, label: "Conectado" },
-      error: { color: "text-destructive", icon: <AlertTriangle size={12} />, label: "Não configurado" },
-    };
-    const cfg = statusConfig[whatsappStatus] || statusConfig.error;
-    return (
-      <span className={`flex items-center gap-1.5 text-xs font-medium ${cfg.color}`}>
-        {cfg.icon} {cfg.label}
-      </span>
-    );
-  };
+  const ToggleSwitch = ({ enabled, onToggle, label, description }: { enabled: boolean; onToggle: () => void; label: string; description: string }) => (
+    <div className="flex items-center justify-between py-3">
+      <div className="flex-1 mr-4">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <button onClick={onToggle} className="shrink-0">
+        {enabled ? (
+          <ToggleRight size={32} className="text-primary" />
+        ) : (
+          <ToggleLeft size={32} className="text-muted-foreground" />
+        )}
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -329,50 +450,250 @@ const AgenteIA = () => {
           <h1 className="text-2xl font-bold text-foreground">Agente IA</h1>
           <p className="text-sm text-muted-foreground">Assistente inteligente com WhatsApp integrado</p>
         </div>
-        <StatusBadge />
+        <span className={`flex items-center gap-1.5 text-xs font-medium ${whatsappStatus === "connected" ? "text-green-500" : "text-muted-foreground"}`}>
+          {whatsappStatus === "connected" ? <><Wifi size={12} /> Conectado</> : <><WifiOff size={12} /> Offline</>}
+        </span>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {[
-          { id: "chat" as const, label: "Chat", icon: <Bot size={16} /> },
-          { id: "whatsapp" as const, label: "WhatsApp", icon: <Phone size={16} /> },
-          { id: "metricas" as const, label: "Métricas", icon: <BarChart3 size={16} /> },
-          { id: "relatorios" as const, label: "Relatórios", icon: <FileText size={16} /> },
-        ].map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
+        {([
+          { id: "chat", label: "Chat IA", icon: <Bot size={16} /> },
+          { id: "mensagens", label: "Mensagens", icon: <Inbox size={16} /> },
+          { id: "whatsapp", label: "WhatsApp", icon: <Phone size={16} /> },
+          { id: "config", label: "Configurações", icon: <Settings size={16} /> },
+          { id: "metricas", label: "Métricas", icon: <BarChart3 size={16} /> },
+          { id: "relatorios", label: "Relatórios", icon: <FileText size={16} /> },
+        ] as { id: TabType; label: string; icon: React.ReactNode }[]).map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
             {t.icon} {t.label}
-            {t.id === "whatsapp" && whatsappStatus === "connected" && <span className="w-2 h-2 rounded-full bg-green-400" />}
           </button>
         ))}
       </div>
 
-      {/* WhatsApp Tab */}
+      {/* ========== MENSAGENS TAB ========== */}
+      {tab === "mensagens" && (
+        <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
+          {whatsappStatus !== "connected" ? (
+            <div className="flex-1 flex items-center justify-center text-center p-6">
+              <div className="space-y-3">
+                <WifiOff size={40} className="mx-auto text-muted-foreground" />
+                <p className="text-foreground font-medium">WhatsApp não conectado</p>
+                <p className="text-sm text-muted-foreground">Conecte na aba WhatsApp para ver as mensagens.</p>
+              </div>
+            </div>
+          ) : !selectedChat ? (
+            <>
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <h2 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Conversas</h2>
+                <button onClick={loadChats} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {loadingChats ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 size={24} className="animate-spin text-muted-foreground" />
+                  </div>
+                ) : whatsappChats.length === 0 ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+                    Nenhuma conversa encontrada
+                  </div>
+                ) : (
+                  whatsappChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => openChat(chat)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User size={18} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{chat.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
+                      </div>
+                      {chat.unreadCount ? (
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
+                          {chat.unreadCount}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-3 border-b border-border flex items-center gap-3">
+                <button onClick={() => { setSelectedChat(null); setChatMessages([]); }} className="p-1.5 rounded-lg hover:bg-muted/50">
+                  <ChevronLeft size={18} className="text-foreground" />
+                </button>
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User size={14} className="text-primary" />
+                </div>
+                <p className="font-medium text-sm text-foreground">{selectedChat.name}</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {loadingMsgs ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 size={24} className="animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  chatMessages.map((msg, i) => {
+                    const fromMe = msg.key?.fromMe;
+                    const text = getMessageText(msg);
+                    const time = msg.messageTimestamp
+                      ? new Date(Number(msg.messageTimestamp) * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    return (
+                      <div key={i} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground"}`}>
+                          <p className="whitespace-pre-wrap">{text}</p>
+                          <p className={`text-[10px] mt-0.5 ${fromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{time}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={chatScrollRef} />
+              </div>
+              <div className="border-t border-border p-3">
+                <div className="flex gap-2">
+                  <input
+                    value={replyInput}
+                    onChange={(e) => setReplyInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendReply()}
+                    placeholder="Digite sua resposta..."
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <button onClick={sendReply} disabled={!replyInput.trim() || sendingReply} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50">
+                    {sendingReply ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ========== CONFIG TAB ========== */}
+      {tab === "config" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-1">
+            <h2 className="font-semibold text-foreground flex items-center gap-2 mb-3"><Bot size={18} /> Chatbot IA</h2>
+            <ToggleSwitch
+              enabled={agentConfig.chatbotEnabled}
+              onToggle={() => setAgentConfig((p) => ({ ...p, chatbotEnabled: !p.chatbotEnabled }))}
+              label="Chatbot Ativo"
+              description="Responde mensagens automaticamente via IA no WhatsApp"
+            />
+            <ToggleSwitch
+              enabled={agentConfig.autoReply}
+              onToggle={() => setAgentConfig((p) => ({ ...p, autoReply: !p.autoReply }))}
+              label="Resposta Automática"
+              description="Responde automaticamente quando o cliente envia mensagem"
+            />
+            <div className="py-3">
+              <p className="text-sm font-medium text-foreground mb-2">Tom das respostas</p>
+              <div className="flex gap-2">
+                {(["formal", "casual", "firme"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setAgentConfig((p) => ({ ...p, tone: t }))}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${agentConfig.tone === t ? "bg-primary text-primary-foreground" : "bg-muted/30 border border-border text-muted-foreground"}`}
+                  >
+                    {t === "formal" ? "Formal" : t === "casual" ? "Casual" : "Firme"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-1">
+            <h2 className="font-semibold text-foreground flex items-center gap-2 mb-3"><Zap size={18} /> Agente de Cobranças</h2>
+            <ToggleSwitch
+              enabled={agentConfig.autoCollections}
+              onToggle={() => setAgentConfig((p) => ({ ...p, autoCollections: !p.autoCollections }))}
+              label="Cobranças Automáticas"
+              description="Envia mensagens de cobrança automaticamente para parcelas atrasadas"
+            />
+            <ToggleSwitch
+              enabled={agentConfig.sendPix}
+              onToggle={() => setAgentConfig((p) => ({ ...p, sendPix: !p.sendPix }))}
+              label="Enviar Chave Pix"
+              description="Inclui a chave Pix na mensagem de cobrança"
+            />
+            <ToggleSwitch
+              enabled={agentConfig.notifyOwner}
+              onToggle={() => setAgentConfig((p) => ({ ...p, notifyOwner: !p.notifyOwner }))}
+              label="Notificar Proprietário"
+              description="Receba uma notificação quando uma cobrança for enviada"
+            />
+            <div className="py-3">
+              <label className="text-sm font-medium text-foreground block mb-2">Limite diário de mensagens</label>
+              <input
+                type="number"
+                value={agentConfig.maxMessagesPerDay}
+                onChange={(e) => setAgentConfig((p) => ({ ...p, maxMessagesPerDay: Number(e.target.value) }))}
+                className="w-24 px-3 py-2 rounded-lg bg-muted/30 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div className="py-3">
+              <label className="text-sm font-medium text-foreground block mb-2 flex items-center gap-2">
+                <Clock size={14} /> Horário de envio
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={agentConfig.workHourStart}
+                  onChange={(e) => setAgentConfig((p) => ({ ...p, workHourStart: Number(e.target.value) }))}
+                  className="w-16 px-3 py-2 rounded-lg bg-muted/30 border border-border text-sm text-foreground focus:outline-none"
+                />
+                <span className="text-sm text-muted-foreground">às</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={agentConfig.workHourEnd}
+                  onChange={(e) => setAgentConfig((p) => ({ ...p, workHourEnd: Number(e.target.value) }))}
+                  className="w-16 px-3 py-2 rounded-lg bg-muted/30 border border-border text-sm text-foreground focus:outline-none"
+                />
+                <span className="text-sm text-muted-foreground">horas</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={saveConfig}
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+          >
+            Salvar Configurações
+          </button>
+        </div>
+      )}
+
+      {/* ========== WHATSAPP TAB ========== */}
       {tab === "whatsapp" && (
         <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <MessageSquare size={20} /> Conexão WhatsApp
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2"><MessageSquare size={20} /> Conexão WhatsApp</h2>
             {whatsappStatus === "connected" && (
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
                 <LogOut size={14} /> Desconectar
               </button>
             )}
           </div>
-
           {whatsappStatus === "connected" ? (
             <div className="text-center py-10 space-y-4">
-              <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                <CheckCircle2 size={40} className="text-green-500" />
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <CheckCircle2 size={40} className="text-primary" />
               </div>
-              <div>
-                <p className="text-lg font-semibold text-foreground">WhatsApp Conectado!</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Instância: <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{instanceName}</span>
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-md mx-auto mt-4">
+              <p className="text-lg font-semibold text-foreground">WhatsApp Conectado!</p>
+              <p className="text-sm text-muted-foreground">Instância: <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{instanceName}</span></p>
+              <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mt-4">
                 <div className="rounded-xl bg-muted/30 border border-border p-3 text-center">
                   <p className="text-2xl font-bold text-foreground">{dashData?.clients.length || 0}</p>
                   <p className="text-xs text-muted-foreground">Clientes</p>
@@ -382,62 +703,34 @@ const AgenteIA = () => {
                   <p className="text-xs text-muted-foreground">Atrasados</p>
                 </div>
                 <div className="rounded-xl bg-muted/30 border border-border p-3 text-center">
-                  <p className="text-2xl font-bold text-green-400">Ativo</p>
-                  <p className="text-xs text-muted-foreground">Status Bot</p>
+                  <p className="text-2xl font-bold text-primary">Ativo</p>
+                  <p className="text-xs text-muted-foreground">Status</p>
                 </div>
               </div>
             </div>
           ) : whatsappStatus === "qr_ready" && qrCode ? (
             <div className="text-center py-6 space-y-4">
               <p className="text-foreground font-medium">Escaneie o QR Code com seu WhatsApp</p>
-              <p className="text-xs text-muted-foreground">Abra o WhatsApp &gt; Menu &gt; Aparelhos conectados &gt; Conectar</p>
               <div className="inline-block p-4 bg-white rounded-2xl shadow-lg">
-                <img
-                  src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
-                  alt="QR Code WhatsApp"
-                  className="w-64 h-64 object-contain"
-                />
+                <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-64 h-64 object-contain" />
               </div>
-              {pollingQr && (
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                  <Loader2 size={12} className="animate-spin" /> Aguardando leitura do QR Code...
-                </p>
-              )}
-              <button
-                onClick={fetchQr}
-                className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"
-              >
-                <RefreshCw size={14} /> Gerar novo QR
-              </button>
+              {pollingQr && <p className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Loader2 size={12} className="animate-spin" /> Aguardando...</p>}
+              <button onClick={fetchQr} className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"><RefreshCw size={14} /> Novo QR</button>
             </div>
           ) : (
             <div className="text-center py-10 space-y-4">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                <QrCode size={36} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-foreground font-medium">Conectar WhatsApp</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Clique abaixo para criar a instância e gerar o QR Code automaticamente.
-                </p>
-              </div>
-              <button
-                onClick={createInstance}
-                disabled={whatsappStatus === "connecting" || whatsappStatus === "checking"}
-                className="px-6 py-3 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
-              >
-                {whatsappStatus === "connecting" || whatsappStatus === "checking" ? (
-                  <><Loader2 size={16} className="animate-spin" /> Conectando...</>
-                ) : (
-                  <><Wifi size={16} /> Conectar WhatsApp</>
-                )}
+              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto"><QrCode size={36} className="text-primary" /></div>
+              <p className="text-foreground font-medium">Conectar WhatsApp</p>
+              <p className="text-sm text-muted-foreground">Crie a instância e gere o QR Code automaticamente.</p>
+              <button onClick={createInstance} disabled={whatsappStatus === "connecting" || whatsappStatus === "checking"} className="px-6 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 mx-auto">
+                {whatsappStatus === "connecting" || whatsappStatus === "checking" ? <><Loader2 size={16} className="animate-spin" /> Conectando...</> : <><Wifi size={16} /> Conectar WhatsApp</>}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Chat Tab */}
+      {/* ========== CHAT IA TAB ========== */}
       {tab === "chat" && (
         <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -462,29 +755,20 @@ const AgenteIA = () => {
             )}
             <div ref={scrollRef} />
           </div>
-
           <div className="border-t border-border p-3">
             <div className="flex gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Pergunte algo... Ex: Quantos contratos ativos?"
-                className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-              <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50">
-                <Send size={16} />
-              </button>
+              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="Pergunte algo..." className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+              <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"><Send size={16} /></button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Metrics Tab */}
+      {/* Metrics */}
       {tab === "metricas" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Conversas", value: totalConversas },
+            { label: "Conversas IA", value: messages.filter((m) => m.role === "user").length },
             { label: "Mensagens", value: messages.length },
             { label: "Parcelas Atrasadas", value: overdue },
             { label: "WhatsApp", value: whatsappStatus === "connected" ? "✅ Online" : "❌ Offline" },
@@ -497,16 +781,17 @@ const AgenteIA = () => {
         </div>
       )}
 
-      {/* Reports Tab */}
+      {/* Reports */}
       {tab === "relatorios" && (
         <div className="rounded-2xl border border-border bg-card p-6">
           <h2 className="font-semibold text-foreground mb-4">Insights do Portfólio</h2>
           <div className="space-y-3">
             {[
               dashData && dashData.clients.length > 0 ? `Você gerencia ${dashData.clients.length} clientes e ${dashData.contracts.length} contratos.` : null,
-              overdue > 0 ? `⚠️ Atenção: ${overdue} parcelas estão atrasadas e precisam de ação.` : "✅ Nenhuma parcela atrasada. Parabéns!",
-              dashData ? `O capital total ativo é de R$ ${dashData.contracts.filter((c: any) => c.status === "active").reduce((s: number, c: any) => s + Number(c.capital), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.` : null,
-              whatsappStatus === "connected" ? "📱 WhatsApp conectado e pronto para envio de cobranças automáticas." : "📱 WhatsApp não conectado. Conecte para habilitar cobranças automáticas.",
+              overdue > 0 ? `⚠️ ${overdue} parcelas atrasadas precisam de ação.` : "✅ Nenhuma parcela atrasada!",
+              whatsappStatus === "connected" ? "📱 WhatsApp conectado e pronto." : "📱 WhatsApp não conectado.",
+              agentConfig.chatbotEnabled ? "🤖 Chatbot IA ativo." : "🤖 Chatbot desativado.",
+              agentConfig.autoCollections ? "⚡ Cobranças automáticas ativas." : "⚡ Cobranças automáticas desativadas.",
             ].filter(Boolean).map((insight, i) => (
               <div key={i} className="px-4 py-3 rounded-lg bg-muted/30 border border-border text-sm text-foreground">{insight}</div>
             ))}
