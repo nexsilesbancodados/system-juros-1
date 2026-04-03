@@ -374,8 +374,7 @@ const Simulador = () => {
       {hasValue && (
         <button
           onClick={() => navigate("/clientes/novo", { state: { valor, taxa, parcelas: calc?.numParcelas, loanMode, frequency, dailyMode } })}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground micro-press focus-ring animate-fade-in"
-          style={{ background: "var(--gradient-button)" }}
+          className="action-btn-primary w-full"
         >
           <FileSignature size={16} /> Criar Contrato com Esses Valores <ArrowRight size={14} />
         </button>

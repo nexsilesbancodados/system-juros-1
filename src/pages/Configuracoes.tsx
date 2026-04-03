@@ -1125,8 +1125,7 @@ const Configuracoes = () => {
               <textarea value={newTemplate.content} onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })} placeholder="Olá [Nome], sua parcela de R$ [Valor] está atrasada há [Dias] dias..." className={`${inputCls} min-h-[80px] resize-none`} />
               <input type="number" value={newTemplate.trigger_days} onChange={(e) => setNewTemplate({ ...newTemplate, trigger_days: e.target.value })} placeholder="Dias de atraso para disparar (opcional)" className={inputCls} />
               <button onClick={handleAddTemplate} disabled={!newTemplate.name || !newTemplate.content}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 focus-ring"
-                style={{ background: "var(--gradient-button)" }}>
+                className="action-btn-primary">
                 <Plus size={14} /> Adicionar Template
               </button>
             </div>

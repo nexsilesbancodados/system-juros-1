@@ -74,8 +74,7 @@ const Anotacoes = () => {
           <p className="text-muted-foreground text-sm mt-0.5">{notes.length} nota{notes.length !== 1 ? "s" : ""} salva{notes.length !== 1 ? "s" : ""}</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/20"
-          style={{ background: "var(--gradient-button)" }}>
+          className="action-btn-primary">
           <Plus size={16} /> Nova Anotação
         </button>
       </div>

@@ -591,7 +591,7 @@ const ClienteDetalhe = () => {
               <button onClick={() => setPartialAmount(String(Number(partialPayModal.amount) / 2))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Metade</button>
             </div>
             <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+              className="action-btn-primary w-full">
               Confirmar
             </button>
           </div>
@@ -650,7 +650,7 @@ const ClienteDetalhe = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
+        <button onClick={() => setNewLoanMode(true)} className="action-btn-primary">
           <Plus size={15} /> Novo Empréstimo
         </button>
         <button onClick={payAllPending} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-success/10 text-success border border-success/20 text-sm font-medium hover:bg-success/20 transition-colors">

@@ -239,8 +239,7 @@ const Cobradores = () => {
           <p className="text-sm text-muted-foreground mt-1">Gestão completa de cobradores externos</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-          style={{ background: "var(--gradient-button)" }}>
+          className="action-btn-primary">
           <Plus size={16} /> Novo Cobrador
         </button>
       </div>
@@ -326,8 +325,7 @@ const Cobradores = () => {
 
           <div className="flex items-center gap-3 pt-1">
             <button type="submit" disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 hover:shadow-lg transition-all"
-              style={{ background: "var(--gradient-button)" }}>
+              className="action-btn-primary">
               {editingId ? <Check size={14} /> : <Plus size={14} />}
               {saving ? "Salvando..." : editingId ? "Salvar Alterações" : "Cadastrar"}
             </button>

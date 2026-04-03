@@ -195,8 +195,7 @@ const Gastos = () => {
             </button>
           )}
           <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: "var(--gradient-button)" }}>
+            className="action-btn-primary">
             <Plus size={16} /> Novo Gasto
           </button>
         </div>

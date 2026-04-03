@@ -22,8 +22,7 @@ const NotFound = () => {
         </p>
         <Link
           to="/"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:opacity-90"
-          style={{ background: "var(--gradient-button)" }}
+          className="action-btn-primary"
         >
           <ArrowLeft size={16} />
           Voltar ao Início

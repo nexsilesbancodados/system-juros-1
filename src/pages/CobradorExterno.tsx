@@ -116,8 +116,7 @@ const CobradorExterno = () => {
           </div>
           <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Insira seu token" required className={inputCls} />
           <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-all hover:shadow-lg"
-            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
+            className="action-btn-primary w-full">
             {loading ? "Verificando..." : "Acessar Portal"}
           </button>
         </form>
