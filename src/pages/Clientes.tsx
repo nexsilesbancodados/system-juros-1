@@ -74,7 +74,8 @@ const Clientes = () => {
           <p className="text-muted-foreground text-sm">Gerencie seus clientes e contratos.</p>
         </div>
         <button onClick={() => navigate("/clientes/novo")}
-          className="action-btn-primary">
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
+          style={{ background: "var(--gradient-button)" }}>
           <Plus size={16} /> Novo Cliente
         </button>
       </div>
@@ -103,7 +104,7 @@ const Clientes = () => {
           {search && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
-              <button onClick={() => setSearch("")} className="icon-action-sm"><X size={14} /></button>
+              <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
             </div>
           )}
         </div>
@@ -168,10 +169,10 @@ const Clientes = () => {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="icon-action" title="Ver">
+                        <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="p-2 rounded-lg hover:bg-accent text-muted-foreground" title="Ver">
                           <Eye size={15} />
                         </button>
-                        <button onClick={(e) => handleDelete(c.id, e)} className="icon-action hover:!bg-destructive/10 hover:!text-destructive" title="Excluir">
+                        <button onClick={(e) => handleDelete(c.id, e)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title="Excluir">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -213,7 +214,7 @@ const Clientes = () => {
               className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 cursor-pointer transition-all group relative">
               {/* Delete button */}
               <button onClick={(e) => handleDelete(c.id, e)}
-                className="absolute top-3 right-3 icon-action-sm opacity-0 group-hover:opacity-100 hover:!bg-destructive/10 hover:!text-destructive transition-all"
+                className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                 title="Excluir">
                 <Trash2 size={13} />
               </button>

@@ -291,7 +291,7 @@ const ContratoDetalhe = () => {
               className="w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none" placeholder="Observações..." />
             <div className="flex gap-2">
               <button onClick={() => setEditNotes(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={saveNotes} className="action-btn-primary">Salvar</button>
+              <button onClick={saveNotes} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
             </div>
           </div>
         </div>

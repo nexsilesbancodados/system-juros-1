@@ -101,7 +101,8 @@ const Relatorios = () => {
               className="bg-transparent text-sm text-foreground focus:outline-none" />
           </div>
           <button onClick={handleExportCSV} disabled={!data}
-            className="action-btn-primary">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 focus-ring"
+            style={{ background: "var(--gradient-button)" }}>
             <Download size={16} /> Exportar
           </button>
         </div>

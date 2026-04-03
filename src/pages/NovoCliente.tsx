@@ -390,7 +390,8 @@ const NovoCliente = () => {
             </button>
             <button
               onClick={() => navigate("/clientes")}
-              className="action-btn-primary"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity"
+              style={{ background: "var(--gradient-button)" }}
             >
               <Check size={16} /> Concluir
             </button>
@@ -742,12 +743,14 @@ const NovoCliente = () => {
         {step < 3 ? (
           <button onClick={goNext}
             disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
-            className="action-btn-primary disabled:opacity-50">
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
+            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
             Próximo <ArrowRight size={16} />
           </button>
         ) : (
           <button onClick={handleSave} disabled={saving}
-            className="action-btn-primary disabled:opacity-50">
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
+            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {saving ? "Criando..." : "Criar Cliente e Contrato"}
           </button>

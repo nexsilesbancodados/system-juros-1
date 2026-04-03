@@ -71,7 +71,8 @@ const Metas = () => {
           <p className="text-muted-foreground text-sm mt-0.5">Defina e acompanhe suas metas financeiras.</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="action-btn-primary">
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/20"
+          style={{ background: "var(--gradient-button)" }}>
           <Plus size={16} /> Nova Meta
         </button>
       </div>
@@ -142,7 +143,8 @@ const Metas = () => {
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={saving}
-              className="action-btn-primary disabled:opacity-50">
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-all hover:shadow-lg"
+              style={{ background: "var(--gradient-button)" }}>
               {saving ? "Salvando..." : "Criar Meta"}
             </button>
             <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>

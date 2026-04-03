@@ -239,7 +239,8 @@ const Cobradores = () => {
           <p className="text-sm text-muted-foreground mt-1">Gestão completa de cobradores externos</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="action-btn-primary">
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+          style={{ background: "var(--gradient-button)" }}>
           <Plus size={16} /> Novo Cobrador
         </button>
       </div>
@@ -325,7 +326,8 @@ const Cobradores = () => {
 
           <div className="flex items-center gap-3 pt-1">
             <button type="submit" disabled={saving}
-              className="action-btn-primary">
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 hover:shadow-lg transition-all"
+              style={{ background: "var(--gradient-button)" }}>
               {editingId ? <Check size={14} /> : <Plus size={14} />}
               {saving ? "Salvando..." : editingId ? "Salvar Alterações" : "Cadastrar"}
             </button>
@@ -354,7 +356,8 @@ const Cobradores = () => {
           </p>
           {!search && (
             <button onClick={() => { resetForm(); setShowForm(true); }}
-              className="action-btn-primary">
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
+              style={{ background: "var(--gradient-button)" }}>
               <Plus size={14} /> Cadastrar Primeiro Cobrador
             </button>
           )}
@@ -554,7 +557,7 @@ const Cobradores = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <div className="modal-icon w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary border border-primary/10">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary border border-primary/10">
                     {fichaData.name?.charAt(0)?.toUpperCase()}
                   </div>
                   <div>
@@ -727,10 +730,10 @@ const Cobradores = () => {
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setFichaCollector(null)} className="rounded-xl">Fechar</Button>
+              <DialogFooter className="gap-2 mt-4">
+                <Button variant="outline" onClick={() => setFichaCollector(null)}>Fechar</Button>
                 <Button onClick={() => { setFichaCollector(null); setAssignCobrancaModal(fichaData.id); }}
-                  className="gap-1.5 rounded-xl" style={{ background: "var(--gradient-button)" }}>
+                  className="gap-1.5" style={{ background: "var(--gradient-button)" }}>
                   <DollarSign size={14} /> Atribuir Cobranças
                 </Button>
               </DialogFooter>
@@ -743,14 +746,9 @@ const Cobradores = () => {
       <Dialog open={!!assignCobrancaModal} onOpenChange={() => { setAssignCobrancaModal(null); setCobrancaClientSearch(""); }}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="modal-icon modal-icon-primary">
-                <DollarSign size={18} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">Atribuir Cobranças</p>
-                <p className="text-xs text-muted-foreground font-normal mt-0.5">Selecione clientes com cobranças pendentes</p>
-              </div>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign size={18} className="text-primary" />
+              Atribuir Cobranças
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground -mt-2">
@@ -833,14 +831,9 @@ const Cobradores = () => {
       <Dialog open={!!assignModal} onOpenChange={() => { setAssignModal(null); setClientSearch(""); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="modal-icon modal-icon-primary">
-                <Users size={18} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">Atribuir Cliente</p>
-                <p className="text-xs text-muted-foreground font-normal mt-0.5">Vincule um cliente ao cobrador</p>
-              </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Users size={18} className="text-primary" />
+              Atribuir Cliente
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
@@ -888,24 +881,18 @@ const Cobradores = () => {
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="sm:max-w-sm">
-          <div className="modal-delete-bar -mx-6 -mt-6 mb-4" />
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="modal-icon modal-icon-destructive">
-                <AlertTriangle size={18} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">Excluir Cobrador</p>
-                <p className="text-xs text-muted-foreground font-normal mt-0.5">Esta ação é irreversível</p>
-              </div>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={18} />
+              Excluir Cobrador
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Todos os tokens e atribuições deste cobrador serão removidos permanentemente.
+            Esta ação é irreversível. Todos os tokens e atribuições deste cobrador serão removidos.
           </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="rounded-xl">Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="rounded-xl">
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
               <Trash2 size={14} className="mr-1.5" /> Excluir
             </Button>
           </DialogFooter>

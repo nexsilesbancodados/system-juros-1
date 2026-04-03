@@ -89,7 +89,8 @@ const PuxadaDados = () => {
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="action-btn-primary disabled:opacity-50"
+              className="px-4 py-2.5 rounded-lg text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0"
+              style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
             </button>

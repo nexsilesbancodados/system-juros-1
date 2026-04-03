@@ -138,7 +138,8 @@ const PortalCliente = () => {
             <button
               type="submit"
               disabled={loading}
-              className="action-btn-primary w-full disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl text-sm font-bold text-primary-foreground disabled:opacity-50 transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
+              style={{ background: "var(--gradient-button)" }}
             >
               {loading ? (
                 <>

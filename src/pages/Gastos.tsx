@@ -195,7 +195,8 @@ const Gastos = () => {
             </button>
           )}
           <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="action-btn-primary">
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: "var(--gradient-button)" }}>
             <Plus size={16} /> Novo Gasto
           </button>
         </div>
@@ -379,7 +380,8 @@ const Gastos = () => {
           <p className="text-sm text-muted-foreground mt-2">Registre seus gastos para controlar as despesas</p>
           {!search && catFilter === "all" && (
             <button onClick={() => { resetForm(); setShowForm(true); }}
-              className="action-btn-primary">
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
+              style={{ background: "var(--gradient-button)" }}>
               <Plus size={14} /> Registrar Primeiro Gasto
             </button>
           )}
@@ -442,35 +444,28 @@ const Gastos = () => {
       <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="modal-icon modal-icon-destructive">
-                <ArrowDownRight size={18} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">{editingId ? "Editar Gasto" : "Novo Gasto"}</p>
-                <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                  {editingId ? "Atualize os dados do gasto" : "Registre uma nova saída"}
-                </p>
-              </div>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownRight size={18} className="text-destructive" />
+              {editingId ? "Editar Gasto" : "Novo Gasto"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4">
             <div>
-              <label className="modal-field-label">Descrição *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição *</label>
               <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Aluguel do escritório" className={inputCls} autoFocus />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="modal-field-label">Valor (R$) *</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$) *</label>
                 <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
               </div>
               <div>
-                <label className="modal-field-label">Data</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
               </div>
             </div>
             <div>
-              <label className="modal-field-label">Categoria</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Categoria</label>
               <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ex: Operacional" className={inputCls} list="cat-list" />
               <datalist id="cat-list">
                 {[...new Set([...SUGGESTED_CATEGORIES, ...categories])].map(c => <option key={c} value={c} />)}
@@ -487,9 +482,9 @@ const Gastos = () => {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={resetForm} className="rounded-xl">Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saving || !desc || !amount} variant="destructive" className="rounded-xl">
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={saving || !desc || !amount} variant="destructive">
               {editingId ? <Check size={14} className="mr-1.5" /> : <Plus size={14} className="mr-1.5" />}
               {saving ? "Salvando..." : editingId ? "Salvar" : "Registrar"}
             </Button>
@@ -500,22 +495,15 @@ const Gastos = () => {
       {/* Delete Dialog */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="sm:max-w-sm">
-          <div className="modal-delete-bar -mx-6 -mt-6 mb-4" />
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="modal-icon modal-icon-destructive">
-                <Trash2 size={18} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">Excluir Gasto</p>
-                <p className="text-xs text-muted-foreground font-normal mt-0.5">Esta ação não pode ser desfeita</p>
-              </div>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 size={18} /> Excluir Gasto
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este registro de gasto?</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="rounded-xl">Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="rounded-xl">
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
               <Trash2 size={14} className="mr-1.5" /> Excluir
             </Button>
           </DialogFooter>
