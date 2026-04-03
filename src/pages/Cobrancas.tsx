@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, ChevronRight, Send, Filter } from "lucide-react";
+import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, Filter, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,7 @@ const Cobrancas = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "overdue" | "paid">("all");
   const [search, setSearch] = useState("");
+  const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
 
   const fetchInstallments = async () => {
     if (!user) return;
@@ -51,7 +52,7 @@ const Cobrancas = () => {
   const handleMarkPaid = async (id: string) => {
     const { error } = await supabase.from("installments").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); }
-    else { toast({ title: "✓ Parcela marcada como paga!" }); fetchInstallments(); }
+    else { toast({ title: "✓ Parcela marcada como paga!" }); setConfirmPayId(null); fetchInstallments(); }
   };
 
   const handleWhatsApp = (inst: Installment) => {
@@ -67,11 +68,9 @@ const Cobrancas = () => {
     window.open(`https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  // Improvement #48: Batch WhatsApp for all overdue
   const handleBulkWhatsApp = () => {
     const overdue = filtered.filter(i => i.status === "overdue");
     if (!overdue.length) { toast({ title: "Nenhuma parcela atrasada" }); return; }
-    // Open first one as demo, inform user
     handleWhatsApp(overdue[0]);
     if (overdue.length > 1) toast({ title: `${overdue.length - 1} cobrança(s) restantes`, description: "Envie uma por uma clicando no botão Cobrar." });
   };
@@ -91,6 +90,18 @@ const Cobrancas = () => {
     totalOverdue: installments.filter((i) => i.status === "overdue").reduce((acc, i) => acc + Number(i.amount), 0),
   };
 
+  // Group overdue by client for summary
+  const overdueByClient = useMemo(() => {
+    const map = new Map<string, { name: string; count: number; total: number }>();
+    installments.filter(i => i.status === "overdue").forEach(i => {
+      const existing = map.get(i.client_id) || { name: i.client_name || "—", count: 0, total: 0 };
+      existing.count++;
+      existing.total += Number(i.amount);
+      map.set(i.client_id, existing);
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
+  }, [installments]);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
@@ -105,15 +116,21 @@ const Cobrancas = () => {
         )}
       </div>
 
-      {/* Improvement #49: Visual stats cards with icons */}
+      {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
         {[
-          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "" },
-          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20" : "" },
-          { label: "Pagas", value: stats.paid, sub: "", icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "" },
-          { label: "Total", value: stats.total, sub: "", icon: Receipt, color: "text-foreground", bg: "bg-muted/30", border: "" },
+          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const },
+          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const },
+          { label: "Pagas", value: stats.paid, sub: "", icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const },
+          { label: "Total", value: stats.total, sub: "", icon: Receipt, color: "text-foreground", bg: "bg-muted/30", border: "", filterKey: "all" as const },
         ].map(s => (
-          <div key={s.label} className={`rounded-xl border bg-card p-4 card-shine ${s.border || "border-border"}`}>
+          <button
+            key={s.label}
+            onClick={() => setFilter(s.filterKey)}
+            className={`rounded-xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
+              filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
+            }`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
                 <s.icon size={14} className={s.color} />
@@ -122,9 +139,31 @@ const Cobrancas = () => {
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
             {s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
-          </div>
+          </button>
         ))}
       </div>
+
+      {/* Overdue Summary by Client */}
+      {overdueByClient.length > 0 && filter !== "paid" && (
+        <div className="bg-destructive/5 border border-destructive/15 rounded-xl p-4 animate-fade-in">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={14} className="text-destructive" />
+            <span className="text-xs font-semibold text-destructive uppercase tracking-wider">Inadimplentes</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {overdueByClient.slice(0, 6).map(([clientId, info]) => (
+              <div
+                key={clientId}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-xs"
+              >
+                <span className="font-medium text-foreground">{info.name}</span>
+                <span className="text-destructive font-bold">{info.count}x</span>
+                <span className="text-muted-foreground">R$ {fmt(info.total)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in">
@@ -134,7 +173,7 @@ const Cobrancas = () => {
             className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced" />
           {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>}
         </div>
-        <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1">
+        <div className="pill-tabs">
           {([
             { key: "all", label: "Todas", count: stats.total },
             { key: "overdue", label: "Atrasadas", count: stats.overdue },
@@ -144,9 +183,7 @@ const Cobrancas = () => {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                filter === f.key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              }`}
+              className={`pill-tab ${filter === f.key ? "pill-tab-active" : "pill-tab-inactive"}`}
             >
               {f.label}
               {f.count > 0 && filter !== f.key && (
@@ -161,9 +198,9 @@ const Cobrancas = () => {
       {loading ? (
         <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 rounded-xl skeleton-shimmer" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-6 text-center py-16 animate-fade-in">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-            <Receipt size={24} className="text-muted-foreground/30" />
+        <div className="empty-state animate-fade-in">
+          <div className="empty-state-icon">
+            <Receipt size={28} className="text-muted-foreground/30" />
           </div>
           <p className="text-muted-foreground font-medium">
             {installments.length === 0 ? "Nenhuma parcela gerada." : "Nenhuma parcela com este filtro."}
@@ -171,7 +208,6 @@ const Cobrancas = () => {
         </div>
       ) : (
         <div className="space-y-2 stagger-fade-in">
-          {/* Improvement #50: Better installment cards with days info */}
           {filtered.map((inst) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
@@ -184,13 +220,12 @@ const Cobrancas = () => {
               <div
                 key={inst.id}
                 className={`rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm ${
-                  isOverdue ? "border-destructive/20 bg-destructive/3" :
-                  isPaid ? "border-success/15 bg-success/3" :
+                  isOverdue ? "border-destructive/20 bg-destructive/3 danger-glow" :
+                  isPaid ? "border-success/15 bg-success/3 success-glow" :
                   "border-border bg-card"
                 }`}
               >
-                {/* Number badge */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                <div className={`num-badge w-10 h-10 rounded-xl ${
                   isOverdue ? "bg-destructive/10 text-destructive" :
                   isPaid ? "bg-success/10 text-success" :
                   "bg-muted text-muted-foreground"
@@ -211,7 +246,7 @@ const Cobrancas = () => {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
-                    <span>Vence: {dueDate.toLocaleDateString("pt-BR")}</span>
+                    <span className="flex items-center gap-1"><CalendarDays size={10} /> {dueDate.toLocaleDateString("pt-BR")}</span>
                     {daysText && <span className={isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}>{daysText}</span>}
                     {isPaid && inst.paid_at && <span className="text-success">Pago: {new Date(inst.paid_at).toLocaleDateString("pt-BR")}</span>}
                   </div>
@@ -229,7 +264,7 @@ const Cobrancas = () => {
                         <span className="hidden sm:inline">Cobrar</span>
                       </button>
                       <button
-                        onClick={() => handleMarkPaid(inst.id)}
+                        onClick={() => setConfirmPayId(inst.id)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
                         title="Marcar como paga"
                       >
@@ -242,6 +277,33 @@ const Cobrancas = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {confirmPayId && (
+        <div className="modal-backdrop" onClick={() => setConfirmPayId(null)}>
+          <div className="modal-content max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle size={28} className="text-success" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Confirmar Pagamento?</h3>
+              {(() => {
+                const inst = installments.find(i => i.id === confirmPayId);
+                return inst ? (
+                  <div className="mt-2">
+                    <p className="text-sm font-medium text-foreground">{inst.client_name}</p>
+                    <p className="text-sm text-muted-foreground">Parcela #{inst.installment_number} · R$ {fmt(Number(inst.amount))}</p>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => handleMarkPaid(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
