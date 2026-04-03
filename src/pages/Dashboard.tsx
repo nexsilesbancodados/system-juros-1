@@ -256,21 +256,21 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Weekly Activity Bar ─── */}
-      <div className="glass-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
+      <div className="premium-card p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
               <BarChart3 size={14} className="text-primary" />
             </div>
             <h2 className="text-headline text-sm text-foreground">Atividade Semanal</h2>
           </div>
           <span className="text-[10px] text-muted-foreground">Pagamentos recebidos</span>
         </div>
-        <div className="flex items-end gap-2 h-16">
+        <div className="flex items-end gap-2.5 h-16">
           {metrics.weeklyActivity.map((w: any, i: number) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
               <div
-                className={`w-full rounded-t-md transition-all duration-700 ${w.count > 0 ? 'bg-primary/60' : 'bg-muted/40'}`}
+                className={`w-full rounded-lg transition-all duration-700 ${w.count > 0 ? 'bg-gradient-to-t from-primary/40 to-primary/70' : 'bg-muted/30'}`}
                 style={{
                   height: `${Math.max(4, (w.count / metrics.maxActivity) * 48)}px`,
                   animationDelay: `${i * 80}ms`
