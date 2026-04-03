@@ -201,7 +201,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       {/* Improvement #28: Better collapse toggle with animation */}
       <button
         onClick={onToggleCollapse}
-        className="absolute -right-3 top-16 w-6 h-6 rounded-full glass-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:scale-110 transition-all duration-200 focus-ring"
+        className="absolute -right-3 top-16 w-6 h-6 rounded-full premium-card flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all duration-200 focus-ring"
         title={collapsed ? "Expandir" : "Minimizar"}
       >
         <span className={`transition-transform duration-300 ${collapsed ? "rotate-0" : "rotate-180"}`}>
