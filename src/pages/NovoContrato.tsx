@@ -2,9 +2,9 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Search, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Search, UserPlus, X } from "lucide-react";
 
 const frequencyOptions = [
   { value: "daily", label: "Diário" },
@@ -17,12 +17,27 @@ const NovoContrato = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
   // Step 1 – Client
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [savingClient, setSavingClient] = useState(false);
+
+  // New client inline form
+  const [newNome, setNewNome] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newTelefone, setNewTelefone] = useState("");
+  const [newCpfCnpj, setNewCpfCnpj] = useState("");
+  const [newCep, setNewCep] = useState("");
+  const [newRua, setNewRua] = useState("");
+  const [newNumero, setNewNumero] = useState("");
+  const [newBairro, setNewBairro] = useState("");
+  const [newCidade, setNewCidade] = useState("");
+  const [newEstado, setNewEstado] = useState("");
 
   // Step 2 – Loan config
   const [capital, setCapital] = useState("");
@@ -86,6 +101,51 @@ const NovoContrato = () => {
     return dates;
   };
 
+  const buscarCep = async () => {
+    if (newCep.replace(/\D/g, "").length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${newCep.replace(/\D/g, "")}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setNewRua(data.logradouro || "");
+        setNewBairro(data.bairro || "");
+        setNewCidade(data.localidade || "");
+        setNewEstado(data.uf || "");
+      }
+    } catch {}
+  };
+
+  const handleCreateClient = async () => {
+    if (!user || !newNome.trim()) {
+      toast({ title: "Erro", description: "Nome é obrigatório.", variant: "destructive" });
+      return;
+    }
+    setSavingClient(true);
+    const clientId = crypto.randomUUID();
+    const { error } = await supabase.from("clients").insert({
+      id: clientId,
+      user_id: user.id,
+      name: newNome.trim(),
+      email: newEmail.trim() || null,
+      phone: newTelefone.trim() || null,
+      cpf_cnpj: newCpfCnpj.trim() || null,
+      client_type: "loan",
+      status: "Ativo",
+      address: newRua ? { cep: newCep, street: newRua, number: newNumero, neighborhood: newBairro, city: newCidade, state: newEstado } : null,
+    });
+    setSavingClient(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Cliente cadastrado!" });
+    await queryClient.invalidateQueries({ queryKey: ["clients-for-contract", user.id] });
+    setSelectedClientId(clientId);
+    setShowNewClientForm(false);
+    setNewNome(""); setNewEmail(""); setNewTelefone(""); setNewCpfCnpj("");
+    setNewCep(""); setNewRua(""); setNewNumero(""); setNewBairro(""); setNewCidade(""); setNewEstado("");
+  };
+
   const handleSubmit = async () => {
     if (!user || !selectedClientId || !calc) return;
     setLoading(true);
@@ -114,7 +174,6 @@ const NovoContrato = () => {
 
       if (cErr) throw cErr;
 
-      // Generate installments
       const dueDates = generateDueDates(startDate, frequency, n);
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id,
@@ -172,56 +231,110 @@ const NovoContrato = () => {
         ))}
       </div>
 
-      {/* Step 1: Select Client */}
+      {/* Step 1: Select or Create Client */}
       {step === 1 && (
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Dados do Cliente</h2>
-          <p className="text-sm text-muted-foreground">Selecione um cliente existente ou cadastre um novo.</p>
+          <p className="text-sm text-muted-foreground">Selecione um cliente existente ou cadastre um novo junto com o contrato.</p>
 
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar por nome ou CPF..."
-              value={clientSearch}
-              onChange={(e) => setClientSearch(e.target.value)}
-              className={`${inputCls} pl-9`}
-            />
-          </div>
+          {!showNewClientForm ? (
+            <>
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou CPF..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className={`${inputCls} pl-9`}
+                />
+              </div>
 
-          <div className="max-h-60 overflow-y-auto space-y-1">
-            {filteredClients.map((c: any) => (
+              <div className="max-h-60 overflow-y-auto space-y-1">
+                {filteredClients.map((c: any) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClientId(c.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      selectedClientId === c.id
+                        ? "bg-primary/10 border border-primary/30"
+                        : "hover:bg-accent/50 border border-transparent"
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-sm font-semibold text-foreground">
+                      {c.name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.cpf_cnpj || "Sem CPF"}</p>
+                    </div>
+                    {selectedClientId === c.id && <Check size={16} className="text-primary" />}
+                  </button>
+                ))}
+                {filteredClients.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-6">Nenhum cliente encontrado</p>
+                )}
+              </div>
+
               <button
-                key={c.id}
-                onClick={() => setSelectedClientId(c.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  selectedClientId === c.id
-                    ? "bg-primary/10 border border-primary/30"
-                    : "hover:bg-accent/50 border border-transparent"
-                }`}
+                onClick={() => setShowNewClientForm(true)}
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
               >
-                <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-sm font-semibold text-foreground">
-                  {c.name?.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">{c.cpf_cnpj || "Sem CPF"}</p>
-                </div>
-                {selectedClientId === c.id && <Check size={16} className="text-primary" />}
+                <UserPlus size={14} />
+                Cadastrar novo cliente
               </button>
-            ))}
-            {filteredClients.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-6">Nenhum cliente encontrado</p>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Novo Cliente</h3>
+                <button onClick={() => setShowNewClientForm(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
 
-          <button
-            onClick={() => navigate("/clientes/novo")}
-            className="flex items-center gap-2 text-sm text-primary hover:underline"
-          >
-            <UserPlus size={14} />
-            Cadastrar novo cliente
-          </button>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome Completo *</label>
+                <input type="text" placeholder="Nome do cliente" value={newNome} onChange={(e) => setNewNome(e.target.value)} className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                  <input type="tel" placeholder="+55 (00) 00000-0000" value={newTelefone} onChange={(e) => setNewTelefone(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">CPF/CNPJ</label>
+                  <input type="text" placeholder="000.000.000-00" value={newCpfCnpj} onChange={(e) => setNewCpfCnpj(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+                <input type="email" placeholder="email@exemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={inputCls} />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+                  <input type="text" placeholder="00000-000" value={newCep} onChange={(e) => setNewCep(e.target.value)} className={inputCls} />
+                </div>
+                <button onClick={buscarCep} className="self-end px-3 py-2.5 rounded-lg bg-accent border border-border text-foreground hover:bg-accent/70 transition-colors">
+                  <Search size={16} />
+                </button>
+              </div>
+              {newRua && (
+                <p className="text-xs text-muted-foreground">{newRua}, {newBairro} - {newCidade}/{newEstado}</p>
+              )}
+
+              <button
+                onClick={handleCreateClient}
+                disabled={savingClient || !newNome.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-colors"
+                style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}
+              >
+                <UserPlus size={14} />
+                {savingClient ? "Salvando..." : "Cadastrar e Selecionar"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
