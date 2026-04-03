@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ConstellationBackground from "@/components/ConstellationBackground";
-import eagleLogo from "@/assets/eagle-logo.png";
+import eagleLogo from "@/assets/eagle-logo.webp";
 
 const Index = () => {
   const [email, setEmail] = useState("");
