@@ -65,8 +65,15 @@ const sections: MenuSection[] = [
   },
 ];
 
+const ferramentasItems: MenuItem[] = [
+  { label: "Metas", icon: <Target size={18} />, path: "/ferramentas/metas" },
+  { label: "Simulador", icon: <Calculator size={18} />, path: "/ferramentas/simulador" },
+  { label: "Tarefas", icon: <CheckSquare size={18} />, path: "/ferramentas/tarefas" },
+  { label: "Anotações", icon: <StickyNote size={18} />, path: "/ferramentas/anotacoes" },
+  { label: "Planilha", icon: <Table size={18} />, path: "/ferramentas/planilha" },
+];
+
 const bottomItems: MenuItem[] = [
-  { label: "Ferramentas", icon: <Wrench size={18} />, path: "/ferramentas" },
   { label: "Uruszap", icon: <MessageSquare size={18} />, path: "/uruszap", badge: "0" },
   { label: "Puxada de Dados", icon: <Database size={18} />, path: "/puxada-dados" },
   { label: "Network", icon: <Network size={18} />, path: "/network" },
