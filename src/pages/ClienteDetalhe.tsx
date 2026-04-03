@@ -694,11 +694,24 @@ const ClienteDetalhe = () => {
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa de Juros (%)</label>
                 <input type="number" step="0.1" value={loanInterestRate} onChange={e => setLoanInterestRate(e.target.value)} placeholder="10" className={inputCls} />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequência</label>
-                <select value={loanFreq} onChange={e => setLoanFreq(e.target.value)} className={inputCls}>
-                  {freqOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Frequência</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {freqOpts.map(o => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setLoanFreq(o.value)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                        loanFreq === o.value
+                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                          : "bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
