@@ -169,17 +169,16 @@ const MobileBottomNav = () => {
                   }
                 }}
                 className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[3.5rem] active:scale-95 ${
-                  active ? "text-primary" : "text-muted-foreground"
+                  active ? "text-primary" : mobileIconColor[tab.path] || "text-muted-foreground"
                 }`}
               >
-                {/* Active indicator line */}
                 {active && (
                   <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-primary animate-scale-in" />
                 )}
                 <div className={`p-1 rounded-xl transition-all duration-200 ${active ? "bg-primary/15" : ""}`}>
                   <tab.icon size={20} strokeWidth={active ? 2.5 : 2} />
                 </div>
-                <span className={`text-[10px] font-semibold ${active ? "text-primary" : ""}`}>{tab.label}</span>
+                <span className={`text-[10px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
               </button>
             );
           })}
