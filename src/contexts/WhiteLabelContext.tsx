@@ -8,6 +8,12 @@ interface WhiteLabelConfig {
   primaryColor: string;
   accentColor: string;
   themeMode: "light" | "dark" | "system";
+  sidebarStyle: "default" | "minimal" | "gradient";
+  loginTitle: string;
+  loginSubtitle: string;
+  footerText: string;
+  borderRadius: string;
+  fontFamily: string;
 }
 
 interface WhiteLabelContextType {
@@ -24,6 +30,12 @@ const defaults: WhiteLabelConfig = {
   primaryColor: "#4a86c8",
   accentColor: "#6ba3d6",
   themeMode: "dark",
+  sidebarStyle: "default",
+  loginTitle: "SYSTEM JUROS",
+  loginSubtitle: "SISTEMA DE GESTÃO DE EMPRÉSTIMOS",
+  footerText: "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS",
+  borderRadius: "16",
+  fontFamily: "default",
 };
 
 const WhiteLabelContext = createContext<WhiteLabelContextType>({
@@ -90,24 +102,38 @@ function hexToHSLValues(hex: string) {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-function applyColors(primary: string, accent: string) {
+const FONT_MAP: Record<string, string> = {
+  default: "'Space Grotesk', 'Inter', system-ui, sans-serif",
+  inter: "'Inter', system-ui, sans-serif",
+  roboto: "'Roboto', system-ui, sans-serif",
+  poppins: "'Poppins', system-ui, sans-serif",
+  montserrat: "'Montserrat', system-ui, sans-serif",
+  nunito: "'Nunito', system-ui, sans-serif",
+};
+
+function applyConfig(config: WhiteLabelConfig) {
   const root = document.documentElement;
+  const { primaryColor: primary, accentColor: accent } = config;
+
+  // Colors
   const pHSL = hexToHSL(primary);
-  const aHSL = hexToHSL(accent);
   const { h, s } = hexToHSLValues(primary);
-  
   root.style.setProperty("--primary", pHSL);
   root.style.setProperty("--ring", pHSL);
-  
-  // Generate a lighter primary-foreground that works on the primary color
   const pVals = hexToHSLValues(primary);
   const fgLight = pVals.l > 55 ? `${h} ${Math.min(s, 20)}% 8%` : `0 0% 100%`;
   root.style.setProperty("--primary-foreground", fgLight);
-  
-  // Update gradient variables
   root.style.setProperty("--gradient-gold", `linear-gradient(135deg, ${primary}, ${accent}, ${primary})`);
   root.style.setProperty("--gradient-button", `linear-gradient(135deg, ${primary}, ${accent}, ${primary})`);
   root.style.setProperty("--shadow-glow", `0 0 20px ${primary}33, 0 0 60px ${primary}15`);
+
+  // Border radius
+  const br = config.borderRadius || "16";
+  root.style.setProperty("--radius", `${br}px`);
+
+  // Font family
+  const font = FONT_MAP[config.fontFamily] || FONT_MAP.default;
+  root.style.setProperty("--font-body", font);
 }
 
 function applyThemeMode(mode: "light" | "dark") {
@@ -148,23 +174,30 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
       applyThemeMode(resolved);
       return;
     }
-    
+
     const { data } = await supabase
       .from("settings")
-      .select("company_name, company_logo_url, primary_color, accent_color, theme_mode")
+      .select("company_name, company_logo_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family")
       .eq("user_id", user.id)
       .single();
-    
+
     if (data) {
+      const s = data as any;
       const newConfig: WhiteLabelConfig = {
-        companyName: data.company_name || defaults.companyName,
-        companyLogo: data.company_logo_url || null,
-        primaryColor: (data as any).primary_color || defaults.primaryColor,
-        accentColor: (data as any).accent_color || defaults.accentColor,
-        themeMode: ((data as any).theme_mode || defaults.themeMode) as WhiteLabelConfig["themeMode"],
+        companyName: s.company_name || defaults.companyName,
+        companyLogo: s.company_logo_url || null,
+        primaryColor: s.primary_color || defaults.primaryColor,
+        accentColor: s.accent_color || defaults.accentColor,
+        themeMode: (s.theme_mode || defaults.themeMode) as WhiteLabelConfig["themeMode"],
+        sidebarStyle: (s.sidebar_style || defaults.sidebarStyle) as WhiteLabelConfig["sidebarStyle"],
+        loginTitle: s.login_title || defaults.loginTitle,
+        loginSubtitle: s.login_subtitle || defaults.loginSubtitle,
+        footerText: s.footer_text || defaults.footerText,
+        borderRadius: s.border_radius || defaults.borderRadius,
+        fontFamily: s.font_family || defaults.fontFamily,
       };
       setConfig(newConfig);
-      applyColors(newConfig.primaryColor, newConfig.accentColor);
+      applyConfig(newConfig);
       const resolved = resolveTheme(newConfig.themeMode);
       setEffectiveTheme(resolved);
       applyThemeMode(resolved);
@@ -180,7 +213,7 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (isLoaded) {
-      applyColors(config.primaryColor, config.accentColor);
+      applyConfig(config);
       const resolved = resolveTheme(config.themeMode);
       setEffectiveTheme(resolved);
       applyThemeMode(resolved);
