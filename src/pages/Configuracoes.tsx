@@ -4,7 +4,7 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2 } from "lucide-react";
 
 const COLOR_PRESETS = [
   { label: "Âmbar", primary: "#d97706", accent: "#f59e0b" },
@@ -53,27 +53,63 @@ const Configuracoes = () => {
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
     pix_key: "", pix_key_type: "CPF", billing_message: "",
+    // Bot de cobranças
+    bot_enabled: false, bot_auto_send: false,
+    bot_send_hour: 9, bot_send_minute: 0,
+    bot_max_messages_per_day: 50,
+    bot_work_days: ["mon", "tue", "wed", "thu", "fri"] as string[],
+    bot_escalation_rules: [
+      { days: 0, template: "lembrete", channel: "whatsapp" },
+      { days: 1, template: "cobranca_1d", channel: "whatsapp" },
+      { days: 3, template: "cobranca_3d", channel: "whatsapp" },
+      { days: 7, template: "cobranca_7d", channel: "whatsapp" },
+      { days: 15, template: "cobranca_15d", channel: "whatsapp" },
+      { days: 30, template: "cobranca_30d", channel: "whatsapp" },
+    ] as { days: number; template: string; channel: string }[],
+    bot_retry_interval_hours: 24,
+    bot_stop_on_payment: true, bot_notify_owner: true,
+    bot_greeting_message: "Olá {nome}, aqui é do {empresa}.",
+    bot_closing_message: "Qualquer dúvida, entre em contato. Obrigado!",
+    bot_send_pix: true, bot_send_receipt: false,
+    bot_tone: "formal",
   });
 
   useEffect(() => {
     if (settings) {
+      const s = settings as any;
       setForm(prev => ({
         ...prev,
-        company_name: settings.company_name || "",
-        company_cnpj: settings.company_cnpj || "",
-        company_logo_url: settings.company_logo_url || "",
-        primary_color: (settings as any).primary_color || "#4a86c8",
-        accent_color: (settings as any).accent_color || "#6ba3d6",
-        theme_mode: (settings as any).theme_mode || "dark",
-        default_interest_rate: String(settings.default_interest_rate || 10),
-        default_late_fee: String(settings.default_late_fee || 2),
-        default_daily_interest: String(settings.default_daily_interest || 0.33),
-        default_frequency: settings.default_frequency || "monthly",
-        whatsapp_api_url: settings.whatsapp_api_url || "",
-        whatsapp_api_key: settings.whatsapp_api_key || "",
-        whatsapp_instance: settings.whatsapp_instance || "",
-        n8n_webhook_url: settings.n8n_webhook_url || "",
-        push_notifications_enabled: settings.push_notifications_enabled || false,
+        company_name: s.company_name || "",
+        company_cnpj: s.company_cnpj || "",
+        company_logo_url: s.company_logo_url || "",
+        primary_color: s.primary_color || "#4a86c8",
+        accent_color: s.accent_color || "#6ba3d6",
+        theme_mode: s.theme_mode || "dark",
+        default_interest_rate: String(s.default_interest_rate || 10),
+        default_late_fee: String(s.default_late_fee || 2),
+        default_daily_interest: String(s.default_daily_interest || 0.33),
+        default_frequency: s.default_frequency || "monthly",
+        whatsapp_api_url: s.whatsapp_api_url || "",
+        whatsapp_api_key: s.whatsapp_api_key || "",
+        whatsapp_instance: s.whatsapp_instance || "",
+        n8n_webhook_url: s.n8n_webhook_url || "",
+        push_notifications_enabled: s.push_notifications_enabled || false,
+        // Bot
+        bot_enabled: s.bot_enabled || false,
+        bot_auto_send: s.bot_auto_send || false,
+        bot_send_hour: s.bot_send_hour ?? 9,
+        bot_send_minute: s.bot_send_minute ?? 0,
+        bot_max_messages_per_day: s.bot_max_messages_per_day ?? 50,
+        bot_work_days: s.bot_work_days || ["mon", "tue", "wed", "thu", "fri"],
+        bot_escalation_rules: s.bot_escalation_rules || prev.bot_escalation_rules,
+        bot_retry_interval_hours: s.bot_retry_interval_hours ?? 24,
+        bot_stop_on_payment: s.bot_stop_on_payment ?? true,
+        bot_notify_owner: s.bot_notify_owner ?? true,
+        bot_greeting_message: s.bot_greeting_message || "Olá {nome}, aqui é do {empresa}.",
+        bot_closing_message: s.bot_closing_message || "Qualquer dúvida, entre em contato. Obrigado!",
+        bot_send_pix: s.bot_send_pix ?? true,
+        bot_send_receipt: s.bot_send_receipt ?? false,
+        bot_tone: s.bot_tone || "formal",
       }));
     }
   }, [settings]);
@@ -125,6 +161,22 @@ const Configuracoes = () => {
       whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
+      // Bot settings
+      bot_enabled: form.bot_enabled,
+      bot_auto_send: form.bot_auto_send,
+      bot_send_hour: form.bot_send_hour,
+      bot_send_minute: form.bot_send_minute,
+      bot_max_messages_per_day: form.bot_max_messages_per_day,
+      bot_work_days: form.bot_work_days,
+      bot_escalation_rules: form.bot_escalation_rules,
+      bot_retry_interval_hours: form.bot_retry_interval_hours,
+      bot_stop_on_payment: form.bot_stop_on_payment,
+      bot_notify_owner: form.bot_notify_owner,
+      bot_greeting_message: form.bot_greeting_message || null,
+      bot_closing_message: form.bot_closing_message || null,
+      bot_send_pix: form.bot_send_pix,
+      bot_send_receipt: form.bot_send_receipt,
+      bot_tone: form.bot_tone,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
@@ -173,6 +225,7 @@ const Configuracoes = () => {
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
     { id: "pix", label: "PIX", icon: CreditCard },
+    { id: "bot", label: "Bot Cobranças", icon: Bot },
     { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
     { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
@@ -349,7 +402,302 @@ const Configuracoes = () => {
           </>
         )}
 
-        {tab === "cobranca" && (
+        {tab === "bot" && (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><Bot size={16} className="text-primary" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Bot de Cobranças Automático</h2>
+                <p className="text-xs text-muted-foreground">Configure o envio automático de cobranças via WhatsApp</p>
+              </div>
+            </div>
+
+            {/* Toggle principal */}
+            <div className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${form.bot_enabled ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
+              <button
+                onClick={() => setForm({ ...form, bot_enabled: !form.bot_enabled })}
+                className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${form.bot_enabled ? "bg-primary" : "bg-muted"}`}
+              >
+                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${form.bot_enabled ? "left-[26px]" : "left-1"}`} />
+              </button>
+              <div>
+                <span className="text-sm font-medium text-foreground">{form.bot_enabled ? "Bot Ativado" : "Bot Desativado"}</span>
+                <p className="text-[10px] text-muted-foreground">O bot enviará cobranças automaticamente conforme as regras abaixo</p>
+              </div>
+            </div>
+
+            {form.bot_enabled && (
+              <div className="space-y-5">
+                {/* Modo de envio */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className="text-warning" />
+                    <p className="text-label">Modo de Envio</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      { value: false, label: "Aprovação Manual", desc: "Revise cada mensagem antes de enviar", icon: Shield },
+                      { value: true, label: "Envio Automático", desc: "Mensagens enviadas sem intervenção", icon: Zap },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.value)}
+                        onClick={() => setForm({ ...form, bot_auto_send: opt.value })}
+                        className={`text-left p-3 rounded-xl border transition-all ${
+                          form.bot_auto_send === opt.value ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/20"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <opt.icon size={14} className={form.bot_auto_send === opt.value ? "text-primary" : "text-muted-foreground"} />
+                          <span className="text-xs font-semibold text-foreground">{opt.label}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tom da mensagem */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Volume2 size={14} className="text-info" />
+                    <p className="text-label">Tom da Mensagem</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: "formal", label: "Formal", emoji: "👔" },
+                      { value: "amigavel", label: "Amigável", emoji: "😊" },
+                      { value: "urgente", label: "Urgente", emoji: "⚠️" },
+                    ].map((tone) => (
+                      <button
+                        key={tone.value}
+                        onClick={() => setForm({ ...form, bot_tone: tone.value })}
+                        className={`p-3 rounded-xl border text-center transition-all ${
+                          form.bot_tone === tone.value ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/20"
+                        }`}
+                      >
+                        <span className="text-lg">{tone.emoji}</span>
+                        <p className="text-xs font-medium text-foreground mt-1">{tone.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Horário de envio */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-primary" />
+                    <p className="text-label">Horário de Envio</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Hora</label>
+                      <select value={form.bot_send_hour} onChange={(e) => setForm({ ...form, bot_send_hour: parseInt(e.target.value) })} className={inputCls}>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i}>{String(i).padStart(2, "0")}h</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Minuto</label>
+                      <select value={form.bot_send_minute} onChange={(e) => setForm({ ...form, bot_send_minute: parseInt(e.target.value) })} className={inputCls}>
+                        {[0, 15, 30, 45].map(m => (
+                          <option key={m} value={m}>{String(m).padStart(2, "0")}min</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Mensagens serão enviadas às {String(form.bot_send_hour).padStart(2, "0")}:{String(form.bot_send_minute).padStart(2, "0")}</p>
+                </div>
+
+                {/* Dias de funcionamento */}
+                <div className="space-y-3">
+                  <p className="text-label">Dias de Funcionamento</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
+                      { key: "thu", label: "Qui" }, { key: "fri", label: "Sex" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
+                    ].map((day) => {
+                      const active = form.bot_work_days.includes(day.key);
+                      return (
+                        <button
+                          key={day.key}
+                          onClick={() => {
+                            const days = active
+                              ? form.bot_work_days.filter(d => d !== day.key)
+                              : [...form.bot_work_days, day.key];
+                            setForm({ ...form, bot_work_days: days });
+                          }}
+                          className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                            active ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/20"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Limites */}
+                <div className="space-y-3">
+                  <p className="text-label">Limites e Intervalos</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Máx. mensagens/dia</label>
+                      <input type="number" value={form.bot_max_messages_per_day} onChange={(e) => setForm({ ...form, bot_max_messages_per_day: parseInt(e.target.value) || 50 })} className={inputCls} min={1} max={500} />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Intervalo entre cobranças (h)</label>
+                      <input type="number" value={form.bot_retry_interval_hours} onChange={(e) => setForm({ ...form, bot_retry_interval_hours: parseInt(e.target.value) || 24 })} className={inputCls} min={1} max={168} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fluxo de escalação */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-label">Fluxo de Escalação</p>
+                    <button
+                      onClick={() => {
+                        const rules = [...form.bot_escalation_rules, { days: 0, template: "", channel: "whatsapp" }];
+                        setForm({ ...form, bot_escalation_rules: rules });
+                      }}
+                      className="flex items-center gap-1 text-[11px] text-primary font-medium hover:underline"
+                    >
+                      <Plus size={12} /> Adicionar etapa
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Defina em quantos dias de atraso cada mensagem será enviada</p>
+                  <div className="space-y-2">
+                    {form.bot_escalation_rules.map((rule, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-3 rounded-xl border border-border bg-muted/10">
+                        <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-warning">{idx + 1}</span>
+                        </div>
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[9px] text-muted-foreground">Dias atraso</label>
+                            <input
+                              type="number" min={0} value={rule.days}
+                              onChange={(e) => {
+                                const rules = [...form.bot_escalation_rules];
+                                rules[idx] = { ...rules[idx], days: parseInt(e.target.value) || 0 };
+                                setForm({ ...form, bot_escalation_rules: rules });
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-muted-foreground">Template</label>
+                            <select
+                              value={rule.template}
+                              onChange={(e) => {
+                                const rules = [...form.bot_escalation_rules];
+                                rules[idx] = { ...rules[idx], template: e.target.value };
+                                setForm({ ...form, bot_escalation_rules: rules });
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground"
+                            >
+                              <option value="">Selecionar...</option>
+                              {templates.map((t: any) => (
+                                <option key={t.id} value={t.name}>{t.name}</option>
+                              ))}
+                              <option value="lembrete">Lembrete</option>
+                              <option value="cobranca_1d">Cobrança 1d</option>
+                              <option value="cobranca_3d">Cobrança 3d</option>
+                              <option value="cobranca_7d">Cobrança 7d</option>
+                              <option value="cobranca_15d">Cobrança 15d</option>
+                              <option value="cobranca_30d">Cobrança 30d</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-muted-foreground">Canal</label>
+                            <select
+                              value={rule.channel}
+                              onChange={(e) => {
+                                const rules = [...form.bot_escalation_rules];
+                                rules[idx] = { ...rules[idx], channel: e.target.value };
+                                setForm({ ...form, bot_escalation_rules: rules });
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground"
+                            >
+                              <option value="whatsapp">WhatsApp</option>
+                              <option value="sms">SMS</option>
+                              <option value="email">E-mail</option>
+                            </select>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const rules = form.bot_escalation_rules.filter((_, i) => i !== idx);
+                            setForm({ ...form, bot_escalation_rules: rules });
+                          }}
+                          className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mensagens do bot */}
+                <div className="space-y-3">
+                  <p className="text-label">Mensagens Personalizadas</p>
+                  <p className="text-[10px] text-muted-foreground">Variáveis: <code className="text-primary font-mono bg-primary/5 px-1 rounded">{"{nome}"}</code> <code className="text-primary font-mono bg-primary/5 px-1 rounded">{"{empresa}"}</code> <code className="text-primary font-mono bg-primary/5 px-1 rounded">{"{valor}"}</code> <code className="text-primary font-mono bg-primary/5 px-1 rounded">{"{data}"}</code></p>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Saudação Inicial</label>
+                    <input value={form.bot_greeting_message} onChange={(e) => setForm({ ...form, bot_greeting_message: e.target.value })} className={inputCls} placeholder="Olá {nome}, aqui é do {empresa}." />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Mensagem de Encerramento</label>
+                    <input value={form.bot_closing_message} onChange={(e) => setForm({ ...form, bot_closing_message: e.target.value })} className={inputCls} placeholder="Qualquer dúvida, entre em contato. Obrigado!" />
+                  </div>
+                </div>
+
+                {/* Opções extras */}
+                <div className="space-y-3">
+                  <p className="text-label">Opções Adicionais</p>
+                  <div className="space-y-2">
+                    {[
+                      { key: "bot_stop_on_payment" as const, label: "Parar ao detectar pagamento", desc: "Interrompe a sequência se a parcela for paga" },
+                      { key: "bot_notify_owner" as const, label: "Notificar proprietário", desc: "Receba um alerta cada vez que o bot enviar uma cobrança" },
+                      { key: "bot_send_pix" as const, label: "Incluir chave PIX", desc: "Anexar chave PIX na mensagem para pagamento rápido" },
+                      { key: "bot_send_receipt" as const, label: "Enviar comprovante ao pagar", desc: "Envia confirmação automática quando o pagamento é registrado" },
+                    ].map((opt) => (
+                      <div key={opt.key} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/10">
+                        <button
+                          onClick={() => setForm({ ...form, [opt.key]: !form[opt.key] })}
+                          className={`relative w-10 h-6 rounded-full transition-colors duration-300 shrink-0 ${(form[opt.key] as boolean) ? "bg-primary" : "bg-muted"}`}
+                        >
+                          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${(form[opt.key] as boolean) ? "left-[18px]" : "left-0.5"}`} />
+                        </button>
+                        <div>
+                          <span className="text-xs font-medium text-foreground">{opt.label}</span>
+                          <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status info */}
+                <div className="p-4 rounded-xl bg-info/5 border border-info/20 space-y-2">
+                  <p className="text-xs font-semibold text-info flex items-center gap-2"><Bot size={14} /> Como funciona</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside">
+                    <li>O bot verifica parcelas em atraso diariamente no horário configurado</li>
+                    <li>Envia a mensagem correspondente ao nível de atraso (fluxo de escalação)</li>
+                    <li>Respeita os limites de mensagens/dia e dias de funcionamento</li>
+                    <li>Requer integração com WhatsApp (Evolution API) configurada na aba "WhatsApp"</li>
+                    <li>Templates devem ser criados na aba "Templates" para uso no fluxo</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+
           <>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-warning/8 flex items-center justify-center"><MessageSquare size={16} className="text-warning" /></div>

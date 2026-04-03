@@ -819,6 +819,21 @@ export type Database = {
       settings: {
         Row: {
           accent_color: string | null
+          bot_auto_send: boolean | null
+          bot_closing_message: string | null
+          bot_enabled: boolean | null
+          bot_escalation_rules: Json | null
+          bot_greeting_message: string | null
+          bot_max_messages_per_day: number | null
+          bot_notify_owner: boolean | null
+          bot_retry_interval_hours: number | null
+          bot_send_hour: number | null
+          bot_send_minute: number | null
+          bot_send_pix: boolean | null
+          bot_send_receipt: boolean | null
+          bot_stop_on_payment: boolean | null
+          bot_tone: string | null
+          bot_work_days: Json | null
           company_cnpj: string | null
           company_logo_url: string | null
           company_name: string | null
@@ -839,6 +854,21 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          bot_auto_send?: boolean | null
+          bot_closing_message?: string | null
+          bot_enabled?: boolean | null
+          bot_escalation_rules?: Json | null
+          bot_greeting_message?: string | null
+          bot_max_messages_per_day?: number | null
+          bot_notify_owner?: boolean | null
+          bot_retry_interval_hours?: number | null
+          bot_send_hour?: number | null
+          bot_send_minute?: number | null
+          bot_send_pix?: boolean | null
+          bot_send_receipt?: boolean | null
+          bot_stop_on_payment?: boolean | null
+          bot_tone?: string | null
+          bot_work_days?: Json | null
           company_cnpj?: string | null
           company_logo_url?: string | null
           company_name?: string | null
@@ -859,6 +889,21 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          bot_auto_send?: boolean | null
+          bot_closing_message?: string | null
+          bot_enabled?: boolean | null
+          bot_escalation_rules?: Json | null
+          bot_greeting_message?: string | null
+          bot_max_messages_per_day?: number | null
+          bot_notify_owner?: boolean | null
+          bot_retry_interval_hours?: number | null
+          bot_send_hour?: number | null
+          bot_send_minute?: number | null
+          bot_send_pix?: boolean | null
+          bot_send_receipt?: boolean | null
+          bot_stop_on_payment?: boolean | null
+          bot_tone?: string | null
+          bot_work_days?: Json | null
           company_cnpj?: string | null
           company_logo_url?: string | null
           company_name?: string | null
