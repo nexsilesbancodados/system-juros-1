@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, TrendingUp, Banknote, CreditCard, Plus, Minus, Calendar, Search, X, Filter } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Wallet, ArrowUpRight, ArrowDownRight, TrendingUp, Banknote, CreditCard, Plus, Minus, Calendar, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,37 +7,55 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const Carteira = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profits, setProfits] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [installments, setInstallments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [searchTimeline, setSearchTimeline] = useState("");
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchAll = async () => {
-    if (!user) return;
-    const [p, e, i] = await Promise.all([
-      supabase.from("profits").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-      supabase.from("expenses").select("*").eq("user_id", user.id).order("date", { ascending: false }),
-      supabase.from("contract_installments").select("*").eq("user_id", user.id).eq("status", "paid").order("paid_at", { ascending: false }),
-    ]);
-    setProfits(p.data || []);
-    setExpenses(e.data || []);
-    setInstallments(i.data || []);
-    setLoading(false);
-  };
+  // Realtime subscriptions
+  useMultiTableRealtime(
+    ["profits", "expenses", "contract_installments"],
+    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""]],
+  );
 
-  useEffect(() => { if (user) fetchAll(); }, [user]);
+  const { data: profits = [], isLoading: loadingProfits } = useQuery({
+    queryKey: ["carteira-profits", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
+    queryKey: ["carteira-expenses", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: installments = [], isLoading: loadingInst } = useQuery({
+    queryKey: ["carteira-installments", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("contract_installments").select("*").eq("user_id", user!.id).eq("status", "paid").order("paid_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const loading = loadingProfits || loadingExpenses || loadingInst;
 
   const handleSave = async () => {
     if (!user || !amount || !description) return;
@@ -60,18 +78,20 @@ const Carteira = () => {
 
     toast({ title: dialogType === "in" ? "✓ Entrada adicionada!" : "✓ Saída registrada!" });
     setAmount(""); setDescription(""); setDialogOpen(false); setSaving(false);
-    setLoading(true); fetchAll();
+    qc.invalidateQueries({ queryKey: ["carteira-profits"] });
+    qc.invalidateQueries({ queryKey: ["carteira-expenses"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
-  const totalEntradas = profits.reduce((a, p) => a + Number(p.amount), 0) + installments.reduce((a, i) => a + Number(i.paid_amount || i.amount), 0);
-  const totalSaidas = expenses.reduce((a, e) => a + Number(e.amount), 0);
+  const totalEntradas = profits.reduce((a: number, p: any) => a + Number(p.amount), 0) + installments.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
+  const totalSaidas = expenses.reduce((a: number, e: any) => a + Number(e.amount), 0);
   const saldo = totalEntradas - totalSaidas;
 
   const timeline = useMemo(() => {
     const all = [
-      ...profits.map((p) => ({ type: "in" as const, desc: p.description, amount: Number(p.amount), date: p.date, source: "Lucro" })),
-      ...installments.map((i) => ({ type: "in" as const, desc: "Parcela recebida", amount: Number(i.amount), date: i.paid_at, source: "Parcela" })),
-      ...expenses.map((e) => ({ type: "out" as const, desc: e.description, amount: Number(e.amount), date: e.date, source: e.category || "Gasto" })),
+      ...profits.map((p: any) => ({ type: "in" as const, desc: p.description, amount: Number(p.amount), date: p.date, source: "Lucro" })),
+      ...installments.map((i: any) => ({ type: "in" as const, desc: "Parcela recebida", amount: Number(i.amount), date: i.paid_at, source: "Parcela" })),
+      ...expenses.map((e: any) => ({ type: "out" as const, desc: e.description, amount: Number(e.amount), date: e.date, source: e.category || "Gasto" })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const now = new Date();
@@ -105,7 +125,6 @@ const Carteira = () => {
   const total = totalEntradas + totalSaidas || 1;
   const entradasPct = Math.round((totalEntradas / total) * 100);
 
-  // Group timeline by date
   const grouped = timeline.reduce((acc, t) => {
     const key = new Date(t.date).toLocaleDateString("pt-BR");
     if (!acc[key]) acc[key] = [];

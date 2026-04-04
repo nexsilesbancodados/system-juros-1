@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { DollarSign, Plus, X, ArrowDownRight, Search, Calendar, Tag, PieChart, Edit2, Check, Download, Trash2, MoreVertical, BarChart3, TrendingDown, Receipt } from "lucide-react";
+import { useState, useMemo } from "react";
+import { DollarSign, Plus, X, ArrowDownRight, Search, Calendar, Tag, PieChart, Edit2, Download, Trash2, MoreVertical, BarChart3, TrendingDown, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -33,8 +35,7 @@ const SUGGESTED_CATEGORIES = ["Operacional", "Pessoal", "Transporte", "Alimenta�
 const Gastos = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [desc, setDesc] = useState("");
@@ -47,13 +48,19 @@ const Gastos = () => {
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const fetchExpenses = async () => {
-    const { data } = await supabase.from("expenses").select("*").order("date", { ascending: false });
-    setExpenses(data || []);
-    setLoading(false);
-  };
+  useMultiTableRealtime(
+    ["expenses"],
+    [["gastos-data", user?.id || ""]],
+  );
 
-  useEffect(() => { fetchExpenses(); }, []);
+  const { data: expenses = [], isLoading: loading } = useQuery({
+    queryKey: ["gastos-data", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const resetForm = () => {
     setDesc(""); setAmount(""); setCategory(""); setDate(new Date().toISOString().slice(0, 10));
@@ -79,25 +86,25 @@ const Gastos = () => {
       const { error } = await supabase.from("expenses").update(payload).eq("id", editingId);
       setSaving(false);
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-      else { toast({ title: "✓ Gasto atualizado!" }); resetForm(); fetchExpenses(); }
+      else { toast({ title: "✓ Gasto atualizado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["gastos-data"] }); }
     } else {
       const { error } = await supabase.from("expenses").insert({ ...payload, user_id: user.id });
       setSaving(false);
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-      else { toast({ title: "✓ Gasto registrado!" }); resetForm(); fetchExpenses(); }
+      else { toast({ title: "✓ Gasto registrado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["gastos-data"] }); }
     }
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from("expenses").delete().eq("id", id);
     setDeleteConfirm(null);
-    fetchExpenses();
+    qc.invalidateQueries({ queryKey: ["gastos-data"] });
     toast({ title: "Gasto excluído" });
   };
 
   const handleExportCSV = () => {
     const header = "Data,Descrição,Categoria,Valor\n";
-    const rows = filtered.map(e =>
+    const rows = filtered.map((e: any) =>
       `${new Date(e.date).toLocaleDateString("pt-BR")},"${e.description}","${e.category || ""}",${Number(e.amount).toFixed(2)}`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -106,13 +113,13 @@ const Gastos = () => {
     toast({ title: "CSV exportado!" });
   };
 
-  const categories = useMemo(() => [...new Set(expenses.map(e => e.category || "Sem categoria"))], [expenses]);
+  const categories = useMemo(() => [...new Set(expenses.map((e: any) => e.category || "Sem categoria"))], [expenses]);
 
   const filtered = useMemo(() => {
     const now = new Date();
     const filterDays: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
     const days = filterDays[timeFilter];
-    return expenses.filter(e => {
+    return expenses.filter((e: any) => {
       if (days) {
         const diff = (now.getTime() - new Date(e.date).getTime()) / 86400000;
         if (diff > days) return false;
@@ -123,13 +130,12 @@ const Gastos = () => {
     });
   }, [expenses, search, catFilter, timeFilter]);
 
-  const totalFiltered = filtered.reduce((acc, e) => acc + Number(e.amount), 0);
-  const totalAll = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
+  const totalFiltered = filtered.reduce((acc: number, e: any) => acc + Number(e.amount), 0);
+  const totalAll = expenses.reduce((acc: number, e: any) => acc + Number(e.amount), 0);
 
-  // Category breakdown
   const catBreakdown = useMemo(() => {
     const map = new Map<string, number>();
-    expenses.forEach(e => {
+    expenses.forEach((e: any) => {
       const cat = e.category || "Sem categoria";
       map.set(cat, (map.get(cat) || 0) + Number(e.amount));
     });
@@ -138,16 +144,15 @@ const Gastos = () => {
       .map(([cat, total]) => ({ cat, total, pct: totalAll > 0 ? (total / totalAll) * 100 : 0 }));
   }, [expenses, totalAll]);
 
-  // Monthly data
   const monthlyData = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
       const monthStr = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-      const amount = expenses.filter(e => {
+      const amount = expenses.filter((e: any) => {
         const ed = new Date(e.date);
         return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
-      }).reduce((s, e) => s + Number(e.amount), 0);
+      }).reduce((s: number, e: any) => s + Number(e.amount), 0);
       return { month: monthStr, amount };
     });
   }, [expenses]);
@@ -159,13 +164,12 @@ const Gastos = () => {
     ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal * 100).toFixed(1)
     : currentMonthTotal > 0 ? "+100" : "0";
 
-  const todayTotal = expenses.filter(e => {
+  const todayTotal = expenses.filter((e: any) => {
     const d = new Date(e.date);
     return d.toDateString() === new Date().toDateString();
-  }).reduce((s, e) => s + Number(e.amount), 0);
+  }).reduce((s: number, e: any) => s + Number(e.amount), 0);
 
-  // Group by date
-  const grouped = filtered.reduce((acc, e) => {
+  const grouped = filtered.reduce((acc: Record<string, any[]>, e: any) => {
     const key = new Date(e.date).toLocaleDateString("pt-BR");
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
@@ -253,7 +257,6 @@ const Gastos = () => {
 
       {/* Monthly Chart + Category Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Monthly chart */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -287,7 +290,6 @@ const Gastos = () => {
           </div>
         </div>
 
-        {/* Category breakdown */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <PieChart size={13} className="text-primary" />
@@ -372,13 +374,11 @@ const Gastos = () => {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 rounded-2xl border border-dashed border-border bg-card/50">
           <div className="w-20 h-20 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-5">
-            <DollarSign size={32} className="text-muted-foreground/40" />
+            <TrendingDown size={32} className="text-muted-foreground/40" />
           </div>
-          <p className="text-foreground font-semibold text-lg">
-            {search || catFilter !== "all" ? "Sem resultados" : "Nenhum gasto registrado"}
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">Registre seus gastos para controlar as despesas</p>
-          {!search && catFilter === "all" && (
+          <p className="text-foreground font-semibold text-lg">{search ? `Sem resultados para "${search}"` : "Nenhum gasto registrado"}</p>
+          <p className="text-sm text-muted-foreground mt-2">Registre seus gastos para controlar despesas</p>
+          {!search && (
             <button onClick={() => { resetForm(); setShowForm(true); }}
               className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
               style={{ background: "var(--gradient-button)" }}>
@@ -406,12 +406,14 @@ const Gastos = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{e.description}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${getCategoryStyle(e.category || "Sem categoria")}`}>
-                            {e.category || "Sem categoria"}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                          </span>
+                          <p className="text-[10px] text-muted-foreground">
+                            {new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                          </p>
+                          {e.category && (
+                            <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${getCategoryStyle(e.category)}`}>
+                              {e.category}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <span className="text-sm font-bold text-destructive shrink-0">−R$ {fmt(Number(e.amount))}</span>
@@ -445,67 +447,60 @@ const Gastos = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowDownRight size={18} className="text-destructive" />
+              {editingId ? <Edit2 size={18} className="text-primary" /> : <Plus size={18} className="text-destructive" />}
               {editingId ? "Editar Gasto" : "Novo Gasto"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição *</label>
-              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Aluguel do escritório" className={inputCls} autoFocus />
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição</label>
+              <input type="text" placeholder="Ex: Aluguel, Gasolina..." value={desc} onChange={e => setDesc(e.target.value)} className={inputCls} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$) *</label>
-                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
-              </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$)</label>
+              <input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={e => setAmount(e.target.value)} className={inputCls} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Categoria</label>
-              <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ex: Operacional" className={inputCls} list="cat-list" />
-              <datalist id="cat-list">
-                {[...new Set([...SUGGESTED_CATEGORIES, ...categories])].map(c => <option key={c} value={c} />)}
-              </datalist>
+              <input type="text" placeholder="Ex: Operacional" value={category} onChange={e => setCategory(e.target.value)} className={inputCls} />
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {SUGGESTED_CATEGORIES.slice(0, 6).map(c => (
+                {SUGGESTED_CATEGORIES.map(c => (
                   <button key={c} type="button" onClick={() => setCategory(c)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-medium border transition-colors ${
-                      category === c ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                    className={`text-[10px] px-2 py-1 rounded-full border transition-colors ${
+                      category === c ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-accent"
                     }`}>
                     {c}
                   </button>
                 ))}
               </div>
             </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
+            </div>
           </div>
-          <DialogFooter className="gap-2 mt-2">
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saving || !desc || !amount} variant="destructive">
-              {editingId ? <Check size={14} className="mr-1.5" /> : <Plus size={14} className="mr-1.5" />}
-              {saving ? "Salvando..." : editingId ? "Salvar" : "Registrar"}
+            <Button disabled={saving || !desc.trim() || !amount} onClick={handleSubmit}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {saving ? "Salvando..." : editingId ? "Atualizar" : "Registrar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 size={18} /> Excluir Gasto
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 size={18} /> Excluir Gasto?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este registro de gasto?</p>
-          <DialogFooter className="gap-2">
+          <p className="text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              <Trash2 size={14} className="mr-1.5" /> Excluir
-            </Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
