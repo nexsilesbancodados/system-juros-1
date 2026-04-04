@@ -111,8 +111,18 @@ const Dashboard = () => {
     const paidToday = paidInstallments.filter((p: any) => p.paid_at?.startsWith(todayStr));
     const paidTodayAmount = paidToday.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
 
-    // Total profit from profits table
-    const totalProfitAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
+    // Total profit: from profits table + interest portion of paid installments
+    const profitsTableAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
+    // Also compute interest earned from paid installments (totalReceived - capital returned)
+    const totalCapitalReturned = paidInstallments.reduce((s: number, i: any) => {
+      const contract = contracts.find((c: any) => c.id === i.contract_id);
+      if (!contract) return s;
+      const capitalPerInstallment = Number(contract.capital) / Number(contract.num_installments);
+      return s + capitalPerInstallment;
+    }, 0);
+    const interestEarned = totalReceived - totalCapitalReturned;
+    // Use the higher of: profits table total OR calculated interest (avoid double counting)
+    const totalProfitAmount = Math.max(profitsTableAmount, interestEarned > 0 ? interestEarned : 0);
 
     // ROI
     const totalCapitalEver = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);

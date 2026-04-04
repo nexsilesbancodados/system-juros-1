@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { TrendingUp, Plus, X, Search, Calendar, ArrowUpRight, Edit2, Check, Download, Trash2, MoreVertical, BarChart3, Wallet } from "lucide-react";
+import { useState, useMemo } from "react";
+import { TrendingUp, Plus, X, Search, Calendar, ArrowUpRight, Edit2, Download, Trash2, MoreVertical, BarChart3, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,14 +11,15 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Lucros = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profits, setProfits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [desc, setDesc] = useState("");
@@ -29,13 +30,19 @@ const Lucros = () => {
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const fetchProfits = async () => {
-    const { data } = await supabase.from("profits").select("*").order("date", { ascending: false });
-    setProfits(data || []);
-    setLoading(false);
-  };
+  useMultiTableRealtime(
+    ["profits"],
+    [["lucros-data", user?.id || ""]],
+  );
 
-  useEffect(() => { fetchProfits(); }, []);
+  const { data: profits = [], isLoading: loading } = useQuery({
+    queryKey: ["lucros-data", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const resetForm = () => {
     setDesc(""); setAmount(""); setDate(new Date().toISOString().slice(0, 10));
@@ -58,39 +65,28 @@ const Lucros = () => {
         .eq("id", editingId);
       setSaving(false);
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-      else { toast({ title: "✓ Lucro atualizado!" }); resetForm(); fetchProfits(); }
+      else { toast({ title: "✓ Lucro atualizado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["lucros-data"] }); }
     } else {
       const { error } = await supabase.from("profits")
         .insert({ user_id: user.id, description: desc.trim(), amount: parseFloat(amount), date: new Date(date).toISOString() });
       setSaving(false);
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-      else { toast({ title: "✓ Lucro registrado!" }); resetForm(); fetchProfits(); }
+      else { toast({ title: "✓ Lucro registrado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["lucros-data"] }); }
     }
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from("profits").delete().eq("id", id);
     setDeleteConfirm(null);
-    fetchProfits();
+    qc.invalidateQueries({ queryKey: ["lucros-data"] });
     toast({ title: "Lucro excluído" });
-  };
-
-  const handleExportCSV = () => {
-    const header = "Data,Descrição,Valor\n";
-    const rows = filtered.map(p =>
-      `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description}",${Number(p.amount).toFixed(2)}`
-    ).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "lucros.csv"; a.click();
-    toast({ title: "CSV exportado!" });
   };
 
   const filtered = useMemo(() => {
     const now = new Date();
     const filterDays: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
     const days = filterDays[timeFilter];
-    return profits.filter(p => {
+    return profits.filter((p: any) => {
       if (days) {
         const diff = (now.getTime() - new Date(p.date).getTime()) / 86400000;
         if (diff > days) return false;
@@ -100,43 +96,48 @@ const Lucros = () => {
     });
   }, [profits, search, timeFilter]);
 
-  const total = filtered.reduce((acc, p) => acc + Number(p.amount), 0);
-  const totalAll = profits.reduce((acc, p) => acc + Number(p.amount), 0);
+  const handleExportCSV = () => {
+    const header = "Data,Descrição,Valor\n";
+    const rows = filtered.map((p: any) =>
+      `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description}",${Number(p.amount).toFixed(2)}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "lucros.csv"; a.click();
+    toast({ title: "CSV exportado!" });
+  };
 
-  // Monthly data (last 6 months)
+  const total = filtered.reduce((acc: number, p: any) => acc + Number(p.amount), 0);
+  const totalAll = profits.reduce((acc: number, p: any) => acc + Number(p.amount), 0);
+
   const monthlyData = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
       const monthStr = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-      const amount = profits.filter(p => {
+      const amount = profits.filter((p: any) => {
         const pd = new Date(p.date);
         return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
-      }).reduce((s, p) => s + Number(p.amount), 0);
+      }).reduce((s: number, p: any) => s + Number(p.amount), 0);
       return { month: monthStr, amount };
     });
   }, [profits]);
   const maxMonthly = Math.max(...monthlyData.map(m => m.amount), 1);
 
-  // Current vs previous month comparison
   const currentMonthTotal = monthlyData[5]?.amount || 0;
   const prevMonthTotal = monthlyData[4]?.amount || 0;
   const monthlyChange = prevMonthTotal > 0
     ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal * 100).toFixed(1)
     : currentMonthTotal > 0 ? "+100" : "0";
 
-  // Average per entry
   const avgPerEntry = profits.length > 0 ? totalAll / profits.length : 0;
 
-  // Today's total
-  const todayTotal = profits.filter(p => {
+  const todayTotal = profits.filter((p: any) => {
     const d = new Date(p.date);
-    const now = new Date();
-    return d.toDateString() === now.toDateString();
-  }).reduce((s, p) => s + Number(p.amount), 0);
+    return d.toDateString() === new Date().toDateString();
+  }).reduce((s: number, p: any) => s + Number(p.amount), 0);
 
-  // Group by date
-  const grouped = filtered.reduce((acc, p) => {
+  const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
     const key = new Date(p.date).toLocaleDateString("pt-BR");
     if (!acc[key]) acc[key] = [];
     acc[key].push(p);
@@ -236,7 +237,6 @@ const Lucros = () => {
             const isCurrentMonth = i === 5;
             return (
               <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group relative">
-                {/* Tooltip */}
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-[10px] font-semibold text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                   R$ {fmt(m.amount)}
                 </div>
@@ -361,51 +361,46 @@ const Lucros = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowUpRight size={18} className="text-success" />
+              {editingId ? <Edit2 size={18} className="text-primary" /> : <Plus size={18} className="text-success" />}
               {editingId ? "Editar Lucro" : "Novo Lucro"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição *</label>
-              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ex: Juros do cliente X" className={inputCls} autoFocus />
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Descrição</label>
+              <input type="text" placeholder="Ex: Juros recebidos, Comissão..." value={desc} onChange={e => setDesc(e.target.value)} className={inputCls} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$) *</label>
-                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
-              </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Valor (R$)</label>
+              <input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={e => setAmount(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Data</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
             </div>
           </div>
-          <DialogFooter className="gap-2 mt-2">
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saving || !desc || !amount}
-              className="bg-success hover:bg-success/90 text-success-foreground">
-              {editingId ? <Check size={14} className="mr-1.5" /> : <Plus size={14} className="mr-1.5" />}
-              {saving ? "Salvando..." : editingId ? "Salvar" : "Registrar"}
+            <Button disabled={saving || !desc.trim() || !amount} onClick={handleSubmit}
+              className="bg-success text-success-foreground hover:bg-success/90">
+              {saving ? "Salvando..." : editingId ? "Atualizar" : "Registrar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 size={18} /> Excluir Lucro
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 size={18} /> Excluir Lucro?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este registro de lucro?</p>
-          <DialogFooter className="gap-2">
+          <p className="text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              <Trash2 size={14} className="mr-1.5" /> Excluir
-            </Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
