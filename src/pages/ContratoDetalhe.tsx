@@ -1,12 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import ContractTemplate from "@/components/ContractTemplate";
 import {
   ArrowLeft, CheckCircle, Clock, AlertTriangle, DollarSign, FileText, User, Calendar,
-  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X
+  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X, Eye, Download
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +35,8 @@ const ContratoDetalhe = () => {
   const [editNotes, setEditNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+  const [showContract, setShowContract] = useState(false);
+  const contractRef = useRef<HTMLDivElement>(null);
 
   useMultiTableRealtime(
     ["contracts", "contract_installments"],
@@ -146,6 +149,72 @@ const ContratoDetalhe = () => {
     navigate("/contratos");
   }, [id, toast, navigate]);
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("settings").select("company_name, company_cnpj").eq("user_id", user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const handleDownloadPDF = useCallback(() => {
+    setShowContract(true);
+    setTimeout(() => {
+      const printContent = document.getElementById("contract-template");
+      if (!printContent) return;
+      const win = window.open("", "_blank");
+      if (!win) { toast({ title: "Popup bloqueado", description: "Permita popups para baixar o PDF.", variant: "destructive" }); return; }
+      win.document.write(`
+        <!DOCTYPE html>
+        <html><head><title>Contrato - ${contract?.clients?.name}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #111; }
+          #contract-template { max-width: 800px; margin: 0 auto; }
+          .bg-card, .bg-muted\\/20 { background: #f9f9f9; }
+          .border { border: 1px solid #e5e5e5; }
+          .border-b { border-bottom: 1px solid #e5e5e5; }
+          .border-t { border-top: 1px solid #e5e5e5; }
+          .rounded-2xl { border-radius: 12px; }
+          .rounded-xl { border-radius: 8px; }
+          .rounded-lg { border-radius: 6px; }
+          .p-8 { padding: 32px; } .p-4 { padding: 16px; } .p-3 { padding: 12px; }
+          .space-y-8 > * + * { margin-top: 32px; }
+          .space-y-4 > * + * { margin-top: 16px; }
+          .space-y-3 > * + * { margin-top: 12px; }
+          .space-y-2 > * + * { margin-top: 8px; }
+          .space-y-1 > * + * { margin-top: 4px; }
+          .text-2xl { font-size: 1.5rem; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; }
+          .text-\\[10px\\] { font-size: 10px; }
+          .font-bold { font-weight: 700; } .font-semibold { font-weight: 600; }
+          .text-center { text-align: center; }
+          .uppercase { text-transform: uppercase; }
+          .tracking-tight { letter-spacing: -0.025em; }
+          .tracking-wider { letter-spacing: 0.05em; }
+          .leading-relaxed { line-height: 1.625; }
+          .text-foreground, .text-black { color: #111; }
+          .text-muted-foreground, .text-gray-600 { color: #666; }
+          .text-gray-500 { color: #888; }
+          .grid { display: grid; }
+          .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+          .grid-cols-1 { grid-template-columns: 1fr; }
+          .gap-3 { gap: 12px; } .gap-10 { gap: 40px; }
+          .pb-6 { padding-bottom: 24px; } .pt-2 { padding-top: 8px; } .pt-6 { padding-top: 24px; } .pt-8 { padding-top: 32px; }
+          .mt-0\\.5 { margin-top: 2px; } .mt-2 { margin-top: 8px; }
+          .mx-8 { margin-left: 32px; margin-right: 32px; }
+          .mb-2 { margin-bottom: 8px; }
+          .list-disc { list-style: disc; } .pl-5 { padding-left: 20px; }
+          @media print { body { padding: 20px; } }
+        </style>
+        </head><body>${printContent.outerHTML}</body></html>
+      `);
+      win.document.close();
+      setTimeout(() => { win.print(); }, 500);
+    }, 300);
+  }, [contract, toast]);
+
   const { paid, overdue, pending, paidPct, totalPaid, grouped } = useMemo(() => {
     const paid = installments.filter((i: any) => i.status === "paid").length;
     const overdue = installments.filter((i: any) => i.status === "overdue").length;
@@ -180,7 +249,35 @@ const ContratoDetalhe = () => {
     </div>
   );
 
+  const FREQ_LABEL: Record<string, string> = {
+    daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal",
+    "daily_mon-fri": "Seg-Sex", "daily_mon-sat": "Seg-Sáb", "daily_mon-sun": "Seg-Dom",
+  };
+
+  const contractData = contract ? {
+    clientName: contract.clients?.name || "—",
+    cpfCnpj: contract.clients?.cpf_cnpj || "",
+    phone: contract.clients?.phone || "",
+    whatsapp: contract.clients?.whatsapp || "",
+    email: contract.clients?.email || "",
+    address: "",
+    capital: Number(contract.capital),
+    interestRate: Number(contract.interest_rate),
+    totalAmount: Number(contract.total_amount),
+    totalInterest: Number(contract.total_interest),
+    installmentAmount: Number(contract.installment_amount),
+    numInstallments: contract.num_installments,
+    frequency: FREQ_LABEL[contract.frequency] || contract.frequency,
+    startDate: contract.start_date?.split("T")[0] || "",
+    lateFeePercent: Number(contract.late_fee_percent),
+    dailyInterestPercent: Number(contract.daily_interest_percent),
+    companyName: settings?.company_name || "Empresa",
+    companyCnpj: settings?.company_cnpj || "",
+  } : null;
+
   const tools = [
+    { icon: Eye, label: "Ver Contrato", action: () => setShowContract(true), color: "text-primary" },
+    { icon: Download, label: "Baixar PDF", action: handleDownloadPDF, color: "text-primary" },
     { icon: Send, label: "Cobrar", action: sendAllOverdue, color: "text-destructive" },
     { icon: Copy, label: "Copiar", action: copyInfo, color: "text-muted-foreground" },
     { icon: Edit, label: "Notas", action: () => setEditNotes(true), color: "text-primary" },
@@ -402,6 +499,29 @@ const ContratoDetalhe = () => {
         <div className="bg-card border border-border rounded-2xl p-4">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Notas</p>
           <p className="text-sm text-foreground whitespace-pre-wrap">{contract.notes}</p>
+        </div>
+      )}
+
+      {/* Contract View Modal */}
+      {showContract && contractData && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4 pt-8 pb-8" onClick={() => setShowContract(false)}>
+          <div className="max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">Contrato</h2>
+              <div className="flex items-center gap-2">
+                <button onClick={handleDownloadPDF}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity">
+                  <Download size={14} /> Baixar PDF
+                </button>
+                <button onClick={() => setShowContract(false)} className="p-2 rounded-xl hover:bg-white/10 text-white transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div ref={contractRef}>
+              <ContractTemplate data={contractData} />
+            </div>
+          </div>
         </div>
       )}
     </div>
