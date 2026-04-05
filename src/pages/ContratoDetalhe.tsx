@@ -501,6 +501,29 @@ const ContratoDetalhe = () => {
           <p className="text-sm text-foreground whitespace-pre-wrap">{contract.notes}</p>
         </div>
       )}
+
+      {/* Contract View Modal */}
+      {showContract && contractData && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4 pt-8 pb-8" onClick={() => setShowContract(false)}>
+          <div className="max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">Contrato</h2>
+              <div className="flex items-center gap-2">
+                <button onClick={handleDownloadPDF}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity">
+                  <Download size={14} /> Baixar PDF
+                </button>
+                <button onClick={() => setShowContract(false)} className="p-2 rounded-xl hover:bg-white/10 text-white transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div ref={contractRef}>
+              <ContractTemplate data={contractData} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
