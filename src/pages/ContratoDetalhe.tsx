@@ -249,7 +249,35 @@ const ContratoDetalhe = () => {
     </div>
   );
 
+  const FREQ_LABEL: Record<string, string> = {
+    daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal",
+    "daily_mon-fri": "Seg-Sex", "daily_mon-sat": "Seg-Sáb", "daily_mon-sun": "Seg-Dom",
+  };
+
+  const contractData = contract ? {
+    clientName: contract.clients?.name || "—",
+    cpfCnpj: contract.clients?.cpf_cnpj || "",
+    phone: contract.clients?.phone || "",
+    whatsapp: contract.clients?.whatsapp || "",
+    email: contract.clients?.email || "",
+    address: "",
+    capital: Number(contract.capital),
+    interestRate: Number(contract.interest_rate),
+    totalAmount: Number(contract.total_amount),
+    totalInterest: Number(contract.total_interest),
+    installmentAmount: Number(contract.installment_amount),
+    numInstallments: contract.num_installments,
+    frequency: FREQ_LABEL[contract.frequency] || contract.frequency,
+    startDate: contract.start_date?.split("T")[0] || "",
+    lateFeePercent: Number(contract.late_fee_percent),
+    dailyInterestPercent: Number(contract.daily_interest_percent),
+    companyName: settings?.company_name || "Empresa",
+    companyCnpj: settings?.company_cnpj || "",
+  } : null;
+
   const tools = [
+    { icon: Eye, label: "Ver Contrato", action: () => setShowContract(true), color: "text-primary" },
+    { icon: Download, label: "Baixar PDF", action: handleDownloadPDF, color: "text-primary" },
     { icon: Send, label: "Cobrar", action: sendAllOverdue, color: "text-destructive" },
     { icon: Copy, label: "Copiar", action: copyInfo, color: "text-muted-foreground" },
     { icon: Edit, label: "Notas", action: () => setEditNotes(true), color: "text-primary" },
