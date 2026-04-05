@@ -35,6 +35,8 @@ const ContratoDetalhe = () => {
   const [editNotes, setEditNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+  const [showContract, setShowContract] = useState(false);
+  const contractRef = useRef<HTMLDivElement>(null);
 
   useMultiTableRealtime(
     ["contracts", "contract_installments"],
