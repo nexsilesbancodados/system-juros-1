@@ -1,12 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import ContractTemplate from "@/components/ContractTemplate";
 import {
   ArrowLeft, CheckCircle, Clock, AlertTriangle, DollarSign, FileText, User, Calendar,
-  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X
+  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X, Eye, Download
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
