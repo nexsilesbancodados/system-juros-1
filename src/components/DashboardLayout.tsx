@@ -5,12 +5,14 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
 import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
+  usePushNotifications();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
