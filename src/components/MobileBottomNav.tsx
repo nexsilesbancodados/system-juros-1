@@ -7,6 +7,8 @@ import {
   UserCheck, FileText, X,
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdminEmail } from "@/lib/admin";
 
 const mobileIconColor: Record<string, string> = {
   "/dashboard": "text-blue-400",
@@ -65,7 +67,12 @@ const moreItems = [
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showMore, setShowMore] = useState(false);
+  const isSuperAdmin = isSuperAdminEmail(user?.email);
+
+  // Esconde "Admin" para usuários não-super-admin
+  const visibleMoreItems = moreItems.filter((i) => i.path !== "/admin" || isSuperAdmin);
 
   const isActive = (path: string) => {
     if (path === "__more__") return showMore;

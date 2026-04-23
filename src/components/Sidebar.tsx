@@ -282,7 +282,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {sections.map((section, idx) => (
+        {visibleSections.map((section, idx) => (
           <div key={section.title}>
             {idx > 0 && !collapsed && <div className="border-t border-border/10 mb-3" />}
             {renderSection(section)}
