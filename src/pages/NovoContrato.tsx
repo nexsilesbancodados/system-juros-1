@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Search, UserPlus, X, Hash, Percent, Calendar, Clock, Repeat, AlertCircle, Loader2, DollarSign, Shield, Info, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Search, UserPlus, X, Hash, Percent, Calendar, Clock, Repeat, AlertCircle, Loader2, DollarSign, Shield, Info, Sparkles, FileText } from "lucide-react";
 
 type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily";
