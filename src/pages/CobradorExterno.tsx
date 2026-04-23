@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Lock, Users, DollarSign, Phone, Mail, MapPin, Calendar,
   AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp,
-  LogOut, User, FileText, TrendingUp, Shield
+  LogOut, LogIn, User, FileText, TrendingUp, Shield
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
