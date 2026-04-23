@@ -28,8 +28,8 @@ const Cobrancas = () => {
   const { data: installments = [], isLoading: loading } = useQuery({
     queryKey: ["cobrancas-installments", user?.id],
     queryFn: async () => {
-      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp").eq("user_id", user!.id);
-      const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone }]));
+      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, email").eq("user_id", user!.id);
+      const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone, email: c.email }]));
 
       const { data } = await supabase
         .from("contract_installments")
