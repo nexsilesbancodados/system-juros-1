@@ -74,18 +74,21 @@ const Anotacoes = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <StickyNote size={24} className="text-primary" /> Anotações
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{notes.length} nota{notes.length !== 1 ? "s" : ""} salva{notes.length !== 1 ? "s" : ""}</p>
+      <div className="page-hero">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)]">
+              <StickyNote size={22} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Anotações</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">{notes.length} nota{notes.length !== 1 ? "s" : ""} salva{notes.length !== 1 ? "s" : ""}</p>
+            </div>
+          </div>
+          <button onClick={() => setShowForm(!showForm)} className="btn-premium">
+            <Plus size={16} /> Nova Anotação
+          </button>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/20"
-          style={{ background: "var(--gradient-button)" }}>
-          <Plus size={16} /> Nova Anotação
-        </button>
       </div>
 
       {/* Search */}

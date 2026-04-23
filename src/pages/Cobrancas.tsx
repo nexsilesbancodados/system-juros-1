@@ -150,16 +150,24 @@ const Cobrancas = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Cobranças</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
+      {/* Premium hero */}
+      <div className="page-hero animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)] shrink-0">
+              <Receipt size={22} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Cobranças</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
+            </div>
+          </div>
+          {stats.overdue > 0 && (
+            <button onClick={handleBulkWhatsApp} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
+              <Send size={14} /> Cobrar Atrasadas ({stats.overdue})
+            </button>
+          )}
         </div>
-        {stats.overdue > 0 && (
-          <button onClick={handleBulkWhatsApp} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all focus-ring">
-            <Send size={14} /> Cobrar Atrasadas ({stats.overdue})
-          </button>
-        )}
       </div>
 
       {/* Stats cards */}
