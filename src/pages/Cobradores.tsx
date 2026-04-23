@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const Cobradores = () => {
   const { user } = useAuth();
@@ -40,6 +41,11 @@ const Cobradores = () => {
   const [fichaCollector, setFichaCollector] = useState<string | null>(null);
   const [assignCobrancaModal, setAssignCobrancaModal] = useState<string | null>(null);
   const [cobrancaClientSearch, setCobrancaClientSearch] = useState("");
+
+  useMultiTableRealtime(
+    ["collectors", "collector_assignments", "collector_tokens", "clients"],
+    [["collectors", user?.id || ""], ["collector-assignments", user?.id || ""], ["collector-tokens", user?.id || ""]],
+  );
 
   const { data: collectors = [] } = useQuery({
     queryKey: ["collectors", user?.id],

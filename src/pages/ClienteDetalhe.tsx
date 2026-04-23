@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -50,6 +51,17 @@ const ClienteDetalhe = () => {
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
     qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
   }, [inv, qc]);
+
+  useMultiTableRealtime(
+    ["clients", "contracts", "contract_installments", "transactions", "profits"],
+    [
+      ["client-detail", id || ""],
+      ["client-contracts", id || ""],
+      ["client-installments", id || ""],
+      ["client-transactions", id || ""],
+      ["client-profits", id || ""],
+    ],
+  );
 
   const { data: client, isLoading } = useQuery({
     queryKey: ["client-detail", id],

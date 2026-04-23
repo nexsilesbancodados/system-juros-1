@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 
 const scoreColor = (s: number) => s >= 700 ? "text-success bg-success/10" : s >= 400 ? "text-warning bg-warning/10" : "text-destructive bg-destructive/10";
 
@@ -24,6 +25,11 @@ const Clientes = () => {
     setViewMode(mode);
     localStorage.setItem("clients-view", mode);
   };
+
+  useMultiTableRealtime(
+    ["clients", "contracts", "contract_installments"],
+    [["clients", user?.id || ""]],
+  );
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id],
