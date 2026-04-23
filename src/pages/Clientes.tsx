@@ -171,9 +171,14 @@ const Clientes = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie seus clientes e contratos.</p>
             </div>
           </div>
-          <button onClick={() => navigate("/clientes/novo")} className="btn-premium">
-            <Plus size={16} /> Novo Cliente
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload size={15} /> Importar CSV
+            </button>
+            <button onClick={() => navigate("/clientes/novo")} className="btn-premium">
+              <Plus size={16} /> Novo Cliente
+            </button>
+          </div>
         </div>
       </div>
 
