@@ -177,10 +177,7 @@ const Perfil = () => {
           <LogOut size={16} /> Sair
         </button>
         <button onClick={handleSave} disabled={saving}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all focus-ring ${
-            saved ? "bg-success text-success-foreground" : "text-primary-foreground"
-          }`}
-          style={saved ? {} : { background: "var(--gradient-button)" }}>
+          className={saved ? "btn-premium bg-success !shadow-none" : "btn-premium"}>
           {saved ? <><Check size={16} /> Salvo!</> : <><Save size={16} /> {saving ? "Salvando..." : "Salvar Alterações"}</>}
         </button>
       </div>
