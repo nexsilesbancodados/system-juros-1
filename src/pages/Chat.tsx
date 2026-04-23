@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Hash, Users, Search, Send, Paperclip, Smile, MoreVertical, Reply, Trash2, Pin, PinOff,
-  Ban, ShieldCheck, LogIn, LogOut, MessageSquarePlus, Image as ImageIcon, X, Check, CheckCheck,
-  Plus, Crown, ArrowLeft, Circle, Sparkles,
+  Hash, Search, Send, Paperclip, Smile, MoreVertical, Reply, Trash2, Pin, PinOff,
+  Ban, ShieldCheck, LogIn, LogOut, MessageSquarePlus, X, Check, CheckCheck,
+  Plus, Crown, ArrowLeft, Circle, Sparkles, Mic, Square, Pencil, Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
+
 interface Channel { id: string; name: string; description: string | null; is_default: boolean; is_announcement: boolean; }
-interface Member { user_id: string; channel_id: string; }
-interface DMThread { id: string; user_a: string; user_b: string; last_message_at: string; }
+interface Member { user_id: string; channel_id: string; last_read_at?: string; }
+interface DMThread { id: string; user_a: string; user_b: string; last_message_at: string; last_read_a?: string; last_read_b?: string; }
 interface Profile { id: string; name: string; avatar_url: string | null; is_admin: boolean; is_chat_blocked: boolean; }
 interface Reaction { id: string; message_id: string; user_id: string; emoji: string; }
 interface Message {
@@ -24,7 +26,8 @@ interface Message {
 }
 type Scope = { kind: "channel"; id: string } | { kind: "dm"; id: string; otherUserId: string };
 
-const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "👏"];
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "👏"];
+const URL_RE = /(https?:\/\/[^\s]+)/i;
 
 const fmtTime = (s: string) => new Date(s).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 const fmtDay = (s: string) => {
@@ -32,6 +35,18 @@ const fmtDay = (s: string) => {
   if (d.toDateString() === today.toDateString()) return "Hoje";
   if (d.toDateString() === y.toDateString()) return "Ontem";
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/** Linkify text: convert URLs to <a> */
+const renderText = (text: string) => {
+  const parts = text.split(URL_RE);
+  return parts.map((p, i) =>
+    URL_RE.test(p) ? (
+      <a key={i} href={p} target="_blank" rel="noreferrer" className="underline text-primary hover:opacity-80 break-all">{p}</a>
+    ) : (
+      <span key={i}>{p}</span>
+    ),
+  );
 };
 
 const Chat = () => {
@@ -44,21 +59,39 @@ const Chat = () => {
   const [dmThreads, setDmThreads] = useState<DMThread[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({}); // user_id -> name
+  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
+
+  // Unread counts per channel/dm
+  const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
+  const [unreadByDm, setUnreadByDm] = useState<Record<string, number>>({});
+  // Last messages preview per channel/dm
+  const [lastMsgByChannel, setLastMsgByChannel] = useState<Record<string, { content: string; created_at: string }>>({});
+  const [lastMsgByDm, setLastMsgByDm] = useState<Record<string, { content: string; created_at: string }>>({});
 
   const [scope, setScope] = useState<Scope | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [showEmoji, setShowEmoji] = useState<string | null>(null); // message id for picker
+  const [editingMsg, setEditingMsg] = useState<Message | null>(null);
+  const [showEmoji, setShowEmoji] = useState<string | null>(null);
+  const [showInputEmoji, setShowInputEmoji] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [inThreadSearch, setInThreadSearch] = useState("");
+  const [showThreadSearch, setShowThreadSearch] = useState(false);
   const [tab, setTab] = useState<"channels" | "dms" | "people">("channels");
   const [showSidebar, setShowSidebar] = useState(!isMobile);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  // Audio recording
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunks = useRef<Blob[]>([]);
+  const recordTimer = useRef<number | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
@@ -81,20 +114,17 @@ const Chat = () => {
       const map: Record<string, Profile> = {};
       (prfRes.data || []).forEach((p: any) => { map[p.id] = p; });
       setProfiles(map);
-
-      // auto-select default channel if member, otherwise the first channel
       const defaultCh = (chRes.data || []).find((c: any) => c.is_default);
       if (defaultCh) setScope({ kind: "channel", id: defaultCh.id });
     })();
   }, [user]);
 
-  // ============ PRESENCE (online users) ============
+  // ============ PRESENCE ============
   useEffect(() => {
     if (!user || !profile) return;
     const ch = supabase.channel("chat-presence", { config: { presence: { key: user.id } } });
     ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState();
-      setOnlineUsers(new Set(Object.keys(state)));
+      setOnlineUsers(new Set(Object.keys(ch.presenceState())));
     });
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") await ch.track({ name: profile.name, online_at: new Date().toISOString() });
@@ -103,7 +133,7 @@ const Chat = () => {
     return () => { supabase.removeChannel(ch); };
   }, [user, profile]);
 
-  // ============ MEMBERSHIP REALTIME ============
+  // ============ MEMBERSHIP / CHANNEL REALTIME ============
   useEffect(() => {
     if (!user) return;
     const ch = supabase
@@ -116,9 +146,61 @@ const Chat = () => {
         const { data } = await supabase.from("chat_channels").select("*").order("name");
         setChannels(data || []);
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_dm_threads" }, async () => {
+        const { data } = await supabase.from("chat_dm_threads").select("*").or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order("last_message_at", { ascending: false });
+        setDmThreads(data || []);
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
+
+  // ============ UNREAD COUNTS + LAST MESSAGE PREVIEWS ============
+  const computeUnread = async () => {
+    if (!user) return;
+    const myMems = memberships.filter((m) => m.user_id === user.id);
+    const channelEntries: [string, number][] = [];
+    const lastChMap: Record<string, { content: string; created_at: string }> = {};
+    for (const m of myMems) {
+      const watermark = m.last_read_at || new Date(0).toISOString();
+      const [{ count }, { data: last }] = await Promise.all([
+        supabase.from("chat_messages").select("*", { count: "exact", head: true })
+          .eq("channel_id", m.channel_id).neq("user_id", user.id).gt("created_at", watermark),
+        supabase.from("chat_messages").select("content, created_at, type").eq("channel_id", m.channel_id).order("created_at", { ascending: false }).limit(1),
+      ]);
+      channelEntries.push([m.channel_id, count || 0]);
+      if (last && last[0]) lastChMap[m.channel_id] = { content: last[0].type === "text" ? last[0].content : last[0].type === "image" ? "📷 Imagem" : last[0].type === "audio" ? "🎤 Áudio" : "📎 Arquivo", created_at: last[0].created_at };
+    }
+    const dmEntries: [string, number][] = [];
+    const lastDmMap: Record<string, { content: string; created_at: string }> = {};
+    for (const d of dmThreads) {
+      const isA = d.user_a === user.id;
+      const watermark = (isA ? d.last_read_a : d.last_read_b) || new Date(0).toISOString();
+      const [{ count }, { data: last }] = await Promise.all([
+        supabase.from("chat_messages").select("*", { count: "exact", head: true })
+          .eq("dm_thread_id", d.id).neq("user_id", user.id).gt("created_at", watermark),
+        supabase.from("chat_messages").select("content, created_at, type").eq("dm_thread_id", d.id).order("created_at", { ascending: false }).limit(1),
+      ]);
+      dmEntries.push([d.id, count || 0]);
+      if (last && last[0]) lastDmMap[d.id] = { content: last[0].type === "text" ? last[0].content : last[0].type === "image" ? "📷 Imagem" : last[0].type === "audio" ? "🎤 Áudio" : "📎 Arquivo", created_at: last[0].created_at };
+    }
+    setUnreadByChannel(Object.fromEntries(channelEntries));
+    setUnreadByDm(Object.fromEntries(dmEntries));
+    setLastMsgByChannel(lastChMap);
+    setLastMsgByDm(lastDmMap);
+  };
+
+  useEffect(() => { computeUnread(); /* eslint-disable-next-line */ }, [memberships, dmThreads, user]);
+
+  // Recompute unread when any new message arrives globally
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`chat-unread-global-${user.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => computeUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line
+  }, [user, memberships, dmThreads]);
 
   // ============ MESSAGES + REACTIONS for current scope ============
   useEffect(() => {
@@ -137,14 +219,21 @@ const Chat = () => {
       } else setReactions([]);
     })();
 
+    // Mark as read on open
+    markScopeAsRead();
+
     const ch = supabase
       .channel(`chat-msgs-${scope.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages", filter: `${filterCol}=eq.${scope.id}` }, (payload) => {
-        if (payload.eventType === "INSERT") setMessages((prev) => [...prev, payload.new as Message]);
+        if (payload.eventType === "INSERT") {
+          setMessages((prev) => [...prev, payload.new as Message]);
+          // Auto-mark as read if I'm currently in this scope
+          markScopeAsRead();
+        }
         else if (payload.eventType === "UPDATE") setMessages((prev) => prev.map((m) => (m.id === (payload.new as any).id ? (payload.new as Message) : m)));
         else if (payload.eventType === "DELETE") setMessages((prev) => prev.filter((m) => m.id !== (payload.old as any).id));
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_message_reactions" }, async (payload: any) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_message_reactions" }, (payload: any) => {
         if (payload.eventType === "INSERT") setReactions((prev) => [...prev, payload.new]);
         else if (payload.eventType === "DELETE") setReactions((prev) => prev.filter((r) => r.id !== payload.old.id));
       })
@@ -160,6 +249,22 @@ const Chat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, memberships]);
 
+  const markScopeAsRead = async () => {
+    if (!user || !scope) return;
+    const now = new Date().toISOString();
+    if (scope.kind === "channel") {
+      await supabase.from("chat_channel_members").update({ last_read_at: now }).eq("channel_id", scope.id).eq("user_id", user.id);
+      setUnreadByChannel((prev) => ({ ...prev, [scope.id]: 0 }));
+    } else {
+      const dm = dmThreads.find((d) => d.id === scope.id);
+      if (!dm) return;
+      const isA = dm.user_a === user.id;
+      await supabase.from("chat_dm_threads").update(isA ? { last_read_a: now } : { last_read_b: now }).eq("id", scope.id);
+      setUnreadByDm((prev) => ({ ...prev, [scope.id]: 0 }));
+    }
+    window.dispatchEvent(new CustomEvent("chat:read"));
+  };
+
   // ============ AUTOSCROLL ============
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,7 +273,6 @@ const Chat = () => {
   // ============ DERIVED ============
   const myMembership = useMemo(() => new Set(memberships.filter((m) => m.user_id === user?.id).map((m) => m.channel_id)), [memberships, user]);
   const currentChannel = scope?.kind === "channel" ? channels.find((c) => c.id === scope.id) : null;
-  const currentDM = scope?.kind === "dm" ? dmThreads.find((d) => d.id === scope.id) : null;
   const dmOther = scope?.kind === "dm" ? profiles[scope.otherUserId] : null;
   const isMemberOfCurrent = scope?.kind === "channel" ? myMembership.has(scope.id) : true;
   const channelMemberCount = (cid: string) => memberships.filter((m) => m.channel_id === cid).length;
@@ -178,8 +282,14 @@ const Chat = () => {
   }, [profiles, user, search]);
 
   const filteredChannels = channels.filter((c) => !search || c.name.toLowerCase().includes(search.toLowerCase()));
-
   const pinnedMessages = useMemo(() => messages.filter((m) => m.is_pinned && !m.is_deleted), [messages]);
+
+  // Filter messages by inline search
+  const visibleMessages = useMemo(() => {
+    if (!inThreadSearch.trim()) return messages;
+    const q = inThreadSearch.toLowerCase();
+    return messages.filter((m) => m.content?.toLowerCase().includes(q));
+  }, [messages, inThreadSearch]);
 
   const reactionsByMessage = useMemo(() => {
     const map: Record<string, Record<string, { count: number; mine: boolean }>> = {};
@@ -191,6 +301,15 @@ const Chat = () => {
     }
     return map;
   }, [reactions, user]);
+
+  // For DM ✓✓ — current other user's last_read timestamp
+  const otherReadAt = useMemo(() => {
+    if (scope?.kind !== "dm" || !user) return null;
+    const dm = dmThreads.find((d) => d.id === scope.id);
+    if (!dm) return null;
+    const otherIsA = dm.user_a !== user.id;
+    return otherIsA ? dm.last_read_a : dm.last_read_b;
+  }, [scope, dmThreads, user]);
 
   // ============ ACTIONS ============
   const join = async (channelId: string) => {
@@ -210,7 +329,6 @@ const Chat = () => {
     const { data, error } = await supabase.rpc("get_or_create_dm_thread", { _other_user: otherUserId });
     if (error || !data) return toast.error("Erro ao abrir conversa");
     const tid = data as string;
-    // refresh threads
     const { data: dms } = await supabase.from("chat_dm_threads").select("*").or(`user_a.eq.${user!.id},user_b.eq.${user!.id}`);
     setDmThreads(dms || []);
     setScope({ kind: "dm", id: tid, otherUserId });
@@ -221,6 +339,18 @@ const Chat = () => {
   const send = async () => {
     if (!user || !profile || !scope || !input.trim()) return;
     if (profile.is_chat_blocked) return toast.error("Você está bloqueado de enviar mensagens");
+
+    // Edit mode
+    if (editingMsg) {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({ content: input.trim(), edited_at: new Date().toISOString() })
+        .eq("id", editingMsg.id);
+      if (error) toast.error("Erro ao editar");
+      setInput(""); setEditingMsg(null);
+      return;
+    }
+
     const payload: any = {
       user_id: user.id, user_name: profile.name, user_avatar: profile.avatar_url || null,
       content: input.trim(), type: "text",
@@ -232,20 +362,21 @@ const Chat = () => {
     if (error) toast.error("Erro ao enviar: " + error.message);
   };
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, asAudio = false) => {
     if (!user || !profile || !scope) return;
     if (file.size > 10 * 1024 * 1024) return toast.error("Arquivo deve ter até 10MB");
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const ext = file.name.split(".").pop() || "bin";
       const path = `chat/${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("uploads").upload(path, file);
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
       const isImage = file.type.startsWith("image/");
+      const type = asAudio ? "audio" : isImage ? "image" : "file";
       const payload: any = {
         user_id: user.id, user_name: profile.name, user_avatar: profile.avatar_url || null,
-        content: isImage ? "" : file.name, type: isImage ? "image" : "file",
+        content: type === "text" ? "" : (isImage || asAudio ? "" : file.name), type,
         file_url: pub.publicUrl, file_name: file.name, file_type: file.type,
       };
       if (scope.kind === "channel") payload.channel_id = scope.id; else payload.dm_thread_id = scope.id;
@@ -253,6 +384,39 @@ const Chat = () => {
     } catch (e: any) {
       toast.error("Erro no upload: " + e.message);
     } finally { setUploading(false); }
+  };
+
+  // ============ AUDIO RECORDING ============
+  const startRecording = async () => {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      recordChunks.current = [];
+      mr.ondataavailable = (e) => e.data.size > 0 && recordChunks.current.push(e.data);
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(recordChunks.current, { type: "audio/webm" });
+        const file = new File([blob], `audio-${Date.now()}.webm`, { type: "audio/webm" });
+        await handleFile(file, true);
+      };
+      mr.start();
+      recorderRef.current = mr;
+      setRecording(true);
+      setRecordSec(0);
+      recordTimer.current = window.setInterval(() => setRecordSec((s) => s + 1), 1000);
+    } catch (e: any) {
+      toast.error("Microfone bloqueado. Libere acesso nas permissões do navegador.");
+    }
+  };
+  const stopRecording = (cancel = false) => {
+    if (!recorderRef.current) return;
+    if (cancel) recorderRef.current.ondataavailable = null as any;
+    recorderRef.current.stop();
+    recorderRef.current = null;
+    if (recordTimer.current) { clearInterval(recordTimer.current); recordTimer.current = null; }
+    setRecording(false);
+    setRecordSec(0);
   };
 
   const broadcastTyping = () => {
@@ -282,6 +446,14 @@ const Chat = () => {
     if (!isAdmin) return;
     await supabase.from("chat_messages").update({ is_pinned: !m.is_pinned }).eq("id", m.id);
     toast.success(m.is_pinned ? "Desfixada" : "Fixada");
+    setOpenMenu(null);
+  };
+
+  const startEdit = (m: Message) => {
+    setEditingMsg(m);
+    setReplyTo(null);
+    setInput(m.content);
+    inputRef.current?.focus();
     setOpenMenu(null);
   };
 
@@ -325,13 +497,15 @@ const Chat = () => {
   const groupedMessages = useMemo(() => {
     const groups: { date: string; items: Message[] }[] = [];
     let lastDate = "";
-    for (const m of messages) {
+    for (const m of visibleMessages) {
       const d = fmtDay(m.created_at);
       if (d !== lastDate) { groups.push({ date: d, items: [m] }); lastDate = d; }
       else groups[groups.length - 1].items.push(m);
     }
     return groups;
-  }, [messages]);
+  }, [visibleMessages]);
+
+  const totalUnread = (m: Record<string, number>) => Object.values(m).reduce((a, b) => a + b, 0);
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex bg-background">
@@ -354,15 +528,23 @@ const Chat = () => {
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="flex-1 bg-transparent text-xs outline-none" />
             </div>
             <div className="grid grid-cols-3 gap-1 p-0.5 bg-muted/30 rounded-xl">
-              {(["channels", "dms", "people"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {t === "channels" ? "Canais" : t === "dms" ? "DMs" : "Pessoas"}
-                </button>
-              ))}
+              {(["channels", "dms", "people"] as const).map((t) => {
+                const tabUnread = t === "channels" ? totalUnread(unreadByChannel) : t === "dms" ? totalUnread(unreadByDm) : 0;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={`relative px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {t === "channels" ? "Canais" : t === "dms" ? "DMs" : "Pessoas"}
+                    {tabUnread > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center">
+                        {tabUnread > 99 ? "99+" : tabUnread}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -380,6 +562,8 @@ const Chat = () => {
                 {filteredChannels.map((c) => {
                   const member = myMembership.has(c.id);
                   const active = scope?.kind === "channel" && scope.id === c.id;
+                  const unread = unreadByChannel[c.id] || 0;
+                  const lastMsg = lastMsgByChannel[c.id];
                   return (
                     <div
                       key={c.id}
@@ -388,8 +572,17 @@ const Chat = () => {
                     >
                       <Hash size={14} className={active ? "text-primary" : "text-muted-foreground"} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${active ? "text-foreground" : "text-muted-foreground"}`}>{c.name}</p>
-                        <p className="text-[10px] text-muted-foreground/70">{channelMemberCount(c.id)} membros{member ? " · você" : ""}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-medium truncate ${active || unread > 0 ? "text-foreground" : "text-muted-foreground"}`}>{c.name}</p>
+                          {unread > 0 && !active && (
+                            <span className="shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                              {unread > 99 ? "99+" : unread}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground/70 truncate">
+                          {lastMsg ? lastMsg.content : `${channelMemberCount(c.id)} membros${member ? " · você" : ""}`}
+                        </p>
                       </div>
                       {member ? (
                         <button onClick={(e) => { e.stopPropagation(); leave(c.id); }} title="Sair" className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition">
@@ -421,6 +614,8 @@ const Chat = () => {
                   if (!other) return null;
                   const active = scope?.kind === "dm" && scope.id === d.id;
                   const online = onlineUsers.has(otherId);
+                  const unread = unreadByDm[d.id] || 0;
+                  const lastMsg = lastMsgByDm[d.id];
                   return (
                     <div
                       key={d.id}
@@ -428,17 +623,26 @@ const Chat = () => {
                       className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition ${active ? "bg-primary/10" : "hover:bg-accent/40"}`}
                     >
                       <div className="relative shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
-                          {other.avatar_url ? <img src={other.avatar_url} alt="" className="w-8 h-8 object-cover" /> : other.name.charAt(0).toUpperCase()}
+                        <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
+                          {other.avatar_url ? <img src={other.avatar_url} alt="" className="w-9 h-9 object-cover" /> : other.name.charAt(0).toUpperCase()}
                         </div>
                         {online && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-card" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate flex items-center gap-1">
-                          {other.name}
-                          {other.is_admin && <Crown size={10} className="text-warning" />}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-medium truncate flex items-center gap-1 ${unread > 0 || active ? "text-foreground" : "text-foreground/90"}`}>
+                            {other.name}
+                            {other.is_admin && <Crown size={10} className="text-warning" />}
+                          </p>
+                          {unread > 0 && !active && (
+                            <span className="shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                              {unread > 99 ? "99+" : unread}
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-[10px] truncate ${unread > 0 ? "text-foreground/70 font-semibold" : "text-muted-foreground/70"}`}>
+                          {lastMsg ? lastMsg.content : (online ? "online" : "offline")}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/70">{online ? "online" : "offline"}</p>
                       </div>
                     </div>
                   );
@@ -549,6 +753,9 @@ const Chat = () => {
                 ) : null}
               </div>
               <div className="flex items-center gap-1">
+                <button onClick={() => setShowThreadSearch((v) => !v)} title="Buscar nesta conversa" className={`p-2 rounded-lg transition ${showThreadSearch ? "bg-primary/10 text-primary" : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"}`}>
+                  <Search size={14} />
+                </button>
                 {currentChannel && !isMemberOfCurrent && (
                   <button onClick={() => join(currentChannel.id)} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition flex items-center gap-1.5">
                     <LogIn size={11} /> Entrar
@@ -566,6 +773,26 @@ const Chat = () => {
                 )}
               </div>
             </div>
+
+            {/* In-thread search */}
+            {showThreadSearch && (
+              <div className="px-3 py-2 border-b border-border/40 bg-muted/20 flex items-center gap-2">
+                <Search size={13} className="text-muted-foreground shrink-0" />
+                <input
+                  autoFocus
+                  value={inThreadSearch}
+                  onChange={(e) => setInThreadSearch(e.target.value)}
+                  placeholder="Buscar mensagens nesta conversa..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                />
+                {inThreadSearch && (
+                  <span className="text-[10px] text-muted-foreground font-semibold">{visibleMessages.length} resultado{visibleMessages.length !== 1 ? "s" : ""}</span>
+                )}
+                <button onClick={() => { setShowThreadSearch(false); setInThreadSearch(""); }} className="p-1 hover:bg-muted/50 rounded">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
             {/* Pinned bar */}
             {pinnedMessages.length > 0 && (
@@ -588,9 +815,9 @@ const Chat = () => {
                     <LogIn size={12} /> Entrar no canal
                   </button>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : visibleMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Diga olá! 👋</p>
+                  <p className="text-sm text-muted-foreground">{inThreadSearch ? "Nenhum resultado." : "Nenhuma mensagem ainda. Diga olá! 👋"}</p>
                 </div>
               ) : (
                 groupedMessages.map((g) => (
@@ -606,8 +833,11 @@ const Chat = () => {
                       const mine = m.user_id === user?.id;
                       const author = profiles[m.user_id];
                       const rxs = reactionsByMessage[m.id] || {};
+                      const isRead = mine && scope.kind === "dm" && otherReadAt && new Date(m.created_at) <= new Date(otherReadAt);
+                      const url = !m.is_deleted && m.type === "text" ? m.content.match(URL_RE)?.[0] : null;
+
                       return (
-                        <div key={m.id} className={`group flex gap-2.5 ${sameAuthor ? "mt-0.5" : "mt-3"}`}>
+                        <div key={m.id} className={`group flex gap-2.5 ${mine ? "flex-row-reverse" : ""} ${sameAuthor ? "mt-0.5" : "mt-3"}`}>
                           <div className="w-8 shrink-0">
                             {!sameAuthor && (
                               <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
@@ -615,40 +845,73 @@ const Chat = () => {
                               </div>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 relative">
+                          <div className={`flex-1 min-w-0 relative ${mine ? "flex flex-col items-end" : ""}`}>
                             {!sameAuthor && (
-                              <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className={`text-xs font-bold ${mine ? "text-primary" : "text-foreground"}`}>{m.user_name}</span>
+                              <div className={`flex items-center gap-1.5 mb-0.5 ${mine ? "flex-row-reverse" : ""}`}>
+                                <span className={`text-xs font-bold ${mine ? "text-primary" : "text-foreground"}`}>{mine ? "Você" : m.user_name}</span>
                                 {author?.is_admin && <Crown size={9} className="text-warning" />}
                                 <span className="text-[10px] text-muted-foreground/60">{fmtTime(m.created_at)}</span>
                               </div>
                             )}
                             {m.reply_to && (
-                              <div className="mb-1 pl-2 border-l-2 border-primary/40 text-[11px]">
+                              <div className="mb-1 pl-2 border-l-2 border-primary/40 text-[11px] max-w-[85%]">
                                 <p className="text-primary font-semibold">{m.reply_to.user_name}</p>
                                 <p className="text-muted-foreground truncate">{m.reply_to.content}</p>
                               </div>
                             )}
-                            <div className={`relative inline-block max-w-[85%] ${m.is_pinned ? "ring-1 ring-warning/40" : ""}`}>
+                            <div className={`relative inline-block max-w-[85%] ${m.is_pinned ? "ring-1 ring-warning/40" : ""} ${
+                              !m.is_deleted && (m.type === "text" || m.type === "audio")
+                                ? mine
+                                  ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 shadow-sm"
+                                  : "bg-muted/60 text-foreground rounded-2xl rounded-tl-sm px-3 py-2"
+                                : ""
+                            }`}>
                               {m.is_deleted ? (
-                                <p className="text-xs italic text-muted-foreground/60">[mensagem removida]</p>
+                                <p className="text-xs italic text-muted-foreground/60 px-2 py-1">[mensagem removida]</p>
                               ) : m.type === "image" && m.file_url ? (
                                 <a href={m.file_url} target="_blank" rel="noreferrer">
                                   <img src={m.file_url} alt={m.file_name || ""} className="rounded-xl max-h-64 max-w-xs object-cover border border-border" />
                                 </a>
+                              ) : m.type === "audio" && m.file_url ? (
+                                <audio controls src={m.file_url} className="max-w-[260px] h-10" />
                               ) : m.type === "file" && m.file_url ? (
                                 <a href={m.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border hover:bg-muted/60 transition">
                                   <Paperclip size={14} className="text-primary" />
                                   <span className="text-xs font-medium text-foreground truncate max-w-[200px]">{m.file_name}</span>
                                 </a>
                               ) : (
-                                <p className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
+                                <>
+                                  <p className={`text-sm whitespace-pre-wrap break-words leading-relaxed ${mine ? "text-primary-foreground" : "text-foreground"}`}>
+                                    {renderText(m.content)}
+                                  </p>
+                                  {m.edited_at && (
+                                    <span className={`text-[9px] italic ml-1 ${mine ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>(editada)</span>
+                                  )}
+                                </>
+                              )}
+                              {/* Inline link card */}
+                              {url && !m.is_deleted && m.type === "text" && (
+                                <div className={`mt-1.5 flex items-center gap-1.5 text-[10px] ${mine ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                  <LinkIcon size={10} />
+                                  <span className="truncate max-w-[200px]">{new URL(url).hostname}</span>
+                                </div>
                               )}
                               {m.is_pinned && <Pin size={10} className="absolute -top-1.5 -right-1.5 text-warning bg-card rounded-full p-0.5" fill="currentColor" />}
                             </div>
+                            {/* Time + read receipts for own messages */}
+                            {mine && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-[9px] text-muted-foreground/70">{fmtTime(m.created_at)}</span>
+                                {scope.kind === "dm" && (
+                                  isRead
+                                    ? <CheckCheck size={11} className="text-primary" />
+                                    : <Check size={11} className="text-muted-foreground/60" />
+                                )}
+                              </div>
+                            )}
                             {/* Reactions */}
                             {Object.keys(rxs).length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
+                              <div className={`flex flex-wrap gap-1 mt-1 ${mine ? "justify-end" : ""}`}>
                                 {Object.entries(rxs).map(([emoji, info]) => (
                                   <button
                                     key={emoji}
@@ -662,11 +925,11 @@ const Chat = () => {
                             )}
                             {/* Hover actions */}
                             {!m.is_deleted && (
-                              <div className="absolute -top-2 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded-lg shadow-lg flex items-center p-0.5">
+                              <div className={`absolute -top-2 ${mine ? "left-0" : "right-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded-lg shadow-lg flex items-center p-0.5 z-10`}>
                                 <button onClick={() => setShowEmoji(showEmoji === m.id ? null : m.id)} className="p-1.5 hover:bg-muted/50 rounded-md text-muted-foreground hover:text-foreground" title="Reagir">
                                   <Smile size={13} />
                                 </button>
-                                <button onClick={() => { setReplyTo(m); inputRef.current?.focus(); }} className="p-1.5 hover:bg-muted/50 rounded-md text-muted-foreground hover:text-foreground" title="Responder">
+                                <button onClick={() => { setReplyTo(m); setEditingMsg(null); inputRef.current?.focus(); }} className="p-1.5 hover:bg-muted/50 rounded-md text-muted-foreground hover:text-foreground" title="Responder">
                                   <Reply size={13} />
                                 </button>
                                 {(mine || isAdmin) && (
@@ -677,8 +940,8 @@ const Chat = () => {
                               </div>
                             )}
                             {showEmoji === m.id && (
-                              <div className="absolute z-20 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl p-1.5 flex gap-1">
-                                {EMOJIS.map((e) => (
+                              <div className={`absolute z-20 ${mine ? "left-0" : "right-0"} mt-1 bg-card border border-border rounded-xl shadow-xl p-1.5 flex gap-1`}>
+                                {QUICK_EMOJIS.map((e) => (
                                   <button key={e} onClick={() => toggleReaction(m.id, e)} className="text-base hover:scale-125 transition-transform p-1">
                                     {e}
                                   </button>
@@ -686,7 +949,12 @@ const Chat = () => {
                               </div>
                             )}
                             {openMenu === m.id && (
-                              <div className="absolute z-20 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl py-1 min-w-[160px]">
+                              <div className={`absolute z-20 ${mine ? "left-0" : "right-0"} mt-1 bg-card border border-border rounded-xl shadow-xl py-1 min-w-[160px]`}>
+                                {mine && m.type === "text" && !m.is_deleted && (
+                                  <button onClick={() => startEdit(m)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 text-foreground">
+                                    <Pencil size={12} /> Editar
+                                  </button>
+                                )}
                                 {isAdmin && (
                                   <button onClick={() => togglePin(m)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 text-foreground">
                                     {m.is_pinned ? <PinOff size={12} /> : <Pin size={12} />} {m.is_pinned ? "Desfixar" : "Fixar"}
@@ -721,7 +989,7 @@ const Chat = () => {
 
             {/* Input */}
             {(scope.kind === "dm" || isMemberOfCurrent) && (
-              <div className="p-3 border-t border-border bg-card/40">
+              <div className="p-3 border-t border-border bg-card/40 relative">
                 {replyTo && (
                   <div className="mb-2 flex items-start gap-2 p-2 rounded-xl bg-muted/30 border-l-2 border-primary">
                     <Reply size={12} className="text-primary mt-0.5 shrink-0" />
@@ -734,28 +1002,74 @@ const Chat = () => {
                     </button>
                   </div>
                 )}
+                {editingMsg && (
+                  <div className="mb-2 flex items-start gap-2 p-2 rounded-xl bg-warning/10 border-l-2 border-warning">
+                    <Pencil size={12} className="text-warning mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-warning">Editando mensagem</p>
+                      <p className="text-xs text-muted-foreground truncate">{editingMsg.content}</p>
+                    </div>
+                    <button onClick={() => { setEditingMsg(null); setInput(""); }} className="p-0.5 hover:bg-muted/60 rounded">
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
                 {profile?.is_chat_blocked ? (
                   <div className="text-center py-3 text-xs text-destructive font-semibold">
                     <Ban size={14} className="inline mr-1" /> Você foi silenciado pelo administrador
                   </div>
+                ) : recording ? (
+                  <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                    <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                    <span className="text-sm font-semibold text-destructive">Gravando {String(Math.floor(recordSec / 60)).padStart(2, "0")}:{String(recordSec % 60).padStart(2, "0")}</span>
+                    <div className="flex-1" />
+                    <button onClick={() => stopRecording(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:bg-muted/40">
+                      Cancelar
+                    </button>
+                    <button onClick={() => stopRecording(false)} className="p-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Send size={14} />
+                    </button>
+                  </div>
                 ) : (
                   <div className="flex items-end gap-2">
                     <input ref={fileRef} type="file" hidden accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-                    <button onClick={() => fileRef.current?.click()} disabled={uploading} className="p-2.5 rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition shrink-0">
+                    <button onClick={() => fileRef.current?.click()} disabled={uploading} className="p-2.5 rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition shrink-0" title="Anexar arquivo">
                       {uploading ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip size={16} />}
+                    </button>
+                    <button onClick={() => setShowInputEmoji((v) => !v)} className="p-2.5 rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition shrink-0" title="Emoji">
+                      <Smile size={16} />
                     </button>
                     <textarea
                       ref={inputRef}
                       value={input}
                       onChange={(e) => { setInput(e.target.value); broadcastTyping(); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                      placeholder={`Mensagem em ${currentChannel ? `#${currentChannel.name}` : dmOther?.name || ""}...`}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } if (e.key === "Escape") { setEditingMsg(null); setInput(""); } }}
+                      placeholder={editingMsg ? "Editar mensagem..." : `Mensagem em ${currentChannel ? `#${currentChannel.name}` : dmOther?.name || ""}...`}
                       rows={1}
                       className="flex-1 resize-none bg-muted/30 border border-border/40 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40 max-h-32"
                     />
-                    <button onClick={send} disabled={!input.trim()} className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition shrink-0">
-                      <Send size={16} />
-                    </button>
+                    {input.trim() ? (
+                      <button onClick={send} className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition shrink-0" title={editingMsg ? "Salvar" : "Enviar"}>
+                        {editingMsg ? <Check size={16} /> : <Send size={16} />}
+                      </button>
+                    ) : (
+                      <button onClick={startRecording} className="p-2.5 rounded-xl bg-primary/90 text-primary-foreground hover:bg-primary transition shrink-0" title="Gravar áudio">
+                        <Mic size={16} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {showInputEmoji && (
+                  <div className="absolute bottom-16 right-3 z-30">
+                    <Suspense fallback={<div className="w-72 h-80 rounded-xl bg-card border border-border animate-pulse" />}>
+                      <EmojiPicker
+                        onEmojiClick={(d: any) => { setInput((prev) => prev + d.emoji); setShowInputEmoji(false); inputRef.current?.focus(); }}
+                        width={isMobile ? 280 : 340}
+                        height={380}
+                        searchPlaceholder="Buscar emoji..."
+                        previewConfig={{ showPreview: false }}
+                      />
+                    </Suspense>
                   </div>
                 )}
               </div>
