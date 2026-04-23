@@ -353,6 +353,17 @@ const Cobrancas = () => {
                 }`}
                 onClick={() => navigate(`/clientes/${inst.client_id}`)}
               >
+                {!isPaid && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(inst.id); }}
+                    className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
+                    title="Selecionar"
+                  >
+                    {selected.has(inst.id)
+                      ? <CheckSquare size={18} className="text-primary" />
+                      : <Square size={18} className="text-muted-foreground" />}
+                  </button>
+                )}
                 <div className={`num-badge w-10 h-10 rounded-xl ${
                   isOverdue ? "bg-destructive/10 text-destructive" :
                   isPaid ? "bg-success/10 text-success" :
