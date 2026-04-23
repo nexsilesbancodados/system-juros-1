@@ -71,9 +71,16 @@ const Perfil = () => {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie suas informações pessoais.</p>
+      <div className="page-hero">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <User size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Meu Perfil</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Gerencie suas informações pessoais e chave PIX</p>
+          </div>
+        </div>
       </div>
 
       {/* Avatar Card */}

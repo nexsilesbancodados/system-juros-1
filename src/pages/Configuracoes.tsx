@@ -254,20 +254,22 @@ const Configuracoes = () => {
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Settings size={22} className="text-primary" /> Configurações
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Personalize o sistema</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Settings size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Configurações</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Personalize a identidade, automações e preferências do sistema</p>
+            </div>
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            className={saved ? "btn-premium bg-success !shadow-none" : "btn-premium"}>
+            {saved ? <><Check size={16} /> Salvo!</> : saving ? "Salvando..." : <><Save size={16} /> Salvar</>}
+          </button>
         </div>
-        <button onClick={handleSave} disabled={saving}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 focus-ring ${
-            saved ? "bg-success text-success-foreground" : "text-primary-foreground"
-          }`}
-          style={saved ? {} : { background: "var(--gradient-button)" }}>
-          {saved ? <><Check size={16} /> Salvo!</> : saving ? "Salvando..." : <><Save size={16} /> Salvar</>}
-        </button>
       </div>
 
       {/* Tabs */}

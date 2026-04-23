@@ -283,20 +283,22 @@ const Suporte = () => {
 
   // ============ LIST VIEW ============
   return (
-    <div className="min-h-screen p-4 md:p-6 max-w-5xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
-            <LifeBuoy className="text-primary" size={22} />
+    <div className="min-h-screen p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <LifeBuoy size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Central de Suporte</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Abra um ticket e fale com nossa equipe</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Suporte</h1>
-            <p className="text-sm text-muted-foreground">Abra um ticket e fale com nossa equipe</p>
-          </div>
+          <button onClick={() => setNewOpen(true)} className="btn-premium">
+            <Plus size={16} /> Novo ticket
+          </button>
         </div>
-        <Button onClick={() => setNewOpen(true)} className="gap-2">
-          <Plus size={16} /> Novo ticket
-        </Button>
       </div>
 
       <div className="relative mb-4">
