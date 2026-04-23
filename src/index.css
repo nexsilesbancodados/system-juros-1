@@ -646,3 +646,32 @@
     opacity: 0.6;
   }
 }
+
+/* ─── Eagle logo: globe + orbit scan-line (synced) ─── */
+@keyframes eagleRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.eagle-spin {
+  animation: eagleRotate 12s linear infinite;
+  will-change: transform;
+}
+.eagle-orbit {
+  animation: eagleRotate 12s linear infinite;
+  will-change: transform;
+}
+.eagle-scanline {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(45 90% 60% / 0.0) 15%,
+    hsl(45 90% 60% / 0.55) 50%,
+    hsl(45 90% 60% / 0.0) 85%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px hsl(45 90% 60% / 0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .eagle-spin, .eagle-orbit { animation: none; }
+}
+
