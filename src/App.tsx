@@ -44,6 +44,7 @@ const ClienteDetalhe = lazy(() => import("./pages/ClienteDetalhe"));
 const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 const Suporte = lazy(() => import("./pages/Suporte"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const Chat = lazy(() => import("./pages/Chat"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,6 +105,7 @@ const App = () => (
                   <Route path="/automacoes" element={<Automacoes />} />
                   <Route path="/suporte" element={<Suporte />} />
                   <Route path="/notificacoes" element={<Notificacoes />} />
+                  <Route path="/chat" element={<Chat />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
