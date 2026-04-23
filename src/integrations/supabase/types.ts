@@ -71,13 +71,138 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          id: string
+          joined_at: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_announcement: boolean
+          is_default: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_announcement?: boolean
+          is_default?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_announcement?: boolean
+          is_default?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      chat_dm_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
+      chat_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
+          channel_id: string | null
           content: string
           created_at: string
+          deleted_by: string | null
+          dm_thread_id: string | null
+          edited_at: string | null
           file_name: string | null
           file_type: string | null
+          file_url: string | null
           id: string
+          is_deleted: boolean
+          is_pinned: boolean
           reply_to: Json | null
           type: string
           user_avatar: string | null
@@ -85,11 +210,18 @@ export type Database = {
           user_name: string
         }
         Insert: {
+          channel_id?: string | null
           content: string
           created_at?: string
+          deleted_by?: string | null
+          dm_thread_id?: string | null
+          edited_at?: string | null
           file_name?: string | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
+          is_deleted?: boolean
+          is_pinned?: boolean
           reply_to?: Json | null
           type?: string
           user_avatar?: string | null
@@ -97,18 +229,40 @@ export type Database = {
           user_name: string
         }
         Update: {
+          channel_id?: string | null
           content?: string
           created_at?: string
+          deleted_by?: string | null
+          dm_thread_id?: string | null
+          edited_at?: string | null
           file_name?: string | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
+          is_deleted?: boolean
+          is_pinned?: boolean
           reply_to?: Json | null
           type?: string
           user_avatar?: string | null
           user_id?: string
           user_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_dm_thread_id_fkey"
+            columns: ["dm_thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_dm_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_tokens: {
         Row: {
@@ -1201,6 +1355,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_dm_thread: {
+        Args: { _other_user: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1209,6 +1367,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_channel_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_dm_participant: {
+        Args: { _thread_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "operator" | "viewer"
