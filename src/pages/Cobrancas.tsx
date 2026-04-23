@@ -218,10 +218,18 @@ const Cobrancas = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
             </div>
           </div>
-          {stats.overdue > 0 && (
-            <button onClick={handleBulkWhatsApp} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
-              <Send size={14} /> Cobrar Atrasadas ({stats.overdue})
-            </button>
+          {(stats.overdue > 0 || selected.size > 0) && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => handleBulk("whatsapp")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
+                <MessageSquare size={14} /> WhatsApp ({selected.size || stats.overdue})
+              </button>
+              <button onClick={() => handleBulk("email")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }}>
+                <Mail size={14} /> E-mail ({selected.size || stats.overdue})
+              </button>
+              <button onClick={() => handleBulk("sms")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--warning)), hsl(38 92% 60%))" }}>
+                <Send size={14} /> SMS ({selected.size || stats.overdue})
+              </button>
+            </div>
           )}
         </div>
       </div>
