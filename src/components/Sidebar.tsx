@@ -8,7 +8,7 @@ import {
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronRight,
   FileText, Crown, ClipboardList,
   Settings, Bot, QrCode, UserCheck, Shield, Zap,
-  Briefcase, PieChart, Cog, Sparkles, LogOut, User,
+  Briefcase, PieChart, Cog, Sparkles, LogOut, User, LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
@@ -52,6 +52,7 @@ const iconColorMap: Record<string, string> = {
   "/configuracoes": "text-zinc-400",
   "/admin": "text-amber-300",
   "/sobre": "text-blue-300",
+  "/suporte": "text-pink-400",
 };
 
 const sections: MenuSection[] = [
@@ -109,6 +110,7 @@ const sections: MenuSection[] = [
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Admin", icon: Crown, path: "/admin" },
+      { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
       { label: "Sobre", icon: Info, path: "/sobre" },
     ],
   },
