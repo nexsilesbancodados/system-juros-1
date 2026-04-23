@@ -46,15 +46,16 @@ const QRCodePage = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-8 pb-8">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-primary/15 flex items-center justify-center">
-          <QrCode size={22} className="text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Portais</h1>
-          <p className="text-xs text-muted-foreground">Acesse e compartilhe os portais do sistema</p>
+    <div className="max-w-xl mx-auto space-y-6 pb-8">
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <QrCode size={22} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-shimmer">Portais</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Acesse e compartilhe os portais do sistema</p>
+          </div>
         </div>
       </div>
 
