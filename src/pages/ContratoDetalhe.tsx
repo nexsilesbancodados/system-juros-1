@@ -555,6 +555,87 @@ const ContratoDetalhe = () => {
           </div>
         </div>
       )}
+
+      {/* ─── Settlement (Quitação Antecipada) Modal ─── */}
+      {settleOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSettleOpen(false)}>
+          <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Calculator size={18} className="text-success" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Quitação Antecipada</h3>
+                  <p className="text-[11px] text-muted-foreground">Calcule o valor para encerrar o contrato</p>
+                </div>
+              </div>
+              <button onClick={() => setSettleOpen(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+            </div>
+
+            {!settlement ? (
+              <div className="text-center py-6">
+                <CheckCircle size={32} className="text-success mx-auto mb-2" />
+                <p className="text-sm text-foreground font-medium">Contrato já está quitado!</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Percent size={12} /> Desconto sobre juros futuros
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="0" max="100" step="5"
+                      value={settleDiscount}
+                      onChange={e => setSettleDiscount(e.target.value)}
+                      className="flex-1 accent-success"
+                    />
+                    <input
+                      type="number" min="0" max="100"
+                      value={settleDiscount}
+                      onChange={e => setSettleDiscount(e.target.value)}
+                      className="w-16 px-2 py-1.5 rounded-lg bg-muted/50 border border-border text-sm text-center text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-muted/30 border border-border p-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Parcelas pendentes</span>
+                    <span className="font-semibold text-foreground">{settlement.unpaidCount}x</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Saldo devedor</span>
+                    <span className="font-semibold text-foreground">R$ {fmt(settlement.remainingPrincipal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Juros futuros</span>
+                    <span className="font-semibold text-warning">R$ {fmt(settlement.futureInterest)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <span className="text-muted-foreground">Desconto ({settlement.discountPct}%)</span>
+                    <span className="font-bold text-success">− R$ {fmt(settlement.discount)}</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-success/10 border border-success/20 p-4 text-center">
+                  <p className="text-[11px] text-success font-medium uppercase tracking-wider">Valor para quitar</p>
+                  <p className="text-3xl font-bold text-success mt-1">R$ {fmt(settlement.settleAmount)}</p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => setSettleOpen(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={handleSettle} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-opacity">
+                    Confirmar Quitação
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
