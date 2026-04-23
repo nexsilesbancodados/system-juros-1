@@ -72,7 +72,7 @@ const Analises = () => {
     queryFn: async () => {
       const [contracts, installments, clients, transactions] = await Promise.all([
         supabase.from("contracts").select("*").eq("user_id", user!.id),
-        supabase.from("contract_installments").select("*").eq("user_id", user!.id),
+        supabase.from("contract_installments").select("*, clients(id, name)").eq("user_id", user!.id),
         supabase.from("clients").select("id, name, credit_score, status").eq("user_id", user!.id),
         supabase.from("transactions").select("*").eq("user_id", user!.id),
       ]);
@@ -212,8 +212,45 @@ const Analises = () => {
     const totalReceived = filteredPaidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
     const inadRate = filteredInstallments.length > 0 ? (overdue / filteredInstallments.length) * 100 : 0;
 
+    // 7. Ranking dos piores pagadores (top 10 por valor em atraso)
+    const overdueByClient = new Map<string, { name: string; amount: number; count: number; maxDays: number }>();
+    installments.forEach((i: any) => {
+      if (i.status !== "pending" || new Date(i.due_date) >= now) return;
+      const cid = i.client_id;
+      const cname = i.clients?.name || clients.find((c: any) => c.id === cid)?.name || "—";
+      const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000);
+      const cur = overdueByClient.get(cid) || { name: cname, amount: 0, count: 0, maxDays: 0 };
+      cur.amount += Number(i.amount);
+      cur.count += 1;
+      cur.maxDays = Math.max(cur.maxDays, days);
+      overdueByClient.set(cid, cur);
+    });
+    const worstPayers = Array.from(overdueByClient.values())
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+
+    // 8. Previsão de recebimento (próximos 30 dias por semana)
+    const weeks: { label: string; valor: number; parcelas: number }[] = [];
+    for (let w = 0; w < 4; w++) {
+      const start = new Date(now);
+      start.setDate(now.getDate() + w * 7);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      const wInsts = installments.filter((i: any) => {
+        if (i.status !== "pending") return false;
+        const d = new Date(i.due_date);
+        return d >= start && d <= end;
+      });
+      weeks.push({
+        label: `Sem ${w + 1}`,
+        valor: wInsts.reduce((s: number, i: any) => s + Number(i.amount), 0),
+        parcelas: wInsts.length,
+      });
+    }
+
     return {
       monthlyRevenue, installmentPie, scoreDistribution, aging, defaultRate, loanFrequency,
+      worstPayers, forecast: weeks,
       stats: { totalCapital, totalReceived, inadRate, totalContracts: filteredContracts.length, totalClients: clients.length, overdue },
     };
   }, [data, dateFrom, dateTo]);
@@ -431,6 +468,57 @@ const Analises = () => {
             </ResponsiveContainer>
           ) : (
             <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">Sem contratos</div>
+          )}
+        </div>
+      </div>
+
+      {/* Row 4: Forecast + Worst Payers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-foreground">Previsão de Recebimento (4 semanas)</h2>
+            <span className="text-xs text-success font-bold">
+              R$ {fmt(charts.forecast.reduce((s, w) => s + w.valor, 0))}
+            </span>
+          </div>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={charts.forecast}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(v: number, name: string) => name === "valor" ? `R$ ${fmt(v)}` : `${v} parcelas`}
+              />
+              <Area type="monotone" dataKey="valor" name="Valor previsto" stroke="hsl(142,71%,45%)" fill="hsl(142,71%,45%)" fillOpacity={0.2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-foreground">Top 10 Piores Pagadores</h2>
+            <span className="text-xs text-destructive font-bold">{charts.worstPayers.length}</span>
+          </div>
+          {charts.worstPayers.length === 0 ? (
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">Sem inadimplentes 🎉</div>
+          ) : (
+            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+              {charts.worstPayers.map((p, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-destructive/5 border border-destructive/15">
+                  <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive shrink-0">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {p.count} parcela{p.count > 1 ? "s" : ""} · {p.maxDays}d em atraso
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold text-destructive shrink-0">R$ {fmt(p.amount)}</p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
