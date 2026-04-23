@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, CalendarDays } from "lucide-react";
+import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, CalendarDays, Mail, CheckSquare, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ const Cobrancas = () => {
   const [filter, setFilter] = useState<"all" | "pending" | "overdue" | "paid">("all");
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useMultiTableRealtime(
     ["contract_installments", "contracts"],
@@ -27,8 +28,8 @@ const Cobrancas = () => {
   const { data: installments = [], isLoading: loading } = useQuery({
     queryKey: ["cobrancas-installments", user?.id],
     queryFn: async () => {
-      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp").eq("user_id", user!.id);
-      const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone }]));
+      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, email").eq("user_id", user!.id);
+      const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone, email: c.email }]));
 
       const { data } = await supabase
         .from("contract_installments")
@@ -45,6 +46,7 @@ const Cobrancas = () => {
           status: isOverdue ? "overdue" : inst.status,
           client_name: client?.name || "—",
           client_phone: client?.phone || null,
+          client_email: client?.email || null,
         };
       });
     },
@@ -102,24 +104,78 @@ const Cobrancas = () => {
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
-  const handleWhatsApp = (inst: any) => {
-    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    const phone = inst.client_phone.replace(/\D/g, "");
+  const buildMessage = (inst: any) => {
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize.`;
-    const message = billingTemplate
+    return billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}/g, `${inst.installment_number}`)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
+  };
+
+  const handleWhatsApp = (inst: any) => {
+    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const phone = inst.client_phone.replace(/\D/g, "");
+    const message = buildMessage(inst);
     window.open(`https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  const handleBulkWhatsApp = () => {
-    const overdue = filtered.filter((i: any) => i.status === "overdue");
-    if (!overdue.length) { toast({ title: "Nenhuma parcela atrasada" }); return; }
-    handleWhatsApp(overdue[0]);
-    if (overdue.length > 1) toast({ title: `${overdue.length - 1} cobrança(s) restantes`, description: "Envie uma por uma clicando no botão Cobrar." });
+  const handleEmail = (inst: any) => {
+    if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
+    const subject = `Cobrança - Parcela ${inst.installment_number}`;
+    const body = buildMessage(inst);
+    window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+  };
+
+  const handleSMS = (inst: any) => {
+    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const phone = inst.client_phone.replace(/\D/g, "");
+    const message = buildMessage(inst);
+    window.open(`sms:${phone.startsWith("55") ? "+" + phone : "+55" + phone}?body=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const selectable = filtered.filter((i: any) => i.status !== "paid").map((i: any) => i.id);
+    const allSelected = selectable.every((id: string) => selected.has(id));
+    setSelected(allSelected ? new Set() : new Set(selectable));
+  };
+
+  const getSelectedItems = () => installments.filter((i: any) => selected.has(i.id));
+
+  const handleBulk = (channel: "whatsapp" | "email" | "sms") => {
+    const items = getSelectedItems();
+    if (!items.length) {
+      // Fallback: cobrar todas atrasadas
+      const overdue = filtered.filter((i: any) => i.status === "overdue");
+      if (!overdue.length) { toast({ title: "Selecione parcelas ou tenha atrasadas" }); return; }
+      items.push(...overdue);
+    }
+    let opened = 0, skipped = 0;
+    items.forEach((inst: any, idx: number) => {
+      const hasContact = channel === "email" ? !!inst.client_email : !!inst.client_phone;
+      if (!hasContact) { skipped++; return; }
+      // Stagger window.open to avoid popup blocking
+      setTimeout(() => {
+        if (channel === "whatsapp") handleWhatsApp(inst);
+        else if (channel === "email") handleEmail(inst);
+        else handleSMS(inst);
+      }, idx * 350);
+      opened++;
+    });
+    toast({
+      title: `Enviando ${opened} cobrança(s) por ${channel === "whatsapp" ? "WhatsApp" : channel === "email" ? "E-mail" : "SMS"}`,
+      description: skipped > 0 ? `${skipped} cliente(s) sem contato e foram ignorados.` : undefined,
+    });
+    setSelected(new Set());
   };
 
   const filtered = installments.filter((inst: any) => {
@@ -162,10 +218,18 @@ const Cobrancas = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
             </div>
           </div>
-          {stats.overdue > 0 && (
-            <button onClick={handleBulkWhatsApp} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
-              <Send size={14} /> Cobrar Atrasadas ({stats.overdue})
-            </button>
+          {(stats.overdue > 0 || selected.size > 0) && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => handleBulk("whatsapp")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
+                <MessageSquare size={14} /> WhatsApp ({selected.size || stats.overdue})
+              </button>
+              <button onClick={() => handleBulk("email")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }}>
+                <Mail size={14} /> E-mail ({selected.size || stats.overdue})
+              </button>
+              <button onClick={() => handleBulk("sms")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--warning)), hsl(38 92% 60%))" }}>
+                <Send size={14} /> SMS ({selected.size || stats.overdue})
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -247,6 +311,14 @@ const Cobrancas = () => {
             </button>
           ))}
         </div>
+        <button
+          onClick={toggleSelectAll}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors focus-ring"
+          title="Selecionar todas as parcelas visíveis"
+        >
+          {selected.size > 0 ? <CheckSquare size={14} className="text-primary" /> : <Square size={14} />}
+          <span className="hidden sm:inline">{selected.size > 0 ? `${selected.size} selecionada(s)` : "Selecionar"}</span>
+        </button>
       </div>
 
       {/* List */}
@@ -281,6 +353,17 @@ const Cobrancas = () => {
                 }`}
                 onClick={() => navigate(`/clientes/${inst.client_id}`)}
               >
+                {!isPaid && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(inst.id); }}
+                    className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
+                    title="Selecionar"
+                  >
+                    {selected.has(inst.id)
+                      ? <CheckSquare size={18} className="text-primary" />
+                      : <Square size={18} className="text-muted-foreground" />}
+                  </button>
+                )}
                 <div className={`num-badge w-10 h-10 rounded-xl ${
                   isOverdue ? "bg-destructive/10 text-destructive" :
                   isPaid ? "bg-success/10 text-success" :
@@ -317,8 +400,18 @@ const Cobrancas = () => {
                         title="Cobrar via WhatsApp"
                       >
                         <MessageSquare size={14} />
-                        <span className="hidden sm:inline">Cobrar</span>
+                        <span className="hidden md:inline">WhatsApp</span>
                       </button>
+                      {inst.client_email && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                          title="Cobrar via E-mail"
+                        >
+                          <Mail size={14} />
+                          <span className="hidden lg:inline">E-mail</span>
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmPayId(inst.id); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
