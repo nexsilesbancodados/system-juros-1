@@ -1,8 +1,7 @@
-import { Bell, TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Check, Settings } from "lucide-react";
+import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
