@@ -134,57 +134,62 @@ const Carteira = () => {
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Banknote size={24} className="text-primary" /> Carteira
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">Visão geral do seu saldo e movimentações.</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={dialogOpen && dialogType === "in"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("in"); }}>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 font-medium text-sm transition-colors">
-                <Plus size={16} /> Entrada
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-success">
-                  <ArrowUpRight size={20} /> Adicionar Entrada
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div><Label>Descrição</Label><Input placeholder="Ex: Depósito, Recebimento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-                <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-lg bg-success text-success-foreground font-medium hover:opacity-90 transition-colors disabled:opacity-50">
-                  {saving ? "Salvando..." : "Confirmar Entrada"}
+      <div className="page-hero animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)]">
+              <Banknote size={22} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Carteira</h1>
+              <p className="text-muted-foreground text-sm mt-1">Visão geral do seu saldo e movimentações.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={dialogOpen && dialogType === "in"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("in"); }}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-success/15 text-success hover:bg-success/25 font-semibold text-sm transition-colors border border-success/20">
+                  <Plus size={16} /> Entrada
                 </button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-success">
+                    <ArrowUpRight size={20} /> Adicionar Entrada
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div><Label>Descrição</Label><Input placeholder="Ex: Depósito, Recebimento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-success text-success-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                    {saving ? "Salvando..." : "Confirmar Entrada"}
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
-          <Dialog open={dialogOpen && dialogType === "out"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("out"); }}>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 font-medium text-sm transition-colors">
-                <Minus size={16} /> Saída
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-destructive">
-                  <ArrowDownRight size={20} /> Registrar Saída
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div><Label>Descrição</Label><Input placeholder="Ex: Saque, Pagamento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-                <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-lg bg-destructive text-destructive-foreground font-medium hover:opacity-90 transition-colors disabled:opacity-50">
-                  {saving ? "Salvando..." : "Confirmar Saída"}
+            <Dialog open={dialogOpen && dialogType === "out"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("out"); }}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold text-sm transition-colors border border-destructive/20">
+                  <Minus size={16} /> Saída
                 </button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <ArrowDownRight size={20} /> Registrar Saída
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div><Label>Descrição</Label><Input placeholder="Ex: Saque, Pagamento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                    {saving ? "Salvando..." : "Confirmar Saída"}
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
