@@ -69,17 +69,25 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
       <div className="flex-1" />
 
-      {/* Financial indicators */}
+      {/* Financial indicators - clickable */}
       {!isMobile && (
         <div className="hidden md:flex items-center gap-1.5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 border border-border/30">
-            <Wallet size={13} className="text-primary/60" />
-            <span className="text-[11px] font-semibold text-muted-foreground">R$ {fmt(financials?.carteira ?? 0)}</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10">
-            <TrendingUp size={13} className="text-success/70" />
+          <button
+            onClick={() => navigate("/carteira")}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+            title="Ver Carteira"
+          >
+            <Wallet size={13} className="text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">R$ {fmt(financials?.carteira ?? 0)}</span>
+          </button>
+          <button
+            onClick={() => navigate("/lucros")}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10 hover:border-success/40 hover:bg-success/10 transition-all duration-200"
+            title="Ver Lucros"
+          >
+            <TrendingUp size={13} className="text-success/70 group-hover:text-success transition-colors" />
             <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
-          </div>
+          </button>
         </div>
       )}
 
@@ -114,13 +122,14 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           <>
             <button
               onClick={() => navigate("/perfil")}
-              className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary hover:ring-2 hover:ring-primary/30 transition-all duration-200 ml-1 micro-bounce"
+              className="relative w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40 transition-all duration-200 ml-1 micro-bounce"
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
               ) : (
                 profile?.name?.charAt(0)?.toUpperCase() || "U"
               )}
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-background" />
             </button>
             <button onClick={handleSignOut} className="p-2.5 rounded-full hover:bg-destructive/10 transition-all duration-200 text-muted-foreground/60 hover:text-destructive" title="Sair">
               <LogOut size={17} />
