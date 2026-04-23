@@ -53,9 +53,16 @@ const PuxadaDados = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Puxada de Dados</h1>
-        <p className="text-sm text-muted-foreground">Consulte informações de CPF e CNPJ via API Brasil</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <Database size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Puxada de Dados</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Consulte informações de CPF e CNPJ via API Brasil</p>
+          </div>
+        </div>
       </div>
 
       {/* Search */}

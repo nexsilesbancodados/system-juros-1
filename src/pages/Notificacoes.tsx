@@ -130,30 +130,35 @@ const Notificacoes = () => {
   return (
     <div className="p-3 lg:p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Bell size={22} className="text-primary" /> Notificações
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Central de notificações — todas as atividades em um só lugar</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {stats.unread > 0 && (
-            <button
-              onClick={() => markRead(items.filter((n) => !n.is_read).map((n) => n.id), true)}
-              className="text-xs font-semibold px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/15 transition flex items-center gap-1.5"
-            >
-              <CheckCheck size={14} /> Marcar todas ({stats.unread})
-            </button>
-          )}
-          {items.some((n) => n.is_read) && (
-            <button
-              onClick={() => remove(items.filter((n) => n.is_read).map((n) => n.id))}
-              className="text-xs font-semibold px-3 py-2 rounded-xl bg-muted/40 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition flex items-center gap-1.5"
-            >
-              <Trash2 size={14} /> Limpar lidas
-            </button>
-          )}
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-start sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Bell size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Notificações</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Central de notificações — todas as atividades em um só lugar</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {stats.unread > 0 && (
+              <button
+                onClick={() => markRead(items.filter((n) => !n.is_read).map((n) => n.id), true)}
+                className="text-xs font-semibold px-3 py-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition flex items-center gap-1.5 border border-primary/20"
+              >
+                <CheckCheck size={14} /> Marcar todas ({stats.unread})
+              </button>
+            )}
+            {items.some((n) => n.is_read) && (
+              <button
+                onClick={() => remove(items.filter((n) => n.is_read).map((n) => n.id))}
+                className="text-xs font-semibold px-3 py-2 rounded-xl bg-muted/40 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> Limpar lidas
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

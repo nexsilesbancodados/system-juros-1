@@ -144,11 +144,16 @@ const Simulador = () => {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Calculator size={24} className="text-primary" /> Simulador
-        </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Simule empréstimos por parcela ou porcentagem.</p>
+      <div className="page-hero">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <Calculator size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Simulador</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Simule empréstimos por parcela ou porcentagem</p>
+          </div>
+        </div>
       </div>
 
       {/* Quick presets */}

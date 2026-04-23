@@ -78,11 +78,16 @@ const Historico = () => {
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Clock size={24} className="text-primary" /> Histórico
-        </h1>
-        <p className="text-sm text-muted-foreground">Log de todas as atividades do sistema</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <Clock size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Histórico</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Log de todas as atividades do sistema</p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}

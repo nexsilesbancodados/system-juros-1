@@ -234,21 +234,21 @@ const Cobradores = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Shield size={20} className="text-primary" />
+      <div className="page-hero">
+        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Shield size={22} />
             </div>
-            Cobradores
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Gestão completa de cobradores externos</p>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Cobradores</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Gestão completa de cobradores externos</p>
+            </div>
+          </div>
+          <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn-premium">
+            <Plus size={16} /> Novo Cobrador
+          </button>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-          style={{ background: "var(--gradient-button)" }}>
-          <Plus size={16} /> Novo Cobrador
-        </button>
       </div>
 
       {/* Stats Cards */}
