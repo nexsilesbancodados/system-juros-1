@@ -408,15 +408,16 @@ const ClienteDetalhe = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-24">
-      {/* Header */}
-      <div className="flex items-center gap-3">
+      {/* Premium hero header */}
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
         <button onClick={() => navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <div className="relative group shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary overflow-hidden">
+              <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-lg font-bold text-primary overflow-hidden ring-1 ring-primary/20">
                 {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
               <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100" style={{ background: "var(--gradient-button)" }}>
