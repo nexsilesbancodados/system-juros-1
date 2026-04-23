@@ -467,6 +467,7 @@ const ClienteDetalhe = () => {
             </>
           )}
         </div>
+        </div>
       </div>
 
       {/* ===== MODALS ===== */}
