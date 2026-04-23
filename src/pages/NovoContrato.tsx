@@ -273,19 +273,24 @@ const NovoContrato = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">Novo Contrato</h1>
-          <p className="text-sm text-muted-foreground">Etapa {step} de 3 — {["Cliente", "Configuração", "Revisão"][step - 1]}</p>
-        </div>
-        {step === 2 && settings && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
-            <Shield size={10} /> Padrões carregados
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="page-hero-icon">
+            <FileText size={22} />
           </div>
-        )}
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-shimmer">Novo Contrato</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {["Cliente", "Configuração", "Revisão"][step - 1]}</p>
+          </div>
+          {step === 2 && settings && (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold border border-primary/20">
+              <Shield size={10} /> Padrões carregados
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Progress */}

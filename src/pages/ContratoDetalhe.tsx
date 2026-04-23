@@ -272,19 +272,22 @@ const ContratoDetalhe = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/contratos")} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <User size={18} className="text-primary" /> {contract.clients?.name}
-          </h1>
-          <p className="text-xs text-muted-foreground">{contract.clients?.cpf_cnpj || "—"} · {FREQ[contract.frequency] || contract.frequency}</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <button onClick={() => navigate("/contratos")} className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="page-hero-icon">
+            <User size={22} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-shimmer truncate">{contract.clients?.name}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{contract.clients?.cpf_cnpj || "—"} · {FREQ[contract.frequency] || contract.frequency}</p>
+          </div>
+          <Badge variant="outline" className={contract.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+            {contract.status === "active" ? "Ativo" : contract.status === "cancelled" ? "Cancelado" : contract.status === "completed" ? "Quitado" : contract.status}
+          </Badge>
         </div>
-        <Badge variant="outline" className={contract.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
-          {contract.status === "active" ? "Ativo" : contract.status === "cancelled" ? "Cancelado" : contract.status === "completed" ? "Quitado" : contract.status}
-        </Badge>
       </div>
 
       {/* Stats */}

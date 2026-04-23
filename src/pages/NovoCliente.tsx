@@ -405,13 +405,18 @@ const NovoCliente = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">Cadastrar Novo Cliente</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="page-hero-icon">
+            <User size={22} />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-shimmer">Cadastrar Novo Cliente</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
+          </div>
         </div>
       </div>
 
