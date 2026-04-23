@@ -651,6 +651,105 @@
     background: var(--gradient-gold);
     opacity: 0.6;
   }
+
+  /* Page hero with mesh gradient */
+  .page-hero {
+    @apply relative overflow-hidden rounded-3xl border border-border/40 p-5 md:p-7;
+    background: var(--gradient-card);
+  }
+  .page-hero::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: var(--gradient-mesh);
+    opacity: 0.7;
+  }
+  .page-hero > * { @apply relative z-10; }
+
+  /* Section title with icon chip */
+  .section-title {
+    @apply flex items-center gap-2.5 mb-4;
+  }
+  .section-title-chip {
+    @apply w-9 h-9 rounded-2xl flex items-center justify-center bg-primary/10 text-primary;
+  }
+  .section-title-text {
+    @apply text-headline text-base text-foreground;
+  }
+
+  /* Premium button — primary CTA */
+  .btn-premium {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground transition-all duration-200 active:scale-[0.97];
+    background: var(--gradient-button);
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-premium:hover {
+    box-shadow: var(--shadow-premium);
+    transform: translateY(-1px);
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold border border-border/60 bg-card/60 text-foreground transition-all duration-200;
+  }
+  .btn-ghost:hover {
+    @apply bg-accent/40 border-primary/30;
+  }
+
+  /* Filter chip */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-150 cursor-pointer border;
+  }
+  .chip-default {
+    @apply bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground hover:border-primary/30;
+  }
+  .chip-active {
+    @apply bg-primary/12 text-primary border-primary/30;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+  }
+
+  /* Sidebar active item with gradient */
+  .sidebar-item-active {
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.18), hsl(var(--primary) / 0.04));
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.15);
+  }
+
+  /* Shimmer text */
+  .text-shimmer {
+    background: linear-gradient(90deg, hsl(var(--foreground)), hsl(var(--primary)), hsl(var(--foreground)));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textShimmer 4s linear infinite;
+  }
+  @keyframes textShimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  /* Mesh background utility */
+  .bg-mesh {
+    background: var(--gradient-mesh);
+  }
+
+  /* Sparkline area */
+  .sparkline {
+    @apply flex items-end gap-px h-8;
+  }
+  .sparkline-bar {
+    @apply flex-1 rounded-sm bg-primary/30 transition-all duration-500;
+    min-height: 2px;
+  }
+
+  /* Floating action button (FAB) */
+  .fab {
+    @apply fixed bottom-20 right-4 lg:bottom-6 lg:right-6 w-14 h-14 rounded-2xl flex items-center justify-center text-primary-foreground z-40 transition-all duration-200 active:scale-95;
+    background: var(--gradient-button);
+    box-shadow: var(--shadow-premium);
+  }
+  .fab:hover {
+    transform: translateY(-2px) scale(1.05);
+  }
 }
 
 /* ─── Eagle logo: globe + orbit scan-line (synced) ─── */
