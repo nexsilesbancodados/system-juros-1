@@ -11,7 +11,7 @@ const Perfil = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [form, setForm] = useState({
-    name: "", email: "", pix_key: "", pix_key_type: "CPF", billing_message: "",
+    name: "", email: "", pix_key: "", pix_key_type: "cpf", billing_message: "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,7 +22,7 @@ const Perfil = () => {
     if (profile) {
       setForm({
         name: profile.name || "", email: profile.email || "",
-        pix_key: profile.pix_key || "", pix_key_type: profile.pix_key_type || "CPF",
+        pix_key: profile.pix_key || "", pix_key_type: profile.pix_key_type || "cpf",
         billing_message: profile.billing_message || "",
       });
       setAvatarPreview(profile.avatar_url || null);
@@ -136,7 +136,7 @@ const Perfil = () => {
           <div>
             <label className="text-label mb-1.5 block">Tipo</label>
             <select value={form.pix_key_type} onChange={(e) => setForm({ ...form, pix_key_type: e.target.value })} className={inputCls}>
-              <option value="CPF">CPF</option><option value="CNPJ">CNPJ</option><option value="Email">Email</option><option value="Telefone">Telefone</option><option value="Aleatória">Chave Aleatória</option>
+              <option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="phone">Telefone</option><option value="random">Chave Aleatória</option>
             </select>
           </div>
           <div>
