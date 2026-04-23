@@ -46,6 +46,7 @@ const Cobrancas = () => {
           status: isOverdue ? "overdue" : inst.status,
           client_name: client?.name || "—",
           client_phone: client?.phone || null,
+          client_email: client?.email || null,
         };
       });
     },
