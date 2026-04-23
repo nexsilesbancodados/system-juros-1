@@ -675,3 +675,10 @@
   .eagle-spin, .eagle-orbit { animation: none; }
 }
 
+
+@keyframes wiggle {
+  0%, 92%, 100% { transform: rotate(0deg); }
+  94% { transform: rotate(-12deg); }
+  96% { transform: rotate(12deg); }
+  98% { transform: rotate(-6deg); }
+}
