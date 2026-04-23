@@ -359,6 +359,81 @@ const Clientes = () => {
           ))}
         </div>
       )}
+
+      {/* ─── Import CSV Modal ──────────────────────────────── */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => { setImportOpen(false); setImportPreview(null); }}>
+          <div className="bg-card border border-border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={18} className="text-primary" />
+                <h3 className="text-base font-bold text-foreground">Importar Clientes (CSV)</h3>
+              </div>
+              <button onClick={() => { setImportOpen(false); setImportPreview(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+            </div>
+
+            {!importPreview ? (
+              <div className="p-6 space-y-4">
+                <div
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                  onClick={() => fileRef.current?.click()}
+                  className="border-2 border-dashed border-border rounded-2xl p-10 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                >
+                  <Upload size={28} className="mx-auto text-muted-foreground/60 mb-2" />
+                  <p className="text-sm font-medium text-foreground">Clique ou arraste o CSV aqui</p>
+                  <p className="text-xs text-muted-foreground mt-1">Colunas aceitas: nome, cpf, telefone, whatsapp, email, data_nascimento, status</p>
+                  <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+                </div>
+                <button onClick={downloadTemplate} className="text-xs text-primary hover:underline">📥 Baixar modelo CSV</button>
+              </div>
+            ) : (
+              <>
+                <div className="px-5 py-3 border-b border-border flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1 text-success"><CheckCircle size={13} /> {importPreview.filter(r => r._errors.length === 0).length} válidas</span>
+                  <span className="flex items-center gap-1 text-destructive"><AlertCircle size={13} /> {importPreview.filter(r => r._errors.length > 0).length} com erro</span>
+                  <span className="text-muted-foreground ml-auto">{importPreview.length} total</span>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-muted/60 backdrop-blur z-10">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">#</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Nome</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">CPF</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Telefone</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Email</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.map((r) => (
+                        <tr key={r._row} className={`border-t border-border/50 ${r._errors.length > 0 ? "bg-destructive/5" : ""}`}>
+                          <td className="px-3 py-2 text-muted-foreground">{r._row}</td>
+                          <td className="px-3 py-2 text-foreground font-medium">
+                            {r.name || <span className="text-destructive">—</span>}
+                            {r._errors.length > 0 && <p className="text-[10px] text-destructive">{r._errors.join(", ")}</p>}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground font-mono">{r.cpf_cnpj || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{r.phone || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground truncate max-w-[180px]">{r.email || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{r.status || "Ativo"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2">
+                  <button onClick={() => setImportPreview(null)} className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent">Voltar</button>
+                  <button onClick={confirmImport} disabled={importing} className="btn-premium disabled:opacity-50">
+                    {importing ? "Importando..." : `Importar ${importPreview.filter(r => r._errors.length === 0).length} cliente(s)`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
