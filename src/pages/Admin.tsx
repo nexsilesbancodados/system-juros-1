@@ -74,20 +74,6 @@ const Admin = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  if (!profile?.is_admin) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
-          <Shield size={40} className="text-destructive" />
-        </div>
-        <h1 className="text-xl font-bold text-foreground mb-2">Acesso Restrito</h1>
-        <p className="text-muted-foreground max-w-sm">
-          Você não tem permissão para acessar esta página. Apenas administradores podem visualizar este painel.
-        </p>
-      </div>
-    );
-  }
-
   const isExpired = (u: UserRow) =>
     u.subscription_expires_at && new Date(u.subscription_expires_at) < new Date();
 
