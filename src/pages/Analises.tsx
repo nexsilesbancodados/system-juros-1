@@ -239,14 +239,21 @@ const Analises = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Análises</h1>
-          <p className="text-muted-foreground text-sm">Relatórios e gráficos avançados do seu portfólio</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <BarChart3 size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Análises</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Relatórios e gráficos avançados do seu portfólio</p>
+            </div>
+          </div>
+          <button onClick={handleExport} className="btn-ghost">
+            <Download size={16} /> Exportar CSV
+          </button>
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-card border border-border text-foreground hover:bg-accent transition-colors">
-          <Download size={16} /> Exportar CSV
-        </button>
       </div>
 
       {/* ─── Period Selector ─── */}

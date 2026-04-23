@@ -101,22 +101,27 @@ const Relatorios = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Resumo mensal completo do seu negócio.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card border border-border">
-            <Calendar size={14} className="text-muted-foreground shrink-0" />
-            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
-              className="bg-transparent text-sm text-foreground focus:outline-none" />
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <BarChart3 size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Relatórios</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Resumo mensal completo do seu negócio</p>
+            </div>
           </div>
-          <button onClick={handleExportCSV} disabled={!data}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 focus-ring"
-            style={{ background: "var(--gradient-button)" }}>
-            <Download size={16} /> Exportar
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm">
+              <Calendar size={14} className="text-muted-foreground shrink-0" />
+              <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
+                className="bg-transparent text-sm text-foreground focus:outline-none" />
+            </div>
+            <button onClick={handleExportCSV} disabled={!data} className="btn-premium disabled:opacity-50">
+              <Download size={16} /> Exportar
+            </button>
+          </div>
         </div>
       </div>
 
