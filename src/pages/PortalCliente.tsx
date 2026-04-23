@@ -105,18 +105,25 @@ const PortalCliente = () => {
   // ===== LOGIN SCREEN =====
   if (!clientData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm animate-fade-in">
-          <form onSubmit={handleAccess} className="space-y-5 rounded-2xl border border-border bg-card p-8 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        {/* Mesh gradient backdrop */}
+        <div className="pointer-events-none absolute inset-0 opacity-70">
+          <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/20 blur-[140px]" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[140px]" />
+          <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-success/10 blur-[100px]" />
+        </div>
+        <div className="w-full max-w-sm animate-fade-in relative">
+          <form onSubmit={handleAccess} className="space-y-5 rounded-3xl border border-border/60 bg-card/80 backdrop-blur-xl p-8 shadow-2xl">
             {/* Logo / branding area */}
             <div className="text-center">
-              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center mx-auto mb-5 shadow-lg">
                 <Shield size={32} className="text-primary" />
+                <div className="absolute inset-0 rounded-2xl bg-primary/15 blur-xl -z-10" />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success/20 border-2 border-card flex items-center justify-center">
                   <Lock size={10} className="text-success" />
                 </div>
               </div>
-              <h1 className="text-2xl font-display font-bold text-foreground tracking-wide">Portal do Cliente</h1>
+              <h1 className="text-2xl font-display font-bold text-shimmer tracking-wide">Portal do Cliente</h1>
               <p className="text-sm text-muted-foreground mt-2">Consulte suas parcelas, contratos e histórico de pagamentos</p>
             </div>
 
@@ -138,8 +145,7 @@ const PortalCliente = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl text-sm font-bold text-primary-foreground disabled:opacity-50 transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{ background: "var(--gradient-button)" }}
+              className="btn-premium w-full py-3.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
