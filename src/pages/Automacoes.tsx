@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Play, Clock, MessageSquare, DollarSign, Bell,
   CheckCircle, AlertTriangle, Loader2, Shield, RefreshCcw,
-  Bot, TrendingUp, Calendar, Settings
+  Bot, TrendingUp, Calendar, Settings, CreditCard, Database,
+  Receipt, Cake, Star, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +134,11 @@ const Automacoes = () => {
     await runAutomation("Notificações", "auto-notifications");
     await runAutomation("Cobrança WhatsApp", "auto-collection");
     await runAutomation("Verificar Atrasos", "check-overdue");
+    await runAutomation("Assinaturas", "auto-subscription-check");
+    await runAutomation("Score de Crédito", "auto-credit-score");
+    await runAutomation("Aniversários", "auto-birthday");
+    await runAutomation("Backup", "auto-backup");
+    await runAutomation("Limpeza", "auto-cleanup");
     setRunningAll(false);
     toast({ title: "✓ Todas automações executadas" });
   };
@@ -179,6 +185,51 @@ const Automacoes = () => {
       color: "text-destructive",
       bg: "bg-destructive/10",
       fn: "check-overdue",
+    },
+    {
+      id: "subscription",
+      name: "Assinaturas",
+      description: "Bloqueia contas com assinatura vencida e avisa quem vence em 7 dias",
+      icon: CreditCard,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
+      fn: "auto-subscription-check",
+    },
+    {
+      id: "credit-score",
+      name: "Score de Crédito",
+      description: "Recalcula o score de cada cliente baseado no histórico de pagamentos e atrasos",
+      icon: Star,
+      color: "text-yellow-500",
+      bg: "bg-yellow-500/10",
+      fn: "auto-credit-score",
+    },
+    {
+      id: "birthday",
+      name: "Aniversários",
+      description: "Envia mensagem de parabéns via WhatsApp e notifica internamente",
+      icon: Cake,
+      color: "text-pink-500",
+      bg: "bg-pink-500/10",
+      fn: "auto-birthday",
+    },
+    {
+      id: "backup",
+      name: "Backup de Dados",
+      description: "Exporta todos os dados (clientes, contratos, parcelas, etc) para o Storage diariamente",
+      icon: Database,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+      fn: "auto-backup",
+    },
+    {
+      id: "cleanup",
+      name: "Limpeza Semanal",
+      description: "Remove notificações lidas com +30 dias e logs com +90 dias para manter o banco enxuto",
+      icon: Trash2,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      fn: "auto-cleanup",
     },
   ];
 
