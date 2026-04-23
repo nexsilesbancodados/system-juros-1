@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { isSuperAdminEmail } from "@/lib/admin";
+import { useChatUnread } from "@/hooks/useChatUnread";
 
 interface MenuItem {
   label: string;
@@ -132,6 +133,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const logoSrc = config.companyLogo || eagleLogo;
   const brandName = config.companyName || "SYSTEM JUROS";
   const isSuperAdmin = isSuperAdminEmail(user?.email);
+  const chatUnread = useChatUnread();
 
   // Filtra item "Admin" do menu para usuários comuns
   const visibleSections = sections.map((s) => ({
@@ -159,6 +161,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const renderItem = (item: MenuItem) => {
     const active = isActive(item.path);
     const Icon = item.icon;
+    const badge = item.path === "/chat" && chatUnread > 0 ? chatUnread : 0;
     return (
       <button
         key={item.path}
@@ -173,14 +176,24 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         {active && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
         )}
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+        <div className={`relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
           active
             ? "bg-primary/20 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
             : `${iconColorMap[item.path] || "text-muted-foreground"} group-hover:brightness-125 group-hover:bg-accent/30 group-hover:scale-105`
         }`}>
           <Icon size={16} />
+          {badge > 0 && collapsed && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-card animate-pulse">
+              {badge > 9 ? "9+" : badge}
+            </span>
+          )}
         </div>
-        {!collapsed && <span className="truncate">{item.label}</span>}
+        {!collapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+        {!collapsed && badge > 0 && (
+          <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center animate-pulse shrink-0">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
         {collapsed && (
           <div className="absolute left-full ml-3 px-3 py-2 rounded-xl bg-popover border border-border text-xs text-foreground font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 shadow-xl z-50 translate-x-1 group-hover:translate-x-0">
             {item.label}
