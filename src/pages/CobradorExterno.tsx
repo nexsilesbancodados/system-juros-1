@@ -105,21 +105,27 @@ const CobradorExterno = () => {
 
   if (!collectorData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <form onSubmit={handleAccess} className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        {/* Mesh gradient backdrop */}
+        <div className="pointer-events-none absolute inset-0 opacity-60">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px]" />
+        </div>
+        <form onSubmit={handleAccess} className="w-full max-w-sm space-y-5 rounded-3xl border border-border/60 bg-card/80 backdrop-blur-xl p-8 shadow-2xl relative animate-fade-in">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <Shield size={28} className="text-primary" />
+            <div className="relative w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center mb-5 shadow-lg">
+              <Shield size={32} className="text-primary" />
+              <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-xl -z-10" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Portal do Cobrador</h1>
-            <p className="text-sm text-muted-foreground mt-1">Acesse com seu token de acesso</p>
+            <h1 className="text-2xl font-display font-bold text-shimmer tracking-wide">Portal do Cobrador</h1>
+            <p className="text-sm text-muted-foreground mt-2">Acesse com seu token de acesso</p>
           </div>
-          <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Insira seu token" required className={inputCls} />
-          <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-all hover:shadow-lg"
-            style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
-            {loading ? "Verificando..." : "Acessar Portal"}
+          <div className="h-px bg-border" />
+          <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Insira seu token" required className={`${inputCls} text-center font-mono tracking-wider`} />
+          <button type="submit" disabled={loading} className="btn-premium w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            {loading ? "Verificando..." : (<><LogIn size={16} /> Acessar Portal</>)}
           </button>
+          <p className="text-[10px] text-center text-muted-foreground">Acesso seguro · Token fornecido pelo gestor</p>
         </form>
       </div>
     );
