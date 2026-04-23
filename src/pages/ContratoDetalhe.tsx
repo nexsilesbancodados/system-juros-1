@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import ContractTemplate from "@/components/ContractTemplate";
 import {
   ArrowLeft, CheckCircle, Clock, AlertTriangle, DollarSign, FileText, User, Calendar,
-  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X, Eye, Download
+  Send, RotateCcw, Copy, Edit, Trash2, Ban, MessageSquare, TrendingUp, X, Eye, Download, Calculator, Percent
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +36,8 @@ const ContratoDetalhe = () => {
   const [notes, setNotes] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
   const [showContract, setShowContract] = useState(false);
+  const [settleOpen, setSettleOpen] = useState(false);
+  const [settleDiscount, setSettleDiscount] = useState("50");
   const contractRef = useRef<HTMLDivElement>(null);
 
   useMultiTableRealtime(
