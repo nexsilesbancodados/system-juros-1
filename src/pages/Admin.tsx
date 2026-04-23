@@ -8,6 +8,7 @@ import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { isSuperAdminEmail } from "@/lib/admin";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
@@ -41,8 +42,9 @@ type UserRow = {
 type FilterTab = "all" | "active" | "blocked" | "expired" | "admins";
 
 const Admin = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { toast } = useToast();
+  const isSuperAdmin = isSuperAdminEmail(user?.email);
   const [section, setSection] = useState<"users" | "support">("users");
   const [supportUnread, setSupportUnread] = useState(0);
   const [users, setUsers] = useState<UserRow[]>([]);
