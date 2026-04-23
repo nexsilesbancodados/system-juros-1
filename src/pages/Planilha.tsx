@@ -90,18 +90,21 @@ const Planilha = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Table size={24} className="text-primary" /> Planilha
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Visão completa dos dados de todos os clientes.</p>
+      <div className="page-hero">
+        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Table size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Planilha</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Visão completa dos dados de todos os clientes</p>
+            </div>
+          </div>
+          <button onClick={handleExportCSV} className="btn-premium">
+            <Download size={16} /> Exportar CSV
+          </button>
         </div>
-        <button onClick={handleExportCSV}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg"
-          style={{ background: "var(--gradient-button)" }}>
-          <Download size={16} /> Exportar CSV
-        </button>
       </div>
 
       {/* Summary */}

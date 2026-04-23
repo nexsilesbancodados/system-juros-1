@@ -85,11 +85,16 @@ const Auditoria = () => {
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Shield size={24} className="text-primary" /> Auditoria
-        </h1>
-        <p className="text-sm text-muted-foreground">Log completo de todas as ações do sistema</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <Shield size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Auditoria</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Log completo de todas as ações do sistema</p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}

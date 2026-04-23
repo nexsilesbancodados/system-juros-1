@@ -619,14 +619,21 @@ const AgenteIA = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Agente IA</h1>
-          <p className="text-sm text-muted-foreground">Assistente inteligente com WhatsApp integrado</p>
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Bot size={22} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Agente IA</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Assistente inteligente com WhatsApp integrado</p>
+            </div>
+          </div>
+          <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${whatsappStatus === "connected" ? "text-success bg-success/10 border-success/20" : "text-muted-foreground bg-muted/40 border-border"}`}>
+            {whatsappStatus === "connected" ? <><Wifi size={12} /> Conectado</> : <><WifiOff size={12} /> Offline</>}
+          </span>
         </div>
-        <span className={`flex items-center gap-1.5 text-xs font-medium ${whatsappStatus === "connected" ? "text-green-500" : "text-muted-foreground"}`}>
-          {whatsappStatus === "connected" ? <><Wifi size={12} /> Conectado</> : <><WifiOff size={12} /> Offline</>}
-        </span>
       </div>
 
       {/* Tabs */}

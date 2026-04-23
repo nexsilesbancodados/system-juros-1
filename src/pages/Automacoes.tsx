@@ -198,27 +198,24 @@ const Automacoes = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Zap size={20} className="text-primary" />
+      <div className="page-hero">
+        <div className="page-hero-content flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Zap size={22} />
             </div>
-            Automações
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie e execute automações do sistema
-          </p>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Automações</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Gerencie e execute automações do sistema
+              </p>
+            </div>
+          </div>
+          <button onClick={runAll} disabled={runningAll} className="btn-premium disabled:opacity-50">
+            {runningAll ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+            Executar Todas
+          </button>
         </div>
-        <Button
-          onClick={runAll}
-          disabled={runningAll}
-          className="rounded-xl gap-2"
-          style={{ background: "var(--gradient-button)" }}
-        >
-          {runningAll ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-          Executar Todas
-        </Button>
       </div>
 
       {/* Stats */}
