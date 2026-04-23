@@ -303,6 +303,7 @@ export type Database = {
         Row: {
           address: Json | null
           avatar_url: string | null
+          birth_date: string | null
           cellphone_sale: Json | null
           client_type: string
           cpf_cnpj: string | null
@@ -321,6 +322,7 @@ export type Database = {
         Insert: {
           address?: Json | null
           avatar_url?: string | null
+          birth_date?: string | null
           cellphone_sale?: Json | null
           client_type?: string
           cpf_cnpj?: string | null
@@ -339,6 +341,7 @@ export type Database = {
         Update: {
           address?: Json | null
           avatar_url?: string | null
+          birth_date?: string | null
           cellphone_sale?: Json | null
           client_type?: string
           cpf_cnpj?: string | null

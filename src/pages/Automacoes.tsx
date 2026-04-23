@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Play, Clock, MessageSquare, DollarSign, Bell,
   CheckCircle, AlertTriangle, Loader2, Shield, RefreshCcw,
-  Bot, TrendingUp, Calendar, Settings
+  Bot, TrendingUp, Calendar, Settings, CreditCard, Database,
+  Receipt, Cake, Star, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +134,11 @@ const Automacoes = () => {
     await runAutomation("Notificações", "auto-notifications");
     await runAutomation("Cobrança WhatsApp", "auto-collection");
     await runAutomation("Verificar Atrasos", "check-overdue");
+    await runAutomation("Assinaturas", "auto-subscription-check");
+    await runAutomation("Score de Crédito", "auto-credit-score");
+    await runAutomation("Aniversários", "auto-birthday");
+    await runAutomation("Backup", "auto-backup");
+    await runAutomation("Limpeza", "auto-cleanup");
     setRunningAll(false);
     toast({ title: "✓ Todas automações executadas" });
   };
@@ -179,6 +185,51 @@ const Automacoes = () => {
       color: "text-destructive",
       bg: "bg-destructive/10",
       fn: "check-overdue",
+    },
+    {
+      id: "subscription",
+      name: "Assinaturas",
+      description: "Bloqueia contas com assinatura vencida e avisa quem vence em 7 dias",
+      icon: CreditCard,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
+      fn: "auto-subscription-check",
+    },
+    {
+      id: "credit-score",
+      name: "Score de Crédito",
+      description: "Recalcula o score de cada cliente baseado no histórico de pagamentos e atrasos",
+      icon: Star,
+      color: "text-yellow-500",
+      bg: "bg-yellow-500/10",
+      fn: "auto-credit-score",
+    },
+    {
+      id: "birthday",
+      name: "Aniversários",
+      description: "Envia mensagem de parabéns via WhatsApp e notifica internamente",
+      icon: Cake,
+      color: "text-pink-500",
+      bg: "bg-pink-500/10",
+      fn: "auto-birthday",
+    },
+    {
+      id: "backup",
+      name: "Backup de Dados",
+      description: "Exporta todos os dados (clientes, contratos, parcelas, etc) para o Storage diariamente",
+      icon: Database,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+      fn: "auto-backup",
+    },
+    {
+      id: "cleanup",
+      name: "Limpeza Semanal",
+      description: "Remove notificações lidas com +30 dias e logs com +90 dias para manter o banco enxuto",
+      icon: Trash2,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      fn: "auto-cleanup",
     },
   ];
 
@@ -362,27 +413,30 @@ const Automacoes = () => {
       )}
 
       {/* Info */}
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-success/30 bg-success/5 p-5">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Settings size={18} className="text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+            <CheckCircle size={18} className="text-success" />
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground">Automação Agendada (Cron)</h3>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              Cron Ativo
+              <Badge className="bg-success/15 text-success border-success/30 text-[10px]">Automático</Badge>
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Para executar as automações automaticamente todos os dias, configure o agendamento no painel do Supabase.
-              As automações rodarão no horário configurado em <strong>Configurações → Bot de Cobranças</strong>.
+              Todas as automações rodam sozinhas no horário programado. Você pode executar manualmente a qualquer momento.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="outline" className="text-[10px]">
-                <Clock size={10} className="mr-1" /> Multas: Diário
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                <Bell size={10} className="mr-1" /> Notificações: Diário
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                <MessageSquare size={10} className="mr-1" /> WhatsApp: Conforme horário
-              </Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Assinaturas: 02:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Multas: 03:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Backup: 04:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Score: 05:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Notificações: 06:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Atrasos: 07:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Aniversários: 09:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><MessageSquare size={10} className="mr-1" /> WhatsApp: hora em hora</Badge>
+              <Badge variant="outline" className="text-[10px]"><Trash2 size={10} className="mr-1" /> Limpeza: seg 01:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Receipt size={10} className="mr-1" /> Recibo: ao pagar parcela</Badge>
             </div>
           </div>
         </div>
