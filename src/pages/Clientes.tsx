@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Users, Trash2, Eye, X, ChevronRight, LayoutGrid, List, Phone, Mail } from "lucide-react";
+import { Plus, Search, Users, Trash2, Eye, X, ChevronRight, LayoutGrid, List, Phone, Mail, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,10 @@ const Clientes = () => {
   const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
     return (localStorage.getItem("clients-view") as "list" | "cards") || "list";
   });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const toggleView = (mode: "list" | "cards") => {
     setViewMode(mode);
@@ -68,6 +72,90 @@ const Clientes = () => {
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
+  };
+
+  // ─── CSV Import ─────────────────────────────────────────────
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ""));
+    const map: Record<string, string> = {
+      nome: "name", name: "name",
+      cpf: "cpf_cnpj", cnpj: "cpf_cnpj", cpf_cnpj: "cpf_cnpj", documento: "cpf_cnpj",
+      telefone: "phone", phone: "phone", celular: "phone", tel: "phone",
+      whatsapp: "whatsapp", wpp: "whatsapp", "whats app": "whatsapp",
+      email: "email", "e-mail": "email",
+      status: "status",
+      "data nascimento": "birth_date", nascimento: "birth_date", birth_date: "birth_date", aniversario: "birth_date",
+    };
+    return lines.slice(1).map((line, idx) => {
+      const cols = line.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ""));
+      const row: any = { _row: idx + 2, _errors: [] as string[] };
+      headers.forEach((h, i) => {
+        const key = map[h];
+        if (key) row[key] = cols[i] || "";
+      });
+      if (!row.name) row._errors.push("nome obrigatório");
+      if (row.birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(row.birth_date)) {
+        // tenta dd/mm/yyyy
+        const m = row.birth_date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) row.birth_date = `${m[3]}-${m[2]}-${m[1]}`;
+        else { row._errors.push("data inválida"); row.birth_date = null; }
+      }
+      return row;
+    });
+  };
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCSV(String(reader.result || ""));
+      if (parsed.length === 0) {
+        toast({ title: "CSV vazio ou inválido", variant: "destructive" });
+        return;
+      }
+      setImportPreview(parsed);
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || !user) return;
+    const valid = importPreview.filter(r => r._errors.length === 0);
+    if (valid.length === 0) {
+      toast({ title: "Nenhuma linha válida", variant: "destructive" });
+      return;
+    }
+    setImporting(true);
+    const rows = valid.map(r => ({
+      user_id: user.id,
+      name: r.name,
+      cpf_cnpj: r.cpf_cnpj || null,
+      phone: r.phone || null,
+      whatsapp: r.whatsapp || r.phone || null,
+      email: r.email || null,
+      birth_date: r.birth_date || null,
+      status: r.status === "Inativo" ? "Inativo" : "Ativo",
+      client_type: "loan",
+    }));
+    const { error } = await supabase.from("clients").insert(rows);
+    setImporting(false);
+    if (error) {
+      toast({ title: "Erro ao importar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: `✓ ${rows.length} cliente(s) importado(s)!` });
+    setImportOpen(false); setImportPreview(null);
+    qc.invalidateQueries({ queryKey: ["clients", user?.id] });
+  };
+
+  const downloadTemplate = () => {
+    const csv = "nome,cpf,telefone,whatsapp,email,data_nascimento,status\nJoão da Silva,123.456.789-00,(11) 91234-5678,(11) 91234-5678,joao@email.com,1990-05-15,Ativo\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "modelo-clientes.csv"; a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
