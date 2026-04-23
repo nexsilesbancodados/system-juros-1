@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
+import { isSuperAdminEmail } from "@/lib/admin";
 
 interface MenuItem {
   label: string;
@@ -126,10 +127,17 @@ interface SidebarProps {
 const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
   const brandName = config.companyName || "SYSTEM JUROS";
+  const isSuperAdmin = isSuperAdminEmail(user?.email);
+
+  // Filtra item "Admin" do menu para usuários comuns
+  const visibleSections = sections.map((s) => ({
+    ...s,
+    items: s.items.filter((i) => i.path !== "/admin" || isSuperAdmin),
+  }));
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -274,7 +282,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {sections.map((section, idx) => (
+        {visibleSections.map((section, idx) => (
           <div key={section.title}>
             {idx > 0 && !collapsed && <div className="border-t border-border/10 mb-3" />}
             {renderSection(section)}

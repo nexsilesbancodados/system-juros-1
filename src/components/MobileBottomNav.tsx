@@ -7,6 +7,8 @@ import {
   UserCheck, FileText, X,
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdminEmail } from "@/lib/admin";
 
 const mobileIconColor: Record<string, string> = {
   "/dashboard": "text-blue-400",
@@ -65,14 +67,19 @@ const moreItems = [
 const MobileBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showMore, setShowMore] = useState(false);
+  const isSuperAdmin = isSuperAdminEmail(user?.email);
+
+  // Esconde "Admin" para usuários não-super-admin
+  const visibleMoreItems = moreItems.filter((i) => i.path !== "/admin" || isSuperAdmin);
 
   const isActive = (path: string) => {
     if (path === "__more__") return showMore;
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
-  const isInMoreSection = moreItems.some(
+  const isInMoreSection = visibleMoreItems.some(
     (item) => location.pathname === item.path || location.pathname.startsWith(item.path + "/")
   );
 
@@ -95,7 +102,7 @@ const MobileBottomNav = () => {
                 <div>
                   <p className="text-label mb-2">Gestão & Análise</p>
                   <div className="grid grid-cols-4 gap-2">
-                    {moreItems.slice(0, 6).map((item) => (
+                    {visibleMoreItems.slice(0, 6).map((item) => (
                       <button
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
@@ -112,7 +119,7 @@ const MobileBottomNav = () => {
                 <div className="border-t border-border/30 pt-3">
                   <p className="text-label mb-2">Ferramentas</p>
                   <div className="grid grid-cols-4 gap-2">
-                    {moreItems.slice(6, 14).map((item) => (
+                    {visibleMoreItems.slice(6, 14).map((item) => (
                       <button
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
@@ -129,7 +136,7 @@ const MobileBottomNav = () => {
                 <div className="border-t border-border/30 pt-3">
                   <p className="text-label mb-2">Sistema</p>
                   <div className="grid grid-cols-4 gap-2">
-                    {moreItems.slice(14).map((item) => (
+                    {visibleMoreItems.slice(14).map((item) => (
                       <button
                         key={item.path}
                         onClick={() => { navigate(item.path); setShowMore(false); }}
