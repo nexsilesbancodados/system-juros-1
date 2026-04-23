@@ -373,10 +373,10 @@ const Chat = () => {
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
       const isImage = file.type.startsWith("image/");
-      const type = asAudio ? "audio" : isImage ? "image" : "file";
+      const type: "audio" | "image" | "file" = asAudio ? "audio" : isImage ? "image" : "file";
       const payload: any = {
         user_id: user.id, user_name: profile.name, user_avatar: profile.avatar_url || null,
-        content: type === "text" ? "" : (isImage || asAudio ? "" : file.name), type,
+        content: isImage || asAudio ? "" : file.name, type,
         file_url: pub.publicUrl, file_name: file.name, file_type: file.type,
       };
       if (scope.kind === "channel") payload.channel_id = scope.id; else payload.dm_thread_id = scope.id;
