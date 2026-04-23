@@ -237,7 +237,7 @@ const Admin = () => {
     { key: "admins", label: "Admins", count: stats.admins },
   ];
 
-  if (!profile?.is_admin) {
+  if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="w-20 h-20 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
