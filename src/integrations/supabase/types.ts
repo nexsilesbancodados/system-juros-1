@@ -138,6 +138,8 @@ export type Database = {
           created_at: string
           id: string
           last_message_at: string
+          last_read_a: string
+          last_read_b: string
           user_a: string
           user_b: string
         }
@@ -145,6 +147,8 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          last_read_a?: string
+          last_read_b?: string
           user_a: string
           user_b: string
         }
@@ -152,6 +156,8 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          last_read_a?: string
+          last_read_b?: string
           user_a?: string
           user_b?: string
         }
