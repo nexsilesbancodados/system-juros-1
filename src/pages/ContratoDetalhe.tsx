@@ -209,6 +209,51 @@ const ContratoDetalhe = () => {
     return { paid, overdue, pending, paidPct, totalPaid, grouped };
   }, [installments, contract]);
 
+  // Quitação antecipada
+  const settlement = useMemo(() => {
+    if (!contract) return null;
+    const unpaid = installments.filter((i: any) => i.status !== "paid");
+    if (unpaid.length === 0) return null;
+    const remainingPrincipal = unpaid.reduce((s: number, i: any) => s + Number(i.amount), 0);
+    // Estimar juros embutidos: (total_amount - capital) proporcional às parcelas não pagas
+    const totalInterest = Number(contract.total_interest || 0);
+    const interestPerInst = totalInterest / Number(contract.num_installments || 1);
+    const futureInterest = interestPerInst * unpaid.length;
+    const discountPct = Math.max(0, Math.min(100, parseFloat(settleDiscount) || 0));
+    const discount = futureInterest * (discountPct / 100);
+    const settleAmount = remainingPrincipal - discount;
+    return {
+      unpaidCount: unpaid.length,
+      remainingPrincipal,
+      futureInterest,
+      discountPct,
+      discount,
+      settleAmount,
+      unpaidIds: unpaid.map((i: any) => i.id),
+    };
+  }, [installments, contract, settleDiscount]);
+
+  const handleSettle = useCallback(async () => {
+    if (!settlement || !user || !contract) return;
+    if (!confirm(`Confirmar quitação antecipada por R$ ${fmt(settlement.settleAmount)}?`)) return;
+    const now = new Date().toISOString();
+    // marca todas como pagas
+    const { error } = await supabase
+      .from("contract_installments")
+      .update({ status: "paid", paid_at: now, paid_amount: settlement.settleAmount / settlement.unpaidCount })
+      .in("id", settlement.unpaidIds);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    await supabase.from("contracts").update({ status: "completed" }).eq("id", id!);
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: settlement.settleAmount, type: "payment",
+      description: `Quitação antecipada · ${contract.clients?.name} · desconto R$ ${fmt(settlement.discount)}`,
+      client_id: contract.client_id, contract_id: id!,
+    });
+    toast({ title: "✓ Contrato quitado!", description: `Desconto: R$ ${fmt(settlement.discount)}` });
+    setSettleOpen(false);
+    invalidate();
+  }, [settlement, user, contract, id, toast, invalidate]);
+
   if (isLoading) return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Skeleton className="h-8 w-48" />
