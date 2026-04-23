@@ -159,60 +159,32 @@ const ContratoDetalhe = () => {
     staleTime: 60_000,
   });
 
-  const handleDownloadPDF = useCallback(() => {
+  const handleDownloadPDF = useCallback(async () => {
+    // Ensure template is mounted in DOM
     setShowContract(true);
-    setTimeout(() => {
-      const printContent = document.getElementById("contract-template");
-      if (!printContent) return;
-      const win = window.open("", "_blank");
-      if (!win) { toast({ title: "Popup bloqueado", description: "Permita popups para baixar o PDF.", variant: "destructive" }); return; }
-      win.document.write(`
-        <!DOCTYPE html>
-        <html><head><title>Contrato - ${contract?.clients?.name}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #111; }
-          #contract-template { max-width: 800px; margin: 0 auto; }
-          .bg-card, .bg-muted\\/20 { background: #f9f9f9; }
-          .border { border: 1px solid #e5e5e5; }
-          .border-b { border-bottom: 1px solid #e5e5e5; }
-          .border-t { border-top: 1px solid #e5e5e5; }
-          .rounded-2xl { border-radius: 12px; }
-          .rounded-xl { border-radius: 8px; }
-          .rounded-lg { border-radius: 6px; }
-          .p-8 { padding: 32px; } .p-4 { padding: 16px; } .p-3 { padding: 12px; }
-          .space-y-8 > * + * { margin-top: 32px; }
-          .space-y-4 > * + * { margin-top: 16px; }
-          .space-y-3 > * + * { margin-top: 12px; }
-          .space-y-2 > * + * { margin-top: 8px; }
-          .space-y-1 > * + * { margin-top: 4px; }
-          .text-2xl { font-size: 1.5rem; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; }
-          .text-\\[10px\\] { font-size: 10px; }
-          .font-bold { font-weight: 700; } .font-semibold { font-weight: 600; }
-          .text-center { text-align: center; }
-          .uppercase { text-transform: uppercase; }
-          .tracking-tight { letter-spacing: -0.025em; }
-          .tracking-wider { letter-spacing: 0.05em; }
-          .leading-relaxed { line-height: 1.625; }
-          .text-foreground, .text-black { color: #111; }
-          .text-muted-foreground, .text-gray-600 { color: #666; }
-          .text-gray-500 { color: #888; }
-          .grid { display: grid; }
-          .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-          .grid-cols-1 { grid-template-columns: 1fr; }
-          .gap-3 { gap: 12px; } .gap-10 { gap: 40px; }
-          .pb-6 { padding-bottom: 24px; } .pt-2 { padding-top: 8px; } .pt-6 { padding-top: 24px; } .pt-8 { padding-top: 32px; }
-          .mt-0\\.5 { margin-top: 2px; } .mt-2 { margin-top: 8px; }
-          .mx-8 { margin-left: 32px; margin-right: 32px; }
-          .mb-2 { margin-bottom: 8px; }
-          .list-disc { list-style: disc; } .pl-5 { padding-left: 20px; }
-          @media print { body { padding: 20px; } }
-        </style>
-        </head><body>${printContent.outerHTML}</body></html>
-      `);
-      win.document.close();
-      setTimeout(() => { win.print(); }, 500);
-    }, 300);
+    await new Promise((r) => setTimeout(r, 350));
+    const node = document.getElementById("contract-template");
+    if (!node) {
+      toast({ title: "Erro", description: "Não foi possível gerar o PDF.", variant: "destructive" });
+      return;
+    }
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const fileName = `Contrato-${(contract?.clients?.name || "cliente").replace(/\s+/g, "_")}.pdf`;
+      await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: fileName,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        } as any)
+        .from(node)
+        .save();
+      toast({ title: "✓ PDF gerado!" });
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar PDF", description: e?.message, variant: "destructive" });
+    }
   }, [contract, toast]);
 
   const { paid, overdue, pending, paidPct, totalPaid, grouped } = useMemo(() => {
