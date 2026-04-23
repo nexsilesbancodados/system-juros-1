@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
-  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download,
-  Activity, Megaphone, Wrench, Database
+  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
 } from "lucide-react";
+import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,11 +21,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { SystemHealth } from "@/components/admin/SystemHealth";
-import { AuditTrail } from "@/components/admin/AuditTrail";
-import { BroadcastPanel } from "@/components/admin/BroadcastPanel";
-import { MaintenanceTools } from "@/components/admin/MaintenanceTools";
-import { GrowthChart } from "@/components/admin/GrowthChart";
 
 type UserRow = {
   id: string;
@@ -48,6 +43,8 @@ type FilterTab = "all" | "active" | "blocked" | "expired" | "admins";
 const Admin = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [section, setSection] = useState<"users" | "support">("users");
+  const [supportUnread, setSupportUnread] = useState(0);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -61,7 +58,6 @@ const Admin = () => {
   } | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [notifyMsg, setNotifyMsg] = useState("");
-  const [section, setSection] = useState<"users" | "system" | "audit" | "broadcast" | "maintenance">("users");
 
   const fetchUsers = async () => {
     const { data } = await supabase
@@ -77,6 +73,23 @@ const Admin = () => {
     const ch = supabase
       .channel("realtime-admin-profiles")
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "profiles" }, () => fetchUsers())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  // Counter of unread support tickets (for the tab badge)
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("support_tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("unread_by_admin", true);
+      setSupportUnread(count || 0);
+    };
+    fetchUnread();
+    const ch = supabase
+      .channel("realtime-support-unread")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "support_tickets" }, fetchUnread)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -256,45 +269,39 @@ const Admin = () => {
         </Button>
       </div>
 
-      {/* Section nav */}
-      <div className="flex flex-wrap gap-2 border-b border-border pb-3 -mt-2">
-        {[
-          { key: "users", label: "Usuários", icon: Users },
-          { key: "system", label: "Sistema", icon: Database },
-          { key: "broadcast", label: "Comunicado", icon: Megaphone },
-          { key: "audit", label: "Auditoria", icon: Activity },
-          { key: "maintenance", label: "Manutenção", icon: Wrench },
-        ].map((s) => {
-          const Icon = s.icon;
-          const active = section === s.key;
-          return (
-            <button
-              key={s.key}
-              onClick={() => setSection(s.key as any)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Icon size={14} />
-              {s.label}
-            </button>
-          );
-        })}
+      {/* Section Tabs (Users / Support) */}
+      <div className="flex items-center gap-2 border-b border-border">
+        <button
+          onClick={() => setSection("users")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+            section === "users"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users size={15} /> Usuários
+        </button>
+        <button
+          onClick={() => setSection("support")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+            section === "support"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <LifeBuoy size={15} /> Tickets de Suporte
+          {supportUnread > 0 && (
+            <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              {supportUnread}
+            </span>
+          )}
+        </button>
       </div>
 
-      {section === "system" && (
-        <div className="space-y-6">
-          <SystemHealth />
-          <GrowthChart />
-        </div>
-      )}
-      {section === "audit" && <AuditTrail />}
-      {section === "broadcast" && <BroadcastPanel />}
-      {section === "maintenance" && <MaintenanceTools />}
-
-      {section === "users" && <>
+      {section === "support" ? (
+        <SupportInbox />
+      ) : (
+      <>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard icon={Users} label="Total" value={stats.total} tone="primary" />
@@ -575,7 +582,8 @@ const Admin = () => {
           </div>
         </div>
       )}
-      </>}
+      </>
+      )}
 
       {/* Detail dialog */}
       <Dialog open={!!detailUser} onOpenChange={(o) => !o && setDetailUser(null)}>
