@@ -18,7 +18,15 @@ const Tarefas = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchTodos(); }, []);
+  useEffect(() => {
+    if (!user) return;
+    fetchTodos();
+    const ch = supabase
+      .channel("realtime-todos")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "todos", filter: `user_id=eq.${user.id}` }, () => fetchTodos())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
 
   const handleAdd = async () => {
     if (!user || !newTask.trim()) return;
