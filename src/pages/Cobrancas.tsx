@@ -400,8 +400,18 @@ const Cobrancas = () => {
                         title="Cobrar via WhatsApp"
                       >
                         <MessageSquare size={14} />
-                        <span className="hidden sm:inline">Cobrar</span>
+                        <span className="hidden md:inline">WhatsApp</span>
                       </button>
+                      {inst.client_email && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                          title="Cobrar via E-mail"
+                        >
+                          <Mail size={14} />
+                          <span className="hidden lg:inline">E-mail</span>
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmPayId(inst.id); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
