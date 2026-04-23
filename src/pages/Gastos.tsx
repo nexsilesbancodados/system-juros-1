@@ -180,29 +180,27 @@ const Gastos = () => {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <TrendingDown size={20} className="text-destructive" />
+      <div className="page-hero">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-destructive/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--destructive)/0.2)]">
+              <TrendingDown size={22} className="text-destructive" />
             </div>
-            Gastos
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">Controle suas despesas por categoria</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {filtered.length > 0 && (
-            <button onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium border border-border bg-card text-foreground hover:bg-accent transition-colors">
-              <Download size={14} /> CSV
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Gastos</h1>
+              <p className="text-muted-foreground text-sm mt-1">Controle suas despesas por categoria</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {filtered.length > 0 && (
+              <button onClick={handleExportCSV} className="btn-ghost">
+                <Download size={14} /> CSV
+              </button>
+            )}
+            <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-premium">
+              <Plus size={16} /> Novo Gasto
             </button>
-          )}
-          <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: "var(--gradient-button)" }}>
-            <Plus size={16} /> Novo Gasto
-          </button>
+          </div>
         </div>
       </div>
 

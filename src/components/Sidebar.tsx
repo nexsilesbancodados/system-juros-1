@@ -158,15 +158,17 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         title={collapsed ? item.label : undefined}
         className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
           active
-            ? "bg-primary/10 text-foreground"
+            ? "sidebar-item-active text-foreground"
             : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
         } ${collapsed ? "justify-center px-2" : ""}`}
       >
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
         )}
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
-          active ? "bg-primary/15 text-primary shadow-sm" : `${iconColorMap[item.path] || "text-muted-foreground"} group-hover:brightness-125 group-hover:bg-accent/30`
+          active
+            ? "bg-primary/20 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
+            : `${iconColorMap[item.path] || "text-muted-foreground"} group-hover:brightness-125 group-hover:bg-accent/30 group-hover:scale-105`
         }`}>
           <Icon size={16} />
         </div>

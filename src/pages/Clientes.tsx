@@ -72,18 +72,21 @@ const Clientes = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users size={22} className="text-primary" /> Clientes
-          </h1>
-          <p className="text-muted-foreground text-sm">Gerencie seus clientes e contratos.</p>
+      <div className="page-hero animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)]">
+              <Users size={22} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Clientes</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Gerencie seus clientes e contratos.</p>
+            </div>
+          </div>
+          <button onClick={() => navigate("/clientes/novo")} className="btn-premium">
+            <Plus size={16} /> Novo Cliente
+          </button>
         </div>
-        <button onClick={() => navigate("/clientes/novo")}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
-          style={{ background: "var(--gradient-button)" }}>
-          <Plus size={16} /> Novo Cliente
-        </button>
       </div>
 
       {/* Stats */}

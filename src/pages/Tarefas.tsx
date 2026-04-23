@@ -67,16 +67,21 @@ const Tarefas = () => {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CheckSquare size={24} className="text-primary" /> Tarefas
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Organize suas tarefas diárias.</p>
+      <div className="page-hero">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)]">
+              <CheckSquare size={22} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Tarefas</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Organize suas tarefas diárias.</p>
+            </div>
+          </div>
+          <span className="text-xs text-muted-foreground bg-card/70 border border-border/40 rounded-xl px-3 py-1.5 backdrop-blur">
+            <Calendar size={12} className="inline mr-1" />{today}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-1.5">
-          <Calendar size={12} className="inline mr-1" />{today}
-        </span>
       </div>
 
       {/* Stats */}
