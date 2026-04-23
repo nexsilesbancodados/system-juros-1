@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
-  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download
+  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
 } from "lucide-react";
+import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,8 @@ type FilterTab = "all" | "active" | "blocked" | "expired" | "admins";
 const Admin = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [section, setSection] = useState<"users" | "support">("users");
+  const [supportUnread, setSupportUnread] = useState(0);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -70,6 +73,23 @@ const Admin = () => {
     const ch = supabase
       .channel("realtime-admin-profiles")
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "profiles" }, () => fetchUsers())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  // Counter of unread support tickets (for the tab badge)
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("support_tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("unread_by_admin", true);
+      setSupportUnread(count || 0);
+    };
+    fetchUnread();
+    const ch = supabase
+      .channel("realtime-support-unread")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "support_tickets" }, fetchUnread)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
