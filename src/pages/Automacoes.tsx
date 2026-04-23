@@ -413,27 +413,30 @@ const Automacoes = () => {
       )}
 
       {/* Info */}
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-2xl border border-success/30 bg-success/5 p-5">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Settings size={18} className="text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+            <CheckCircle size={18} className="text-success" />
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground">Automação Agendada (Cron)</h3>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              Cron Ativo
+              <Badge className="bg-success/15 text-success border-success/30 text-[10px]">Automático</Badge>
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Para executar as automações automaticamente todos os dias, configure o agendamento no painel do Supabase.
-              As automações rodarão no horário configurado em <strong>Configurações → Bot de Cobranças</strong>.
+              Todas as automações rodam sozinhas no horário programado. Você pode executar manualmente a qualquer momento.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="outline" className="text-[10px]">
-                <Clock size={10} className="mr-1" /> Multas: Diário
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                <Bell size={10} className="mr-1" /> Notificações: Diário
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                <MessageSquare size={10} className="mr-1" /> WhatsApp: Conforme horário
-              </Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Assinaturas: 02:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Multas: 03:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Backup: 04:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Score: 05:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Notificações: 06:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Atrasos: 07:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Aniversários: 09:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><MessageSquare size={10} className="mr-1" /> WhatsApp: hora em hora</Badge>
+              <Badge variant="outline" className="text-[10px]"><Trash2 size={10} className="mr-1" /> Limpeza: seg 01:00</Badge>
+              <Badge variant="outline" className="text-[10px]"><Receipt size={10} className="mr-1" /> Recibo: ao pagar parcela</Badge>
             </div>
           </div>
         </div>
