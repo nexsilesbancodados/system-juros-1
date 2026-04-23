@@ -269,6 +269,39 @@ const Admin = () => {
         </Button>
       </div>
 
+      {/* Section Tabs (Users / Support) */}
+      <div className="flex items-center gap-2 border-b border-border">
+        <button
+          onClick={() => setSection("users")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+            section === "users"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users size={15} /> Usuários
+        </button>
+        <button
+          onClick={() => setSection("support")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+            section === "support"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <LifeBuoy size={15} /> Tickets de Suporte
+          {supportUnread > 0 && (
+            <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              {supportUnread}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {section === "support" ? (
+        <SupportInbox />
+      ) : (
+      <>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard icon={Users} label="Total" value={stats.total} tone="primary" />
