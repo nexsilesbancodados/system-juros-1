@@ -152,7 +152,7 @@ const ContratoDetalhe = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("company_name, company_cnpj").eq("user_id", user!.id).single();
+      const { data } = await supabase.from("settings").select("company_name, company_cnpj, company_logo_url").eq("user_id", user!.id).single();
       return data;
     },
     enabled: !!user,
@@ -173,11 +173,12 @@ const ContratoDetalhe = () => {
       const fileName = `Contrato-${(contract?.clients?.name || "cliente").replace(/\s+/g, "_")}.pdf`;
       await html2pdf()
         .set({
-          margin: [10, 10, 10, 10],
+          margin: [12, 12, 12, 12],
           filename: fileName,
           image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
         } as any)
         .from(node)
         .save();
@@ -245,6 +246,13 @@ const ContratoDetalhe = () => {
     dailyInterestPercent: Number(contract.daily_interest_percent),
     companyName: settings?.company_name || "Empresa",
     companyCnpj: settings?.company_cnpj || "",
+    companyLogoUrl: settings?.company_logo_url || undefined,
+    installments: installments.map((i: any) => ({
+      installment_number: i.installment_number,
+      amount: Number(i.amount),
+      due_date: i.due_date,
+      status: i.status,
+    })),
   } : null;
 
   const tools = [

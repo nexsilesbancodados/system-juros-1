@@ -62,9 +62,24 @@ const Index = () => {
 
       {/* Logo & Title */}
       <div className="relative z-10 flex flex-col items-center mb-10 animate-fade-in">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full gold-glow" />
-          <img src={logoSrc} alt={brandTitle} width={88} height={88} className="relative rounded-full ring-2 ring-white/20" />
+        <div className="relative w-[120px] h-[120px] flex items-center justify-center">
+          {/* Halo */}
+          <div className="absolute inset-2 rounded-full gold-glow" />
+
+          {/* Orbiting scan-line ring (synced with globe rotation) */}
+          <div className="absolute inset-0 rounded-full eagle-orbit pointer-events-none">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 block w-[120px] h-[2px] rounded-full eagle-scanline" />
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(45,90%,60%)] shadow-[0_0_12px_hsl(45,90%,60%)]" />
+          </div>
+
+          {/* Globe (logo) — rotates at the same speed as the orbit line */}
+          <img
+            src={logoSrc}
+            alt={brandTitle}
+            width={88}
+            height={88}
+            className="relative rounded-full ring-2 ring-white/20 eagle-spin"
+          />
         </div>
         <h1 className="font-display text-2xl tracking-[0.35em] mt-4 text-gradient-gold">
           {brandTitle}
