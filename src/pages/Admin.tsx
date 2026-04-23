@@ -61,6 +61,7 @@ const Admin = () => {
   } | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [notifyMsg, setNotifyMsg] = useState("");
+  const [section, setSection] = useState<"users" | "system" | "audit" | "broadcast" | "maintenance">("users");
 
   const fetchUsers = async () => {
     const { data } = await supabase
