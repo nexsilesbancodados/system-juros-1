@@ -305,6 +305,7 @@ const ContratoDetalhe = () => {
   const tools = [
     { icon: Eye, label: "Ver Contrato", action: () => setShowContract(true), color: "text-primary" },
     { icon: Download, label: "Baixar PDF", action: handleDownloadPDF, color: "text-primary" },
+    { icon: Calculator, label: "Quitação", action: () => setSettleOpen(true), color: "text-success" },
     { icon: Send, label: "Cobrar", action: sendAllOverdue, color: "text-destructive" },
     { icon: Copy, label: "Copiar", action: copyInfo, color: "text-muted-foreground" },
     { icon: Edit, label: "Notas", action: () => setEditNotes(true), color: "text-primary" },
