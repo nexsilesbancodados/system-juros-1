@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
-  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download
+  Mail, Trash2, Eye, AlertTriangle, Sparkles, Download,
+  Activity, Megaphone, Wrench, Database
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +21,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { SystemHealth } from "@/components/admin/SystemHealth";
+import { AuditTrail } from "@/components/admin/AuditTrail";
+import { BroadcastPanel } from "@/components/admin/BroadcastPanel";
+import { MaintenanceTools } from "@/components/admin/MaintenanceTools";
+import { GrowthChart } from "@/components/admin/GrowthChart";
 
 type UserRow = {
   id: string;
