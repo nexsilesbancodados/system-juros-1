@@ -56,6 +56,18 @@ const Relatorios = () => {
 
   useEffect(() => { fetchReport(); }, [user, month]);
 
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel("realtime-relatorios")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "profits", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "installments", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, month]);
+
   const monthLabel = (() => {
     const [y, m] = month.split("-").map(Number);
     return new Date(y, m - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });

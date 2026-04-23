@@ -23,7 +23,15 @@ const Metas = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchGoals(); }, []);
+  useEffect(() => {
+    if (!user) return;
+    fetchGoals();
+    const ch = supabase
+      .channel("realtime-goals")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "goals", filter: `user_id=eq.${user.id}` }, () => fetchGoals())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm input-enhanced";

@@ -17,7 +17,14 @@ const Admin = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+    const ch = supabase
+      .channel("realtime-admin-profiles")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "profiles" }, () => fetchUsers())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   if (!profile?.is_admin) {
     return (

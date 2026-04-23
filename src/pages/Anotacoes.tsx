@@ -21,7 +21,15 @@ const Anotacoes = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchNotes(); }, []);
+  useEffect(() => {
+    if (!user) return;
+    fetchNotes();
+    const ch = supabase
+      .channel("realtime-notes")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "notes", filter: `user_id=eq.${user.id}` }, () => fetchNotes())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
 
   const handleAdd = async () => {
     if (!user || !title.trim()) return;

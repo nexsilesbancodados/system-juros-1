@@ -32,6 +32,13 @@ const Planilha = () => {
       setLoading(false);
     };
     fetch();
+    const ch = supabase
+      .channel("realtime-planilha")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients", filter: `user_id=eq.${user.id}` }, fetch)
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contracts", filter: `user_id=eq.${user.id}` }, fetch)
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contract_installments", filter: `user_id=eq.${user.id}` }, fetch)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [user]);
 
   const enriched = useMemo(() => {

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock, Search, Filter, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 const actionLabels: Record<string, string> = {
   contract_created: "Contrato criado",
@@ -37,6 +38,8 @@ const Historico = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+
+  useRealtimeSubscription("audit_logs", [["audit-logs-history", user?.id || ""]]);
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit-logs-history", user?.id],
