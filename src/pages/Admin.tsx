@@ -582,6 +582,8 @@ const Admin = () => {
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* Detail dialog */}
       <Dialog open={!!detailUser} onOpenChange={(o) => !o && setDetailUser(null)}>
