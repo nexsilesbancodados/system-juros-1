@@ -71,9 +71,16 @@ const Perfil = () => {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie suas informações pessoais.</p>
+      <div className="page-hero">
+        <div className="page-hero-content flex items-center gap-3">
+          <div className="page-hero-icon">
+            <User size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-shimmer">Meu Perfil</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Gerencie suas informações pessoais e chave PIX</p>
+          </div>
+        </div>
       </div>
 
       {/* Avatar Card */}
@@ -170,10 +177,7 @@ const Perfil = () => {
           <LogOut size={16} /> Sair
         </button>
         <button onClick={handleSave} disabled={saving}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all focus-ring ${
-            saved ? "bg-success text-success-foreground" : "text-primary-foreground"
-          }`}
-          style={saved ? {} : { background: "var(--gradient-button)" }}>
+          className={saved ? "btn-premium bg-success !shadow-none" : "btn-premium"}>
           {saved ? <><Check size={16} /> Salvo!</> : <><Save size={16} /> {saving ? "Salvando..." : "Salvar Alterações"}</>}
         </button>
       </div>

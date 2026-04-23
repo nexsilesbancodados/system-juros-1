@@ -252,21 +252,23 @@ const Admin = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <Crown size={18} className="text-primary-foreground" />
+      <div className="page-hero animate-fade-in">
+        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="page-hero-icon">
+              <Crown size={22} />
             </div>
-            Painel Administrativo
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gerencie usuários, assinaturas e permissões em tempo real.
-          </p>
+            <div>
+              <h1 className="text-2xl font-bold text-shimmer">Painel Administrativo</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                Gerencie usuários, assinaturas e permissões em tempo real
+              </p>
+            </div>
+          </div>
+          <button onClick={exportCSV} className="btn-ghost">
+            <Download size={14} /> Exportar CSV
+          </button>
         </div>
-        <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
-          <Download size={14} /> Exportar CSV
-        </Button>
       </div>
 
       {/* Section Tabs (Users / Support) */}
