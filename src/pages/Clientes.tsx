@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Users, Trash2, Eye, X, ChevronRight, LayoutGrid, List, Phone, Mail } from "lucide-react";
+import { Plus, Search, Users, Trash2, Eye, X, ChevronRight, LayoutGrid, List, Phone, Mail, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,10 @@ const Clientes = () => {
   const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
     return (localStorage.getItem("clients-view") as "list" | "cards") || "list";
   });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const toggleView = (mode: "list" | "cards") => {
     setViewMode(mode);
@@ -70,6 +74,90 @@ const Clientes = () => {
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
   };
 
+  // ─── CSV Import ─────────────────────────────────────────────
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ""));
+    const map: Record<string, string> = {
+      nome: "name", name: "name",
+      cpf: "cpf_cnpj", cnpj: "cpf_cnpj", cpf_cnpj: "cpf_cnpj", documento: "cpf_cnpj",
+      telefone: "phone", phone: "phone", celular: "phone", tel: "phone",
+      whatsapp: "whatsapp", wpp: "whatsapp", "whats app": "whatsapp",
+      email: "email", "e-mail": "email",
+      status: "status",
+      "data nascimento": "birth_date", nascimento: "birth_date", birth_date: "birth_date", aniversario: "birth_date",
+    };
+    return lines.slice(1).map((line, idx) => {
+      const cols = line.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ""));
+      const row: any = { _row: idx + 2, _errors: [] as string[] };
+      headers.forEach((h, i) => {
+        const key = map[h];
+        if (key) row[key] = cols[i] || "";
+      });
+      if (!row.name) row._errors.push("nome obrigatório");
+      if (row.birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(row.birth_date)) {
+        // tenta dd/mm/yyyy
+        const m = row.birth_date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) row.birth_date = `${m[3]}-${m[2]}-${m[1]}`;
+        else { row._errors.push("data inválida"); row.birth_date = null; }
+      }
+      return row;
+    });
+  };
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCSV(String(reader.result || ""));
+      if (parsed.length === 0) {
+        toast({ title: "CSV vazio ou inválido", variant: "destructive" });
+        return;
+      }
+      setImportPreview(parsed);
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || !user) return;
+    const valid = importPreview.filter(r => r._errors.length === 0);
+    if (valid.length === 0) {
+      toast({ title: "Nenhuma linha válida", variant: "destructive" });
+      return;
+    }
+    setImporting(true);
+    const rows = valid.map(r => ({
+      user_id: user.id,
+      name: r.name,
+      cpf_cnpj: r.cpf_cnpj || null,
+      phone: r.phone || null,
+      whatsapp: r.whatsapp || r.phone || null,
+      email: r.email || null,
+      birth_date: r.birth_date || null,
+      status: r.status === "Inativo" ? "Inativo" : "Ativo",
+      client_type: "loan",
+    }));
+    const { error } = await supabase.from("clients").insert(rows);
+    setImporting(false);
+    if (error) {
+      toast({ title: "Erro ao importar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: `✓ ${rows.length} cliente(s) importado(s)!` });
+    setImportOpen(false); setImportPreview(null);
+    qc.invalidateQueries({ queryKey: ["clients", user?.id] });
+  };
+
+  const downloadTemplate = () => {
+    const csv = "nome,cpf,telefone,whatsapp,email,data_nascimento,status\nJoão da Silva,123.456.789-00,(11) 91234-5678,(11) 91234-5678,joao@email.com,1990-05-15,Ativo\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "modelo-clientes.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5">
       <div className="page-hero animate-fade-in">
@@ -83,9 +171,14 @@ const Clientes = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie seus clientes e contratos.</p>
             </div>
           </div>
-          <button onClick={() => navigate("/clientes/novo")} className="btn-premium">
-            <Plus size={16} /> Novo Cliente
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload size={15} /> Importar CSV
+            </button>
+            <button onClick={() => navigate("/clientes/novo")} className="btn-premium">
+              <Plus size={16} /> Novo Cliente
+            </button>
+          </div>
         </div>
       </div>
 
@@ -264,6 +357,81 @@ const Clientes = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ─── Import CSV Modal ──────────────────────────────── */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => { setImportOpen(false); setImportPreview(null); }}>
+          <div className="bg-card border border-border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={18} className="text-primary" />
+                <h3 className="text-base font-bold text-foreground">Importar Clientes (CSV)</h3>
+              </div>
+              <button onClick={() => { setImportOpen(false); setImportPreview(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+            </div>
+
+            {!importPreview ? (
+              <div className="p-6 space-y-4">
+                <div
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                  onClick={() => fileRef.current?.click()}
+                  className="border-2 border-dashed border-border rounded-2xl p-10 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                >
+                  <Upload size={28} className="mx-auto text-muted-foreground/60 mb-2" />
+                  <p className="text-sm font-medium text-foreground">Clique ou arraste o CSV aqui</p>
+                  <p className="text-xs text-muted-foreground mt-1">Colunas aceitas: nome, cpf, telefone, whatsapp, email, data_nascimento, status</p>
+                  <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+                </div>
+                <button onClick={downloadTemplate} className="text-xs text-primary hover:underline">📥 Baixar modelo CSV</button>
+              </div>
+            ) : (
+              <>
+                <div className="px-5 py-3 border-b border-border flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1 text-success"><CheckCircle size={13} /> {importPreview.filter(r => r._errors.length === 0).length} válidas</span>
+                  <span className="flex items-center gap-1 text-destructive"><AlertCircle size={13} /> {importPreview.filter(r => r._errors.length > 0).length} com erro</span>
+                  <span className="text-muted-foreground ml-auto">{importPreview.length} total</span>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-muted/60 backdrop-blur z-10">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">#</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Nome</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">CPF</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Telefone</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Email</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.map((r) => (
+                        <tr key={r._row} className={`border-t border-border/50 ${r._errors.length > 0 ? "bg-destructive/5" : ""}`}>
+                          <td className="px-3 py-2 text-muted-foreground">{r._row}</td>
+                          <td className="px-3 py-2 text-foreground font-medium">
+                            {r.name || <span className="text-destructive">—</span>}
+                            {r._errors.length > 0 && <p className="text-[10px] text-destructive">{r._errors.join(", ")}</p>}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground font-mono">{r.cpf_cnpj || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{r.phone || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground truncate max-w-[180px]">{r.email || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{r.status || "Ativo"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2">
+                  <button onClick={() => setImportPreview(null)} className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-accent">Voltar</button>
+                  <button onClick={confirmImport} disabled={importing} className="btn-premium disabled:opacity-50">
+                    {importing ? "Importando..." : `Importar ${importPreview.filter(r => r._errors.length === 0).length} cliente(s)`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

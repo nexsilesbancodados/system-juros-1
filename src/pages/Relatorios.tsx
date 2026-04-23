@@ -1,14 +1,23 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3 } from "lucide-react";
+import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Relatorios = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const [companySettings, setCompanySettings] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("settings").select("company_name, company_cnpj, company_logo_url").eq("user_id", user.id).single()
+      .then(({ data }) => setCompanySettings(data));
+  }, [user]);
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -99,6 +108,126 @@ const Relatorios = () => {
     toast({ title: "✓ Relatório exportado!" });
   };
 
+  const handleExportPDF = async () => {
+    if (!data) return;
+    try {
+      const doc = new jsPDF();
+      const pageW = doc.internal.pageSize.getWidth();
+      const companyName = companySettings?.company_name || profile?.name || "Sistema Juros";
+
+      // Header com gradient simulado
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageW, 42, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18); doc.setFont("helvetica", "bold");
+      doc.text(companyName, 14, 16);
+      doc.setFontSize(11); doc.setFont("helvetica", "normal");
+      doc.text("Relatório Financeiro Mensal", 14, 24);
+      doc.setFontSize(8);
+      doc.text(`Período: ${monthLabel}  |  Emitido em ${new Date().toLocaleString("pt-BR")}`, 14, 32);
+      if (companySettings?.company_cnpj) doc.text(`CNPJ: ${companySettings.company_cnpj}`, 14, 38);
+
+      let y = 52;
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      doc.text("Resumo Financeiro", 14, y); y += 2;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Indicador", "Valor"]],
+        body: [
+          ["Lucro Total", `R$ ${fmt(data.totalProfit)}`],
+          ["Gastos Total", `R$ ${fmt(data.totalExpense)}`],
+          ["Saldo Líquido", `R$ ${fmt(data.balance)}`],
+          ["Total Recebido (parcelas)", `R$ ${fmt(data.totalReceived)}`],
+          ["Total em Atraso", `R$ ${fmt(data.totalOverdue)}`],
+          ["Clientes Ativos", String(data.activeClients)],
+        ],
+        theme: "grid",
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 10 },
+        bodyStyles: { fontSize: 9 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        margin: { left: 14, right: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      // Parcelas
+      doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      doc.text("Parcelas do Período", 14, y); y += 2;
+      autoTable(doc, {
+        startY: y,
+        head: [["Status", "Quantidade"]],
+        body: [
+          ["Pagas", String(data.paidCount)],
+          ["Atrasadas", String(data.overdueCount)],
+          ["Pendentes", String(data.pendingCount)],
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 10 },
+        bodyStyles: { fontSize: 9 },
+        margin: { left: 14, right: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      // Lucros detalhados
+      if (data.profitData.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(13); doc.setFont("helvetica", "bold");
+        doc.text(`Lucros (${data.profitData.length})`, 14, y); y += 2;
+        autoTable(doc, {
+          startY: y,
+          head: [["Data", "Descrição", "Valor"]],
+          body: data.profitData.map((p: any) => [
+            new Date(p.date).toLocaleDateString("pt-BR"),
+            p.description,
+            `R$ ${fmt(Number(p.amount))}`,
+          ]),
+          theme: "grid",
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+          columnStyles: { 2: { halign: "right" } },
+          margin: { left: 14, right: 14 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      // Gastos detalhados
+      if (data.expenseData.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(13); doc.setFont("helvetica", "bold");
+        doc.text(`Gastos (${data.expenseData.length})`, 14, y); y += 2;
+        autoTable(doc, {
+          startY: y,
+          head: [["Data", "Descrição", "Categoria", "Valor"]],
+          body: data.expenseData.map((e: any) => [
+            new Date(e.date).toLocaleDateString("pt-BR"),
+            e.description,
+            e.category || "—",
+            `R$ ${fmt(Number(e.amount))}`,
+          ]),
+          theme: "grid",
+          headStyles: { fillColor: [220, 38, 38], textColor: 255, fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+          columnStyles: { 3: { halign: "right" } },
+          margin: { left: 14, right: 14 },
+        });
+      }
+
+      // Footer em todas as páginas
+      const pages = doc.getNumberOfPages();
+      for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7); doc.setTextColor(140);
+        doc.text(`${companyName} · Página ${p}/${pages}`, pageW / 2, 290, { align: "center" });
+      }
+
+      doc.save(`relatorio-${month}.pdf`);
+      toast({ title: "✓ PDF gerado!" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="page-hero animate-fade-in">
@@ -118,8 +247,11 @@ const Relatorios = () => {
               <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
                 className="bg-transparent text-sm text-foreground focus:outline-none" />
             </div>
-            <button onClick={handleExportCSV} disabled={!data} className="btn-premium disabled:opacity-50">
-              <Download size={16} /> Exportar
+            <button onClick={handleExportCSV} disabled={!data} className="btn-ghost disabled:opacity-50">
+              <Download size={16} /> CSV
+            </button>
+            <button onClick={handleExportPDF} disabled={!data} className="btn-premium disabled:opacity-50">
+              <FileDown size={16} /> PDF
             </button>
           </div>
         </div>

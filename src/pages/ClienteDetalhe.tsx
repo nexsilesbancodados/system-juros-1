@@ -781,27 +781,61 @@ const ClienteDetalhe = () => {
         </div>
       )}
 
-      {/* Tab: Histórico */}
-      {activeTab === "historico" && (
-        <div className="space-y-2">
-          {transactions.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-12">Nenhuma transação</p>
-          ) : transactions.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.type === "income" || t.type === "payment" ? "bg-success/10" : "bg-destructive/10"}`}>
-                {t.type === "income" || t.type === "payment" ? <TrendingUp size={14} className="text-success" /> : <DollarSign size={14} className="text-destructive" />}
+      {/* Tab: Histórico (timeline unificada) */}
+      {activeTab === "historico" && (() => {
+        const events: any[] = [];
+        // Contratos criados
+        contracts.forEach((c: any) => events.push({
+          id: `c-${c.id}`, date: c.created_at, type: "contract",
+          title: `Contrato criado · R$ ${fmt(Number(c.capital))}`,
+          subtitle: `${c.num_installments}x · ${FREQ[c.frequency] || c.frequency}`,
+          icon: FileText, color: "text-primary", bg: "bg-primary/10",
+        }));
+        // Pagamentos (parcelas pagas)
+        installments.filter((i: any) => i.status === "paid" && i.paid_at).forEach((i: any) => events.push({
+          id: `i-${i.id}`, date: i.paid_at, type: "payment",
+          title: `Parcela #${i.installment_number} paga`,
+          subtitle: `R$ ${fmt(Number(i.paid_amount || i.amount))}`,
+          icon: CheckCircle, color: "text-success", bg: "bg-success/10",
+        }));
+        // Lucros
+        profits.forEach((p: any) => events.push({
+          id: `p-${p.id}`, date: p.date, type: "profit",
+          title: p.description, subtitle: `+ R$ ${fmt(Number(p.amount))}`,
+          icon: TrendingUp, color: "text-success", bg: "bg-success/10",
+        }));
+        // Transações genéricas restantes
+        transactions.filter((t: any) => t.type !== "payment").forEach((t: any) => events.push({
+          id: `t-${t.id}`, date: t.date, type: t.type,
+          title: t.description, subtitle: `R$ ${fmt(Number(t.amount))}`,
+          icon: DollarSign, color: "text-muted-foreground", bg: "bg-muted",
+        }));
+        const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return sorted.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento no histórico</p>
+        ) : (
+          <div className="relative pl-6 space-y-3">
+            <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
+            {sorted.map(ev => (
+              <div key={ev.id} className="relative">
+                <div className={`absolute -left-[18px] top-3 w-3 h-3 rounded-full ${ev.bg} border-2 border-background`} />
+                <div className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-lg ${ev.bg} flex items-center justify-center shrink-0`}>
+                    <ev.icon size={14} className={ev.color} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(ev.date).toLocaleDateString("pt-BR")} · {new Date(ev.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <p className={`text-sm font-bold ${ev.color} shrink-0`}>{ev.subtitle}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{t.description}</p>
-                <p className="text-[10px] text-muted-foreground">{new Date(t.date).toLocaleDateString("pt-BR")}</p>
-              </div>
-              <p className={`text-sm font-bold ${t.type === "income" || t.type === "payment" ? "text-success" : "text-foreground"}`}>
-                R$ {fmt(Number(t.amount))}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 };
