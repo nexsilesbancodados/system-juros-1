@@ -104,24 +104,78 @@ const Cobrancas = () => {
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
-  const handleWhatsApp = (inst: any) => {
-    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    const phone = inst.client_phone.replace(/\D/g, "");
+  const buildMessage = (inst: any) => {
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize.`;
-    const message = billingTemplate
+    return billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}/g, `${inst.installment_number}`)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
+  };
+
+  const handleWhatsApp = (inst: any) => {
+    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const phone = inst.client_phone.replace(/\D/g, "");
+    const message = buildMessage(inst);
     window.open(`https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  const handleBulkWhatsApp = () => {
-    const overdue = filtered.filter((i: any) => i.status === "overdue");
-    if (!overdue.length) { toast({ title: "Nenhuma parcela atrasada" }); return; }
-    handleWhatsApp(overdue[0]);
-    if (overdue.length > 1) toast({ title: `${overdue.length - 1} cobrança(s) restantes`, description: "Envie uma por uma clicando no botão Cobrar." });
+  const handleEmail = (inst: any) => {
+    if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
+    const subject = `Cobrança - Parcela ${inst.installment_number}`;
+    const body = buildMessage(inst);
+    window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+  };
+
+  const handleSMS = (inst: any) => {
+    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const phone = inst.client_phone.replace(/\D/g, "");
+    const message = buildMessage(inst);
+    window.open(`sms:${phone.startsWith("55") ? "+" + phone : "+55" + phone}?body=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const selectable = filtered.filter((i: any) => i.status !== "paid").map((i: any) => i.id);
+    const allSelected = selectable.every((id: string) => selected.has(id));
+    setSelected(allSelected ? new Set() : new Set(selectable));
+  };
+
+  const getSelectedItems = () => installments.filter((i: any) => selected.has(i.id));
+
+  const handleBulk = (channel: "whatsapp" | "email" | "sms") => {
+    const items = getSelectedItems();
+    if (!items.length) {
+      // Fallback: cobrar todas atrasadas
+      const overdue = filtered.filter((i: any) => i.status === "overdue");
+      if (!overdue.length) { toast({ title: "Selecione parcelas ou tenha atrasadas" }); return; }
+      items.push(...overdue);
+    }
+    let opened = 0, skipped = 0;
+    items.forEach((inst: any, idx: number) => {
+      const hasContact = channel === "email" ? !!inst.client_email : !!inst.client_phone;
+      if (!hasContact) { skipped++; return; }
+      // Stagger window.open to avoid popup blocking
+      setTimeout(() => {
+        if (channel === "whatsapp") handleWhatsApp(inst);
+        else if (channel === "email") handleEmail(inst);
+        else handleSMS(inst);
+      }, idx * 350);
+      opened++;
+    });
+    toast({
+      title: `Enviando ${opened} cobrança(s) por ${channel === "whatsapp" ? "WhatsApp" : channel === "email" ? "E-mail" : "SMS"}`,
+      description: skipped > 0 ? `${skipped} cliente(s) sem contato e foram ignorados.` : undefined,
+    });
+    setSelected(new Set());
   };
 
   const filtered = installments.filter((inst: any) => {
