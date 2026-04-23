@@ -135,6 +135,19 @@ const Chat = () => {
         const { data: rx } = await supabase.from("chat_message_reactions").select("*").in("message_id", ids);
         setReactions(rx || []);
       } else setReactions([]);
+
+      // Mark as read
+      const now = new Date().toISOString();
+      if (scope.kind === "channel" && user) {
+        await supabase
+          .from("chat_channel_members")
+          .update({ last_read_at: now })
+          .eq("channel_id", scope.id)
+          .eq("user_id", user.id);
+      } else if (scope.kind === "dm") {
+        localStorage.setItem(`chat-dm-read-${scope.id}`, now);
+      }
+      window.dispatchEvent(new CustomEvent("chat:read"));
     })();
 
     const ch = supabase
