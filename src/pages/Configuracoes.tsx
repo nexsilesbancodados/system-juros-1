@@ -58,7 +58,7 @@ const Configuracoes = () => {
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
     whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
-    pix_key: "", pix_key_type: "CPF", billing_message: "",
+    pix_key: "", pix_key_type: "cpf", billing_message: "",
     // Bot de cobranças
     bot_enabled: false, bot_auto_send: false,
     bot_send_hour: 9, bot_send_minute: 0,
@@ -131,7 +131,7 @@ const Configuracoes = () => {
       setForm(prev => ({
         ...prev,
         pix_key: profile.pix_key || "",
-        pix_key_type: profile.pix_key_type || "CPF",
+        pix_key_type: profile.pix_key_type || "cpf",
         billing_message: profile.billing_message || "",
       }));
     }
@@ -632,11 +632,11 @@ const Configuracoes = () => {
               <div>
                 <label className="text-label mb-1.5 block">Tipo da Chave</label>
                 <select value={form.pix_key_type} onChange={(e) => setForm({ ...form, pix_key_type: e.target.value })} className={inputCls}>
-                  <option value="CPF">CPF</option>
-                  <option value="CNPJ">CNPJ</option>
-                  <option value="Email">Email</option>
-                  <option value="Telefone">Telefone</option>
-                  <option value="Aleatória">Chave Aleatória</option>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Telefone</option>
+                  <option value="random">Chave Aleatória</option>
                 </select>
               </div>
               <div>
