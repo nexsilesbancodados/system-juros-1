@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Shield, Search, Activity, FilePlus, Trash2, CreditCard, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 const actionLabels: Record<string, string> = {
   create: "Criação",
@@ -43,6 +44,8 @@ const Auditoria = () => {
   const [filterAction, setFilterAction] = useState("");
   const [filterEntity, setFilterEntity] = useState("");
   const [search, setSearch] = useState("");
+
+  useRealtimeSubscription("audit_logs", [["audit-logs", user?.id || ""]]);
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit-logs", user?.id, filterAction, filterEntity],
