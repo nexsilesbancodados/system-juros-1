@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, Search, Activity, FilePlus, Trash2, CreditCard, Edit } from "lucide-react";
+import { Shield, Search, Activity, FilePlus, Trash2, CreditCard, Edit, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
@@ -76,6 +76,27 @@ const Auditoria = () => {
 
   const selectCls = "px-3 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 
+  const exportCsv = () => {
+    const rows = [
+      ["Data", "Ação", "Entidade", "ID", "Detalhes"],
+      ...filteredLogs.map((l: any) => [
+        new Date(l.created_at).toLocaleString("pt-BR"),
+        actionLabels[l.action] || l.action,
+        entityLabels[l.entity_type] || l.entity_type,
+        l.entity_id || "",
+        JSON.stringify(l.details || {}).replace(/"/g, '""'),
+      ]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `auditoria-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const statItems = [
     { label: "Total de Ações", value: logs.length, icon: Activity, color: "text-primary", bg: "bg-primary/10" },
     { label: "Criações", value: logs.filter((l: any) => l.action === "create").length, icon: FilePlus, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -120,6 +141,13 @@ const Auditoria = () => {
             <option key={k} value={k}>{v}</option>
           ))}
         </select>
+        <button
+          onClick={exportCsv}
+          disabled={filteredLogs.length === 0}
+          className="px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <Download size={14} /> Exportar CSV
+        </button>
       </div>
 
       {/* Stats */}
