@@ -9,6 +9,7 @@ import {
   FileText, Crown, ClipboardList,
   Settings, Bot, QrCode, UserCheck, Shield, Zap,
   Briefcase, PieChart, Cog, Sparkles, LogOut, User, LifeBuoy, MessageCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
@@ -36,6 +37,7 @@ const iconColorMap: Record<string, string> = {
   "/relatorios": "text-sky-300",
   "/clientes": "text-cyan-400",
   "/cobrancas": "text-blue-300",
+  "/inadimplencia": "text-rose-400",
   "/cobradores": "text-slate-300",
   "/carteira": "text-sky-400",
   "/lucros": "text-emerald-400",
@@ -74,6 +76,7 @@ const sections: MenuSection[] = [
     items: [
       { label: "Clientes", icon: Users, path: "/clientes" },
       { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
+      { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia" },
       { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
     ],
   },

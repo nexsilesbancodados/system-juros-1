@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
+import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
 import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -55,6 +56,7 @@ const DashboardLayout = () => {
       {isMobile && <MobileBottomNav />}
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <KeyboardShortcutsHelp />
     </div>
   );
 };

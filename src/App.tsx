@@ -45,6 +45,7 @@ const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 const Suporte = lazy(() => import("./pages/Suporte"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Chat = lazy(() => import("./pages/Chat"));
+const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +107,7 @@ const App = () => (
                   <Route path="/suporte" element={<Suporte />} />
                   <Route path="/notificacoes" element={<Notificacoes />} />
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/inadimplencia" element={<Inadimplencia />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
