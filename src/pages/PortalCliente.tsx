@@ -97,6 +97,7 @@ const PortalCliente = () => {
       setContracts(contractsRes.data || []);
       setInstallments(processedInsts);
       setOwnerProfile(profileRes.data);
+      setPortalSettings(settingsRes.data);
       toast({ title: `Bem-vindo(a), ${client.name.split(" ")[0]}!` });
     } catch (err) {
       toast({ title: "Erro no acesso", description: "Tente novamente mais tarde.", variant: "destructive" });
