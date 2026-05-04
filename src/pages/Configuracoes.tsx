@@ -218,6 +218,13 @@ const Configuracoes = () => {
       bot_use_ai: form.bot_use_ai,
       bot_negotiation_enabled: form.bot_negotiation_enabled,
       bot_send_audio: form.bot_send_audio,
+      portal_title: form.portal_title,
+      portal_subtitle: form.portal_subtitle,
+      portal_welcome_message: form.portal_welcome_message,
+      portal_primary_color: form.portal_primary_color,
+      portal_logo_url: form.portal_logo_url,
+      portal_contact_phone: form.portal_contact_phone,
+      portal_contact_email: form.portal_contact_email,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
