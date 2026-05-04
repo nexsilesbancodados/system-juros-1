@@ -1114,7 +1114,7 @@ const Configuracoes = () => {
               <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><MessageSquare size={16} className="text-primary" /></div>
               <div>
                 <h2 className="font-semibold text-foreground">Templates de Mensagem</h2>
-                <p className="text-xs text-muted-foreground">Use [Nome], [Valor], [Dias] como variáveis.</p>
+                <p className="text-xs text-muted-foreground">Use [Nome], [Valor], [Dias], [Portal] como variáveis.</p>
               </div>
             </div>
 
