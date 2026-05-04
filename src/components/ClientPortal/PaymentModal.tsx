@@ -33,11 +33,32 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
   const isOverdue = installment.status === "overdue";
   const isPaid = installment.status === "paid";
 
+  const pixPayload = useMemo(() => {
+    if (!ownerProfile?.pix_key || isPaid) return "";
+    try {
+      return generatePixPayload(
+        ownerProfile.pix_key,
+        Number(installment.amount),
+        "SAO PAULO",
+        ownerProfile.full_name || "CREDOR",
+        `PARCELA ${installment.installment_number}`
+      );
+    } catch (e) {
+      console.error("Erro ao gerar PIX", e);
+      return "";
+    }
+  }, [ownerProfile, installment, isPaid]);
+
   const handleCopyPix = () => {
-    if (!ownerProfile?.pix_key) return;
-    navigator.clipboard.writeText(ownerProfile.pix_key);
+    const textToCopy = pixPayload || ownerProfile?.pix_key;
+    if (!textToCopy) return;
+    
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
-    toast({ title: "Chave PIX copiada!", description: "Agora basta colar no seu banco." });
+    toast({ 
+      title: pixPayload ? "PIX Copia e Cola!" : "Chave PIX copiada!", 
+      description: "Agora basta colar no seu banco para pagar." 
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
