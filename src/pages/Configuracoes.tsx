@@ -78,6 +78,9 @@ const Configuracoes = () => {
     bot_closing_message: "Qualquer dúvida, entre em contato. Obrigado!",
     bot_send_pix: true, bot_send_receipt: false,
     bot_tone: "formal",
+    bot_use_ai: false,
+    bot_negotiation_enabled: false,
+    bot_send_audio: false,
   });
 
   useEffect(() => {
@@ -122,6 +125,9 @@ const Configuracoes = () => {
         bot_send_pix: s.bot_send_pix ?? true,
         bot_send_receipt: s.bot_send_receipt ?? false,
         bot_tone: s.bot_tone || "formal",
+        bot_use_ai: s.bot_use_ai || false,
+        bot_negotiation_enabled: s.bot_negotiation_enabled || false,
+        bot_send_audio: s.bot_send_audio || false,
       }));
     }
   }, [settings]);
@@ -195,6 +201,9 @@ const Configuracoes = () => {
       bot_send_pix: form.bot_send_pix,
       bot_send_receipt: form.bot_send_receipt,
       bot_tone: form.bot_tone,
+      bot_use_ai: form.bot_use_ai,
+      bot_negotiation_enabled: form.bot_negotiation_enabled,
+      bot_send_audio: form.bot_send_audio,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
@@ -729,6 +738,55 @@ const Configuracoes = () => {
                         <p className="text-xs font-medium text-foreground mt-1">{tone.label}</p>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* AI and Negotiation */}
+                <div className="space-y-4 p-4 rounded-2xl border border-primary/20 bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <Bot size={16} className="text-primary" />
+                    <p className="text-sm font-semibold text-foreground">Inteligência Artificial & Negociação</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Gerar Mensagens com IA</p>
+                        <p className="text-[10px] text-muted-foreground">Usa o Lovable AI para criar mensagens personalizadas e persuasivas</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_use_ai: !form.bot_use_ai })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_use_ai ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_use_ai ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Negociação Inteligente</p>
+                        <p className="text-[10px] text-muted-foreground">Permite que o bot responda e negocie datas e descontos simples</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_negotiation_enabled: !form.bot_negotiation_enabled })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_negotiation_enabled ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_negotiation_enabled ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Enviar Áudio (Beta)</p>
+                        <p className="text-[10px] text-muted-foreground">O bot envia áudios curtos personalizados (TTS)</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_send_audio: !form.bot_send_audio })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_send_audio ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_send_audio ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 

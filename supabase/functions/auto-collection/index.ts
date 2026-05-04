@@ -13,6 +13,51 @@ interface EscalationRule {
   template: string;
 }
 
+// Basic PIX Static Code Generator (Minimal implementation)
+function generatePixCopyPaste(pixKey: string, amount: number, merchantName: string = "SISTEMA JUROS") {
+  // This is a simplified static PIX generator
+  // Merchant Account Information
+  const gui = "000201";
+  const merchantAccount = "26";
+  const pixGui = "0014br.gov.bcb.pix";
+  const pixKeyTag = `01${pixKey.length.toString().padStart(2, "0")}${pixKey}`;
+  const merchantAccountInfo = `${merchantAccount}${(pixGui.length + pixKeyTag.length).toString().padStart(2, "0")}${pixGui}${pixKeyTag}`;
+  
+  const merchantCategory = "52040000";
+  const currency = "5303986";
+  const amountStr = amount.toFixed(2);
+  const transactionAmount = `54${amountStr.length.toString().padStart(2, "0")}${amountStr}`;
+  const countryCode = "5802BR";
+  const merchantNameTag = `59${merchantName.substring(0, 25).length.toString().padStart(2, "0")}${merchantName.substring(0, 25).toUpperCase()}`;
+  const merchantCity = "6009SAO PAULO";
+  const additionalData = "62070503***";
+  
+  const payload = `${gui}${merchantAccountInfo}${merchantCategory}${currency}${transactionAmount}${countryCode}${merchantNameTag}${merchantCity}${additionalData}6304`;
+  
+  // CRC16 Calculation (Simplified for the sake of the bot)
+  // In a real scenario, we'd use a proper CRC16-CCITT (0xFFFF)
+  // For now, let's just return the payload + a dummy CRC or use a library if possible.
+  // Since we are in Deno without many libs, we'll use a standard CRC16 implementation.
+  
+  function crc16(data: string) {
+    let crc = 0xFFFF;
+    const bytes = new TextEncoder().encode(data);
+    for (const b of bytes) {
+      crc ^= (b << 8);
+      for (let i = 0; i < 8; i++) {
+        if (crc & 0x8000) {
+          crc = (crc << 1) ^ 0x1021;
+        } else {
+          crc = crc << 1;
+        }
+      }
+    }
+    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, "0");
+  }
+
+  return payload + crc16(payload);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,6 +67,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
 
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
@@ -59,9 +105,7 @@ serve(async (req) => {
 
       // Check send hour
       const sendHour = settings.bot_send_hour ?? 9;
-      const sendMinute = settings.bot_send_minute ?? 0;
       const currentHour = now.getUTCHours() - 3; // BRT offset
-      // Only execute if within the configured hour (with 30min tolerance)
       if (Math.abs(currentHour - sendHour) > 1) {
         results.push({ user_id: userId, sent: 0, skipped: 1, errors: ["Fora do horário"] });
         continue;
@@ -125,14 +169,14 @@ serve(async (req) => {
 
       const clientMap = new Map(clients?.map(c => [c.id, c]) || []);
 
-      // Get user profile for message template
+      // Get user profile for details
       const { data: profile } = await supabase
         .from("profiles")
         .select("name, billing_message, pix_key, pix_key_type")
         .eq("id", userId)
         .single();
 
-      // Get message templates
+      // Get active templates
       const { data: templates } = await supabase
         .from("message_templates")
         .select("*")
@@ -161,20 +205,19 @@ serve(async (req) => {
           continue;
         }
 
-        // Find the most overdue installment to determine escalation level
+        // Find escalation level
         const mostOverdue = installments.reduce((max, inst) => {
           const days = Math.floor((now.getTime() - new Date(inst.due_date).getTime()) / 86400000);
           return days > max.days ? { days, inst } : max;
         }, { days: 0, inst: installments[0] });
 
-        // Find matching escalation rule
         const matchingRule = escalationRules
           .sort((a, b) => b.days - a.days)
           .find(r => mostOverdue.days >= r.days);
 
         if (!matchingRule) continue;
 
-        // Check if already sent for this rule today
+        // Check frequency
         const { data: alreadySent } = await supabase
           .from("audit_logs")
           .select("id")
@@ -189,53 +232,87 @@ serve(async (req) => {
           continue;
         }
 
-        // Check if payment was made (stop on payment)
-        if (settings.bot_stop_on_payment) {
-          const { data: recentPayments } = await supabase
-            .from("contract_installments")
-            .select("id")
-            .eq("client_id", clientId)
-            .eq("user_id", userId)
-            .eq("status", "paid")
-            .gte("paid_at", `${todayStr}T00:00:00Z`)
-            .limit(1);
+        // Build message
+        const totalAmount = installments.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
+        let message = "";
 
-          if (recentPayments && recentPayments.length > 0) {
-            skipped++;
-            continue;
+        // AI Generation Priority
+        if (settings.bot_use_ai && lovableApiKey) {
+          try {
+            const tone = settings.bot_tone || "profissional e educado";
+            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${lovableApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-3-flash-preview",
+                messages: [
+                  { 
+                    role: "system", 
+                    content: `Você é um assistente de cobrança inteligente para a empresa ${companyName}. Seu objetivo é recuperar o crédito de forma eficaz, mantendo o bom relacionamento com o cliente. Tom de voz: ${tone}.` 
+                  },
+                  { 
+                    role: "user", 
+                    content: `Gere uma mensagem curta e objetiva para o cliente ${client.name}. 
+                    Dados da dívida:
+                    - Valor total: R$ ${totalAmount.toFixed(2)}
+                    - Quantidade de parcelas: ${installments.length}
+                    - Atraso máximo: ${mostOverdue.days} dias.
+                    
+                    Regras:
+                    - Use emojis discretos.
+                    - Não mencione que você é uma IA.
+                    - Se for o primeiro contato (0-5 dias de atraso), seja muito amigável.
+                    - Se for um atraso longo (30+ dias), seja firme mas profissional.
+                    - Mencione que o pagamento pode ser feito via PIX.` 
+                  }
+                ],
+                temperature: 0.7,
+              })
+            });
+
+            if (aiResp.ok) {
+              const aiData = await aiResp.json();
+              message = aiData.choices?.[0]?.message?.content?.trim() || "";
+            }
+          } catch (aiErr) {
+            console.error("AI Generation failed:", aiErr);
           }
         }
 
-        // Build message
-        const totalAmount = installments.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
-        const template = templates?.find(t => t.name.toLowerCase().includes(matchingRule.template.toLowerCase()));
+        // Fallback to templates or default
+        if (!message) {
+          const template = templates?.find(t => t.name.toLowerCase().includes(matchingRule.template.toLowerCase()));
+          if (template) {
+            message = template.content
+              .replace(/\{nome\}/gi, client.name)
+              .replace(/\{empresa\}/gi, companyName)
+              .replace(/\{valor\}/gi, `R$ ${totalAmount.toFixed(2)}`)
+              .replace(/\{parcelas\}/gi, String(installments.length))
+              .replace(/\{dias\}/gi, String(mostOverdue.days));
+          } else {
+            const greeting = settings.bot_greeting_message
+              ?.replace(/\{nome\}/gi, client.name)
+              ?.replace(/\{empresa\}/gi, companyName) || `Olá ${client.name}`;
 
-        let message = "";
-        if (template) {
-          message = template.content
-            .replace(/\{nome\}/gi, client.name)
-            .replace(/\{empresa\}/gi, companyName)
-            .replace(/\{valor\}/gi, `R$ ${totalAmount.toFixed(2)}`)
-            .replace(/\{parcelas\}/gi, String(installments.length))
-            .replace(/\{dias\}/gi, String(mostOverdue.days));
-        } else {
-          // Default message
-          const greeting = settings.bot_greeting_message
-            ?.replace(/\{nome\}/gi, client.name)
-            ?.replace(/\{empresa\}/gi, companyName) || `Olá ${client.name}`;
-
-          message = `${greeting}\n\nIdentificamos ${installments.length} parcela(s) pendente(s) totalizando R$ ${totalAmount.toFixed(2)}.\n`;
-
-          if (mostOverdue.days > 0) {
-            message += `A parcela mais antiga está atrasada há ${mostOverdue.days} dia(s).\n`;
+            message = `${greeting}\n\nIdentificamos ${installments.length} parcela(s) pendente(s) totalizando R$ ${totalAmount.toFixed(2)}.\n`;
+            if (mostOverdue.days > 0) message += `Atraso de ${mostOverdue.days} dia(s).\n`;
+            
+            const closing = settings.bot_closing_message || "Qualquer dúvida, entre em contato. Obrigado!";
+            message += `\n${closing}`;
           }
+        }
 
-          if (settings.bot_send_pix && profile?.pix_key) {
-            message += `\n💰 PIX para pagamento: ${profile.pix_key} (${profile.pix_key_type || "Chave"})`;
+        // Add PIX if enabled
+        if (settings.bot_send_pix && profile?.pix_key) {
+          try {
+            const pixCode = generatePixCopyPaste(profile.pix_key, totalAmount, companyName);
+            message += `\n\n💳 *Pagamento via PIX*\nChave: ${profile.pix_key}\n\n*Copia e Cola:*\n\`${pixCode}\``;
+          } catch (pixErr) {
+            message += `\n\n💰 *PIX para pagamento:*\n${profile.pix_key} (${profile.pix_key_type || "Chave"})`;
           }
-
-          const closing = settings.bot_closing_message || "Qualquer dúvida, entre em contato. Obrigado!";
-          message += `\n\n${closing}`;
         }
 
         // Send via Evolution API
@@ -252,8 +329,6 @@ serve(async (req) => {
 
             if (sendResp.ok) {
               sent++;
-
-              // Log the sent message
               await supabase.from("audit_logs").insert({
                 user_id: userId,
                 entity_type: "auto_collection",
@@ -265,7 +340,8 @@ serve(async (req) => {
                   rule: matchingRule,
                   days_overdue: mostOverdue.days,
                   amount: totalAmount,
-                  installments_count: installments.length,
+                  method: "whatsapp_bot",
+                  ai_generated: settings.bot_use_ai
                 },
               });
             } else {
@@ -282,11 +358,10 @@ serve(async (req) => {
       totalSkipped += skipped;
       results.push({ user_id: userId, sent, skipped, errors });
 
-      // Notify the user about the collection run
       if (sent > 0 && settings.bot_notify_owner) {
         await supabase.from("notifications").insert({
           user_id: userId,
-          message: `🤖 Cobrança automática: ${sent} mensagem(ns) enviada(s) hoje.${errors.length > 0 ? ` ${errors.length} erro(s).` : ""}`,
+          message: `🤖 Bot: ${sent} cobranças enviadas${settings.bot_use_ai ? " (com IA)" : ""}.`,
           type: "collection_auto",
           from: "Bot de Cobranças",
           link: "/auditoria",
@@ -295,12 +370,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({
-        message: `Cobrança automática concluída`,
-        total_sent: totalSent,
-        total_skipped: totalSkipped,
-        results,
-      }),
+      JSON.stringify({ message: `Sucesso`, total_sent: totalSent, total_skipped: totalSkipped, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

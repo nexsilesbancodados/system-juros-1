@@ -186,6 +186,9 @@ const AgenteIA = () => {
     workHourStart: 8,
     workHourEnd: 20,
     tone: "formal" as "formal" | "casual" | "firme",
+    useAi: false,
+    negotiationEnabled: false,
+    sendAudio: false,
   });
 
   const { data: settings } = useQuery({
@@ -193,7 +196,7 @@ const AgenteIA = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("settings")
-        .select("bot_enabled, bot_auto_send, bot_send_pix, bot_notify_owner, bot_max_messages_per_day, bot_send_hour, bot_send_minute, bot_tone, whatsapp_instance")
+        .select("bot_enabled, bot_auto_send, bot_send_pix, bot_notify_owner, bot_max_messages_per_day, bot_send_hour, bot_send_minute, bot_tone, whatsapp_instance, bot_use_ai, bot_negotiation_enabled, bot_send_audio")
         .eq("user_id", user!.id)
         .single();
       return data;
@@ -213,6 +216,9 @@ const AgenteIA = () => {
         maxMessagesPerDay: settings.bot_max_messages_per_day ?? 50,
         workHourStart: settings.bot_send_hour ?? 8,
         tone: (settings.bot_tone as any) ?? "formal",
+        useAi: settings.bot_use_ai ?? false,
+        negotiationEnabled: settings.bot_negotiation_enabled ?? false,
+        sendAudio: settings.bot_send_audio ?? false,
       }));
     }
   }, [settings]);
@@ -492,6 +498,9 @@ const AgenteIA = () => {
         bot_max_messages_per_day: agentConfig.maxMessagesPerDay,
         bot_send_hour: agentConfig.workHourStart,
         bot_tone: agentConfig.tone,
+        bot_use_ai: agentConfig.useAi,
+        bot_negotiation_enabled: agentConfig.negotiationEnabled,
+        bot_send_audio: agentConfig.sendAudio,
       }).eq("user_id", user.id);
       queryClient.invalidateQueries({ queryKey: ["settings-agent"] });
       toast({ title: "Configurações salvas!" });
@@ -800,6 +809,24 @@ const AgenteIA = () => {
               description="Envia mensagens de cobrança automaticamente para parcelas atrasadas"
             />
             <ToggleSwitch
+              enabled={agentConfig.useAi}
+              onToggle={() => setAgentConfig((p) => ({ ...p, useAi: !p.useAi }))}
+              label="Inteligência Artificial"
+              description="Usa o Lovable AI para gerar mensagens de cobrança persuasivas e humanizadas"
+            />
+            <ToggleSwitch
+              enabled={agentConfig.negotiationEnabled}
+              onToggle={() => setAgentConfig((p) => ({ ...p, negotiationEnabled: !p.negotiationEnabled }))}
+              label="Negociação Inteligente"
+              description="O bot responde e negocia prazos e descontos simples via chat"
+            />
+            <ToggleSwitch
+              enabled={agentConfig.sendAudio}
+              onToggle={() => setAgentConfig((p) => ({ ...p, sendAudio: !p.sendAudio }))}
+              label="Enviar Áudio (Beta)"
+              description="Converte a mensagem em áudio (TTS) antes de enviar"
+            />
+            <ToggleSwitch
               enabled={agentConfig.sendPix}
               onToggle={() => setAgentConfig((p) => ({ ...p, sendPix: !p.sendPix }))}
               label="Enviar Chave Pix"
@@ -874,6 +901,14 @@ const AgenteIA = () => {
               </div>
               <p className="text-lg font-semibold text-foreground">WhatsApp Conectado!</p>
               <p className="text-sm text-muted-foreground">Instância: <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{instanceName}</span></p>
+              <div className="bg-muted/30 border border-border rounded-xl p-4 text-left max-w-sm mx-auto space-y-2">
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Shield size={12} className="text-primary" /> Webhook de IA</p>
+                <p className="text-[10px] text-muted-foreground">Copie esta URL e cole nas configurações de Webhook da sua instância no Evolution API para ativar a negociação automática:</p>
+                <div className="flex gap-2">
+                  <input readOnly value={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`} className="flex-1 bg-card border border-border rounded px-2 py-1 text-[10px] font-mono" />
+                  <button onClick={() => { navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`); toast({ title: "Copiado!" }); }} className="p-1 hover:bg-muted rounded"><RefreshCw size={12} /></button>
+                </div>
+              </div>
               <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mt-4">
                 <div className="rounded-xl bg-muted/30 border border-border p-3 text-center">
                   <p className="text-2xl font-bold text-foreground">{dashData?.clients.length || 0}</p>
