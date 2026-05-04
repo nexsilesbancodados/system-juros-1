@@ -323,14 +323,45 @@ const PortalCliente = () => {
             )}
 
             {/* Atalhos Rápidos */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-foreground">Ações Rápidas</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ArrowRight size={16} className="text-primary" /> Ações Rápidas
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <QuickActionButton icon={MessageSquare} label="Iniciar Negociação" desc="Fale com nosso robô" onClick={() => setActiveTab('negociar')} />
                 <QuickActionButton icon={Download} label="Baixar Contratos" desc="Documentos assinados" />
                 <QuickActionButton icon={Headphones} label="Suporte Técnico" desc="Falar com humano" />
-                <QuickActionButton icon={MapPin} label="Endereço da Empresa" desc="Ver localização" />
+                <QuickActionButton icon={HelpCircle} label="Central de Ajuda" desc="Dúvidas comuns" />
               </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div className="pt-4">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <HelpCircle size={16} className="text-primary" /> Dúvidas Frequentes
+              </h3>
+              <Card className="border-border/50 shadow-sm overflow-hidden bg-card">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Como funcionam os juros?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Os juros são calculados diariamente sobre o saldo devedor. Ao antecipar parcelas, você recebe um desconto proporcional nos juros aplicados.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Posso alterar a data de vencimento?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Sim, é possível solicitar a alteração da data de vencimento uma vez a cada 6 meses, desde que não haja parcelas em atraso no momento da solicitação.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Como gerar a segunda via?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Basta clicar na aba "Parcelas", selecionar a parcela desejada e clicar em "Pagar Agora". Você terá acesso ao código PIX ou boleto atualizado.
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
             </div>
           </TabsContent>
 
