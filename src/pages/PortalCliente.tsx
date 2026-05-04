@@ -403,7 +403,7 @@ const PortalCliente = () => {
             </div>
 
             {/* FAQ Section */}
-            <div className="pt-4">
+            <div className="pt-4" id="faq-section">
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <HelpCircle size={16} className="text-primary" /> Dúvidas Frequentes
               </h3>
