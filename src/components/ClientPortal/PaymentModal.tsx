@@ -46,8 +46,8 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
       const { data: { user } } = await supabase.auth.getUser(); // Apenas para contexto se houver
       
       const client = {
-        name: installment.client_name || "Cliente",
-        cpf_cnpj: installment.client_cpf_cnpj || "000.000.000-00"
+        name: clientData?.name || "Cliente",
+        cpf_cnpj: clientData?.cpf_cnpj || "000.000.000-00"
       };
       
       generatePortalReceiptPdf(client, installment, ownerProfile);
