@@ -137,24 +137,34 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                 </div>
                 
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="bg-white p-2 rounded-xl border border-border">
-                    {/* Placeholder para QR Code Real */}
-                    <div className="w-32 h-32 bg-slate-100 flex items-center justify-center relative overflow-hidden group">
-                      <QrCode size={80} className="text-slate-300" />
-                      <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
-                        <span className="text-[10px] font-bold text-slate-800">QR Code indisponível</span>
-                        <span className="text-[8px] text-slate-500">Use a chave abaixo</span>
+                  <div className="bg-white p-3 rounded-2xl border border-border shadow-sm">
+                    {pixPayload ? (
+                      <QRCodeSVG 
+                        value={pixPayload} 
+                        size={160}
+                        level="M"
+                        includeMargin={false}
+                      />
+                    ) : (
+                      <div className="w-32 h-32 bg-slate-100 flex items-center justify-center relative overflow-hidden group">
+                        <QrCode size={80} className="text-slate-300" />
+                        <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
+                          <span className="text-[10px] font-bold text-slate-800">QR Code indisponível</span>
+                          <span className="text-[8px] text-slate-500">Use a chave abaixo</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   
                   <div className="w-full space-y-2">
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase text-center">Chave do Credor</p>
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border p-2 rounded-xl">
-                      <code className="flex-1 text-xs font-mono font-medium truncate px-1">
-                        {ownerProfile?.pix_key || "carregando..."}
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase text-center">
+                      {pixPayload ? "Código PIX Copia e Cola" : "Chave do Credor"}
+                    </p>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border p-2 rounded-xl group hover:border-primary/50 transition-colors">
+                      <code className="flex-1 text-[10px] font-mono font-medium truncate px-1 text-muted-foreground">
+                        {pixPayload || ownerProfile?.pix_key || "carregando..."}
                       </code>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={handleCopyPix}>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg shrink-0" onClick={handleCopyPix}>
                         {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                       </Button>
                     </div>
