@@ -537,17 +537,32 @@ export type Database = {
       }
       contracts: {
         Row: {
+          attachments: Json
+          auto_renew: boolean
           capital: number
           client_id: string
           created_at: string
           daily_interest_percent: number
+          early_payment_discount_percent: number
           frequency: string
+          grace_days: number
+          guarantee_description: string | null
+          guarantee_type: string | null
+          guarantor_cpf: string | null
+          guarantor_name: string | null
+          guarantor_phone: string | null
           id: string
           installment_amount: number
           interest_rate: number
           late_fee_percent: number
+          max_interest_cap_percent: number | null
           notes: string | null
           num_installments: number
+          payment_method: string
+          signature_status: string
+          signature_token: string | null
+          signature_url: string | null
+          signed_at: string | null
           start_date: string
           status: string
           total_amount: number
@@ -555,17 +570,32 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json
+          auto_renew?: boolean
           capital: number
           client_id: string
           created_at?: string
           daily_interest_percent?: number
+          early_payment_discount_percent?: number
           frequency?: string
+          grace_days?: number
+          guarantee_description?: string | null
+          guarantee_type?: string | null
+          guarantor_cpf?: string | null
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
           id?: string
           installment_amount: number
           interest_rate?: number
           late_fee_percent?: number
+          max_interest_cap_percent?: number | null
           notes?: string | null
           num_installments: number
+          payment_method?: string
+          signature_status?: string
+          signature_token?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
           start_date?: string
           status?: string
           total_amount?: number
@@ -573,17 +603,32 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json
+          auto_renew?: boolean
           capital?: number
           client_id?: string
           created_at?: string
           daily_interest_percent?: number
+          early_payment_discount_percent?: number
           frequency?: string
+          grace_days?: number
+          guarantee_description?: string | null
+          guarantee_type?: string | null
+          guarantor_cpf?: string | null
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
           id?: string
           installment_amount?: number
           interest_rate?: number
           late_fee_percent?: number
+          max_interest_cap_percent?: number | null
           notes?: string | null
           num_installments?: number
+          payment_method?: string
+          signature_status?: string
+          signature_token?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
           start_date?: string
           status?: string
           total_amount?: number
