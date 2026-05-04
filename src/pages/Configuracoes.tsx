@@ -125,6 +125,9 @@ const Configuracoes = () => {
         bot_send_pix: s.bot_send_pix ?? true,
         bot_send_receipt: s.bot_send_receipt ?? false,
         bot_tone: s.bot_tone || "formal",
+        bot_use_ai: s.bot_use_ai || false,
+        bot_negotiation_enabled: s.bot_negotiation_enabled || false,
+        bot_send_audio: s.bot_send_audio || false,
       }));
     }
   }, [settings]);
