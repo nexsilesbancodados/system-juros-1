@@ -206,9 +206,17 @@ const PortalCliente = () => {
       <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
-              <User size={24} className="text-white" />
-            </div>
+            {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
+              <img 
+                src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
+                alt="Logo" 
+                className="w-12 h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
+                <User size={24} className="text-white" />
+              </div>
+            )}
             <div className="hidden sm:block">
               <h2 className="text-sm font-bold text-foreground leading-none">{clientData.name}</h2>
               <p className="text-[10px] text-muted-foreground font-mono mt-1">{clientData.cpf_cnpj}</p>
