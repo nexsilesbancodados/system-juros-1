@@ -108,6 +108,7 @@ const PortalCliente = () => {
     setInstallments([]);
     setContracts([]);
     setCpf("");
+    setBirthDate("");
     setOwnerProfile(null);
     setActiveTab("resumo");
   };
