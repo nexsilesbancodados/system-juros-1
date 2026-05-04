@@ -287,9 +287,9 @@ const PortalCliente = () => {
 
             {/* Grid de Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title="Saldo Devedor" value={`R$ ${fmt(totalPending)}`} icon={TrendingDown} color="text-destructive" bg="bg-destructive/10" />
-              <StatCard title="Total Pago" value={`R$ ${fmt(totalPaid)}`} icon={TrendingUp} color="text-success" bg="bg-success/10" />
-              <StatCard title="Contratos" value={contracts.length} icon={FileText} color="text-primary" bg="bg-primary/10" />
+              <StatCard title="Valor do Empréstimo" value={`R$ ${fmt(totalAmount)}`} icon={FileText} color="text-primary" bg="bg-primary/10" />
+              <StatCard title="Valor Pago" value={`R$ ${fmt(totalPaid)}`} icon={TrendingUp} color="text-success" bg="bg-success/10" />
+              <StatCard title="O que falta pagar" value={`R$ ${fmt(totalAmount - totalPaid)}`} icon={TrendingDown} color="text-destructive" bg="bg-destructive/10" />
               <StatCard title="Progresso" value={`${progressTotal}%`} icon={BarChart3} color="text-info" bg="bg-info/10" progress={progressTotal} />
             </div>
 
