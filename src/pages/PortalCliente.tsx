@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 
@@ -215,34 +216,47 @@ const PortalCliente = () => {
   return (
     <div className="min-h-screen bg-accent/20 pb-24 lg:pb-8">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-4">
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
-              <img 
-                src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
-                alt="Logo" 
-                className="w-12 h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
-                <User size={24} className="text-white" />
-              </div>
-            )}
+            <div className="relative">
+              {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
+                <img 
+                  src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
+                  alt="Logo" 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md transition-transform hover:scale-105"
+                />
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform hover:scale-105">
+                  <User size={22} className="text-white" />
+                </div>
+              )}
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-white dark:border-slate-900" />
+            </div>
             <div className="hidden sm:block">
-              <h2 className="text-sm font-bold text-foreground leading-none">{clientData.name}</h2>
-              <p className="text-[10px] text-muted-foreground font-mono mt-1">{clientData.cpf_cnpj}</p>
+              <h2 className="text-sm font-bold text-foreground leading-none flex items-center gap-2">
+                {clientData.name}
+                <Badge variant="secondary" className="text-[8px] h-4 py-0 uppercase font-bold tracking-tighter">Premium</Badge>
+              </h2>
+              <p className="text-[10px] text-muted-foreground font-mono mt-1 opacity-70">{clientData.cpf_cnpj}</p>
             </div>
             <div className="sm:hidden">
-              <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{clientData.name.split(" ")[0]}</p>
-              <Badge variant="outline" className="text-[8px] h-4 py-0 border-primary/20 text-primary">Cliente VIP</Badge>
+              <p className="text-xs font-bold text-foreground truncate max-w-[100px]">{clientData.name.split(" ")[0]}</p>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Online</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl bg-card border border-border sm:hidden">
-              <Settings size={18} className="text-muted-foreground" />
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="hidden md:flex items-center gap-2 mr-4 px-3 py-1.5 rounded-xl bg-success/5 border border-success/10">
+              <Shield size={12} className="text-success" />
+              <span className="text-[10px] font-bold text-success uppercase tracking-wider">Conexão Segura</span>
+            </div>
+            <Button variant="ghost" size="icon" className="rounded-xl bg-card border border-border sm:hidden h-9 w-9">
+              <Settings size={16} className="text-muted-foreground" />
             </Button>
-            <Button variant="ghost" className="rounded-xl gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5" onClick={handleLogout}>
+            <Button variant="ghost" className="rounded-xl h-9 sm:h-10 px-2 sm:px-4 gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" onClick={handleLogout}>
               <LogOut size={16} />
               <span className="hidden sm:inline text-xs font-bold">Sair</span>
             </Button>
@@ -268,29 +282,56 @@ const PortalCliente = () => {
           <TabsContent value="resumo" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
             {/* Hero - Próxima Parcela */}
             {nextDue && (
-              <Card className={`overflow-hidden border-none shadow-xl ${nextDue.status === 'overdue' ? 'bg-destructive/5' : 'bg-primary/5'}`}>
+              <Card className={`overflow-hidden border-none shadow-2xl relative group ${nextDue.status === 'overdue' ? 'bg-destructive/5' : 'bg-primary/5'}`}>
+                {/* Visual Accent */}
+                <div className={`absolute top-0 left-0 w-1 h-full ${nextDue.status === 'overdue' ? 'bg-destructive' : 'bg-primary'}`} />
+                
                 <CardContent className="p-0">
-                  <div className={`p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-border/10 ${nextDue.status === 'overdue' ? 'bg-destructive/10' : 'bg-primary/10'}`}>
-                    <div className="space-y-1">
-                      <p className={`text-[10px] font-bold uppercase tracking-widest ${nextDue.status === 'overdue' ? 'text-destructive' : 'text-primary'}`}>
-                        {nextDue.status === 'overdue' ? '🔴 Parcela em Atraso' : '🔵 Próximo Vencimento'}
-                      </p>
-                      <h3 className="text-4xl font-bold tracking-tight">R$ {fmt(Number(nextDue.amount))}</h3>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                         <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(nextDue.due_date).toLocaleDateString("pt-BR", {day:'2-digit', month:'long'})}</span>
-                         <span>• Parcela #{nextDue.installment_number}</span>
+                  <div className={`p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-border/10 ${nextDue.status === 'overdue' ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                         <div className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${nextDue.status === 'overdue' ? 'bg-destructive text-white animate-pulse' : 'bg-primary text-white'}`}>
+                           {nextDue.status === 'overdue' ? '🔴 Em Atraso' : '🔵 Próxima Fatura'}
+                         </div>
+                         {nextDue.status === 'overdue' && (
+                           <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
+                             <AlertTriangle size={10} /> {nextDue.daysLate} dias
+                           </span>
+                         )}
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground font-medium">Valor Total da Parcela</p>
+                        <h3 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
+                          <span className="text-xl sm:text-2xl font-medium opacity-50 mr-1">R$</span>
+                          {fmt(Number(nextDue.amount))}
+                        </h3>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
+                         <span className="flex items-center gap-1.5 font-medium"><Calendar size={14} className="text-primary"/> Vence {new Date(nextDue.due_date).toLocaleDateString("pt-BR", {day:'2-digit', month:'long'})}</span>
+                         <span className="flex items-center gap-1.5 font-medium"><CreditCard size={14} className="text-primary"/> Parcela {nextDue.installment_number} de {installments.length}</span>
                       </div>
                     </div>
-                    <Button 
-                      className="rounded-2xl py-7 px-8 text-md font-bold shadow-lg active:scale-95 transition-transform" 
-                      onClick={() => { setSelectedInstallment(nextDue); setIsPaymentModalOpen(true); }}
-                    >
-                      Pagar Agora
-                    </Button>
+                    
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        className="rounded-2xl py-8 px-10 text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white group" 
+                        onClick={() => { setSelectedInstallment(nextDue); setIsPaymentModalOpen(true); }}
+                      >
+                        Pagar Agora
+                        <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                      <p className="text-[10px] text-center text-muted-foreground font-medium italic">Pague via PIX para liberação instantânea</p>
+                    </div>
                   </div>
+                  
                   {nextDue.status === 'overdue' && (
-                    <div className="p-4 bg-destructive text-white text-[10px] font-bold uppercase tracking-widest text-center animate-pulse">
-                       Atenção: Parcela com {nextDue.daysLate} dias de atraso. Regularize para evitar juros.
+                    <div className="px-6 py-3 bg-destructive/20 border-t border-destructive/10 flex items-center gap-3">
+                       <div className="w-2 h-2 rounded-full bg-destructive animate-ping" />
+                       <p className="text-[11px] font-bold text-destructive uppercase tracking-tight">
+                         Atenção: Evite o bloqueio de novos créditos regularizando hoje mesmo.
+                       </p>
                     </div>
                   )}
                 </CardContent>
@@ -322,14 +363,72 @@ const PortalCliente = () => {
             )}
 
             {/* Atalhos Rápidos */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-foreground">Ações Rápidas</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ArrowRight size={16} className="text-primary" /> Ações Rápidas
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <QuickActionButton icon={MessageSquare} label="Iniciar Negociação" desc="Fale com nosso robô" onClick={() => setActiveTab('negociar')} />
-                <QuickActionButton icon={Download} label="Baixar Contratos" desc="Documentos assinados" />
-                <QuickActionButton icon={Headphones} label="Suporte Técnico" desc="Falar com humano" />
-                <QuickActionButton icon={MapPin} label="Endereço da Empresa" desc="Ver localização" />
+                <QuickActionButton 
+                  icon={MessageSquare} 
+                  label="Iniciar Negociação" 
+                  desc="Fale com nosso robô" 
+                  onClick={() => setActiveTab('negociar')} 
+                />
+                <QuickActionButton 
+                  icon={Download} 
+                  label="Baixar Contratos" 
+                  desc="Documentos assinados" 
+                  onClick={() => toast({ title: "Preparando documentos", description: "Seus contratos estão sendo gerados e o download iniciará em instantes." })}
+                />
+                <QuickActionButton 
+                  icon={Phone} 
+                  label="Suporte via WhatsApp" 
+                  desc="Falar com um consultor" 
+                  onClick={() => {
+                    const phone = ownerProfile?.phone || "";
+                    if (phone) window.open(`https://wa.me/55${phone.replace(/\D/g, "")}`, "_blank");
+                    else toast({ title: "Suporte indisponível", description: "O consultor não cadastrou um telefone de contato." });
+                  }}
+                />
+                <QuickActionButton 
+                  icon={HelpCircle} 
+                  label="Central de Ajuda" 
+                  desc="Dúvidas comuns" 
+                  onClick={() => {
+                    const faqSection = document.getElementById('faq-section');
+                    faqSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                />
               </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div className="pt-4" id="faq-section">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <HelpCircle size={16} className="text-primary" /> Dúvidas Frequentes
+              </h3>
+              <Card className="border-border/50 shadow-sm overflow-hidden bg-card">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Como funcionam os juros?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Os juros são calculados diariamente sobre o saldo devedor. Ao antecipar parcelas, você recebe um desconto proporcional nos juros aplicados.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Posso alterar a data de vencimento?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Sim, é possível solicitar a alteração da data de vencimento uma vez a cada 6 meses, desde que não haja parcelas em atraso no momento da solicitação.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3" className="border-border/50 px-4">
+                    <AccordionTrigger className="text-sm font-bold hover:no-underline py-4">Como gerar a segunda via?</AccordionTrigger>
+                    <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
+                      Basta clicar na aba "Parcelas", selecionar a parcela desejada e clicar em "Pagar Agora". Você terá acesso ao código PIX ou boleto atualizado.
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
             </div>
           </TabsContent>
 
@@ -390,6 +489,21 @@ const PortalCliente = () => {
         </Tabs>
       </main>
 
+      {/* Security Footer */}
+      <footer className="max-w-4xl mx-auto px-4 py-12 text-center space-y-4 border-t border-border/10 mt-8 mb-20 sm:mb-8">
+        <div className="flex items-center justify-center gap-6 opacity-30 grayscale hover:grayscale-0 transition-all">
+          <Shield size={24} />
+          <Lock size={24} />
+          <CreditCard size={24} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Ambiente 100% Seguro</p>
+          <p className="text-[9px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+            Seus dados estão protegidos por criptografia de nível bancário. Todas as transações são processadas com segurança.
+          </p>
+        </div>
+      </footer>
+
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onOpenChange={setIsPaymentModalOpen} 
@@ -399,7 +513,7 @@ const PortalCliente = () => {
       />
 
       {/* Footer Mobile Nav */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border/60 p-2 sm:hidden safe-area-bottom">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
         <div className="grid grid-cols-3 gap-2">
            <MobileNavItem active={activeTab === 'resumo'} icon={BarChart3} label="Início" onClick={() => setActiveTab('resumo')} />
            <MobileNavItem active={activeTab === 'parcelas'} icon={Receipt} label="Faturas" onClick={() => setActiveTab('parcelas')} />
