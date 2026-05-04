@@ -117,6 +117,8 @@ const NovoCliente = () => {
   const [taxaJuros, setTaxaJuros] = useState("10");
   const [numInstallments, setNumInstallments] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [firstDueDate, setFirstDueDate] = useState("");
+  const [autoFirstDue, setAutoFirstDue] = useState(true);
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
