@@ -20,6 +20,7 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
   const [contracts, setContracts] = useState<any[]>([]);
