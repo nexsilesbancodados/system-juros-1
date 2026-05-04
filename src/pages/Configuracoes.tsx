@@ -280,6 +280,7 @@ const Configuracoes = () => {
     { id: "templates", label: "Templates", icon: MessageSquare },
     { id: "webhooks", label: "Webhooks", icon: Webhook },
     { id: "notificacoes", label: "Notificações", icon: Bell },
+    { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
   ];
 
   return (
