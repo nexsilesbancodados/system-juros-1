@@ -1259,6 +1259,33 @@ const Configuracoes = () => {
               </div>
             </div>
 
+            {/* Link do Portal */}
+            <div className="space-y-3 p-4 rounded-2xl border border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                  <Zap size={12} /> Link de Acesso ao Portal
+                </p>
+                <button onClick={() => {
+                  const url = `${window.location.origin}/portal-cliente`;
+                  navigator.clipboard.writeText(url);
+                  toast({ title: "Link copiado!" });
+                }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                  <Copy size={10} /> Copiar Link
+                </button>
+              </div>
+              <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
+                <p className="text-xs text-muted-foreground truncate flex-1 font-mono">
+                  {window.location.origin}/portal-cliente
+                </p>
+                <button onClick={() => window.open(`${window.location.origin}/portal-cliente`, "_blank")} className="p-1 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Abrir link">
+                  <ExternalLink size={14} />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Este link é único e pode ser compartilhado com todos os seus clientes. Eles acessarão os dados individuais usando o CPF e a data de nascimento cadastrados.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Textos e Identidade</p>
