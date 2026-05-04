@@ -216,34 +216,47 @@ const PortalCliente = () => {
   return (
     <div className="min-h-screen bg-accent/20 pb-24 lg:pb-8">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-4">
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
-              <img 
-                src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
-                alt="Logo" 
-                className="w-12 h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
-                <User size={24} className="text-white" />
-              </div>
-            )}
+            <div className="relative">
+              {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
+                <img 
+                  src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
+                  alt="Logo" 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md transition-transform hover:scale-105"
+                />
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform hover:scale-105">
+                  <User size={22} className="text-white" />
+                </div>
+              )}
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-white dark:border-slate-900" />
+            </div>
             <div className="hidden sm:block">
-              <h2 className="text-sm font-bold text-foreground leading-none">{clientData.name}</h2>
-              <p className="text-[10px] text-muted-foreground font-mono mt-1">{clientData.cpf_cnpj}</p>
+              <h2 className="text-sm font-bold text-foreground leading-none flex items-center gap-2">
+                {clientData.name}
+                <Badge variant="secondary" className="text-[8px] h-4 py-0 uppercase font-bold tracking-tighter">Premium</Badge>
+              </h2>
+              <p className="text-[10px] text-muted-foreground font-mono mt-1 opacity-70">{clientData.cpf_cnpj}</p>
             </div>
             <div className="sm:hidden">
-              <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{clientData.name.split(" ")[0]}</p>
-              <Badge variant="outline" className="text-[8px] h-4 py-0 border-primary/20 text-primary">Cliente VIP</Badge>
+              <p className="text-xs font-bold text-foreground truncate max-w-[100px]">{clientData.name.split(" ")[0]}</p>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Online</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl bg-card border border-border sm:hidden">
-              <Settings size={18} className="text-muted-foreground" />
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="hidden md:flex items-center gap-2 mr-4 px-3 py-1.5 rounded-xl bg-success/5 border border-success/10">
+              <Shield size={12} className="text-success" />
+              <span className="text-[10px] font-bold text-success uppercase tracking-wider">Conexão Segura</span>
+            </div>
+            <Button variant="ghost" size="icon" className="rounded-xl bg-card border border-border sm:hidden h-9 w-9">
+              <Settings size={16} className="text-muted-foreground" />
             </Button>
-            <Button variant="ghost" className="rounded-xl gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5" onClick={handleLogout}>
+            <Button variant="ghost" className="rounded-xl h-9 sm:h-10 px-2 sm:px-4 gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" onClick={handleLogout}>
               <LogOut size={16} />
               <span className="hidden sm:inline text-xs font-bold">Sair</span>
             </Button>
