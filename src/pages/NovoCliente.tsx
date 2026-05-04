@@ -117,6 +117,8 @@ const NovoCliente = () => {
   const [taxaJuros, setTaxaJuros] = useState("10");
   const [numInstallments, setNumInstallments] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [firstDueDate, setFirstDueDate] = useState("");
+  const [autoFirstDue, setAutoFirstDue] = useState(true);
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
@@ -220,14 +222,25 @@ const NovoCliente = () => {
     setCapital(parseCurrency(v));
   };
 
-  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode) => {
+  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
     const s = new Date(start + "T12:00:00");
+    // If a custom first due date is provided, anchor the first installment to it
+    let firstDueDateObj: Date | null = null;
+    if (firstDue) {
+      firstDueDateObj = new Date(firstDue + "T12:00:00");
+    }
     for (let i = 0; i < count; i++) {
+      if (firstDueDateObj && i === 0) {
+        dates.push(firstDueDateObj.toISOString());
+        continue;
+      }
+      const baseDate = firstDueDateObj || s;
       if (freq === "daily") {
         let added = 0;
-        const cur = new Date(s);
-        while (added < i + 1) {
+        const cur = new Date(firstDueDateObj || s);
+        const target = firstDueDateObj ? i : i + 1;
+        while (added < target) {
           cur.setDate(cur.getDate() + 1);
           const dow = cur.getDay();
           if (dMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
@@ -236,9 +249,15 @@ const NovoCliente = () => {
         }
         dates.push(cur.toISOString());
       } else if (freq === "weekly") {
-        const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 7); dates.push(d.toISOString());
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
+        d.setDate(baseDate.getDate() + offset);
+        dates.push(d.toISOString());
       } else {
-        const d = new Date(s); d.setMonth(s.getMonth() + (i + 1)); dates.push(d.toISOString());
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i : i + 1;
+        d.setMonth(baseDate.getMonth() + offset);
+        dates.push(d.toISOString());
       }
     }
     return dates;
@@ -328,7 +347,7 @@ const NovoCliente = () => {
       if (contractErr) throw contractErr;
 
       // 3. Create installments
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode);
+      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, autoFirstDue ? undefined : firstDueDate);
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id,
         contract_id: contract.id,
@@ -647,6 +666,26 @@ const NovoCliente = () => {
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-foreground">1º Vencimento</label>
+                  <button
+                    type="button"
+                    onClick={() => setAutoFirstDue(!autoFirstDue)}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors ${autoFirstDue ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}
+                  >
+                    {autoFirstDue ? "Automático" : "Manual"}
+                  </button>
+                </div>
+                <input
+                  type="date"
+                  value={autoFirstDue ? "" : firstDueDate}
+                  onChange={(e) => setFirstDueDate(e.target.value)}
+                  disabled={autoFirstDue}
+                  placeholder="Calculado automaticamente"
+                  className={`${INPUT} ${autoFirstDue ? "opacity-50 cursor-not-allowed" : ""}`}
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
