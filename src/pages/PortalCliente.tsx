@@ -136,27 +136,39 @@ const PortalCliente = () => {
   // Render Login
   if (!clientData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 opacity-70">
-          <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/20 blur-[140px]" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[140px]" />
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
+        {/* Background Image/Video with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80" 
+            alt="Background" 
+            className="w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-transparent" />
         </div>
-        <div className="w-full max-w-sm animate-fade-in relative">
-          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-border/60 bg-card/80 backdrop-blur-xl p-8 shadow-2xl">
+
+        {/* Animated Background Blobs */}
+        <div className="pointer-events-none absolute inset-0 opacity-40 z-10">
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/30 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
+          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-2xl p-8 shadow-2xl">
             <div className="text-center">
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/10">
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/20">
                 <Shield size={32} className="text-primary" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 border-4 border-card flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 border-4 border-[#121212] flex items-center justify-center">
                   <Lock size={12} className="text-success" />
                 </div>
               </div>
-              <h1 className="text-3xl font-display font-bold text-shimmer tracking-tight">Portal do Cliente</h1>
-              <p className="text-sm text-muted-foreground mt-2 px-4">Acesse seus contratos e realize pagamentos de forma segura</p>
+              <h1 className="text-3xl font-display font-bold text-white tracking-tight">Portal do Cliente</h1>
+              <p className="text-sm text-slate-400 mt-2 px-4">Acesse seus contratos e realize pagamentos de forma segura</p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">
                   Identificação (CPF/CNPJ)
                 </label>
                 <input
@@ -164,13 +176,13 @@ const PortalCliente = () => {
                   onChange={(e) => setCpf(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
                   required
-                  className="w-full px-4 py-4 rounded-2xl bg-accent/30 border border-border text-center text-xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-muted-foreground/30"
+                  className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-xl tracking-widest font-mono text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-slate-600"
                   inputMode="numeric"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">
                   Data de Nascimento
                 </label>
                 <input
@@ -178,20 +190,20 @@ const PortalCliente = () => {
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   required
-                  className="w-full px-4 py-4 rounded-2xl bg-accent/30 border border-border text-center text-lg focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-lg text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all [color-scheme:dark]"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
               >
                 {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
                 {loading ? "Verificando..." : "Entrar no Portal"}
               </Button>
             </div>
-            <p className="text-[10px] text-center text-muted-foreground/60 leading-relaxed font-medium">
+            <p className="text-[10px] text-center text-slate-500 leading-relaxed font-medium">
               Protegido por criptografia de ponta a ponta
             </p>
           </form>
