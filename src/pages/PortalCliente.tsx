@@ -6,7 +6,7 @@ import {
   DollarSign, CreditCard, ChevronDown, ChevronUp, Clock, Shield,
   TrendingDown, TrendingUp, Receipt, Eye, EyeOff, Wallet, Phone,
   BarChart3, ArrowRight, Info, MessageSquare, Headphones, Settings,
-  MapPin, HelpCircle, Download, Share2
+  MapPin, HelpCircle, Download, Share2, Bot
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
