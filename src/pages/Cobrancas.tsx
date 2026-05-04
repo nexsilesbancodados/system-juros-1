@@ -112,7 +112,7 @@ const Cobrancas = () => {
       .replace(/\{parcela\}/g, `${inst.installment_number}`)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
-      .replace(/\{portal\}/g, portalUrl)
+      .replace(/\{portal\}|\[Portal\]/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
   };
 
