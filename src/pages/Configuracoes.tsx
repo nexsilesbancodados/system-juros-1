@@ -81,6 +81,13 @@ const Configuracoes = () => {
     bot_use_ai: false,
     bot_negotiation_enabled: false,
     bot_send_audio: false,
+    portal_title: "Portal do Cliente",
+    portal_subtitle: "Acompanhe seus contratos e pagamentos",
+    portal_welcome_message: "",
+    portal_primary_color: "",
+    portal_logo_url: "",
+    portal_contact_phone: "",
+    portal_contact_email: "",
   });
 
   useEffect(() => {
