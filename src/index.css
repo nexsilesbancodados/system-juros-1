@@ -361,6 +361,14 @@
     to { opacity: 1; transform: scale(1); }
   }
 
+  .animate-pulse-slow {
+    animation: pulseSlow 8s ease-in-out infinite;
+  }
+  @keyframes pulseSlow {
+    0%, 100% { transform: scale(1.05); }
+    50% { transform: scale(1.1); }
+  }
+
   /* Slide in from right */
   .animate-slide-in-right {
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
