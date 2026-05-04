@@ -164,6 +164,20 @@ const PortalCliente = () => {
                   inputMode="numeric"
                 />
               </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  required
+                  className="w-full px-4 py-4 rounded-2xl bg-accent/30 border border-border text-center text-lg focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                />
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading}
