@@ -358,6 +358,19 @@ const NovoCliente = () => {
         total_interest: calc.totalInterest,
         status: "active",
         notes: notes || (loanMode === "percentage" ? "Modo: Porcentagem" : "Modo: Parcelas"),
+        grace_days: parseInt(graceDays) || 0,
+        payment_method: paymentMethod,
+        auto_renew: autoRenew,
+        early_payment_discount_percent: parseFloat(earlyDiscount) || 0,
+        max_interest_cap_percent: maxInterestCap ? parseFloat(maxInterestCap) : null,
+        guarantee_type: guaranteeType === "none" ? null : guaranteeType,
+        guarantee_description: guaranteeDescription || null,
+        guarantor_name: guarantorName || null,
+        guarantor_cpf: guarantorCpf.replace(/\D/g, "") || null,
+        guarantor_phone: guarantorPhone.replace(/\D/g, "") || null,
+        attachments: attachments,
+        signature_status: requireSignature ? "pending" : "not_required",
+        signature_token: requireSignature ? crypto.randomUUID() : null,
       }).select().single();
       if (contractErr) throw contractErr;
 
