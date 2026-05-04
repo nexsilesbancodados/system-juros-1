@@ -186,6 +186,9 @@ const AgenteIA = () => {
     workHourStart: 8,
     workHourEnd: 20,
     tone: "formal" as "formal" | "casual" | "firme",
+    useAi: false,
+    negotiationEnabled: false,
+    sendAudio: false,
   });
 
   const { data: settings } = useQuery({
