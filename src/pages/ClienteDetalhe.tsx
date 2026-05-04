@@ -271,6 +271,14 @@ const ClienteDetalhe = () => {
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
 
+  const sendPortalLink = () => {
+    const phone = getPhone();
+    if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const msg = encodeURIComponent(`Olá ${client?.name}, aqui está o link para o seu portal do cliente: ${portalUrl}\n\nLá você pode conferir suas parcelas, gerar PIX para pagamento e ver seu saldo devedor.\n\nBasta logar com seu CPF e data de nascimento.`);
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+  };
+
   const sendAllOverdue = () => {
     if (!kpis.overdueInst.length) { toast({ title: "Sem parcelas atrasadas" }); return; }
     const phone = getPhone();
@@ -398,6 +406,7 @@ const ClienteDetalhe = () => {
 
   const moreActions = [
     { icon: Copy, label: "Copiar Dados", action: copyClientInfo },
+    { icon: Send, label: "Enviar Portal", action: sendPortalLink },
     { icon: Download, label: "Exportar Resumo", action: exportSummary },
     { icon: Printer, label: "Gerar PDF", action: generatePDF },
     { icon: Star, label: "Score +50", action: () => updateScore(50) },
@@ -641,6 +650,7 @@ const ClienteDetalhe = () => {
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border flex-wrap">
           <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Phone size={13} /> Ligar</button>
           <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 text-success text-xs font-medium hover:bg-success/20 transition-colors"><MessageSquare size={13} /> WhatsApp</button>
+          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Send size={13} /> Enviar Portal</button>
           <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Mail size={13} /> E-mail</button>
           <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs font-medium hover:bg-accent transition-colors ml-auto"><MapPin size={13} /> Editar Endereço</button>
         </div>
