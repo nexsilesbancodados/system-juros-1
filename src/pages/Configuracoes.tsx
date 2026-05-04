@@ -135,6 +135,13 @@ const Configuracoes = () => {
         bot_use_ai: s.bot_use_ai || false,
         bot_negotiation_enabled: s.bot_negotiation_enabled || false,
         bot_send_audio: s.bot_send_audio || false,
+        portal_title: s.portal_title || "Portal do Cliente",
+        portal_subtitle: s.portal_subtitle || "Acompanhe seus contratos e pagamentos",
+        portal_welcome_message: s.portal_welcome_message || "",
+        portal_primary_color: s.portal_primary_color || "",
+        portal_logo_url: s.portal_logo_url || "",
+        portal_contact_phone: s.portal_contact_phone || "",
+        portal_contact_email: s.portal_contact_email || "",
       }));
     }
   }, [settings]);
