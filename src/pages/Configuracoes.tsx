@@ -201,6 +201,9 @@ const Configuracoes = () => {
       bot_send_pix: form.bot_send_pix,
       bot_send_receipt: form.bot_send_receipt,
       bot_tone: form.bot_tone,
+      bot_use_ai: form.bot_use_ai,
+      bot_negotiation_enabled: form.bot_negotiation_enabled,
+      bot_send_audio: form.bot_send_audio,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
