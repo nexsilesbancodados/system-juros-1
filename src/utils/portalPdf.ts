@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const generatePortalReceiptPdf = (client: any, installment: any, company: any) => {
-  const doc = jsPDF();
+  const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Header
