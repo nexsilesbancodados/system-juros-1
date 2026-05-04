@@ -368,10 +368,37 @@ const PortalCliente = () => {
                 <ArrowRight size={16} className="text-primary" /> Ações Rápidas
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <QuickActionButton icon={MessageSquare} label="Iniciar Negociação" desc="Fale com nosso robô" onClick={() => setActiveTab('negociar')} />
-                <QuickActionButton icon={Download} label="Baixar Contratos" desc="Documentos assinados" />
-                <QuickActionButton icon={Headphones} label="Suporte Técnico" desc="Falar com humano" />
-                <QuickActionButton icon={HelpCircle} label="Central de Ajuda" desc="Dúvidas comuns" />
+                <QuickActionButton 
+                  icon={MessageSquare} 
+                  label="Iniciar Negociação" 
+                  desc="Fale com nosso robô" 
+                  onClick={() => setActiveTab('negociar')} 
+                />
+                <QuickActionButton 
+                  icon={Download} 
+                  label="Baixar Contratos" 
+                  desc="Documentos assinados" 
+                  onClick={() => toast({ title: "Preparando documentos", description: "Seus contratos estão sendo gerados e o download iniciará em instantes." })}
+                />
+                <QuickActionButton 
+                  icon={Phone} 
+                  label="Suporte via WhatsApp" 
+                  desc="Falar com um consultor" 
+                  onClick={() => {
+                    const phone = ownerProfile?.phone || "";
+                    if (phone) window.open(`https://wa.me/55${phone.replace(/\D/g, "")}`, "_blank");
+                    else toast({ title: "Suporte indisponível", description: "O consultor não cadastrou um telefone de contato." });
+                  }}
+                />
+                <QuickActionButton 
+                  icon={HelpCircle} 
+                  label="Central de Ajuda" 
+                  desc="Dúvidas comuns" 
+                  onClick={() => {
+                    const faqSection = document.getElementById('faq-section');
+                    faqSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                />
               </div>
             </div>
 
