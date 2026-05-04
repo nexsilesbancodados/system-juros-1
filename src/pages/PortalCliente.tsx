@@ -1,13 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Lock, FileText, LogOut, User, Calendar, AlertTriangle, CheckCircle,
   DollarSign, CreditCard, ChevronDown, ChevronUp, Clock, Shield,
   TrendingDown, TrendingUp, Receipt, Eye, EyeOff, Wallet, Phone,
-  BarChart3, ArrowRight, Info
+  BarChart3, ArrowRight, Info, MessageSquare, Headphones, Settings,
+  MapPin, HelpCircle, Download, Share2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
+import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -18,10 +24,10 @@ const PortalCliente = () => {
   const [clientData, setClientData] = useState<any>(null);
   const [contracts, setContracts] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
-  const [expandedContract, setExpandedContract] = useState<string | null>(null);
-  const [showPaidHistory, setShowPaidHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pendentes" | "pagas">("pendentes");
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("resumo");
+  const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const formatCpf = (value: string) => {
     const nums = value.replace(/\D/g, "").slice(0, 14);
@@ -44,46 +50,55 @@ const PortalCliente = () => {
     }
     setLoading(true);
 
-    const { data: clients } = await supabase
-      .from("clients")
-      .select("*")
-      .or(`cpf_cnpj.eq.${cleanCpf},cpf_cnpj.eq.${cpf}`);
+    try {
+      const { data: clients, error: clientError } = await supabase
+        .from("clients")
+        .select("*")
+        .or(`cpf_cnpj.eq.${cleanCpf},cpf_cnpj.eq.${cpf}`);
 
-    if (!clients || clients.length === 0) {
-      toast({ title: "CPF não encontrado", description: "Nenhum cliente cadastrado com este CPF.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    const client = clients[0];
-
-    const [contractsRes, instsRes, profileRes] = await Promise.all([
-      supabase.from("contracts").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
-      supabase.from("contract_installments").select("*").eq("client_id", client.id).order("due_date"),
-      supabase.from("profiles").select("name, pix_key, pix_key_type, billing_message, avatar_url").eq("id", client.user_id).single(),
-    ]);
-
-    const now = new Date();
-    const processedInsts = (instsRes.data || []).map((inst: any) => {
-      if (inst.status === "pending" && new Date(inst.due_date) < now) {
-        const daysLate = Math.floor((now.getTime() - new Date(inst.due_date).getTime()) / (1000 * 60 * 60 * 24));
-        return { ...inst, status: "overdue", daysLate };
+      if (clientError || !clients || clients.length === 0) {
+        toast({ title: "CPF não encontrado", description: "Nenhum cliente cadastrado com este CPF.", variant: "destructive" });
+        setLoading(false);
+        return;
       }
-      return inst;
-    });
 
-    setClientData(client);
-    setContracts(contractsRes.data || []);
-    setInstallments(processedInsts);
-    setOwnerProfile(profileRes.data);
-    setLoading(false);
-    if (contractsRes.data && contractsRes.data.length > 0) {
-      setExpandedContract(contractsRes.data[0].id);
+      const client = clients[0];
+
+      const [contractsRes, instsRes, profileRes] = await Promise.all([
+        supabase.from("contracts").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
+        supabase.from("contract_installments").select("*").eq("client_id", client.id).order("due_date"),
+        supabase.from("profiles").select("*").eq("id", client.user_id).single(),
+      ]);
+
+      const now = new Date();
+      const processedInsts = (instsRes.data || []).map((inst: any) => {
+        if (inst.status === "pending" && new Date(inst.due_date) < now) {
+          const daysLate = Math.floor((now.getTime() - new Date(inst.due_date).getTime()) / (1000 * 60 * 60 * 24));
+          return { ...inst, status: "overdue", daysLate };
+        }
+        return inst;
+      });
+
+      setClientData(client);
+      setContracts(contractsRes.data || []);
+      setInstallments(processedInsts);
+      setOwnerProfile(profileRes.data);
+      toast({ title: `Bem-vindo(a), ${client.name.split(" ")[0]}!` });
+    } catch (err) {
+      toast({ title: "Erro no acesso", description: "Tente novamente mais tarde.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    toast({ title: `Bem-vindo(a), ${client.name.split(" ")[0]}!` });
   };
 
-  const inputCls = "w-full px-4 py-3 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
+  const handleLogout = () => {
+    setClientData(null);
+    setInstallments([]);
+    setContracts([]);
+    setCpf("");
+    setOwnerProfile(null);
+    setActiveTab("resumo");
+  };
 
   // Computed values
   const now = new Date();
@@ -92,8 +107,8 @@ const PortalCliente = () => {
   const paid = installments.filter((i: any) => i.status === "paid");
   const totalPending = [...pending, ...overdue].reduce((a: number, i: any) => a + Number(i.amount), 0);
   const totalPaid = paid.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
-  const totalCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
   const totalAmount = contracts.reduce((s: number, c: any) => s + Number(c.total_amount || 0), 0);
+  const progressTotal = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
 
   const nextDue = useMemo(() => {
     const upcoming = [...pending, ...overdue].sort((a: any, b: any) =>
@@ -102,65 +117,52 @@ const PortalCliente = () => {
     return upcoming[0] || null;
   }, [pending, overdue]);
 
-  // ===== LOGIN SCREEN =====
+  // Render Login
   if (!clientData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-        {/* Mesh gradient backdrop */}
         <div className="pointer-events-none absolute inset-0 opacity-70">
           <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/20 blur-[140px]" />
           <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[140px]" />
-          <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-success/10 blur-[100px]" />
         </div>
         <div className="w-full max-w-sm animate-fade-in relative">
-          <form onSubmit={handleAccess} className="space-y-5 rounded-3xl border border-border/60 bg-card/80 backdrop-blur-xl p-8 shadow-2xl">
-            {/* Logo / branding area */}
+          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-border/60 bg-card/80 backdrop-blur-xl p-8 shadow-2xl">
             <div className="text-center">
-              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/10">
                 <Shield size={32} className="text-primary" />
-                <div className="absolute inset-0 rounded-2xl bg-primary/15 blur-xl -z-10" />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success/20 border-2 border-card flex items-center justify-center">
-                  <Lock size={10} className="text-success" />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 border-4 border-card flex items-center justify-center">
+                  <Lock size={12} className="text-success" />
                 </div>
               </div>
-              <h1 className="text-2xl font-display font-bold text-shimmer tracking-wide">Portal do Cliente</h1>
-              <p className="text-sm text-muted-foreground mt-2">Consulte suas parcelas, contratos e histórico de pagamentos</p>
+              <h1 className="text-3xl font-display font-bold text-shimmer tracking-tight">Portal do Cliente</h1>
+              <p className="text-sm text-muted-foreground mt-2 px-4">Acesse seus contratos e realize pagamentos de forma segura</p>
             </div>
 
-            <div className="h-px bg-border" />
-
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
-                CPF / CNPJ
-              </label>
-              <input
-                value={cpf}
-                onChange={(e) => setCpf(formatCpf(e.target.value))}
-                placeholder="000.000.000-00"
-                required
-                className={`${inputCls} text-center text-lg tracking-widest font-mono`}
-                inputMode="numeric"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  Identificação (CPF/CNPJ)
+                </label>
+                <input
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  required
+                  className="w-full px-4 py-4 rounded-2xl bg-accent/30 border border-border text-center text-xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-muted-foreground/30"
+                  inputMode="numeric"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+              >
+                {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
+                {loading ? "Verificando..." : "Entrar no Portal"}
+              </Button>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-premium w-full py-3.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                <>
-                  <ArrowRight size={16} />
-                  Acessar Portal
-                </>
-              )}
-            </button>
-            <p className="text-[10px] text-center text-muted-foreground leading-relaxed">
-              Acesso seguro · Digite o CPF cadastrado pelo seu credor
+            <p className="text-[10px] text-center text-muted-foreground/60 leading-relaxed font-medium">
+              Protegido por criptografia de ponta a ponta
             </p>
           </form>
         </div>
@@ -168,411 +170,240 @@ const PortalCliente = () => {
     );
   }
 
-  // ===== PORTAL CONTENT =====
-  const progressTotal = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xl px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-accent/20 pb-24 lg:pb-8">
+      {/* Header */}
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-              {clientData.name?.charAt(0)?.toUpperCase()}
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
+              <User size={24} className="text-white" />
             </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">{clientData.name}</p>
-              <p className="text-[10px] text-muted-foreground font-mono">{clientData.cpf_cnpj}</p>
+            <div className="hidden sm:block">
+              <h2 className="text-sm font-bold text-foreground leading-none">{clientData.name}</h2>
+              <p className="text-[10px] text-muted-foreground font-mono mt-1">{clientData.cpf_cnpj}</p>
             </div>
-          </div>
-          <button onClick={() => { setClientData(null); setInstallments([]); setContracts([]); setCpf(""); setOwnerProfile(null); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-            <LogOut size={14} /> Sair
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4 space-y-5 pb-24 animate-fade-in">
-
-        {/* Hero card - Next payment */}
-        {nextDue && (
-          <div className={`rounded-2xl border p-5 ${
-            nextDue.status === "overdue"
-              ? "border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent"
-              : "border-primary/20 bg-gradient-to-br from-primary/5 to-transparent"
-          }`}>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                  {nextDue.status === "overdue" ? "Parcela em Atraso" : "Próximo Vencimento"}
-                </p>
-                <p className={`text-3xl font-bold mt-1 ${
-                  nextDue.status === "overdue" ? "text-destructive" : "text-foreground"
-                }`}>
-                  R$ {fmt(Number(nextDue.amount))}
-                </p>
-              </div>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                nextDue.status === "overdue" ? "bg-destructive/10" : "bg-primary/10"
-              }`}>
-                {nextDue.status === "overdue" ? (
-                  <AlertTriangle size={22} className="text-destructive" />
-                ) : (
-                  <Calendar size={22} className="text-primary" />
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Calendar size={11} />
-                {new Date(nextDue.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-              </span>
-              {nextDue.status === "overdue" && nextDue.daysLate && (
-                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">
-                  {nextDue.daysLate} {nextDue.daysLate === 1 ? "dia" : "dias"} em atraso
-                </Badge>
-              )}
-              <span className="text-muted-foreground">Parcela #{nextDue.installment_number}</span>
+            <div className="sm:hidden">
+              <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{clientData.name.split(" ")[0]}</p>
+              <Badge variant="outline" className="text-[8px] h-4 py-0 border-primary/20 text-primary">Cliente VIP</Badge>
             </div>
           </div>
-        )}
-
-        {/* Overdue Alert */}
-        {overdue.length > 1 && (
-          <div className="bg-destructive/5 border border-destructive/15 rounded-2xl p-4 flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0 mt-0.5">
-              <AlertTriangle size={16} className="text-destructive" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-destructive">
-                Você tem {overdue.length} parcelas em atraso
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Total em atraso: <span className="font-semibold text-destructive">R$ {fmt(overdue.reduce((s: number, i: any) => s + Number(i.amount), 0))}</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Wallet size={13} className="text-primary" />
-              </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Emprestado</span>
-            </div>
-            <p className="text-lg font-bold text-foreground">R$ {fmt(totalCapital)}</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <TrendingDown size={13} className="text-destructive" />
-              </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Saldo Devedor</span>
-            </div>
-            <p className="text-lg font-bold text-destructive">R$ {fmt(totalPending)}</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
-                <TrendingUp size={13} className="text-success" />
-              </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Pago</span>
-            </div>
-            <p className="text-lg font-bold text-success">R$ {fmt(totalPaid)}</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BarChart3 size={13} className="text-primary" />
-              </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Progresso</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <p className="text-lg font-bold text-foreground">{progressTotal}%</p>
-              <span className="text-[10px] text-muted-foreground mb-0.5">{paid.length}/{installments.length}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-primary to-success transition-all duration-700" style={{ width: `${progressTotal}%` }} />
-            </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-xl bg-card border border-border sm:hidden">
+              <Settings size={18} className="text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" className="rounded-xl gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5" onClick={handleLogout}>
+              <LogOut size={16} />
+              <span className="hidden sm:inline text-xs font-bold">Sair</span>
+            </Button>
           </div>
         </div>
+      </header>
 
-        {/* Contracts */}
-        {contracts.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <FileText size={15} className="text-primary" />
-              Seus Contratos
-            </h2>
-            {contracts.map((c: any) => {
-              const cInst = installments.filter((i: any) => i.contract_id === c.id);
-              const cPaid = cInst.filter((i: any) => i.status === "paid").length;
-              const cOverdue = cInst.filter((i: any) => i.status === "overdue").length;
-              const pct = Math.round((cPaid / (c.num_installments || 1)) * 100);
-              const freqLabel = c.frequency === "monthly" ? "Mensal" : c.frequency === "weekly" ? "Semanal" : c.frequency === "daily" ? "Diário" : "Quinzenal";
-              const isExpanded = expandedContract === c.id;
+      <main className="max-w-4xl mx-auto p-4 space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-3 sm:w-[400px] h-14 p-1 rounded-2xl bg-card border border-border/50 mb-6 shadow-sm">
+            <TabsTrigger value="resumo" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2">
+              <BarChart3 size={14} /> Resumo
+            </TabsTrigger>
+            <TabsTrigger value="parcelas" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2">
+              <Receipt size={14} /> Parcelas
+            </TabsTrigger>
+            <TabsTrigger value="negociar" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2 relative">
+              <MessageSquare size={14} /> Negociar
+              {overdue.length > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-white" />}
+            </TabsTrigger>
+          </TabsList>
 
-              return (
-                <div key={c.id} className="bg-card border border-border rounded-2xl overflow-hidden transition-all">
-                  <button
-                    onClick={() => setExpandedContract(isExpanded ? null : c.id)}
-                    className="w-full p-4 flex items-center gap-3 text-left hover:bg-accent/20 transition-colors"
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      c.status === "active" ? "bg-success/10 border border-success/20" : "bg-muted"
-                    }`}>
-                      <DollarSign size={16} className={c.status === "active" ? "text-success" : "text-muted-foreground"} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
-                        <Badge variant="outline" className={`text-[9px] ${
-                          c.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"
-                        }`}>
-                          {c.status === "active" ? "Ativo" : c.status === "completed" ? "Quitado" : c.status}
-                        </Badge>
-                        {cOverdue > 0 && (
-                          <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/20">
-                            {cOverdue} atrasada{cOverdue > 1 ? "s" : ""}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {freqLabel} · {pct}% pago
+          <TabsContent value="resumo" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            {/* Hero - Próxima Parcela */}
+            {nextDue && (
+              <Card className={`overflow-hidden border-none shadow-xl ${nextDue.status === 'overdue' ? 'bg-destructive/5' : 'bg-primary/5'}`}>
+                <CardContent className="p-0">
+                  <div className={`p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-border/10 ${nextDue.status === 'overdue' ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+                    <div className="space-y-1">
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${nextDue.status === 'overdue' ? 'text-destructive' : 'text-primary'}`}>
+                        {nextDue.status === 'overdue' ? '🔴 Parcela em Atraso' : '🔵 Próximo Vencimento'}
                       </p>
-                    </div>
-                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                  </button>
-
-                  {isExpanded && (
-                    <div className="border-t border-border animate-fade-in">
-                      {/* Contract progress */}
-                      <div className="px-4 py-3 bg-accent/10">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                          <span>{cPaid} de {c.num_installments} pagas</span>
-                          <span className="font-semibold text-foreground">{pct}%</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div className="h-full rounded-full bg-gradient-to-r from-primary to-success transition-all duration-700" style={{ width: `${pct}%` }} />
-                        </div>
+                      <h3 className="text-4xl font-bold tracking-tight">R$ {fmt(Number(nextDue.amount))}</h3>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                         <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(nextDue.due_date).toLocaleDateString("pt-BR", {day:'2-digit', month:'long'})}</span>
+                         <span>• Parcela #{nextDue.installment_number}</span>
                       </div>
+                    </div>
+                    <Button 
+                      className="rounded-2xl py-7 px-8 text-md font-bold shadow-lg active:scale-95 transition-transform" 
+                      onClick={() => { setSelectedInstallment(nextDue); setIsPaymentModalOpen(true); }}
+                    >
+                      Pagar Agora
+                    </Button>
+                  </div>
+                  {nextDue.status === 'overdue' && (
+                    <div className="p-4 bg-destructive text-white text-[10px] font-bold uppercase tracking-widest text-center animate-pulse">
+                       Atenção: Parcela com {nextDue.daysLate} dias de atraso. Regularize para evitar juros.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-                      {/* Contract details */}
-                      <div className="px-4 py-3 grid grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Capital</p>
-                          <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
+            {/* Grid de Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard title="Saldo Devedor" value={`R$ ${fmt(totalPending)}`} icon={TrendingDown} color="text-destructive" bg="bg-destructive/10" />
+              <StatCard title="Total Pago" value={`R$ ${fmt(totalPaid)}`} icon={TrendingUp} color="text-success" bg="bg-success/10" />
+              <StatCard title="Contratos" value={contracts.length} icon={FileText} color="text-primary" bg="bg-primary/10" />
+              <StatCard title="Progresso" value={`${progressTotal}%`} icon={BarChart3} color="text-info" bg="bg-info/10" progress={progressTotal} />
+            </div>
+
+            {/* Mensagem do Credor */}
+            {ownerProfile?.billing_message && (
+              <Card className="bg-card border-border/50 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2">
+                    <Info size={14} className="text-primary" /> Recado do seu Credor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-foreground italic leading-relaxed">
+                    "{ownerProfile.billing_message.replace('[Nome do Cliente]', clientData.name.split(' ')[0])}"
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Atalhos Rápidos */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-foreground">Ações Rápidas</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <QuickActionButton icon={MessageSquare} label="Iniciar Negociação" desc="Fale com nosso robô" onClick={() => setActiveTab('negociar')} />
+                <QuickActionButton icon={Download} label="Baixar Contratos" desc="Documentos assinados" />
+                <QuickActionButton icon={Headphones} label="Suporte Técnico" desc="Falar com humano" />
+                <QuickActionButton icon={MapPin} label="Endereço da Empresa" desc="Ver localização" />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="parcelas" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <Card className="border-none shadow-xl overflow-hidden bg-card">
+              <div className="divide-y divide-border">
+                {installments.length > 0 ? (
+                  installments.map((inst) => (
+                    <div 
+                      key={inst.id} 
+                      className={`p-4 flex items-center justify-between hover:bg-accent/30 transition-colors cursor-pointer ${inst.status === 'overdue' ? 'bg-destructive/[0.02]' : ''}`}
+                      onClick={() => { setSelectedInstallment(inst); setIsPaymentModalOpen(true); }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
+                          inst.status === 'paid' ? 'bg-success/10 text-success' : 
+                          inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {inst.installment_number}
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Total c/ Juros</p>
-                          <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.total_amount))}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Juros</p>
-                          <p className="text-sm font-semibold text-foreground">{Number(c.interest_rate)}%</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground uppercase">Início</p>
-                          <p className="text-sm font-semibold text-foreground">
-                            {new Date(c.start_date).toLocaleDateString("pt-BR")}
+                          <p className="text-sm font-bold">R$ {fmt(Number(inst.status === 'paid' ? (inst.paid_amount || inst.amount) : inst.amount))}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {inst.status === 'paid' ? `Pago em ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}` : `Vence em ${new Date(inst.due_date).toLocaleDateString("pt-BR")}`}
                           </p>
                         </div>
                       </div>
-
-                      {/* Contract installments */}
-                      <div className="border-t border-border">
-                        {cInst.length > 0 && (
-                          <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
-                            {cInst.map((i: any) => {
-                              const isOd = i.status === "overdue";
-                              const isPaid = i.status === "paid";
-                              return (
-                                <div key={i.id} className={`flex items-center gap-3 px-4 py-2.5 ${
-                                  isOd ? "bg-destructive/3" : isPaid ? "bg-success/3" : ""
-                                }`}>
-                                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold ${
-                                    isPaid ? "bg-success/10 text-success" :
-                                    isOd ? "bg-destructive/10 text-destructive" :
-                                    "bg-muted text-muted-foreground"
-                                  }`}>
-                                    {i.installment_number}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-foreground">
-                                      R$ {fmt(Number(isPaid ? (i.paid_amount || i.amount) : i.amount))}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                      {isPaid && i.paid_at ? `Pago em ${new Date(i.paid_at).toLocaleDateString("pt-BR")}` :
-                                       `Vence ${new Date(i.due_date).toLocaleDateString("pt-BR")}`}
-                                    </p>
-                                  </div>
-                                  <Badge variant="outline" className={`text-[9px] ${
-                                    isPaid ? "bg-success/10 text-success border-success/20" :
-                                    isOd ? "bg-destructive/10 text-destructive border-destructive/20" :
-                                    "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                  }`}>
-                                    {isPaid ? "✓ Pago" : isOd ? "Atrasada" : "Pendente"}
-                                  </Badge>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Parcelas Tab View */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="flex border-b border-border">
-            {[
-              { key: "pendentes" as const, label: "A Pagar", count: overdue.length + pending.length, icon: Clock },
-              { key: "pagas" as const, label: "Pagas", count: paid.length, icon: CheckCircle },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-semibold transition-colors ${
-                  activeTab === tab.key
-                    ? "text-primary border-b-2 border-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                }`}
-              >
-                <tab.icon size={14} />
-                {tab.label}
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  activeTab === tab.key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
-            {activeTab === "pendentes" ? (
-              [...overdue, ...pending].length > 0 ? (
-                [...overdue, ...pending].map((i: any) => {
-                  const isOd = i.status === "overdue";
-                  return (
-                    <div key={i.id} className={`flex items-center gap-3 px-4 py-3.5 ${isOd ? "bg-destructive/3" : ""}`}>
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ${
-                        isOd ? "bg-destructive/10 text-destructive border border-destructive/20"
-                          : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                      <Badge variant="outline" className={`rounded-lg py-1 px-3 text-[9px] font-bold ${
+                        inst.status === 'paid' ? 'bg-success/10 text-success border-success/20' :
+                        inst.status === 'overdue' ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
                       }`}>
-                        {i.installment_number}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(i.amount))}</p>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Calendar size={9} />
-                          {new Date(i.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
-                          {isOd && i.daysLate && (
-                            <span className="text-destructive font-medium ml-1">· {i.daysLate}d atraso</span>
-                          )}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className={`text-[10px] gap-1 ${
-                        isOd ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                      }`}>
-                        {isOd && <AlertTriangle size={9} />}
-                        {isOd ? "Atrasada" : "Pendente"}
+                        {inst.status === 'paid' ? 'LIQUIDADO' : inst.status === 'overdue' ? 'EM ATRASO' : 'PENDENTE'}
                       </Badge>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-10">
-                  <CheckCircle size={32} className="mx-auto text-success/40 mb-2" />
-                  <p className="text-sm font-medium text-foreground">Nenhuma parcela pendente!</p>
-                  <p className="text-xs text-muted-foreground mt-1">Parabéns, você está em dia</p>
-                </div>
-              )
-            ) : (
-              paid.length > 0 ? (
-                [...paid].reverse().map((i: any) => (
-                  <div key={i.id} className="flex items-center gap-3 px-4 py-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-xs font-bold text-success">
-                      {i.installment_number}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(i.paid_amount || i.amount))}</p>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <CheckCircle size={9} className="text-success" />
-                        {i.paid_at ? `Pago em ${new Date(i.paid_at).toLocaleDateString("pt-BR")}` : "Pago"}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">
-                      ✓ Pago
-                    </Badge>
+                  ))
+                ) : (
+                  <div className="py-20 text-center">
+                    <CheckCircle size={48} className="mx-auto text-success/20 mb-4" />
+                    <p className="text-sm font-bold">Tudo em dia!</p>
+                    <p className="text-xs text-muted-foreground mt-1">Você não possui parcelas pendentes no momento.</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-10">
-                  <Receipt size={32} className="mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">Nenhum pagamento registrado</p>
-                </div>
-              )
-            )}
-          </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="negociar" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <Card className="border-none shadow-xl bg-card overflow-hidden">
+              <CardHeader className="bg-primary p-6 text-white">
+                <CardTitle className="text-lg flex items-center gap-2"><Bot size={22}/> Central de Negociação</CardTitle>
+                <CardDescription className="text-white/80 text-xs">
+                  Proponha acordos, tire dúvidas sobre valores e regularize suas parcelas em atraso de forma automatizada.
+                </CardDescription>
+              </CardHeader>
+              <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onOpenChange={setIsPaymentModalOpen} 
+        installment={selectedInstallment}
+        ownerProfile={ownerProfile}
+      />
+
+      {/* Footer Mobile Nav */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border/60 p-2 sm:hidden safe-area-bottom">
+        <div className="grid grid-cols-3 gap-2">
+           <MobileNavItem active={activeTab === 'resumo'} icon={BarChart3} label="Início" onClick={() => setActiveTab('resumo')} />
+           <MobileNavItem active={activeTab === 'parcelas'} icon={Receipt} label="Faturas" onClick={() => setActiveTab('parcelas')} />
+           <MobileNavItem active={activeTab === 'negociar'} icon={MessageSquare} label="Negociar" onClick={() => setActiveTab('negociar')} />
         </div>
-
-        {/* PIX info from owner */}
-        {ownerProfile?.pix_key && (
-          <div className="bg-card border border-primary/20 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <CreditCard size={14} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Dados para Pagamento</p>
-                <p className="text-[10px] text-muted-foreground">Chave PIX do credor</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-accent/20 border border-border">
-              <div className="flex-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  {ownerProfile.pix_key_type === "cpf" ? "CPF" :
-                   ownerProfile.pix_key_type === "cnpj" ? "CNPJ" :
-                   ownerProfile.pix_key_type === "email" ? "E-mail" :
-                   ownerProfile.pix_key_type === "phone" ? "Telefone" : "Chave Aleatória"}
-                </p>
-                <p className="text-sm font-mono font-semibold text-foreground mt-0.5">{ownerProfile.pix_key}</p>
-              </div>
-              <button
-                onClick={() => { navigator.clipboard.writeText(ownerProfile.pix_key); toast({ title: "Chave PIX copiada!" }); }}
-                className="px-3 py-2 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
-              >
-                Copiar
-              </button>
-            </div>
-            {ownerProfile.name && (
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Info size={10} /> Credor: {ownerProfile.name}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* No contracts */}
-        {contracts.length === 0 && installments.length === 0 && (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-card/50">
-            <FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-foreground font-semibold">Nenhum contrato encontrado</p>
-            <p className="text-sm text-muted-foreground mt-1">Não há registros de empréstimos vinculados ao seu CPF</p>
-          </div>
-        )}
-      </div>
+      </footer>
     </div>
   );
 };
+
+const StatCard = ({ title, value, icon: Icon, color, bg, progress }: any) => (
+  <Card className="border-border/40 shadow-sm overflow-hidden group">
+    <CardContent className="p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className={`w-8 h-8 rounded-xl ${bg} ${color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+          <Icon size={16} />
+        </div>
+        {progress !== undefined && <span className="text-[10px] font-bold text-muted-foreground">{progress}%</span>}
+      </div>
+      <div>
+        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{title}</p>
+        <p className={`text-lg font-bold tracking-tight ${color}`}>{value}</p>
+      </div>
+      {progress !== undefined && (
+        <div className="h-1 rounded-full bg-muted overflow-hidden mt-1">
+          <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const QuickActionButton = ({ icon: Icon, label, desc, onClick }: any) => (
+  <button 
+    onClick={onClick}
+    className="flex items-center gap-4 p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left active:scale-95 group shadow-sm"
+  >
+    <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors">
+      <Icon size={22} />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-bold text-foreground leading-tight">{label}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{desc}</p>
+    </div>
+  </button>
+);
+
+const MobileNavItem = ({ active, icon: Icon, label, onClick }: any) => (
+  <button 
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl transition-all ${active ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
+  >
+    <Icon size={20} />
+    <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
+  </button>
+);
 
 export default PortalCliente;
