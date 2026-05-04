@@ -222,14 +222,25 @@ const NovoCliente = () => {
     setCapital(parseCurrency(v));
   };
 
-  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode) => {
+  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
     const s = new Date(start + "T12:00:00");
+    // If a custom first due date is provided, anchor the first installment to it
+    let firstDueDateObj: Date | null = null;
+    if (firstDue) {
+      firstDueDateObj = new Date(firstDue + "T12:00:00");
+    }
     for (let i = 0; i < count; i++) {
+      if (firstDueDateObj && i === 0) {
+        dates.push(firstDueDateObj.toISOString());
+        continue;
+      }
+      const baseDate = firstDueDateObj || s;
       if (freq === "daily") {
         let added = 0;
-        const cur = new Date(s);
-        while (added < i + 1) {
+        const cur = new Date(firstDueDateObj || s);
+        const target = firstDueDateObj ? i : i + 1;
+        while (added < target) {
           cur.setDate(cur.getDate() + 1);
           const dow = cur.getDay();
           if (dMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
@@ -238,9 +249,15 @@ const NovoCliente = () => {
         }
         dates.push(cur.toISOString());
       } else if (freq === "weekly") {
-        const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 7); dates.push(d.toISOString());
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
+        d.setDate(baseDate.getDate() + offset);
+        dates.push(d.toISOString());
       } else {
-        const d = new Date(s); d.setMonth(s.getMonth() + (i + 1)); dates.push(d.toISOString());
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i : i + 1;
+        d.setMonth(baseDate.getMonth() + offset);
+        dates.push(d.toISOString());
       }
     }
     return dates;
