@@ -216,6 +216,9 @@ const AgenteIA = () => {
         maxMessagesPerDay: settings.bot_max_messages_per_day ?? 50,
         workHourStart: settings.bot_send_hour ?? 8,
         tone: (settings.bot_tone as any) ?? "formal",
+        useAi: settings.bot_use_ai ?? false,
+        negotiationEnabled: settings.bot_negotiation_enabled ?? false,
+        sendAudio: settings.bot_send_audio ?? false,
       }));
     }
   }, [settings]);
