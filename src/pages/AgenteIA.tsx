@@ -498,6 +498,9 @@ const AgenteIA = () => {
         bot_max_messages_per_day: agentConfig.maxMessagesPerDay,
         bot_send_hour: agentConfig.workHourStart,
         bot_tone: agentConfig.tone,
+        bot_use_ai: agentConfig.useAi,
+        bot_negotiation_enabled: agentConfig.negotiationEnabled,
+        bot_send_audio: agentConfig.sendAudio,
       }).eq("user_id", user.id);
       queryClient.invalidateQueries({ queryKey: ["settings-agent"] });
       toast({ title: "Configurações salvas!" });
