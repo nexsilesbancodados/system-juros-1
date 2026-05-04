@@ -105,12 +105,14 @@ const Cobrancas = () => {
   };
 
   const buildMessage = (inst: any) => {
-    const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize.`;
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
     return billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}/g, `${inst.installment_number}`)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
+      .replace(/\{portal\}/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
   };
 
