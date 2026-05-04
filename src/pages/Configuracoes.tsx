@@ -78,6 +78,9 @@ const Configuracoes = () => {
     bot_closing_message: "Qualquer dúvida, entre em contato. Obrigado!",
     bot_send_pix: true, bot_send_receipt: false,
     bot_tone: "formal",
+    bot_use_ai: false,
+    bot_negotiation_enabled: false,
+    bot_send_audio: false,
   });
 
   useEffect(() => {
