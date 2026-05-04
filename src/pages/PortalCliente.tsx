@@ -77,10 +77,11 @@ const PortalCliente = () => {
 
       const client = clients[0];
 
-      const [contractsRes, instsRes, profileRes] = await Promise.all([
+      const [contractsRes, instsRes, profileRes, settingsRes] = await Promise.all([
         supabase.from("contracts").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
         supabase.from("contract_installments").select("*").eq("client_id", client.id).order("due_date"),
         supabase.from("profiles").select("*").eq("id", client.user_id).single(),
+        supabase.from("settings").select("*").eq("user_id", client.user_id).single(),
       ]);
 
       const now = new Date();
