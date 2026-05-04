@@ -26,6 +26,7 @@ const PortalCliente = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
+  const [portalSettings, setPortalSettings] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("resumo");
   const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
