@@ -406,6 +406,7 @@ const ClienteDetalhe = () => {
 
   const moreActions = [
     { icon: Copy, label: "Copiar Dados", action: copyClientInfo },
+    { icon: Send, label: "Enviar Portal", action: sendPortalLink },
     { icon: Download, label: "Exportar Resumo", action: exportSummary },
     { icon: Printer, label: "Gerar PDF", action: generatePDF },
     { icon: Star, label: "Score +50", action: () => updateScore(50) },
