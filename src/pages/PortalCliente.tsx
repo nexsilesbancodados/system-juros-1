@@ -422,6 +422,21 @@ const PortalCliente = () => {
         </Tabs>
       </main>
 
+      {/* Security Footer */}
+      <footer className="max-w-4xl mx-auto px-4 py-12 text-center space-y-4 border-t border-border/10 mt-8 mb-20 sm:mb-8">
+        <div className="flex items-center justify-center gap-6 opacity-30 grayscale hover:grayscale-0 transition-all">
+          <Shield size={24} />
+          <Lock size={24} />
+          <CreditCard size={24} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Ambiente 100% Seguro</p>
+          <p className="text-[9px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+            Seus dados estão protegidos por criptografia de nível bancário. Todas as transações são processadas com segurança.
+          </p>
+        </div>
+      </footer>
+
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onOpenChange={setIsPaymentModalOpen} 
@@ -431,7 +446,7 @@ const PortalCliente = () => {
       />
 
       {/* Footer Mobile Nav */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border/60 p-2 sm:hidden safe-area-bottom">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
         <div className="grid grid-cols-3 gap-2">
            <MobileNavItem active={activeTab === 'resumo'} icon={BarChart3} label="Início" onClick={() => setActiveTab('resumo')} />
            <MobileNavItem active={activeTab === 'parcelas'} icon={Receipt} label="Faturas" onClick={() => setActiveTab('parcelas')} />
