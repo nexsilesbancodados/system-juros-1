@@ -650,6 +650,7 @@ const ClienteDetalhe = () => {
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border flex-wrap">
           <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Phone size={13} /> Ligar</button>
           <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 text-success text-xs font-medium hover:bg-success/20 transition-colors"><MessageSquare size={13} /> WhatsApp</button>
+          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Send size={13} /> Enviar Portal</button>
           <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Mail size={13} /> E-mail</button>
           <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs font-medium hover:bg-accent transition-colors ml-auto"><MapPin size={13} /> Editar Endereço</button>
         </div>
