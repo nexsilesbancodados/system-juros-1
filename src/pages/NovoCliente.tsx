@@ -123,6 +123,21 @@ const NovoCliente = () => {
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
 
+  // ── Step 2: Advanced contract fields ──
+  const [graceDays, setGraceDays] = useState("0");
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "cash" | "boleto" | "transfer">("pix");
+  const [autoRenew, setAutoRenew] = useState(false);
+  const [earlyDiscount, setEarlyDiscount] = useState("0");
+  const [maxInterestCap, setMaxInterestCap] = useState("");
+  const [guaranteeType, setGuaranteeType] = useState<"none" | "aval" | "vehicle" | "property" | "other">("none");
+  const [guaranteeDescription, setGuaranteeDescription] = useState("");
+  const [guarantorName, setGuarantorName] = useState("");
+  const [guarantorCpf, setGuarantorCpf] = useState("");
+  const [guarantorPhone, setGuarantorPhone] = useState("");
+  const [attachments, setAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [requireSignature, setRequireSignature] = useState(false);
+
   // ── Settings defaults ──
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
