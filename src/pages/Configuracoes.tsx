@@ -81,6 +81,13 @@ const Configuracoes = () => {
     bot_use_ai: false,
     bot_negotiation_enabled: false,
     bot_send_audio: false,
+    portal_title: "Portal do Cliente",
+    portal_subtitle: "Acompanhe seus contratos e pagamentos",
+    portal_welcome_message: "",
+    portal_primary_color: "",
+    portal_logo_url: "",
+    portal_contact_phone: "",
+    portal_contact_email: "",
   });
 
   useEffect(() => {
@@ -128,6 +135,13 @@ const Configuracoes = () => {
         bot_use_ai: s.bot_use_ai || false,
         bot_negotiation_enabled: s.bot_negotiation_enabled || false,
         bot_send_audio: s.bot_send_audio || false,
+        portal_title: s.portal_title || "Portal do Cliente",
+        portal_subtitle: s.portal_subtitle || "Acompanhe seus contratos e pagamentos",
+        portal_welcome_message: s.portal_welcome_message || "",
+        portal_primary_color: s.portal_primary_color || "",
+        portal_logo_url: s.portal_logo_url || "",
+        portal_contact_phone: s.portal_contact_phone || "",
+        portal_contact_email: s.portal_contact_email || "",
       }));
     }
   }, [settings]);
@@ -204,6 +218,13 @@ const Configuracoes = () => {
       bot_use_ai: form.bot_use_ai,
       bot_negotiation_enabled: form.bot_negotiation_enabled,
       bot_send_audio: form.bot_send_audio,
+      portal_title: form.portal_title,
+      portal_subtitle: form.portal_subtitle,
+      portal_welcome_message: form.portal_welcome_message,
+      portal_primary_color: form.portal_primary_color,
+      portal_logo_url: form.portal_logo_url,
+      portal_contact_phone: form.portal_contact_phone,
+      portal_contact_email: form.portal_contact_email,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
@@ -259,6 +280,7 @@ const Configuracoes = () => {
     { id: "templates", label: "Templates", icon: MessageSquare },
     { id: "webhooks", label: "Webhooks", icon: Webhook },
     { id: "notificacoes", label: "Notificações", icon: Bell },
+    { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
   ];
 
   return (
@@ -1225,6 +1247,71 @@ const Configuracoes = () => {
               </div>
             </div>
           </>
+        )}
+
+        {tab === "portal" && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><LayoutDashboard size={16} className="text-primary" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Configurações do Portal do Cliente</h2>
+                <p className="text-xs text-muted-foreground">Personalize a experiência do seu cliente ao acessar o portal</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Textos e Identidade</p>
+                
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Título do Portal</label>
+                  <input value={form.portal_title} onChange={(e) => setForm({ ...form, portal_title: e.target.value })} placeholder="Portal do Cliente" className={inputCls} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Subtítulo do Portal</label>
+                  <input value={form.portal_subtitle} onChange={(e) => setForm({ ...form, portal_subtitle: e.target.value })} placeholder="Acompanhe seus contratos e pagamentos" className={inputCls} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Mensagem de Boas-vindas</label>
+                  <textarea value={form.portal_welcome_message} onChange={(e) => setForm({ ...form, portal_welcome_message: e.target.value })} placeholder="Olá, seja bem-vindo ao seu portal financeiro." className={`${inputCls} min-h-[80px] resize-none`} />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Canais de Contato</p>
+                
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Telefone de Suporte</label>
+                  <input value={form.portal_contact_phone} onChange={(e) => setForm({ ...form, portal_contact_phone: e.target.value })} placeholder="(00) 00000-0000" className={inputCls} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">E-mail de Contato</label>
+                  <input value={form.portal_contact_email} onChange={(e) => setForm({ ...form, portal_contact_email: e.target.value })} placeholder="suporte@empresa.com" className={inputCls} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cor Primária do Portal</label>
+                  <div className="flex gap-2">
+                    <input type="color" value={form.portal_primary_color || form.primary_color} onChange={(e) => setForm({ ...form, portal_primary_color: e.target.value })} className="h-10 w-10 rounded-lg border border-border bg-transparent cursor-pointer" />
+                    <input value={form.portal_primary_color || form.primary_color} onChange={(e) => setForm({ ...form, portal_primary_color: e.target.value })} className={inputCls} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-border bg-info/5 flex items-start gap-3">
+              <Info size={16} className="text-info shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-info uppercase">Dica do Especialista</p>
+                <p className="text-xs text-info/80 leading-relaxed">
+                  A logo utilizada no portal é a mesma definida na aba <strong>Marca</strong> por padrão. Caso queira uma logo diferente especificamente para o portal, você poderá configurar em breve.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

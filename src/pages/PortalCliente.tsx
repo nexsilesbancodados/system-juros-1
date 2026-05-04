@@ -26,6 +26,7 @@ const PortalCliente = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
+  const [portalSettings, setPortalSettings] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("resumo");
   const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -76,10 +77,11 @@ const PortalCliente = () => {
 
       const client = clients[0];
 
-      const [contractsRes, instsRes, profileRes] = await Promise.all([
+      const [contractsRes, instsRes, profileRes, settingsRes] = await Promise.all([
         supabase.from("contracts").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
         supabase.from("contract_installments").select("*").eq("client_id", client.id).order("due_date"),
         supabase.from("profiles").select("*").eq("id", client.user_id).single(),
+        supabase.from("settings").select("*").eq("user_id", client.user_id).single(),
       ]);
 
       const now = new Date();
@@ -95,6 +97,7 @@ const PortalCliente = () => {
       setContracts(contractsRes.data || []);
       setInstallments(processedInsts);
       setOwnerProfile(profileRes.data);
+      setPortalSettings(settingsRes.data);
       toast({ title: `Bem-vindo(a), ${client.name.split(" ")[0]}!` });
     } catch (err) {
       toast({ title: "Erro no acesso", description: "Tente novamente mais tarde.", variant: "destructive" });
@@ -203,9 +206,17 @@ const PortalCliente = () => {
       <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
-              <User size={24} className="text-white" />
-            </div>
+            {portalSettings?.company_logo_url || portalSettings?.portal_logo_url ? (
+              <img 
+                src={portalSettings?.portal_logo_url || portalSettings?.company_logo_url} 
+                alt="Logo" 
+                className="w-12 h-12 rounded-2xl object-contain bg-white p-1 border border-border/50 shadow-md"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground border border-primary/10 flex items-center justify-center shadow-lg shadow-primary/20">
+                <User size={24} className="text-white" />
+              </div>
+            )}
             <div className="hidden sm:block">
               <h2 className="text-sm font-bold text-foreground leading-none">{clientData.name}</h2>
               <p className="text-[10px] text-muted-foreground font-mono mt-1">{clientData.cpf_cnpj}</p>
@@ -276,9 +287,9 @@ const PortalCliente = () => {
 
             {/* Grid de Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title="Saldo Devedor" value={`R$ ${fmt(totalPending)}`} icon={TrendingDown} color="text-destructive" bg="bg-destructive/10" />
-              <StatCard title="Total Pago" value={`R$ ${fmt(totalPaid)}`} icon={TrendingUp} color="text-success" bg="bg-success/10" />
-              <StatCard title="Contratos" value={contracts.length} icon={FileText} color="text-primary" bg="bg-primary/10" />
+              <StatCard title="Valor do Empréstimo" value={`R$ ${fmt(totalAmount)}`} icon={FileText} color="text-primary" bg="bg-primary/10" />
+              <StatCard title="Valor Pago" value={`R$ ${fmt(totalPaid)}`} icon={TrendingUp} color="text-success" bg="bg-success/10" />
+              <StatCard title="O que falta pagar" value={`R$ ${fmt(totalAmount - totalPaid)}`} icon={TrendingDown} color="text-destructive" bg="bg-destructive/10" />
               <StatCard title="Progresso" value={`${progressTotal}%`} icon={BarChart3} color="text-info" bg="bg-info/10" progress={progressTotal} />
             </div>
 
@@ -323,7 +334,7 @@ const PortalCliente = () => {
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
                           inst.status === 'paid' ? 'bg-success/10 text-success' : 
-                          inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+                          inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
                         }`}>
                           {inst.installment_number}
                         </div>

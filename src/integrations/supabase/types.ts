@@ -1060,6 +1060,13 @@ export type Database = {
           login_subtitle: string | null
           login_title: string | null
           n8n_webhook_url: string | null
+          portal_contact_email: string | null
+          portal_contact_phone: string | null
+          portal_logo_url: string | null
+          portal_primary_color: string | null
+          portal_subtitle: string | null
+          portal_title: string | null
+          portal_welcome_message: string | null
           primary_color: string | null
           push_notifications_enabled: boolean | null
           sidebar_style: string | null
@@ -1104,6 +1111,13 @@ export type Database = {
           login_subtitle?: string | null
           login_title?: string | null
           n8n_webhook_url?: string | null
+          portal_contact_email?: string | null
+          portal_contact_phone?: string | null
+          portal_logo_url?: string | null
+          portal_primary_color?: string | null
+          portal_subtitle?: string | null
+          portal_title?: string | null
+          portal_welcome_message?: string | null
           primary_color?: string | null
           push_notifications_enabled?: boolean | null
           sidebar_style?: string | null
@@ -1148,6 +1162,13 @@ export type Database = {
           login_subtitle?: string | null
           login_title?: string | null
           n8n_webhook_url?: string | null
+          portal_contact_email?: string | null
+          portal_contact_phone?: string | null
+          portal_logo_url?: string | null
+          portal_primary_color?: string | null
+          portal_subtitle?: string | null
+          portal_title?: string | null
+          portal_welcome_message?: string | null
           primary_color?: string | null
           push_notifications_enabled?: boolean | null
           sidebar_style?: string | null
