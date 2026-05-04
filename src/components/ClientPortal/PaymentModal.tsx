@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   CreditCard, Copy, Check, QrCode, Receipt, Calendar, 
-  DollarSign, Download, Share2, Info
+  DollarSign, Download, Share2, Info, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
