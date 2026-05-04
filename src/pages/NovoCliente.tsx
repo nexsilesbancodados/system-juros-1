@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
-  Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer
+  Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -122,6 +122,21 @@ const NovoCliente = () => {
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
+
+  // ── Step 2: Advanced contract fields ──
+  const [graceDays, setGraceDays] = useState("0");
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "cash" | "boleto" | "transfer">("pix");
+  const [autoRenew, setAutoRenew] = useState(false);
+  const [earlyDiscount, setEarlyDiscount] = useState("0");
+  const [maxInterestCap, setMaxInterestCap] = useState("");
+  const [guaranteeType, setGuaranteeType] = useState<"none" | "aval" | "vehicle" | "property" | "other">("none");
+  const [guaranteeDescription, setGuaranteeDescription] = useState("");
+  const [guarantorName, setGuarantorName] = useState("");
+  const [guarantorCpf, setGuarantorCpf] = useState("");
+  const [guarantorPhone, setGuarantorPhone] = useState("");
+  const [attachments, setAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [requireSignature, setRequireSignature] = useState(false);
 
   // ── Settings defaults ──
   const { data: settings } = useQuery({
@@ -343,6 +358,19 @@ const NovoCliente = () => {
         total_interest: calc.totalInterest,
         status: "active",
         notes: notes || (loanMode === "percentage" ? "Modo: Porcentagem" : "Modo: Parcelas"),
+        grace_days: parseInt(graceDays) || 0,
+        payment_method: paymentMethod,
+        auto_renew: autoRenew,
+        early_payment_discount_percent: parseFloat(earlyDiscount) || 0,
+        max_interest_cap_percent: maxInterestCap ? parseFloat(maxInterestCap) : null,
+        guarantee_type: guaranteeType === "none" ? null : guaranteeType,
+        guarantee_description: guaranteeDescription || null,
+        guarantor_name: guarantorName || null,
+        guarantor_cpf: guarantorCpf.replace(/\D/g, "") || null,
+        guarantor_phone: guarantorPhone.replace(/\D/g, "") || null,
+        attachments: attachments,
+        signature_status: requireSignature ? "pending" : "not_required",
+        signature_token: requireSignature ? crypto.randomUUID() : null,
       }).select().single();
       if (contractErr) throw contractErr;
 
@@ -728,6 +756,159 @@ const NovoCliente = () => {
               </div>
             )}
           </div>
+
+          {/* ── ADVANCED CONTRACT FIELDS ── */}
+          <details className="bg-card border border-border rounded-2xl p-5 group">
+            <summary className="cursor-pointer flex items-center justify-between list-none">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Shield size={14} className="text-primary" /> Condições Avançadas
+              </h2>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-open:hidden">Abrir</span>
+              <span className="text-[10px] uppercase tracking-wider text-primary hidden group-open:inline">Fechar</span>
+            </summary>
+
+            <div className="mt-5 space-y-5">
+              {/* Carência + Forma pagamento + desconto + teto */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Carência (dias)</label>
+                  <input type="number" value={graceDays} onChange={(e) => setGraceDays(e.target.value)} placeholder="0" className={INPUT} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Dias sem multa após o vencimento</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Forma de Pagamento</label>
+                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className={INPUT}>
+                    <option value="pix">PIX</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="transfer">Transferência</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Desconto Antecipação (%)</label>
+                  <input type="number" step="0.1" value={earlyDiscount} onChange={(e) => setEarlyDiscount(e.target.value)} placeholder="0" className={INPUT} />
+                  <p className="text-[10px] text-muted-foreground mt-1">% se pagar antes do vencimento</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Teto de Juros (%)</label>
+                  <input type="number" step="1" value={maxInterestCap} onChange={(e) => setMaxInterestCap(e.target.value)} placeholder="Sem limite" className={INPUT} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Máx. % do capital em juros</p>
+                </div>
+              </div>
+
+              {/* Renovação automática + Assinatura */}
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setAutoRenew(!autoRenew)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-colors text-left ${autoRenew ? "border-primary bg-primary/5" : "border-border"}`}>
+                  <div className={`w-9 h-5 rounded-full transition-colors relative ${autoRenew ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoRenew ? "left-4" : "left-0.5"}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Renovação Automática</p>
+                    <p className="text-[10px] text-muted-foreground">Cria novo contrato ao quitar</p>
+                  </div>
+                </button>
+                <button type="button" onClick={() => setRequireSignature(!requireSignature)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-colors text-left ${requireSignature ? "border-primary bg-primary/5" : "border-border"}`}>
+                  <div className={`w-9 h-5 rounded-full transition-colors relative ${requireSignature ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${requireSignature ? "left-4" : "left-0.5"}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Assinatura Digital</p>
+                    <p className="text-[10px] text-muted-foreground">Gera link para o cliente assinar</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Garantia / Aval */}
+              <div className="space-y-3 pt-3 border-t border-border">
+                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Garantia / Aval</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {([
+                    { v: "none", label: "Nenhuma" },
+                    { v: "aval", label: "Avalista" },
+                    { v: "vehicle", label: "Veículo" },
+                    { v: "property", label: "Imóvel" },
+                    { v: "other", label: "Outra" },
+                  ] as const).map(g => (
+                    <button key={g.v} type="button" onClick={() => setGuaranteeType(g.v)}
+                      className={`p-2 rounded-lg border text-[10px] font-semibold transition-colors ${guaranteeType === g.v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+
+                {guaranteeType !== "none" && guaranteeType !== "aval" && (
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1.5 block">Descrição da Garantia</label>
+                    <input type="text" value={guaranteeDescription} onChange={(e) => setGuaranteeDescription(e.target.value)}
+                      placeholder="Ex: Honda Civic 2020 placa ABC-1234" className={INPUT} />
+                  </div>
+                )}
+
+                {guaranteeType === "aval" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1.5 block">Nome do Avalista</label>
+                      <input type="text" value={guarantorName} onChange={(e) => setGuarantorName(e.target.value)} className={INPUT} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1.5 block">CPF do Avalista</label>
+                      <input type="text" value={guarantorCpf} onChange={(e) => setGuarantorCpf(e.target.value)} className={INPUT} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs font-semibold text-foreground mb-1.5 block">Telefone do Avalista</label>
+                      <input type="text" value={guarantorPhone} onChange={(e) => setGuarantorPhone(e.target.value)} className={INPUT} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Anexos */}
+              <div className="space-y-3 pt-3 border-t border-border">
+                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Comprovantes Anexos</h3>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  disabled={uploadingAttachment}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length || !user) return;
+                    setUploadingAttachment(true);
+                    const uploaded: { name: string; url: string; type: string }[] = [];
+                    for (const file of files) {
+                      const path = `${user.id}/contracts/${Date.now()}-${file.name}`;
+                      const { error } = await supabase.storage.from("uploads").upload(path, file);
+                      if (!error) {
+                        const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+                        uploaded.push({ name: file.name, url: data.publicUrl, type: file.type });
+                      }
+                    }
+                    setAttachments([...attachments, ...uploaded]);
+                    setUploadingAttachment(false);
+                    e.target.value = "";
+                    toast({ title: `${uploaded.length} arquivo(s) anexado(s)` });
+                  }}
+                  className="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                />
+                {attachments.length > 0 && (
+                  <div className="space-y-1.5">
+                    {attachments.map((att, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText size={12} className="text-primary shrink-0" />
+                          <span className="text-xs text-foreground truncate">{att.name}</span>
+                        </div>
+                        <button type="button" onClick={() => setAttachments(attachments.filter((_, idx) => idx !== i))}
+                          className="text-[10px] text-destructive hover:underline">Remover</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </details>
         </div>
       )}
 

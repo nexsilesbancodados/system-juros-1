@@ -1,0 +1,16 @@
+ALTER TABLE public.contracts
+  ADD COLUMN IF NOT EXISTS grace_days integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS guarantee_type text,
+  ADD COLUMN IF NOT EXISTS guarantee_description text,
+  ADD COLUMN IF NOT EXISTS guarantor_name text,
+  ADD COLUMN IF NOT EXISTS guarantor_cpf text,
+  ADD COLUMN IF NOT EXISTS guarantor_phone text,
+  ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'pix',
+  ADD COLUMN IF NOT EXISTS auto_renew boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS early_payment_discount_percent numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS max_interest_cap_percent numeric,
+  ADD COLUMN IF NOT EXISTS attachments jsonb NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS signature_status text NOT NULL DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS signature_url text,
+  ADD COLUMN IF NOT EXISTS signed_at timestamp with time zone,
+  ADD COLUMN IF NOT EXISTS signature_token text;
