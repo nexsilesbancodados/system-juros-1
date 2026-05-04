@@ -41,16 +41,19 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile }
   const handleDownloadReceipt = async () => {
     setIsDownloading(true);
     try {
-      // Aqui chamaríamos a Edge Function auto-receipt ou similar
-      const { data, error } = await supabase.functions.invoke("auto-receipt", {
-        body: { installmentId: installment.id }
-      });
+      // Tenta gerar localmente primeiro para ser instantâneo
+      const { data: { user } } = await supabase.auth.getUser(); // Apenas para contexto se houver
       
-      if (error) throw error;
+      const client = {
+        name: installment.client_name || "Cliente",
+        cpf_cnpj: installment.client_cpf_cnpj || "000.000.000-00"
+      };
       
-      toast({ title: "Recibo gerado!", description: "O download começará em breve." });
+      generatePortalReceiptPdf(client, installment, ownerProfile);
+      
+      toast({ title: "Recibo gerado!", description: "O download do PDF foi iniciado." });
     } catch (err) {
-      toast({ title: "Aviso", description: "O recibo está sendo gerado e será enviado para seu e-mail.", variant: "default" });
+      toast({ title: "Erro", description: "Não foi possível gerar o recibo agora.", variant: "destructive" });
     } finally {
       setIsDownloading(false);
     }
