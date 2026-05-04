@@ -20,6 +20,7 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
   const [contracts, setContracts] = useState<any[]>([]);
@@ -48,16 +49,27 @@ const PortalCliente = () => {
       toast({ title: "CPF inválido", description: "Digite um CPF válido com 11 dígitos.", variant: "destructive" });
       return;
     }
+    
+    if (!birthDate) {
+      toast({ title: "Data de nascimento", description: "Informe sua data de nascimento para acessar.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: clients, error: clientError } = await supabase
         .from("clients")
         .select("*")
-        .or(`cpf_cnpj.eq.${cleanCpf},cpf_cnpj.eq.${cpf}`);
+        .eq("cpf_cnpj", cleanCpf)
+        .eq("birth_date", birthDate);
 
       if (clientError || !clients || clients.length === 0) {
-        toast({ title: "CPF não encontrado", description: "Nenhum cliente cadastrado com este CPF.", variant: "destructive" });
+        toast({ 
+          title: "Acesso negado", 
+          description: "CPF ou data de nascimento não conferem.", 
+          variant: "destructive" 
+        });
         setLoading(false);
         return;
       }
@@ -96,6 +108,7 @@ const PortalCliente = () => {
     setInstallments([]);
     setContracts([]);
     setCpf("");
+    setBirthDate("");
     setOwnerProfile(null);
     setActiveTab("resumo");
   };
@@ -152,6 +165,20 @@ const PortalCliente = () => {
                   inputMode="numeric"
                 />
               </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  required
+                  className="w-full px-4 py-4 rounded-2xl bg-accent/30 border border-border text-center text-lg focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                />
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading}
