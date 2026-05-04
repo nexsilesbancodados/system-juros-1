@@ -140,11 +140,11 @@ const PortalCliente = () => {
         {/* Background Image/Video with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80" 
+            src="https://images.unsplash.com/photo-1556742044-3c52d6e88c02?auto=format&fit=crop&q=80" 
             alt="Background" 
-            className="w-full h-full object-cover opacity-40"
+            className="w-full h-full object-cover opacity-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/60 to-primary/20" />
         </div>
 
         {/* Animated Background Blobs */}
@@ -154,7 +154,7 @@ const PortalCliente = () => {
         </div>
 
         <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
-          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-2xl p-8 shadow-2xl">
+          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-2xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
             <div className="text-center">
               <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/20">
                 <Shield size={32} className="text-primary" />
