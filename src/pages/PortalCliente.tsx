@@ -326,7 +326,7 @@ const PortalCliente = () => {
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
                           inst.status === 'paid' ? 'bg-success/10 text-success' : 
-                          inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+                          inst.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
                         }`}>
                           {inst.installment_number}
                         </div>
