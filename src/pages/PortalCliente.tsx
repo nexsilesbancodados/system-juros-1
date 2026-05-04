@@ -282,29 +282,56 @@ const PortalCliente = () => {
           <TabsContent value="resumo" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
             {/* Hero - Próxima Parcela */}
             {nextDue && (
-              <Card className={`overflow-hidden border-none shadow-xl ${nextDue.status === 'overdue' ? 'bg-destructive/5' : 'bg-primary/5'}`}>
+              <Card className={`overflow-hidden border-none shadow-2xl relative group ${nextDue.status === 'overdue' ? 'bg-destructive/5' : 'bg-primary/5'}`}>
+                {/* Visual Accent */}
+                <div className={`absolute top-0 left-0 w-1 h-full ${nextDue.status === 'overdue' ? 'bg-destructive' : 'bg-primary'}`} />
+                
                 <CardContent className="p-0">
-                  <div className={`p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-border/10 ${nextDue.status === 'overdue' ? 'bg-destructive/10' : 'bg-primary/10'}`}>
-                    <div className="space-y-1">
-                      <p className={`text-[10px] font-bold uppercase tracking-widest ${nextDue.status === 'overdue' ? 'text-destructive' : 'text-primary'}`}>
-                        {nextDue.status === 'overdue' ? '🔴 Parcela em Atraso' : '🔵 Próximo Vencimento'}
-                      </p>
-                      <h3 className="text-4xl font-bold tracking-tight">R$ {fmt(Number(nextDue.amount))}</h3>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                         <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(nextDue.due_date).toLocaleDateString("pt-BR", {day:'2-digit', month:'long'})}</span>
-                         <span>• Parcela #{nextDue.installment_number}</span>
+                  <div className={`p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-border/10 ${nextDue.status === 'overdue' ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                         <div className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${nextDue.status === 'overdue' ? 'bg-destructive text-white animate-pulse' : 'bg-primary text-white'}`}>
+                           {nextDue.status === 'overdue' ? '🔴 Em Atraso' : '🔵 Próxima Fatura'}
+                         </div>
+                         {nextDue.status === 'overdue' && (
+                           <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
+                             <AlertTriangle size={10} /> {nextDue.daysLate} dias
+                           </span>
+                         )}
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground font-medium">Valor Total da Parcela</p>
+                        <h3 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
+                          <span className="text-xl sm:text-2xl font-medium opacity-50 mr-1">R$</span>
+                          {fmt(Number(nextDue.amount))}
+                        </h3>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
+                         <span className="flex items-center gap-1.5 font-medium"><Calendar size={14} className="text-primary"/> Vence {new Date(nextDue.due_date).toLocaleDateString("pt-BR", {day:'2-digit', month:'long'})}</span>
+                         <span className="flex items-center gap-1.5 font-medium"><CreditCard size={14} className="text-primary"/> Parcela {nextDue.installment_number} de {installments.length}</span>
                       </div>
                     </div>
-                    <Button 
-                      className="rounded-2xl py-7 px-8 text-md font-bold shadow-lg active:scale-95 transition-transform" 
-                      onClick={() => { setSelectedInstallment(nextDue); setIsPaymentModalOpen(true); }}
-                    >
-                      Pagar Agora
-                    </Button>
+                    
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        className="rounded-2xl py-8 px-10 text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white group" 
+                        onClick={() => { setSelectedInstallment(nextDue); setIsPaymentModalOpen(true); }}
+                      >
+                        Pagar Agora
+                        <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                      <p className="text-[10px] text-center text-muted-foreground font-medium italic">Pague via PIX para liberação instantânea</p>
+                    </div>
                   </div>
+                  
                   {nextDue.status === 'overdue' && (
-                    <div className="p-4 bg-destructive text-white text-[10px] font-bold uppercase tracking-widest text-center animate-pulse">
-                       Atenção: Parcela com {nextDue.daysLate} dias de atraso. Regularize para evitar juros.
+                    <div className="px-6 py-3 bg-destructive/20 border-t border-destructive/10 flex items-center gap-3">
+                       <div className="w-2 h-2 rounded-full bg-destructive animate-ping" />
+                       <p className="text-[11px] font-bold text-destructive uppercase tracking-tight">
+                         Atenção: Evite o bloqueio de novos créditos regularizando hoje mesmo.
+                       </p>
                     </div>
                   )}
                 </CardContent>
