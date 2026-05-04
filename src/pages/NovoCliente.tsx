@@ -347,7 +347,7 @@ const NovoCliente = () => {
       if (contractErr) throw contractErr;
 
       // 3. Create installments
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode);
+      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, autoFirstDue ? undefined : firstDueDate);
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id,
         contract_id: contract.id,
