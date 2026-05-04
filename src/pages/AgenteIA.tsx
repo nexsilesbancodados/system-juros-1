@@ -196,7 +196,7 @@ const AgenteIA = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("settings")
-        .select("bot_enabled, bot_auto_send, bot_send_pix, bot_notify_owner, bot_max_messages_per_day, bot_send_hour, bot_send_minute, bot_tone, whatsapp_instance")
+        .select("bot_enabled, bot_auto_send, bot_send_pix, bot_notify_owner, bot_max_messages_per_day, bot_send_hour, bot_send_minute, bot_tone, whatsapp_instance, bot_use_ai, bot_negotiation_enabled, bot_send_audio")
         .eq("user_id", user!.id)
         .single();
       return data;
