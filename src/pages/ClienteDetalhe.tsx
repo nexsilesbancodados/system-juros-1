@@ -271,6 +271,14 @@ const ClienteDetalhe = () => {
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
 
+  const sendPortalLink = () => {
+    const phone = getPhone();
+    if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const msg = encodeURIComponent(`Olá ${client?.name}, aqui está o link para o seu portal do cliente: ${portalUrl}\n\nLá você pode conferir suas parcelas, gerar PIX para pagamento e ver seu saldo devedor.\n\nBasta logar com seu CPF e data de nascimento.`);
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+  };
+
   const sendAllOverdue = () => {
     if (!kpis.overdueInst.length) { toast({ title: "Sem parcelas atrasadas" }); return; }
     const phone = getPhone();
