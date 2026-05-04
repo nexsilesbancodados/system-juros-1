@@ -17,9 +17,10 @@ interface PaymentModalProps {
   onOpenChange: (open: boolean) => void;
   installment: any;
   ownerProfile: any;
+  clientData: any;
 }
 
-export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile }: PaymentModalProps) => {
+export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, clientData }: PaymentModalProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
