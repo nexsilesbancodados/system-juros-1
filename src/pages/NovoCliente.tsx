@@ -668,6 +668,26 @@ const NovoCliente = () => {
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
               </div>
               <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-foreground">1º Vencimento</label>
+                  <button
+                    type="button"
+                    onClick={() => setAutoFirstDue(!autoFirstDue)}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors ${autoFirstDue ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}
+                  >
+                    {autoFirstDue ? "Automático" : "Manual"}
+                  </button>
+                </div>
+                <input
+                  type="date"
+                  value={autoFirstDue ? "" : firstDueDate}
+                  onChange={(e) => setFirstDueDate(e.target.value)}
+                  disabled={autoFirstDue}
+                  placeholder="Calculado automaticamente"
+                  className={`${INPUT} ${autoFirstDue ? "opacity-50 cursor-not-allowed" : ""}`}
+                />
+              </div>
+              <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
                 <input type="number" step="0.01" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className={INPUT} />
               </div>
