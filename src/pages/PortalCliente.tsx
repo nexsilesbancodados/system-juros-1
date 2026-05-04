@@ -345,6 +345,7 @@ const PortalCliente = () => {
         onOpenChange={setIsPaymentModalOpen} 
         installment={selectedInstallment}
         ownerProfile={ownerProfile}
+        clientData={clientData}
       />
 
       {/* Footer Mobile Nav */}
