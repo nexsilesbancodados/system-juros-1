@@ -140,11 +140,11 @@ const PortalCliente = () => {
         {/* Background Image/Video with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1556742044-3c52d6e88c02?auto=format&fit=crop&q=80" 
-            alt="Background" 
-            className="w-full h-full object-cover opacity-50"
+            src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80" 
+            alt="Atendimento humanizado" 
+            className="w-full h-full object-cover opacity-60 scale-105 animate-pulse-slow"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/60 to-primary/20" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-900/70 to-primary/30 backdrop-blur-[2px]" />
         </div>
 
         {/* Animated Background Blobs */}
