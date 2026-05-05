@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 
 type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily";
@@ -373,6 +374,23 @@ const Simulador = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* AI Insights */}
+      {hasValue && calc && (
+        <AISimulatorInsights
+          payload={{
+            valor: valorNum, taxa: taxaNum, parcelas: parcelasNum,
+            loanMode, frequency, dailyMode,
+            totalReceber: calc.totalReceber, jurosTotal: calc.jurosTotal,
+            valorParcela: calc.valorParcela, numParcelas: calc.numParcelas,
+          }}
+          onApplyScenario={(s) => {
+            setTaxa(String(s.taxa));
+            setParcelas(String(s.parcelas));
+            setLoanMode("installments");
+          }}
+        />
       )}
 
       {/* CTA to create contract */}
