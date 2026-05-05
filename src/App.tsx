@@ -46,6 +46,7 @@ const Suporte = lazy(() => import("./pages/Suporte"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
+const TvMode = lazy(() => import("./pages/TvMode"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +77,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/cobrador-externo" element={<CobradorExterno />} />
+                <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/analises" element={<Analises />} />

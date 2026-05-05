@@ -12,6 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
+import DailyBriefing from "@/components/dashboard/DailyBriefing";
+import PeriodComparison from "@/components/dashboard/PeriodComparison";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -232,6 +234,14 @@ const Dashboard = () => {
                 </span>
               </div>
             )}
+            <button
+              onClick={() => navigate("/tv")}
+              className="flex items-center gap-2 px-4 py-2 rounded-full glass-card hover:bg-primary/10 transition group"
+              title="Modo Apresentação"
+            >
+              <Activity size={12} className="text-primary group-hover:scale-110 transition" />
+              <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Modo TV</span>
+            </button>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card">
               <span className="status-dot status-dot-success animate-pulse" />
               <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Online</span>
@@ -239,6 +249,9 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ─── Daily AI Briefing ─── */}
+      <DailyBriefing />
 
       {/* ─── Main Metric Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
@@ -378,6 +391,9 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* ─── Period Comparison ─── */}
+      <PeriodComparison installments={data?.installments || []} />
 
       {/* ─── Interactive Charts ─── */}
       <DashboardCharts
