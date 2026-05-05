@@ -1,0 +1,103 @@
+import { useMemo } from "react";
+import { MessageSquare, Check, AlertTriangle, Clock, CheckCircle, CalendarDays } from "lucide-react";
+
+interface Props {
+  installments: any[];
+  onWhatsApp: (i: any) => void;
+  onMarkPaid: (id: string) => void;
+  onClickInstallment?: (i: any) => void;
+}
+
+const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
+const KanbanView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment }: Props) => {
+  const columns = useMemo(() => {
+    const now = Date.now();
+    const overdue = installments.filter((i) => i.status === "overdue");
+    const dueSoon = installments.filter((i) => {
+      if (i.status !== "pending") return false;
+      const days = (new Date(i.due_date).getTime() - now) / 86400000;
+      return days >= 0 && days <= 7;
+    });
+    const future = installments.filter((i) => {
+      if (i.status !== "pending") return false;
+      const days = (new Date(i.due_date).getTime() - now) / 86400000;
+      return days > 7;
+    });
+    const paid = installments.filter((i) => i.status === "paid").slice(0, 30);
+    return [
+      { key: "overdue", label: "Atrasadas", icon: AlertTriangle, items: overdue, color: "destructive" },
+      { key: "due", label: "Vence em 7 dias", icon: Clock, items: dueSoon, color: "warning" },
+      { key: "future", label: "Futuras", icon: CalendarDays, items: future, color: "primary" },
+      { key: "paid", label: "Pagas (recentes)", icon: CheckCircle, items: paid, color: "success" },
+    ];
+  }, [installments]);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 animate-fade-in">
+      {columns.map((col) => {
+        const total = col.items.reduce((acc, i) => acc + Number(i.amount), 0);
+        const Icon = col.icon;
+        return (
+          <div key={col.key} className="bg-card border border-border rounded-2xl flex flex-col max-h-[70vh]">
+            <div className={`p-3 border-b border-border bg-${col.color}/5 rounded-t-2xl`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg bg-${col.color}/10 flex items-center justify-center`}>
+                    <Icon size={13} className={`text-${col.color}`} />
+                  </div>
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
+                </div>
+                <span className={`text-xs font-bold text-${col.color}`}>{col.items.length}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">R$ {fmt(total)}</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              {col.items.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma parcela</p>
+              ) : (
+                col.items.map((i) => (
+                  <div key={i.id} className="p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <p
+                        className="text-xs font-semibold text-foreground truncate cursor-pointer hover:text-primary"
+                        onClick={() => onClickInstallment?.(i)}
+                      >
+                        {i.client_name}
+                      </p>
+                      <span className="text-[9px] text-muted-foreground shrink-0">#{i.installment_number}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-foreground">R$ {fmt(Number(i.amount))}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(i.due_date).toLocaleDateString("pt-BR")}
+                      </span>
+                    </div>
+                    {col.key !== "paid" && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => onWhatsApp(i)}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-success/10 text-success text-[10px] font-medium hover:bg-success/20 active:scale-95 focus-ring"
+                        >
+                          <MessageSquare size={11} /> WhatsApp
+                        </button>
+                        <button
+                          onClick={() => onMarkPaid(i.id)}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-medium hover:bg-primary/20 active:scale-95 focus-ring"
+                        >
+                          <Check size={11} /> Pago
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default KanbanView;
