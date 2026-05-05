@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import DashboardCharts from "@/components/dashboard/DashboardCharts";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -377,6 +378,13 @@ const Dashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* ─── Interactive Charts ─── */}
+      <DashboardCharts
+        contracts={metrics.contracts}
+        installments={data?.installments || []}
+        profits={data?.profits || []}
+      />
 
       {/* ─── Two-Column Detail ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
