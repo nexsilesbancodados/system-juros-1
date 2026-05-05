@@ -26,10 +26,10 @@ const KanbanView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment }
     });
     const paid = installments.filter((i) => i.status === "paid").slice(0, 30);
     return [
-      { key: "overdue", label: "Atrasadas", icon: AlertTriangle, items: overdue, color: "destructive" },
-      { key: "due", label: "Vence em 7 dias", icon: Clock, items: dueSoon, color: "warning" },
-      { key: "future", label: "Futuras", icon: CalendarDays, items: future, color: "primary" },
-      { key: "paid", label: "Pagas (recentes)", icon: CheckCircle, items: paid, color: "success" },
+      { key: "overdue", label: "Atrasadas", icon: AlertTriangle, items: overdue, headerBg: "bg-destructive/5", iconBg: "bg-destructive/10", iconColor: "text-destructive", countColor: "text-destructive" },
+      { key: "due", label: "Vence em 7 dias", icon: Clock, items: dueSoon, headerBg: "bg-warning/5", iconBg: "bg-warning/10", iconColor: "text-warning", countColor: "text-warning" },
+      { key: "future", label: "Futuras", icon: CalendarDays, items: future, headerBg: "bg-primary/5", iconBg: "bg-primary/10", iconColor: "text-primary", countColor: "text-primary" },
+      { key: "paid", label: "Pagas (recentes)", icon: CheckCircle, items: paid, headerBg: "bg-success/5", iconBg: "bg-success/10", iconColor: "text-success", countColor: "text-success" },
     ];
   }, [installments]);
 
