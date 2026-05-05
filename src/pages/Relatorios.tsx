@@ -25,6 +25,29 @@ const Relatorios = () => {
   });
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+
+  const runAiAnalysis = async () => {
+    if (!user || !data) return;
+    setAiLoading(true);
+    try {
+      const [year, mon] = month.split("-").map(Number);
+      const start_date = new Date(year, mon - 1, 1).toISOString();
+      const end_date = new Date(year, mon, 0, 23, 59, 59).toISOString();
+
+      const { data: res, error } = await supabase.functions.invoke("report-ai", {
+        body: { start_date, end_date }
+      });
+      if (error) throw error;
+      setAiAnalysis(res.analysis);
+      sonnerToast.success("Análise de IA concluída!");
+    } catch (err: any) {
+      sonnerToast.error("Erro ao gerar análise de IA: " + err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchReport = async () => {
     if (!user) return;
