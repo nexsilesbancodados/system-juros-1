@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import AICreditScore from "@/components/clients/AICreditScore";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
