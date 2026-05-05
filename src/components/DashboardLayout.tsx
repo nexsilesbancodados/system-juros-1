@@ -58,6 +58,7 @@ const DashboardLayout = () => {
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <KeyboardShortcutsHelp />
+      <OnboardingTourAuto />
     </div>
   );
 };
