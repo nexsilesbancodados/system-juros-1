@@ -58,6 +58,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
         </button>
       ) : (
         <button
+          data-tour="topbar-search"
           onClick={onSearchClick}
           className="group flex items-center gap-2.5 px-4 py-2 rounded-full bg-muted/40 border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-muted/60 transition-all duration-300"
         >

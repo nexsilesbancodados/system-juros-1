@@ -165,9 +165,15 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
     const active = isActive(item.path);
     const Icon = item.icon;
     const badge = item.path === "/chat" && chatUnread > 0 ? chatUnread : 0;
+    const tourKey =
+      item.path === "/dashboard" ? "dashboard" :
+      item.path === "/clientes" ? "clientes" :
+      item.path === "/cobrancas" ? "cobrancas" :
+      item.path === "/ferramentas/simulador" ? "simulador" : undefined;
     return (
       <button
         key={item.path}
+        data-tour={tourKey}
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 group relative focus-ring ${
