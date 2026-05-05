@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, CalendarDays, Mail, CheckSquare, Square } from "lucide-react";
+import { Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle, DollarSign, Send, CalendarDays, Mail, CheckSquare, Square, List, LayoutGrid, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import CalendarView from "@/components/cobrancas/CalendarView";
+import KanbanView from "@/components/cobrancas/KanbanView";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -19,6 +21,7 @@ const Cobrancas = () => {
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<"list" | "calendar" | "kanban">("list");
 
   useMultiTableRealtime(
     ["contract_installments", "contracts"],
@@ -286,6 +289,25 @@ const Cobrancas = () => {
         </div>
       )}
 
+      {/* View switcher */}
+      <div className="flex items-center gap-2 animate-fade-in">
+        <div className="pill-tabs">
+          {([
+            { key: "list", label: "Lista", icon: List },
+            { key: "calendar", label: "Calendário", icon: CalendarIcon },
+            { key: "kanban", label: "Kanban", icon: LayoutGrid },
+          ] as const).map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setView(v.key)}
+              className={`pill-tab ${view === v.key ? "pill-tab-active" : "pill-tab-inactive"}`}
+            >
+              <v.icon size={12} /> {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in">
         <div className="relative flex-1">
@@ -323,6 +345,28 @@ const Cobrancas = () => {
         </button>
       </div>
 
+      {/* Calendar view */}
+      {view === "calendar" && !loading && (
+        <CalendarView
+          installments={filtered}
+          onWhatsApp={handleWhatsApp}
+          onMarkPaid={(id) => setConfirmPayId(id)}
+          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
+        />
+      )}
+
+      {/* Kanban view */}
+      {view === "kanban" && !loading && (
+        <KanbanView
+          installments={filtered}
+          onWhatsApp={handleWhatsApp}
+          onMarkPaid={(id) => setConfirmPayId(id)}
+          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
+        />
+      )}
+
+      {/* List */}
+      {view === "list" && (<>
       {/* List */}
       {loading ? (
         <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 rounded-xl skeleton-shimmer" />)}</div>
@@ -430,6 +474,7 @@ const Cobrancas = () => {
           })}
         </div>
       )}
+      </>)}
 
       {/* Payment Confirmation Modal */}
       {confirmPayId && (
