@@ -1,9 +1,8 @@
-// Service Worker básico — cache offline de assets estáticos
-const CACHE = "sj-v1";
-const ASSETS = ["/", "/manifest.json"];
+// Service Worker — network-first para HTML/JS/CSS para evitar chunks antigos
+const CACHE = "sj-v3";
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
@@ -18,22 +17,19 @@ self.addEventListener("fetch", (e) => {
   const { request } = e;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  // Não cacheia API/Supabase
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith("/api/") || url.pathname.includes("supabase")) return;
 
+  // Network-first: sempre busca o asset mais recente; só usa cache se offline
   e.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, clone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(request)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === "basic") {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(request))
   );
 });
