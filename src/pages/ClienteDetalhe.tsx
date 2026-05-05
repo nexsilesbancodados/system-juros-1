@@ -455,6 +455,7 @@ const ClienteDetalhe = () => {
                 <span className="text-xs text-muted-foreground font-mono">{client.cpf_cnpj || "Sem CPF"}</span>
                 <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
                 <span className={`text-xs font-bold ${scoreClr}`}>Score: {client.credit_score || 0}</span>
+                <AICreditScore clientId={id!} currentScore={client.credit_score || 0} onApplyScore={() => inv("client-detail")} />
               </div>
             </div>
           </div>
