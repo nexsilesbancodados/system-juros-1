@@ -345,6 +345,28 @@ const Cobrancas = () => {
         </button>
       </div>
 
+      {/* Calendar view */}
+      {view === "calendar" && !loading && (
+        <CalendarView
+          installments={filtered}
+          onWhatsApp={handleWhatsApp}
+          onMarkPaid={(id) => setConfirmPayId(id)}
+          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
+        />
+      )}
+
+      {/* Kanban view */}
+      {view === "kanban" && !loading && (
+        <KanbanView
+          installments={filtered}
+          onWhatsApp={handleWhatsApp}
+          onMarkPaid={(id) => setConfirmPayId(id)}
+          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
+        />
+      )}
+
+      {/* List */}
+      {view === "list" && (<>
       {/* List */}
       {loading ? (
         <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 rounded-xl skeleton-shimmer" />)}</div>
