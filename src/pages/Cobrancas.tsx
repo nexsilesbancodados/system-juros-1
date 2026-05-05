@@ -474,6 +474,7 @@ const Cobrancas = () => {
           })}
         </div>
       )}
+      </>)}
 
       {/* Payment Confirmation Modal */}
       {confirmPayId && (
