@@ -7,6 +7,7 @@ import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
 import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { OnboardingTourAuto } from "@/components/onboarding/OnboardingTour";
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
