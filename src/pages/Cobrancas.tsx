@@ -21,6 +21,7 @@ const Cobrancas = () => {
   const [search, setSearch] = useState("");
   const [confirmPayId, setConfirmPayId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<"list" | "calendar" | "kanban">("list");
 
   useMultiTableRealtime(
     ["contract_installments", "contracts"],
