@@ -87,7 +87,10 @@ const Relatorios = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchReport(); }, [user, month]);
+  useEffect(() => { 
+    fetchReport(); 
+    setAiAnalysis(null);
+  }, [user, month]);
 
   useEffect(() => {
     if (!user) return;
