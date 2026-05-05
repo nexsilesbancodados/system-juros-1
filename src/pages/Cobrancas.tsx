@@ -289,6 +289,25 @@ const Cobrancas = () => {
         </div>
       )}
 
+      {/* View switcher */}
+      <div className="flex items-center gap-2 animate-fade-in">
+        <div className="pill-tabs">
+          {([
+            { key: "list", label: "Lista", icon: List },
+            { key: "calendar", label: "Calendário", icon: CalendarIcon },
+            { key: "kanban", label: "Kanban", icon: LayoutGrid },
+          ] as const).map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setView(v.key)}
+              className={`pill-tab ${view === v.key ? "pill-tab-active" : "pill-tab-inactive"}`}
+            >
+              <v.icon size={12} /> {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in">
         <div className="relative flex-1">
