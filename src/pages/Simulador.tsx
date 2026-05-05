@@ -376,6 +376,23 @@ const Simulador = () => {
         </div>
       )}
 
+      {/* AI Insights */}
+      {hasValue && calc && (
+        <AISimulatorInsights
+          payload={{
+            valor: valorNum, taxa: taxaNum, parcelas: parcelasNum,
+            loanMode, frequency, dailyMode,
+            totalReceber: calc.totalReceber, jurosTotal: calc.jurosTotal,
+            valorParcela: calc.valorParcela, numParcelas: calc.numParcelas,
+          }}
+          onApplyScenario={(s) => {
+            setTaxa(String(s.taxa));
+            setParcelas(String(s.parcelas));
+            setLoanMode("installments");
+          }}
+        />
+      )}
+
       {/* CTA to create contract */}
       {hasValue && (
         <button
