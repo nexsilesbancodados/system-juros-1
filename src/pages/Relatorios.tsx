@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3, FileDown } from "lucide-react";
+import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3, FileDown, Sparkles, Loader2, Lightbulb, ShieldCheck, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast as sonnerToast } from "sonner";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -24,6 +25,29 @@ const Relatorios = () => {
   });
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+
+  const runAiAnalysis = async () => {
+    if (!user || !data) return;
+    setAiLoading(true);
+    try {
+      const [year, mon] = month.split("-").map(Number);
+      const start_date = new Date(year, mon - 1, 1).toISOString();
+      const end_date = new Date(year, mon, 0, 23, 59, 59).toISOString();
+
+      const { data: res, error } = await supabase.functions.invoke("report-ai", {
+        body: { start_date, end_date }
+      });
+      if (error) throw error;
+      setAiAnalysis(res.analysis);
+      sonnerToast.success("Análise de IA concluída!");
+    } catch (err: any) {
+      sonnerToast.error("Erro ao gerar análise de IA: " + err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchReport = async () => {
     if (!user) return;
@@ -63,7 +87,10 @@ const Relatorios = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchReport(); }, [user, month]);
+  useEffect(() => { 
+    fetchReport(); 
+    setAiAnalysis(null);
+  }, [user, month]);
 
   useEffect(() => {
     if (!user) return;
@@ -268,6 +295,108 @@ const Relatorios = () => {
           <div className="flex items-center gap-2 animate-fade-in">
             <BarChart3 size={16} className="text-primary" />
             <h2 className="text-headline text-lg text-foreground capitalize">{monthLabel}</h2>
+          </div>
+
+          {/* AI Insights Section */}
+          <div className="rounded-2xl border border-border bg-card overflow-hidden card-shine animate-fade-in">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-primary animate-pulse" />
+                <h2 className="text-sm font-bold text-foreground">Consultoria IA</h2>
+              </div>
+              {!aiAnalysis && !aiLoading && (
+                <button 
+                  onClick={runAiAnalysis}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 active:scale-95 transition-all"
+                >
+                  <Sparkles size={12} /> Gerar Insights
+                </button>
+              )}
+              {aiAnalysis && (
+                <button 
+                  onClick={runAiAnalysis}
+                  disabled={aiLoading}
+                  className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
+                  title="Re-analisar"
+                >
+                  <Clock size={14} className={aiLoading ? "animate-spin" : ""} />
+                </button>
+              )}
+            </div>
+
+            <div className="p-5">
+              {aiLoading ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                    <Sparkles size={16} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">Processando dados do período...</p>
+                    <p className="text-[10px] text-muted-foreground">O Agente IA está analisando sua performance financeira</p>
+                  </div>
+                </div>
+              ) : aiAnalysis ? (
+                <div className="space-y-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground leading-tight">{aiAnalysis.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{aiAnalysis.summary_text}</p>
+                    </div>
+                    <div className={`shrink-0 flex flex-col items-center px-3 py-2 rounded-xl border ${
+                      aiAnalysis.business_health === "excelente" || aiAnalysis.business_health === "bom" 
+                        ? "bg-success/10 border-success/30 text-success" 
+                        : aiAnalysis.business_health === "estavel" 
+                          ? "bg-primary/10 border-primary/30 text-primary"
+                          : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      <Activity size={18} className="mb-1" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{aiAnalysis.business_health}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        <Lightbulb size={12} className="text-primary" /> Insights de Dados
+                      </div>
+                      <ul className="space-y-2">
+                        {aiAnalysis.insights.map((insight: string, i: number) => (
+                          <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed bg-muted/30 p-2 rounded-lg border border-border/50">
+                            <span className="text-primary font-bold">•</span>
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        <ShieldCheck size={12} className="text-success" /> Recomendações
+                      </div>
+                      <ul className="space-y-2">
+                        {aiAnalysis.recommendations.map((rec: string, i: number) => (
+                          <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed bg-success/5 p-2 rounded-lg border border-success/10">
+                            <TrendingUp size={11} className="text-success mt-0.5 shrink-0" />
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 py-2">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Sparkles size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Análise de IA disponível</p>
+                    <p className="text-xs text-muted-foreground">Clique para gerar insights estratégicos baseados nos seus números de {monthLabel}.</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Main stats */}
