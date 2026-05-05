@@ -40,15 +40,15 @@ const KanbanView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment }
         const Icon = col.icon;
         return (
           <div key={col.key} className="bg-card border border-border rounded-2xl flex flex-col max-h-[70vh]">
-            <div className={`p-3 border-b border-border bg-${col.color}/5 rounded-t-2xl`}>
+            <div className={`p-3 border-b border-border ${col.headerBg} rounded-t-2xl`}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-lg bg-${col.color}/10 flex items-center justify-center`}>
-                    <Icon size={13} className={`text-${col.color}`} />
+                  <div className={`w-7 h-7 rounded-lg ${col.iconBg} flex items-center justify-center`}>
+                    <Icon size={13} className={col.iconColor} />
                   </div>
                   <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
                 </div>
-                <span className={`text-xs font-bold text-${col.color}`}>{col.items.length}</span>
+                <span className={`text-xs font-bold ${col.countColor}`}>{col.items.length}</span>
               </div>
               <p className="text-[10px] text-muted-foreground">R$ {fmt(total)}</p>
             </div>
