@@ -138,8 +138,10 @@ const WhatsAppConfig = () => {
 
       if (error) throw error;
 
-      if (data.code) {
-        setQrCode(data.code);
+      const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
+      if (qr) {
+        const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
+        setQrCode(src);
       } else if (data.instance?.status === "open") {
         setStatus("connected");
         toast({ title: "Conectado!", description: "WhatsApp pronto para uso." });
