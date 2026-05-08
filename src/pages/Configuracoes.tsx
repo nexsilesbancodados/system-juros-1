@@ -369,7 +369,6 @@ const Configuracoes = () => {
               {/* Name */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
-// ... keep existing code
         {tab === "admin_global" && profile?.is_admin && (
           <div className="space-y-6 animate-fade-in">
             <div className="flex items-center gap-2.5">
@@ -1439,6 +1438,59 @@ const Configuracoes = () => {
                 <p className="text-xs text-info/80 leading-relaxed">
                   A logo utilizada no portal é a mesma definida na aba <strong>Marca</strong> por padrão. Caso queira uma logo diferente especificamente para o portal, você poderá configurar em breve.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "admin_global" && profile?.is_admin && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><Shield size={16} className="text-amber-500" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Configurações de Administrador</h2>
+                <p className="text-xs text-muted-foreground">Parâmetros que afetam toda a infraestrutura</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Auto-aprovação de Cobradores</p>
+                    <p className="text-[10px] text-muted-foreground">Novos cobradores podem começar sem revisão manual</p>
+                  </div>
+                  <input type="checkbox" className="w-4 h-4 accent-primary" />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Retenção de Auditoria (Dias)</p>
+                    <p className="text-[10px] text-muted-foreground">Tempo que os logs de sistema são mantidos (padrão 90)</p>
+                  </div>
+                  <input type="number" defaultValue={90} className="w-20 bg-input border border-border rounded-lg px-2 py-1 text-xs" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Backup Diário Automático</p>
+                    <p className="text-[10px] text-muted-foreground">Exportar dados críticos para storage externo</p>
+                  </div>
+                  <input type="checkbox" defaultChecked className="w-4 h-4 accent-primary" />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Limites da Plataforma</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span>Espaço em Disco</span>
+                    <span className="font-mono">1.2GB / 5GB</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary w-[24%]" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
