@@ -20,8 +20,8 @@ const AdminAutomacoes = () => {
     fetchData();
     const sub = supabase
       .channel("automation_updates")
-      .on("postgres_changes", { event: "*", table: "automation_logs" }, () => fetchLogs())
-      .on("postgres_changes", { event: "*", table: "system_automations" }, () => fetchAutomations())
+      .on("postgres_changes" as any, { event: "*", table: "automation_logs", schema: "public" }, () => fetchLogs())
+      .on("postgres_changes" as any, { event: "*", table: "system_automations", schema: "public" }, () => fetchAutomations())
       .subscribe();
     
     return () => { supabase.removeChannel(sub); };
