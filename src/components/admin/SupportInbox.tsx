@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import {
   LifeBuoy, Search, Send, ChevronLeft, AlertCircle, CheckCircle2, Clock,
-  Inbox, User as UserIcon, Filter,
+  Inbox, User as UserIcon, Filter, Lock,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
