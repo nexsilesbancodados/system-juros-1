@@ -159,7 +159,7 @@ const AgenteIA = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // WhatsApp state
-  const [whatsappStatus, setWhatsappStatus] = useState<ConnectionStatus>("checking");
+  const [whatsappStatus, setWhatsappStatus] = useState<ConnectionStatus>("disconnected");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string>("");
   const [pollingQr, setPollingQr] = useState(false);
