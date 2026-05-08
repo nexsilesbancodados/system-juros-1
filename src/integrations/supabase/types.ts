@@ -71,6 +71,41 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_logs: {
+        Row: {
+          automation_id: string | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+        }
+        Insert: {
+          automation_id?: string | null
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+        }
+        Update: {
+          automation_id?: string | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "system_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channel_members: {
         Row: {
           channel_id: string
@@ -1305,6 +1340,45 @@ export type Database = {
           unread_by_user?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_automations: {
+        Row: {
+          config: Json | null
+          created_at: string
+          id: string
+          last_run: string | null
+          name: string
+          status: string
+          success_rate: number | null
+          total_executions: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          last_run?: string | null
+          name: string
+          status?: string
+          success_rate?: number | null
+          total_executions?: number | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          last_run?: string | null
+          name?: string
+          status?: string
+          success_rate?: number | null
+          total_executions?: number | null
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
