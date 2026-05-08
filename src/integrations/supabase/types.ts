@@ -1028,6 +1028,7 @@ export type Database = {
         Row: {
           accent_color: string | null
           border_radius: string | null
+          bot_auto_confirm_payment: boolean | null
           bot_auto_send: boolean | null
           bot_closing_message: string | null
           bot_enabled: boolean | null
@@ -1036,6 +1037,8 @@ export type Database = {
           bot_max_messages_per_day: number | null
           bot_negotiation_enabled: boolean | null
           bot_notify_owner: boolean | null
+          bot_process_audio: boolean | null
+          bot_process_receipts: boolean | null
           bot_retry_interval_hours: number | null
           bot_send_audio: boolean | null
           bot_send_hour: number | null
@@ -1079,6 +1082,7 @@ export type Database = {
         Insert: {
           accent_color?: string | null
           border_radius?: string | null
+          bot_auto_confirm_payment?: boolean | null
           bot_auto_send?: boolean | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
@@ -1087,6 +1091,8 @@ export type Database = {
           bot_max_messages_per_day?: number | null
           bot_negotiation_enabled?: boolean | null
           bot_notify_owner?: boolean | null
+          bot_process_audio?: boolean | null
+          bot_process_receipts?: boolean | null
           bot_retry_interval_hours?: number | null
           bot_send_audio?: boolean | null
           bot_send_hour?: number | null
@@ -1130,6 +1136,7 @@ export type Database = {
         Update: {
           accent_color?: string | null
           border_radius?: string | null
+          bot_auto_confirm_payment?: boolean | null
           bot_auto_send?: boolean | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
@@ -1138,6 +1145,8 @@ export type Database = {
           bot_max_messages_per_day?: number | null
           bot_negotiation_enabled?: boolean | null
           bot_notify_owner?: boolean | null
+          bot_process_audio?: boolean | null
+          bot_process_receipts?: boolean | null
           bot_retry_interval_hours?: number | null
           bot_send_audio?: boolean | null
           bot_send_hour?: number | null
