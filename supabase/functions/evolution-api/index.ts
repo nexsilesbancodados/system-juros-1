@@ -102,6 +102,29 @@ serve(async (req) => {
         });
         break;
 
+      case "setWebhook":
+        endpoint = `${baseUrl}/webhook/instance/set/${instanceName}`;
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": apiKey
+          },
+          body: JSON.stringify({
+            url: data.url,
+            enabled: true,
+            events: [
+              "MESSAGES_UPSERT",
+              "MESSAGES_UPDATE",
+              "MESSAGES_DELETE",
+              "SEND_MESSAGE",
+              "CONNECTION_UPDATE",
+              "TYPE_MESSAGE"
+            ]
+          })
+        });
+        break;
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
