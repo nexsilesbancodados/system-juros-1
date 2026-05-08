@@ -1,9 +1,57 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const buildLocalInsights = (data: { contracts: any[]; installments: any[]; clients: any[] }) => {
+  const now = new Date();
+  const overdue = data.installments.filter((i) => i.status === "pending" && new Date(i.due_date) < now);
+  const overdueAmount = overdue.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const delinquencyRate = data.installments.length > 0 ? (overdue.length / data.installments.length) * 100 : 0;
+  const activeCapital = data.contracts
+    .filter((c) => c.status === "active" || c.status === "overdue")
+    .reduce((s, c) => s + Number(c.capital || 0), 0);
+
+  const predictive_cashflow = Array.from({ length: 4 }, (_, index) => {
+    const target = new Date(now.getFullYear(), now.getMonth() + index, 1);
+    const expected = data.installments
+      .filter((i) => {
+        const due = new Date(i.due_date);
+        return i.status === "pending" && due.getMonth() === target.getMonth() && due.getFullYear() === target.getFullYear();
+      })
+      .reduce((s, i) => s + Number(i.amount || 0), 0);
+    const estimated = expected || activeCapital / 4;
+    const riskAdjustment = Math.min(delinquencyRate / 100, 0.6);
+    return {
+      month: target.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+      expected: Number(estimated.toFixed(2)),
+      likely: Number((estimated * (1 - riskAdjustment)).toFixed(2)),
+    };
+  });
+
+  const risk_assessment = delinquencyRate >= 35 ? "Crítico" : delinquencyRate >= 20 ? "Alto" : delinquencyRate >= 10 ? "Médio" : "Baixo";
+
+  return {
+    predictive_cashflow,
+    risk_assessment,
+    risk_reason: `${overdue.length} parcela(s) em atraso, somando R$ ${overdueAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`,
+    strategic_advice: [
+      overdue.length > 0 ? "Priorize a cobrança dos contratos com maior valor vencido hoje." : "Mantenha a régua preventiva ativa antes dos próximos vencimentos.",
+      delinquencyRate >= 20 ? "Reduza novas liberações para perfis com histórico recente de atraso." : "Acompanhe a expansão da carteira sem elevar concentração de risco.",
+      "Revise diariamente a projeção de caixa e ajuste metas de recuperação por faixa de atraso.",
+    ],
+    top_client_segments: ["Atraso recorrente", "Alto valor em aberto", "Sem pagamento recente"],
+    source: "local",
+  };
 };
 
 serve(async (req) => {
@@ -14,27 +62,28 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
 
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { data: authData, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !authData?.user) {
+      console.warn("BI auth rejected:", authError?.message ?? "missing user");
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
-    const user = { id: claimsData.claims.sub as string };
+    const user = authData.user;
 
 
     // 1. Fetch Global Data for Analysis
