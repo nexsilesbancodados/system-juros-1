@@ -8,20 +8,40 @@ import {
 import { Brain, TrendingUp, AlertTriangle, Lightbulb, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const fallbackInsights = {
+  predictive_cashflow: [
+    { month: "Atual", expected: 0, likely: 0 },
+    { month: "+1 mês", expected: 0, likely: 0 },
+    { month: "+2 meses", expected: 0, likely: 0 },
+    { month: "+3 meses", expected: 0, likely: 0 },
+  ],
+  risk_assessment: "Indisponível",
+  risk_reason: "A análise de IA não respondeu agora. Os demais indicadores da página continuam disponíveis.",
+  strategic_advice: [
+    "Tente gerar a análise novamente em alguns instantes.",
+    "Use os gráficos operacionais abaixo para acompanhar atrasos e recebimentos.",
+    "Confira se a sessão está ativa antes de chamar recursos de IA.",
+  ],
+  top_client_segments: ["Sem dados da IA"],
+};
 
 export const PredictiveAnalytics = () => {
   const { user } = useAuth();
 
-  const { data: aiInsights, isLoading } = useQuery({
+  const { data: aiInsights, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["business-intelligence-ai", user?.id],
     queryFn: async () => {
+      if (!user?.id) throw new Error("Usuário não autenticado");
       const { data, error } = await supabase.functions.invoke("business-intelligence-ai", {
-        body: { user_id: user?.id },
+        body: { user_id: user.id },
       });
-      if (error) throw error;
-      return data;
+      if (error) throw new Error(error.message || "Falha ao carregar análise preditiva");
+      return data || fallbackInsights;
     },
     enabled: !!user,
+    retry: false,
   });
 
   if (isLoading) {
@@ -33,6 +53,29 @@ export const PredictiveAnalytics = () => {
           <Skeleton className="h-[150px] rounded-2xl" />
           <Skeleton className="h-[150px] rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  const insights = aiInsights || fallbackInsights;
+
+  if (isError) {
+    return (
+      <div className="glass-card rounded-2xl p-6 border border-destructive/30 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold">Inteligência Preditiva indisponível</h2>
+            <p className="text-sm text-muted-foreground">
+              {(error as Error)?.message || "Não foi possível carregar a análise de IA agora."}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          Tentar novamente
+        </Button>
       </div>
     );
   }
@@ -68,7 +111,7 @@ export const PredictiveAnalytics = () => {
           </div>
           
           <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={aiInsights?.predictive_cashflow}>
+            <AreaChart data={insights.predictive_cashflow}>
               <defs>
                 <linearGradient id="colorEsperado" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
@@ -100,14 +143,14 @@ export const PredictiveAnalytics = () => {
             
             <div className="flex flex-col items-center justify-center py-4">
               <div className={`text-3xl font-bold mb-2 ${
-                aiInsights?.risk_assessment?.toLowerCase().includes('low') ? 'text-success' :
-                aiInsights?.risk_assessment?.toLowerCase().includes('medium') ? 'text-warning' :
+                insights.risk_assessment?.toLowerCase().includes('baixo') || insights.risk_assessment?.toLowerCase().includes('low') ? 'text-success' :
+                insights.risk_assessment?.toLowerCase().includes('médio') || insights.risk_assessment?.toLowerCase().includes('medio') || insights.risk_assessment?.toLowerCase().includes('medium') ? 'text-warning' :
                 'text-destructive'
               }`}>
-                {aiInsights?.risk_assessment}
+                {insights.risk_assessment}
               </div>
               <p className="text-center text-xs text-muted-foreground px-4">
-                {aiInsights?.risk_reason || "O risco é calculado com base na concentração de contratos, taxa de renegociação e histórico de atrasos."}
+                {insights.risk_reason || "O risco é calculado com base na concentração de contratos, taxa de renegociação e histórico de atrasos."}
               </p>
             </div>
           </div>
@@ -115,7 +158,7 @@ export const PredictiveAnalytics = () => {
           <div className="mt-4 pt-4 border-t border-border">
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Segmentos Críticos</h4>
             <div className="flex flex-wrap gap-2">
-              {aiInsights?.top_client_segments?.map((s: string) => (
+              {insights.top_client_segments?.map((s: string) => (
                 <Badge key={s} variant="secondary" className="text-[9px] py-0 px-2">{s}</Badge>
               ))}
             </div>
@@ -125,7 +168,7 @@ export const PredictiveAnalytics = () => {
 
       {/* Insights e Recomendações */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {aiInsights?.strategic_advice?.map((advice: string, i: number) => (
+        {insights.strategic_advice?.map((advice: string, i: number) => (
           <div key={i} className="glass-card rounded-2xl p-5 border-l-4 border-primary/40 relative overflow-hidden group">
             <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
               <Lightbulb className="w-8 h-8" />
