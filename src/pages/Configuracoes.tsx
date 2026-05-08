@@ -370,49 +370,6 @@ const Configuracoes = () => {
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Auto-aprovação de Cobradores</p>
-                    <p className="text-[10px] text-muted-foreground">Novos cobradores podem começar sem revisão manual</p>
-                  </div>
-                  <input type="checkbox" className="w-4 h-4 accent-primary" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Retenção de Auditoria (Dias)</p>
-                    <p className="text-[10px] text-muted-foreground">Tempo que os logs de sistema são mantidos (padrão 90)</p>
-                  </div>
-                  <input type="number" defaultValue={90} className="w-20 bg-input border border-border rounded-lg px-2 py-1 text-xs" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Backup Diário Automático</p>
-                    <p className="text-[10px] text-muted-foreground">Exportar dados críticos para storage externo</p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-4 h-4 accent-primary" />
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Limites da Plataforma</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span>Espaço em Disco</span>
-                    <span className="font-mono">1.2GB / 5GB</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-primary w-[24%]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
                 <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
                 <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar e login</p>
               </div>
