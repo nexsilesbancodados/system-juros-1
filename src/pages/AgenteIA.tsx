@@ -263,6 +263,13 @@ const AgenteIA = () => {
     try {
       const data = await callEvolutionApi("check_status");
       setInstanceName(data.instance || "");
+      
+      // Silently handle instance not found
+      if (data.status === 404 || data.error?.includes("not found")) {
+        setWhatsappStatus("disconnected");
+        return;
+      }
+
       if (data.status === "connected") {
         setWhatsappStatus("connected");
         setQrCode(null);

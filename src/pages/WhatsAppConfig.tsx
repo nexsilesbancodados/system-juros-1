@@ -106,14 +106,14 @@ const WhatsAppConfig = () => {
     setLoading(true);
     try {
       // First ensure the settings have the URL and Key
+      const instanceName = settings?.whatsapp_instance || `instancia-${user!.id.split("-")[0]}`;
+      
       await updateSettings({
         whatsapp_api_url: EVOLUTION_URL,
         whatsapp_api_key: EVOLUTION_KEY,
-        whatsapp_instance: `instancia-${user!.id.split("-")[0]}`
+        whatsapp_instance: instanceName
       });
 
-      const instanceName = `instancia-${user!.id.split("-")[0]}`;
-      
       const { data, error } = await supabase.functions.invoke("evolution-api", {
         body: { action: "createInstance", instanceName }
       });
