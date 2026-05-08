@@ -139,14 +139,18 @@ const WhatsAppConfig = () => {
       if (error) throw error;
 
       const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
+      console.log("Connect response data:", data);
       if (qr) {
         const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
         setQrCode(src);
-      } else if (data.instance?.status === "open") {
+      } else if (data.instance?.status === "open" || data.status === "open" || data.upstream_status === 200) {
         setStatus("connected");
         toast({ title: "Conectado!", description: "WhatsApp pronto para uso." });
+      } else {
+        console.warn("No QR code or open status in response", data);
       }
     } catch (err: any) {
+      console.error("Connection error:", err);
       toast({ title: "Erro de conexão", description: err.message, variant: "destructive" });
       setStatus("disconnected");
     }
