@@ -72,6 +72,7 @@ serve(async (req) => {
         break;
 
       case "getInstance":
+      case "check_status": // Alias
         endpoint = `${baseUrl}/instance/fetchInstances?instanceName=${instanceName}`;
         response = await fetch(endpoint, {
           method: "GET",
@@ -80,6 +81,7 @@ serve(async (req) => {
         break;
 
       case "connectInstance":
+      case "get_qr": // Alias
         endpoint = `${baseUrl}/instance/connect/${instanceName}`;
         response = await fetch(endpoint, {
           method: "GET",
@@ -88,6 +90,7 @@ serve(async (req) => {
         break;
 
       case "logoutInstance":
+      case "logout": // Alias
         endpoint = `${baseUrl}/instance/logout/${instanceName}`;
         response = await fetch(endpoint, {
           method: "DELETE",
@@ -95,11 +98,35 @@ serve(async (req) => {
         });
         break;
 
-      case "deleteInstance":
-        endpoint = `${baseUrl}/instance/delete/${instanceName}`;
+      case "fetch_messages":
+        endpoint = `${baseUrl}/chat/fetchMessages/${instanceName}`;
         response = await fetch(endpoint, {
-          method: "DELETE",
-          headers: { "apikey": apiKey }
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": apiKey
+          },
+          body: JSON.stringify({
+            where: {
+              remoteJid: data?.remoteJid
+            },
+            limit: data?.count || 50
+          })
+        });
+        break;
+
+      case "send_message":
+        endpoint = `${baseUrl}/message/sendText/${instanceName}`;
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": apiKey
+          },
+          body: JSON.stringify({
+            number: data.phone,
+            text: data.message
+          })
         });
         break;
 
