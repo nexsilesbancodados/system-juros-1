@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   MessageCircle, QrCode, RefreshCcw, Power, CheckCircle2, 
   AlertCircle, Settings2, ShieldCheck, Loader2, Bot,
-  MessageSquare, FileCheck, Headphones
+  MessageSquare, FileCheck, Headphones, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
