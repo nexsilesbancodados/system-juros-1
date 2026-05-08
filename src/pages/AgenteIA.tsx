@@ -359,7 +359,7 @@ const AgenteIA = () => {
 
     if (!silent) setLoadingChats(true);
     try {
-      const data = await callEvolutionApi("fetch_messages");
+      const data = await callEvolutionApi("fetch_messages", { instanceName, remoteJid: "", count: 50 });
       const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
       const uniqueChats = new Map<string, WhatsAppChat>();
 
