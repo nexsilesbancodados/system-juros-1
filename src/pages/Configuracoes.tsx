@@ -28,7 +28,7 @@ const Configuracoes = () => {
   const { refresh: refreshWhiteLabel } = useWhiteLabel();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<string>("marca");
+  const [tab, setTab] = useState("marca");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
