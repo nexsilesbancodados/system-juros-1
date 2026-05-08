@@ -111,7 +111,7 @@ export const PredictiveAnalytics = () => {
           </div>
           
           <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={aiInsights?.predictive_cashflow}>
+            <AreaChart data={insights.predictive_cashflow}>
               <defs>
                 <linearGradient id="colorEsperado" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
@@ -143,14 +143,14 @@ export const PredictiveAnalytics = () => {
             
             <div className="flex flex-col items-center justify-center py-4">
               <div className={`text-3xl font-bold mb-2 ${
-                aiInsights?.risk_assessment?.toLowerCase().includes('low') ? 'text-success' :
-                aiInsights?.risk_assessment?.toLowerCase().includes('medium') ? 'text-warning' :
+                insights.risk_assessment?.toLowerCase().includes('baixo') || insights.risk_assessment?.toLowerCase().includes('low') ? 'text-success' :
+                insights.risk_assessment?.toLowerCase().includes('médio') || insights.risk_assessment?.toLowerCase().includes('medio') || insights.risk_assessment?.toLowerCase().includes('medium') ? 'text-warning' :
                 'text-destructive'
               }`}>
-                {aiInsights?.risk_assessment}
+                {insights.risk_assessment}
               </div>
               <p className="text-center text-xs text-muted-foreground px-4">
-                {aiInsights?.risk_reason || "O risco é calculado com base na concentração de contratos, taxa de renegociação e histórico de atrasos."}
+                {insights.risk_reason || "O risco é calculado com base na concentração de contratos, taxa de renegociação e histórico de atrasos."}
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const PredictiveAnalytics = () => {
           <div className="mt-4 pt-4 border-t border-border">
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Segmentos Críticos</h4>
             <div className="flex flex-wrap gap-2">
-              {aiInsights?.top_client_segments?.map((s: string) => (
+              {insights.top_client_segments?.map((s: string) => (
                 <Badge key={s} variant="secondary" className="text-[9px] py-0 px-2">{s}</Badge>
               ))}
             </div>
@@ -168,7 +168,7 @@ export const PredictiveAnalytics = () => {
 
       {/* Insights e Recomendações */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {aiInsights?.strategic_advice?.map((advice: string, i: number) => (
+        {insights.strategic_advice?.map((advice: string, i: number) => (
           <div key={i} className="glass-card rounded-2xl p-5 border-l-4 border-primary/40 relative overflow-hidden group">
             <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
               <Lightbulb className="w-8 h-8" />
