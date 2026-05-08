@@ -1,11 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, Cell, PieChart, Pie
-} from "recharts";
-import { Brain, TrendingUp, AlertTriangle, Lightbulb, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Brain, AlertTriangle, Lightbulb } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,8 +76,6 @@ export const PredictiveAnalytics = () => {
       </div>
     );
   }
-
-  const COLORS = ["hsl(142,71%,45%)", "hsl(0,84%,60%)", "hsl(45,93%,47%)", "hsl(210,80%,55%)"];
 
   return (
     <div className="space-y-6 animate-fade-in">
