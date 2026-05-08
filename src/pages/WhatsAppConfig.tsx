@@ -32,17 +32,36 @@ const WhatsAppConfig = () => {
   }, [user]);
 
   const fetchSettings = async () => {
-    const { data } = await supabase
+    let { data } = await supabase
       .from("settings")
       .select("*")
       .eq("user_id", user!.id)
-      .single();
-    
-    if (data) {
-      setSettings(data);
-      if (data.whatsapp_instance) {
-        checkStatus(data.whatsapp_instance);
+      .maybeSingle();
+
+    // Garante credenciais Evolution salvas antes de qualquer chamada à edge function
+    const needsCreds = !data || !data.whatsapp_api_url || !data.whatsapp_api_key;
+    if (needsCreds) {
+      const defaults = {
+        user_id: user!.id,
+        whatsapp_api_url: EVOLUTION_URL,
+        whatsapp_api_key: EVOLUTION_KEY,
+        whatsapp_instance: data?.whatsapp_instance || `instancia-${user!.id.split("-")[0]}`,
+      };
+      const { data: upserted, error: upErr } = await supabase
+        .from("settings")
+        .upsert(defaults, { onConflict: "user_id" })
+        .select("*")
+        .single();
+      if (upErr) {
+        toast({ title: "Erro ao inicializar configurações", description: upErr.message, variant: "destructive" });
+        return;
       }
+      data = upserted;
+    }
+
+    setSettings(data);
+    if (data?.whatsapp_instance) {
+      checkStatus(data.whatsapp_instance);
     }
   };
 
