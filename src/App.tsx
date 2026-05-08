@@ -46,6 +46,7 @@ const Suporte = lazy(() => import("./pages/Suporte"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
+const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
 
 const queryClient = new QueryClient({
@@ -110,6 +111,7 @@ const App = () => (
                   <Route path="/notificacoes" element={<Notificacoes />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/inadimplencia" element={<Inadimplencia />} />
+                  <Route path="/configuracoes/whatsapp" element={<WhatsAppConfig />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
