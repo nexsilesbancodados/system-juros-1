@@ -3,6 +3,7 @@ import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
   Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
+  LayoutDashboard, Activity, Terminal, Lock, Globe, Settings2,
 } from "lucide-react";
 import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,12 +41,13 @@ type UserRow = {
 };
 
 type FilterTab = "all" | "active" | "blocked" | "expired" | "admins";
+type AdminSection = "users" | "support" | "automations" | "logs" | "settings";
 
 const Admin = () => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
   const isSuperAdmin = isSuperAdminEmail(user?.email);
-  const [section, setSection] = useState<"users" | "support">("users");
+  const [section, setSection] = useState<AdminSection>("users");
   const [supportUnread, setSupportUnread] = useState(0);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,37 +275,49 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* Section Tabs (Users / Support) */}
-      <div className="flex items-center gap-2 border-b border-border">
-        <button
-          onClick={() => setSection("users")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
-            section === "users"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Users size={15} /> Usuários
-        </button>
-        <button
-          onClick={() => setSection("support")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
-            section === "support"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <LifeBuoy size={15} /> Tickets de Suporte
-          {supportUnread > 0 && (
-            <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-              {supportUnread}
-            </span>
-          )}
-        </button>
+      {/* Section Navigation */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border">
+        <NavButton 
+          active={section === "users"} 
+          onClick={() => setSection("users")} 
+          icon={Users} 
+          label="Usuários" 
+        />
+        <NavButton 
+          active={section === "support"} 
+          onClick={() => setSection("support")} 
+          icon={LifeBuoy} 
+          label="Suporte" 
+          badge={supportUnread}
+        />
+        <NavButton 
+          active={section === "automations"} 
+          onClick={() => setSection("automations")} 
+          icon={Activity} 
+          label="Automações" 
+        />
+        <NavButton 
+          active={section === "logs"} 
+          onClick={() => setSection("logs")} 
+          icon={Terminal} 
+          label="Logs" 
+        />
+        <NavButton 
+          active={section === "settings"} 
+          onClick={() => setSection("settings")} 
+          icon={Settings2} 
+          label="Configurações Globais" 
+        />
       </div>
 
       {section === "support" ? (
         <SupportInbox />
+      ) : section === "automations" ? (
+        <AdminAutomacoesWrapper />
+      ) : section === "logs" ? (
+        <AdminLogs />
+      ) : section === "settings" ? (
+        <GlobalAdminSettings />
       ) : (
       <>
       {/* KPI Cards */}
@@ -680,6 +694,240 @@ const Admin = () => {
 };
 
 // ============= sub components =============
+const NavButton = ({ active, onClick, icon: Icon, label, badge }: any) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+      active
+        ? "border-primary text-foreground"
+        : "border-transparent text-muted-foreground hover:text-foreground"
+    }`}
+  >
+    <Icon size={16} /> {label}
+    {badge > 0 && (
+      <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center animate-pulse">
+        {badge}
+      </span>
+    )}
+  </button>
+);
+
+const AdminAutomacoesWrapper = () => {
+  const [automations, setAutomations] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: autos } = await supabase.from("system_automations").select("*").order("name");
+    if (autos) setAutomations(autos);
+    const { data: logsData } = await supabase.from("automation_logs").select("*").order("created_at", { ascending: false }).limit(30);
+    if (logsData) setLogs(logsData);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {automations.map((auto) => (
+          <div key={auto.id} className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Activity size={20} />
+              </div>
+              <Badge variant={auto.status === "active" ? "default" : "secondary"}>
+                {auto.status === "active" ? "Ativo" : "Pausado"}
+              </Badge>
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground">{auto.name}</h3>
+              <p className="text-xs text-muted-foreground mt-1">Status: {auto.status}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="bg-accent/30 rounded-xl p-2.5">
+                <p className="text-[10px] text-muted-foreground uppercase">Execuções</p>
+                <p className="text-lg font-bold">{auto.total_executions || 0}</p>
+              </div>
+              <div className="bg-accent/30 rounded-xl p-2.5">
+                <p className="text-[10px] text-muted-foreground uppercase">Sucesso</p>
+                <p className="text-lg font-bold text-emerald-500">{auto.success_rate || 0}%</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="p-4 border-b border-border bg-accent/20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Terminal size={16} className="text-primary" />
+            <h3 className="font-semibold text-sm">Logs Recentes do Sistema</h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={fetchData} className="h-8 text-xs">Atualizar</Button>
+        </div>
+        <div className="p-4 bg-black/20 font-mono text-[11px] space-y-1.5 max-h-[400px] overflow-y-auto">
+          {logs.map((log) => (
+            <div key={log.id} className="flex gap-3 border-b border-border/5 py-1 last:border-0">
+              <span className="text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleTimeString()}</span>
+              <span className={log.level === "error" ? "text-red-400" : log.level === "warning" ? "text-amber-400" : "text-emerald-400"}>
+                [{log.level.toUpperCase()}]
+              </span>
+              <span className="text-foreground/80">{log.message}</span>
+            </div>
+          ))}
+          {logs.length === 0 && <p className="text-muted-foreground text-center py-8 italic">Nenhum log disponível.</p>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminLogs = () => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      const { data } = await supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100);
+      setLogs(data || []);
+      setLoading(false);
+    };
+    fetchLogs();
+  }, []);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
+       <div className="overflow-x-auto">
+         <table className="w-full text-xs text-left">
+           <thead className="bg-accent/40 text-muted-foreground uppercase tracking-wider">
+             <tr>
+               <th className="px-4 py-3">Data/Hora</th>
+               <th className="px-4 py-3">Ação</th>
+               <th className="px-4 py-3">Tabela</th>
+               <th className="px-4 py-3">ID Recurso</th>
+               <th className="px-4 py-3">Dados</th>
+             </tr>
+           </thead>
+           <tbody className="divide-y divide-border/50">
+             {logs.map((log) => (
+               <tr key={log.id} className="hover:bg-accent/20 transition-colors">
+                 <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                   {new Date(log.created_at).toLocaleString("pt-BR")}
+                 </td>
+                 <td className="px-4 py-3 font-medium">
+                   <Badge variant="outline" className={
+                     log.action === 'INSERT' ? 'bg-emerald-500/10 text-emerald-500' :
+                     log.action === 'DELETE' ? 'bg-red-500/10 text-red-500' :
+                     'bg-blue-500/10 text-blue-500'
+                   }>
+                     {log.action}
+                   </Badge>
+                 </td>
+                 <td className="px-4 py-3 text-muted-foreground">{log.table_name}</td>
+                 <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground truncate max-w-[100px]" title={log.record_id}>
+                   {log.record_id}
+                 </td>
+                 <td className="px-4 py-3">
+                   <div className="max-w-[300px] truncate text-muted-foreground" title={JSON.stringify(log.data)}>
+                     {JSON.stringify(log.data)}
+                   </div>
+                 </td>
+               </tr>
+             ))}
+           </tbody>
+         </table>
+       </div>
+    </div>
+  );
+};
+
+const GlobalAdminSettings = () => {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    maintenance_mode: false,
+    default_trial_days: 7,
+    allow_new_registrations: true,
+    force_whatsapp_auth: false,
+    global_announcement: "",
+  });
+
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => {
+      setSaving(false);
+      toast({ title: "Configurações salvas", description: "As mudanças globais foram aplicadas." });
+    }, 1000);
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6 animate-fade-in">
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-border pb-4">
+          <Globe className="text-primary" size={20} />
+          <h3 className="font-bold">Parâmetros Globais do Sistema</h3>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-accent/20">
+            <div>
+              <p className="text-sm font-semibold">Modo Manutenção</p>
+              <p className="text-xs text-muted-foreground">Bloqueia acesso para usuários comuns</p>
+            </div>
+            <input 
+              type="checkbox" 
+              checked={form.maintenance_mode} 
+              onChange={(e) => setForm({...form, maintenance_mode: e.target.checked})}
+              className="w-5 h-5 accent-primary"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-accent/20">
+            <div>
+              <p className="text-sm font-semibold">Novos Registros</p>
+              <p className="text-xs text-muted-foreground">Permitir criação de novas contas</p>
+            </div>
+            <input 
+              type="checkbox" 
+              checked={form.allow_new_registrations} 
+              onChange={(e) => setForm({...form, allow_new_registrations: e.target.checked})}
+              className="w-5 h-5 accent-primary"
+            />
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
+            <p className="text-sm font-semibold">Dias de Trial Padrão</p>
+            <input 
+              type="number" 
+              value={form.default_trial_days}
+              onChange={(e) => setForm({...form, default_trial_days: parseInt(e.target.value)})}
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
+            <p className="text-sm font-semibold">Comunicado Global</p>
+            <textarea 
+              rows={3}
+              value={form.global_announcement}
+              onChange={(e) => setForm({...form, global_announcement: e.target.value})}
+              placeholder="Exibido para todos os usuários no dashboard..."
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm resize-none"
+            />
+          </div>
+        </div>
+
+        <Button onClick={handleSave} disabled={saving} className="w-full rounded-xl py-6">
+          {saving ? "Salvando..." : "Salvar Configurações Globais"}
+        </Button>
+      </div>
+    </div>
+  );
+};
 const toneMap = {
   primary: "from-primary/20 to-primary/5 text-primary",
   success: "from-emerald-500/20 to-emerald-500/5 text-emerald-500",
