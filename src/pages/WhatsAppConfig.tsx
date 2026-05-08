@@ -80,20 +80,25 @@ const WhatsAppConfig = () => {
 
   const checkStatus = async (instanceName: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("evolution-api", {
+      const { data } = await supabase.functions.invoke("evolution-api", {
         body: { action: "getInstance", instanceName }
       });
-      
-      if (!error && data) {
-        setInstanceData(data);
-        if (data.instance?.status === "open") {
-          setStatus("connected");
-        } else {
-          setStatus("disconnected");
-        }
+
+      // Instância inexistente (404) ou erro retorna como desconectado, sem toast
+      if (data?.status === 404 || data?.error || !data) {
+        setStatus("disconnected");
+        return;
       }
-    } catch (err) {
-      console.error(err);
+
+      setInstanceData(data);
+      const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
+      if (inst?.status === "open" || inst?.connectionStatus === "open") {
+        setStatus("connected");
+      } else {
+        setStatus("disconnected");
+      }
+    } catch {
+      setStatus("disconnected");
     }
   };
 
