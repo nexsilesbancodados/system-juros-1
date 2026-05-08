@@ -280,7 +280,6 @@ const WhatsAppConfig = () => {
                   </Button>
                 </div>
               </div>
-              </div>
             )}
           </div>
         </Card>
