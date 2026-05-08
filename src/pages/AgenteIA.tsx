@@ -261,16 +261,12 @@ const AgenteIA = () => {
   const checkStatus = async () => {
     setWhatsappStatus("checking");
     try {
-      const data = await callEvolutionApi("check_status");
-      setInstanceName(data.instance || "");
+      const instance = settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}`;
+      const data = await callEvolutionApi("check_status", { instanceName: instance });
+      setInstanceName(instance);
       
-      // Silently handle instance not found
-      if (data.status === 404 || data.error?.includes("not found")) {
-        setWhatsappStatus("disconnected");
-        return;
-      }
-
-      if (data.status === "connected") {
+      const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
+      if (inst?.status === "open" || inst?.connectionStatus === "open") {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
