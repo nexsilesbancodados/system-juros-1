@@ -3,17 +3,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
-import { Download, CalendarIcon, BarChart3 } from "lucide-react";
+import { Download, CalendarIcon, BarChart3, Brain, FileText } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area,
 } from "recharts";
+import { PredictiveAnalytics } from "@/components/analises/PredictiveAnalytics";
 
 const COLORS = ["hsl(142,71%,45%)", "hsl(0,84%,60%)", "hsl(45,93%,47%)", "hsl(210,80%,55%)", "hsl(280,60%,55%)"];
 
@@ -283,8 +285,8 @@ const Analises = () => {
               <BarChart3 size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-shimmer">Análises</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Relatórios e gráficos avançados do seu portfólio</p>
+              <h1 className="text-2xl font-bold text-shimmer">Análises & BI</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Gestão de portfólio e inteligência preditiva</p>
             </div>
           </div>
           <button onClick={handleExport} className="btn-ghost">
@@ -293,26 +295,41 @@ const Analises = () => {
         </div>
       </div>
 
-      {/* ─── Period Selector ─── */}
-      <div className="glass-card rounded-2xl p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <span className="text-label shrink-0">Período</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {presets.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => handlePreset(p.key)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
-                  activePreset === p.key
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+      <Tabs defaultValue="classic" className="w-full">
+        <TabsList className="bg-muted/50 p-1 mb-6">
+          <TabsTrigger value="classic" className="flex items-center gap-2">
+            <FileText size={14} /> Relatórios Clássicos
+          </TabsTrigger>
+          <TabsTrigger value="predictive" className="flex items-center gap-2">
+            <Brain size={14} /> Inteligência Preditiva (IA)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="predictive">
+          <PredictiveAnalytics />
+        </TabsContent>
+
+        <TabsContent value="classic" className="space-y-6">
+          {/* ─── Period Selector ─── */}
+          <div className="glass-card rounded-2xl p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <span className="text-label shrink-0">Período</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {presets.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => handlePreset(p.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      activePreset === p.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
 
           {/* Date pickers - always visible */}
           <div className="flex items-center gap-2 ml-auto">
@@ -522,8 +539,10 @@ const Analises = () => {
           )}
         </div>
       </div>
-    </div>
-  );
+    </TabsContent>
+  </Tabs>
+</div>
+);
 };
 
 export default Analises;
