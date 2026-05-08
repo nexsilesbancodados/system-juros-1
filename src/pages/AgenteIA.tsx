@@ -467,6 +467,7 @@ const AgenteIA = () => {
     setSendingReply(true);
     try {
       await callEvolutionApi("send_message", {
+        instanceName,
         phone: selectedChat.phone || selectedChat.remoteJid,
         message: replyInput,
       });
