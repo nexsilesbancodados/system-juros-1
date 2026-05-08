@@ -145,6 +145,31 @@ const WhatsAppConfig = () => {
     }
   };
 
+  const handleSetWebhook = async () => {
+    setLoading(true);
+    try {
+      // Get the Supabase URL from the environment or use a generic one if not available
+      const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+      const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
+
+      const { data, error } = await supabase.functions.invoke("evolution-api", {
+        body: { 
+          action: "setWebhook", 
+          instanceName: settings.whatsapp_instance,
+          data: { url: webhookUrl }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Webhook Configurado", description: "O bot agora está pronto para receber mensagens." });
+    } catch (err: any) {
+      toast({ title: "Erro no Webhook", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-8 animate-fade-in">
       <div className="page-hero">
@@ -248,6 +273,13 @@ const WhatsAppConfig = () => {
                     <p className="text-sm font-medium text-emerald-500">Operacional</p>
                   </div>
                 </div>
+                <div className="flex justify-center">
+                  <Button variant="outline" size="sm" onClick={handleSetWebhook} disabled={loading} className="rounded-xl border-primary/20 hover:bg-primary/5">
+                    {loading ? <Loader2 className="animate-spin mr-2" size={14} /> : <Zap size={14} className="mr-2 text-amber-500" />}
+                    Configurar Webhook Automático
+                  </Button>
+                </div>
+              </div>
               </div>
             )}
           </div>
