@@ -21,7 +21,7 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Webhook payload received:", JSON.stringify(payload));
 
-    if (payload.event !== "messages.upsert") {
+    if (payload.event !== "messages.upsert" && payload.event !== "MESSAGES_UPSERT") {
       return new Response(JSON.stringify({ status: "ignored_event" }), { headers: corsHeaders });
     }
 

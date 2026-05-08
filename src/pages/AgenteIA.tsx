@@ -159,7 +159,7 @@ const AgenteIA = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // WhatsApp state
-  const [whatsappStatus, setWhatsappStatus] = useState<ConnectionStatus>("checking");
+  const [whatsappStatus, setWhatsappStatus] = useState<ConnectionStatus>("disconnected");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string>("");
   const [pollingQr, setPollingQr] = useState(false);
@@ -236,7 +236,7 @@ const AgenteIA = () => {
     enabled: !!user,
   });
 
-  const callEvolutionApi = useCallback(async (action: string, extra: Record<string, any> = {}) => {
+  const callEvolutionApi = useCallback(async (actionName: string, extra: Record<string, any> = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Sem sessão");
     const resp = await fetch(
@@ -244,11 +244,10 @@ const AgenteIA = () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ action, ...extra }),
+        body: JSON.stringify({ action: actionName, ...extra }),
       }
     );
     const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || "Erro na API");
     return data;
   }, []);
 
@@ -261,16 +260,12 @@ const AgenteIA = () => {
   const checkStatus = async () => {
     setWhatsappStatus("checking");
     try {
-      const data = await callEvolutionApi("check_status");
-      setInstanceName(data.instance || "");
+      const instance = settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}`;
+      const data = await callEvolutionApi("check_status", { instanceName: instance });
+      setInstanceName(instance);
       
-      // Silently handle instance not found
-      if (data.status === 404 || data.error?.includes("not found")) {
-        setWhatsappStatus("disconnected");
-        return;
-      }
-
-      if (data.status === "connected") {
+      const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
+      if (inst?.status === "open" || inst?.connectionStatus === "open") {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
@@ -285,17 +280,11 @@ const AgenteIA = () => {
   const createInstance = async () => {
     setWhatsappStatus("connecting");
     try {
-      const data = await callEvolutionApi("create_instance");
-      setInstanceName(data.instance || "");
-      if (data.status === "connected") {
+      const data = await callEvolutionApi("createInstance", { instanceName: settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}` });
+      setInstanceName(data.instance?.instanceName || data.instanceName || "");
+      if (data.instance?.status === "open") {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
-        return;
-      }
-      if (data.status === "qr_ready" && data.qrcode) {
-        setQrCode(data.qrcode);
-        setWhatsappStatus("qr_ready");
-        startPolling();
         return;
       }
       await fetchQr();
@@ -307,14 +296,18 @@ const AgenteIA = () => {
 
   const fetchQr = async () => {
     try {
-      const data = await callEvolutionApi("get_qr");
-      if (data.qrcode) {
-        setQrCode(data.qrcode);
+      const data = await callEvolutionApi("get_qr", { instanceName });
+      const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
+      if (qr) {
+        const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
+        setQrCode(src);
         setWhatsappStatus("qr_ready");
         startPolling();
+      } else if (data.instance?.status === "open" || data.status === "open") {
+        setWhatsappStatus("connected");
+        stopPolling();
       } else {
-        setWhatsappStatus("connecting");
-        setTimeout(fetchQr, 2000);
+        setTimeout(fetchQr, 3000);
       }
     } catch {
       setWhatsappStatus("error");
@@ -326,15 +319,16 @@ const AgenteIA = () => {
     setPollingQr(true);
     qrIntervalRef.current = setInterval(async () => {
       try {
-        const data = await callEvolutionApi("check_status");
-        if (data.status === "connected") {
+        const data = await callEvolutionApi("check_status", { instanceName });
+        const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
+        if (inst?.status === "open" || inst?.connectionStatus === "open" || data.status === "connected") {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
           toast({ title: "✅ WhatsApp Conectado!" });
         }
       } catch {}
-    }, 4000);
+    }, 5000);
   };
 
   const stopPolling = () => {
@@ -349,7 +343,7 @@ const AgenteIA = () => {
 
   const handleLogout = async () => {
     try {
-      await callEvolutionApi("logout");
+      await callEvolutionApi("logoutInstance", { instanceName });
       setWhatsappStatus("disconnected");
       setQrCode(null);
       toast({ title: "Desconectado" });
@@ -364,7 +358,7 @@ const AgenteIA = () => {
 
     if (!silent) setLoadingChats(true);
     try {
-      const data = await callEvolutionApi("fetch_messages");
+      const data = await callEvolutionApi("fetch_messages", { instanceName, remoteJid: "", count: 50 });
       const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
       const uniqueChats = new Map<string, WhatsAppChat>();
 
@@ -425,7 +419,7 @@ const AgenteIA = () => {
   const refreshChatMessages = async (remoteJid: string, silent = false) => {
     if (!silent) setLoadingMsgs(true);
     try {
-      const data = await callEvolutionApi("fetch_messages", { remoteJid, count: 50 });
+      const data = await callEvolutionApi("fetch_messages", { instanceName, remoteJid, count: 50 });
       const nextMessages = (Array.isArray(data.messages) ? (data.messages as WhatsAppMsg[]) : []).sort(
         (a, b) => getTimestampValue(a.messageTimestamp) - getTimestampValue(b.messageTimestamp)
       );
@@ -472,6 +466,7 @@ const AgenteIA = () => {
     setSendingReply(true);
     try {
       await callEvolutionApi("send_message", {
+        instanceName,
         phone: selectedChat.phone || selectedChat.remoteJid,
         message: replyInput,
       });
