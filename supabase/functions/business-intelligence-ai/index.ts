@@ -171,39 +171,20 @@ serve(async (req) => {
       5. top_client_segments: Array de 3 strings com os segmentos de maior risco.
     `;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Lovable-API-Key": LOVABLE_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "Você é um analista de BI financeiro. Responda apenas com JSON puro, sem markdown." },
-          { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
-      return jsonResponse(buildLocalInsights(data));
-    }
-
-    const aiResult = await response.json();
-    let content;
     try {
-      content = JSON.parse(aiResult.choices[0].message.content);
-    } catch (e) {
-      // Fallback if not valid JSON
-      console.error("Failed to parse AI response as JSON:", aiResult.choices[0].message.content);
+      const gateway = createLovableAiGatewayProvider(LOVABLE_API_KEY);
+      const { output } = await generateText({
+        model: gateway("google/gemini-3-flash-preview"),
+        system: "Você é um analista de BI financeiro. Retorne somente os campos solicitados, em português brasileiro.",
+        prompt,
+        output: Output.object({ schema: BiInsightsSchema }),
+      });
+
+      return jsonResponse(output);
+    } catch (aiError) {
+      console.error("AI Gateway fallback:", aiError instanceof Error ? aiError.message : aiError);
       return jsonResponse(buildLocalInsights(data));
     }
-
-    return jsonResponse(content);
   } catch (error) {
     console.error("Function error:", error);
     return jsonResponse({ error: error instanceof Error ? error.message : "Erro interno" }, 500);
