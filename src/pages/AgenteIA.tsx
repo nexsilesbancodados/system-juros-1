@@ -307,14 +307,18 @@ const AgenteIA = () => {
 
   const fetchQr = async () => {
     try {
-      const data = await callEvolutionApi("get_qr");
-      if (data.qrcode) {
-        setQrCode(data.qrcode);
+      const data = await callEvolutionApi("get_qr", { instanceName });
+      const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
+      if (qr) {
+        const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
+        setQrCode(src);
         setWhatsappStatus("qr_ready");
         startPolling();
+      } else if (data.instance?.status === "open" || data.status === "open") {
+        setWhatsappStatus("connected");
+        stopPolling();
       } else {
-        setWhatsappStatus("connecting");
-        setTimeout(fetchQr, 2000);
+        setTimeout(fetchQr, 3000);
       }
     } catch {
       setWhatsappStatus("error");
