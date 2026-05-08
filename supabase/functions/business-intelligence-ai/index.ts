@@ -78,19 +78,28 @@ serve(async (req) => {
       }
     );
 
-    const { data: authData, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError || !authData?.user) {
-      console.warn("BI auth rejected:", authError?.message ?? "missing user");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    let userId = claimsData?.claims?.sub as string | undefined;
+
+    if (!userId) {
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser(token);
+      userId = authData?.user?.id;
+      if (authError || !userId) {
+        console.warn("BI auth rejected:", claimsError?.message ?? authError?.message ?? "missing user");
+        return jsonResponse({ error: "Unauthorized" }, 401);
+      }
+    }
+
+    if (!userId) {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
-    const user = authData.user;
 
 
     // 1. Fetch Global Data for Analysis
     const [contracts, installments, clients] = await Promise.all([
-      supabaseClient.from("contracts").select("*").eq("user_id", user.id),
-      supabaseClient.from("contract_installments").select("*").eq("user_id", user.id),
-      supabaseClient.from("clients").select("*").eq("user_id", user.id),
+      supabaseClient.from("contracts").select("*").eq("user_id", userId),
+      supabaseClient.from("contract_installments").select("*").eq("user_id", userId),
+      supabaseClient.from("clients").select("*").eq("user_id", userId),
     ]);
 
     const queryError = contracts.error || installments.error || clients.error;
