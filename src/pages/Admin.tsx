@@ -110,6 +110,8 @@ const Admin = () => {
     const yearly = users.filter((u) => u.subscription_type === "yearly").length;
     const expired = users.filter((u) => isExpired(u) && !u.is_admin).length;
     const active = total - blocked - expired;
+    const mrr = (monthly * 49.90) + (yearly * 499.0 / 12); // Cálculo estimado de faturamento mensal
+    const churn = total > 0 ? (expired / total) * 100 : 0;
     const newThisMonth = users.filter((u) => {
       const d = new Date(u.created_at);
       const now = new Date();
@@ -117,7 +119,7 @@ const Admin = () => {
     }).length;
     const totalLoaned = users.reduce((s, u) => s + Number(u.loan_balance || 0), 0);
     const totalProfit = users.reduce((s, u) => s + Number(u.profit_balance || 0), 0);
-    return { total, blocked, admins, monthly, yearly, expired, active, newThisMonth, totalLoaned, totalProfit };
+    return { total, blocked, admins, monthly, yearly, expired, active, newThisMonth, totalLoaned, totalProfit, mrr, churn };
   }, [users]);
 
   // ============ FILTERED ============
@@ -344,11 +346,11 @@ const Admin = () => {
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-            <TrendingUp size={14} /> SAÚDE DA BASE
+            <TrendingUp size={14} /> SAÚDE DA BASE & FINANCEIRO
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <MiniStat label="Taxa Ativos" value={`${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}%`} />
-            <MiniStat label="Taxa Conversão" value={`${stats.total ? Math.round(((stats.monthly + stats.yearly) / stats.total) * 100) : 0}%`} />
+            <MiniStat label="Faturamento Est." value={`R$ ${stats.mrr.toFixed(2)}`} />
+            <MiniStat label="Taxa Churn" value={`${stats.churn.toFixed(1)}%`} />
             <MiniStat label="Capital Total" value={`R$ ${(stats.totalLoaned / 1000).toFixed(1)}k`} />
             <MiniStat label="Lucro Total" value={`R$ ${(stats.totalProfit / 1000).toFixed(1)}k`} />
           </div>
