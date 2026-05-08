@@ -344,7 +344,7 @@ const AgenteIA = () => {
 
   const handleLogout = async () => {
     try {
-      await callEvolutionApi("logout");
+      await callEvolutionApi("logoutInstance", { instanceName });
       setWhatsappStatus("disconnected");
       setQrCode(null);
       toast({ title: "Desconectado" });
