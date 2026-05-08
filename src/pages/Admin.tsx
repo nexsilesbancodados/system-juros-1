@@ -535,6 +535,15 @@ const Admin = () => {
                             <Eye size={15} />
                           </button>
                           <button
+                            onClick={() => {
+                              toast({ title: "Simulando acesso...", description: `Você está visualizando os dados de ${u.name}` });
+                            }}
+                            className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
+                            title="Visualizar como usuário"
+                          >
+                            <Globe size={15} />
+                          </button>
+                          <button
                             onClick={() =>
                               setConfirmAction({
                                 title: u.is_blocked ? "Desbloquear usuário?" : "Bloquear usuário?",
