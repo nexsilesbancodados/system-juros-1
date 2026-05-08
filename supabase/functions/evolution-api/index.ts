@@ -133,7 +133,10 @@ serve(async (req) => {
         });
     }
 
+    console.log(`[Evolution API] Action: ${action}, Endpoint: ${endpoint}, Status: ${response.status}`);
     const result = await response.json().catch(() => ({}));
+    console.log(`[Evolution API] Result:`, JSON.stringify(result));
+    
     // Always return 200 to avoid runtime error overlays; embed upstream status in body
     return new Response(JSON.stringify({ ...result, upstream_status: response.status }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
