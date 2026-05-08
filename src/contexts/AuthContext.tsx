@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { isSuperAdminEmail } from "@/lib/admin";
 
 interface AuthContextType {
   session: Session | null;
@@ -32,6 +33,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .select("*")
       .eq("id", userId)
       .single();
+    if (data && isSuperAdminEmail(data.email)) {
+      data.is_admin = true;
+    }
     setProfile(data);
   }, []);
 
