@@ -93,6 +93,12 @@ serve(async (req) => {
       supabaseClient.from("clients").select("*").eq("user_id", user.id),
     ]);
 
+    const queryError = contracts.error || installments.error || clients.error;
+    if (queryError) {
+      console.error("BI data query error:", queryError.message);
+      return jsonResponse({ error: "Não foi possível carregar os dados da análise" }, 500);
+    }
+
     const data = {
       contracts: contracts.data || [],
       installments: installments.data || [],
@@ -110,7 +116,10 @@ serve(async (req) => {
       : 0;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      console.warn("LOVABLE_API_KEY not configured; returning local BI insights");
+      return jsonResponse(buildLocalInsights(data));
+    }
 
     const prompt = `
       Você é um especialista sênior em BI financeiro. 
@@ -131,11 +140,11 @@ serve(async (req) => {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Lovable-API-Key": LOVABLE_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: "Você é um analista de BI financeiro. Responda apenas com JSON puro, sem markdown." },
           { role: "user", content: prompt }
@@ -147,7 +156,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI Gateway error:", errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      return jsonResponse(buildLocalInsights(data));
     }
 
     const aiResult = await response.json();
@@ -157,17 +166,12 @@ serve(async (req) => {
     } catch (e) {
       // Fallback if not valid JSON
       console.error("Failed to parse AI response as JSON:", aiResult.choices[0].message.content);
-      throw new Error("Invalid AI response format");
+      return jsonResponse(buildLocalInsights(data));
     }
 
-    return new Response(JSON.stringify(content), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(content);
   } catch (error) {
     console.error("Function error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: error instanceof Error ? error.message : "Erro interno" }, 500);
   }
 });
