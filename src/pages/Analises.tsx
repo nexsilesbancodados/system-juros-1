@@ -3,17 +3,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
-import { Download, CalendarIcon, BarChart3 } from "lucide-react";
+import { Download, CalendarIcon, BarChart3, Brain, FileText } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area,
 } from "recharts";
+import { PredictiveAnalytics } from "@/components/analises/PredictiveAnalytics";
 
 const COLORS = ["hsl(142,71%,45%)", "hsl(0,84%,60%)", "hsl(45,93%,47%)", "hsl(210,80%,55%)", "hsl(280,60%,55%)"];
 
