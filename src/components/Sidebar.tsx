@@ -111,6 +111,7 @@ const sections: MenuSection[] = [
     collapsible: true,
     defaultOpen: false,
     items: [
+      { label: "WhatsApp", icon: MessageCircle, path: "/configuracoes/whatsapp" },
       { label: "Automações", icon: Zap, path: "/automacoes" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
