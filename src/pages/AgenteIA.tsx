@@ -330,15 +330,16 @@ const AgenteIA = () => {
     setPollingQr(true);
     qrIntervalRef.current = setInterval(async () => {
       try {
-        const data = await callEvolutionApi("check_status");
-        if (data.status === "connected") {
+        const data = await callEvolutionApi("check_status", { instanceName });
+        const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
+        if (inst?.status === "open" || inst?.connectionStatus === "open" || data.status === "connected") {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
           toast({ title: "✅ WhatsApp Conectado!" });
         }
       } catch {}
-    }, 4000);
+    }, 5000);
   };
 
   const stopPolling = () => {
