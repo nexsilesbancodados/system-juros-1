@@ -53,6 +53,7 @@ const iconColorMap: Record<string, string> = {
   "/historico": "text-slate-400",
   "/auditoria": "text-red-300",
   "/automacoes": "text-amber-400",
+  "/configuracoes/whatsapp": "text-emerald-400",
   "/configuracoes": "text-zinc-400",
   "/admin": "text-amber-300",
   "/sobre": "text-blue-300",
