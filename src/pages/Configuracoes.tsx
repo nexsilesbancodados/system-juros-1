@@ -81,6 +81,9 @@ const Configuracoes = () => {
     bot_use_ai: false,
     bot_negotiation_enabled: false,
     bot_send_audio: false,
+    bot_process_audio: true,
+    bot_process_receipts: true,
+    bot_auto_confirm_payment: false,
     portal_title: "Portal do Cliente",
     portal_subtitle: "Acompanhe seus contratos e pagamentos",
     portal_welcome_message: "",
@@ -135,6 +138,9 @@ const Configuracoes = () => {
         bot_use_ai: s.bot_use_ai || false,
         bot_negotiation_enabled: s.bot_negotiation_enabled || false,
         bot_send_audio: s.bot_send_audio || false,
+        bot_process_audio: s.bot_process_audio ?? true,
+        bot_process_receipts: s.bot_process_receipts ?? true,
+        bot_auto_confirm_payment: s.bot_auto_confirm_payment ?? false,
         portal_title: s.portal_title || "Portal do Cliente",
         portal_subtitle: s.portal_subtitle || "Acompanhe seus contratos e pagamentos",
         portal_welcome_message: s.portal_welcome_message || "",
@@ -218,6 +224,9 @@ const Configuracoes = () => {
       bot_use_ai: form.bot_use_ai,
       bot_negotiation_enabled: form.bot_negotiation_enabled,
       bot_send_audio: form.bot_send_audio,
+      bot_process_audio: form.bot_process_audio,
+      bot_process_receipts: form.bot_process_receipts,
+      bot_auto_confirm_payment: form.bot_auto_confirm_payment,
       portal_title: form.portal_title,
       portal_subtitle: form.portal_subtitle,
       portal_welcome_message: form.portal_welcome_message,
@@ -807,6 +816,45 @@ const Configuracoes = () => {
                         className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_send_audio ? "bg-primary" : "bg-muted"}`}
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_send_audio ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Entender Áudios</p>
+                        <p className="text-[10px] text-muted-foreground">O bot transcreve e entende o que o cliente fala em áudio</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_process_audio: !form.bot_process_audio })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_process_audio ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_process_audio ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Reconhecer Comprovantes</p>
+                        <p className="text-[10px] text-muted-foreground">O bot analisa imagens para identificar comprovantes de pagamento</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_process_receipts: !form.bot_process_receipts })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_process_receipts ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_process_receipts ? "left-5" : "left-1"}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">Baixa Automática (Smart Pay)</p>
+                        <p className="text-[10px] text-muted-foreground">Dá baixa na parcela automaticamente após validar o comprovante</p>
+                      </div>
+                      <button 
+                        onClick={() => setForm({ ...form, bot_auto_confirm_payment: !form.bot_auto_confirm_payment })}
+                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_auto_confirm_payment ? "bg-primary" : "bg-muted"}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_auto_confirm_payment ? "left-5" : "left-1"}`} />
                       </button>
                     </div>
                   </div>
