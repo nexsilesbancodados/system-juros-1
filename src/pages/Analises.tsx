@@ -538,9 +538,10 @@ const Analises = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
+      </TabsContent>
+    </Tabs>
+  </div>
+);
 };
 
 export default Analises;
