@@ -8,20 +8,40 @@ import {
 import { Brain, TrendingUp, AlertTriangle, Lightbulb, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const fallbackInsights = {
+  predictive_cashflow: [
+    { month: "Atual", expected: 0, likely: 0 },
+    { month: "+1 mês", expected: 0, likely: 0 },
+    { month: "+2 meses", expected: 0, likely: 0 },
+    { month: "+3 meses", expected: 0, likely: 0 },
+  ],
+  risk_assessment: "Indisponível",
+  risk_reason: "A análise de IA não respondeu agora. Os demais indicadores da página continuam disponíveis.",
+  strategic_advice: [
+    "Tente gerar a análise novamente em alguns instantes.",
+    "Use os gráficos operacionais abaixo para acompanhar atrasos e recebimentos.",
+    "Confira se a sessão está ativa antes de chamar recursos de IA.",
+  ],
+  top_client_segments: ["Sem dados da IA"],
+};
 
 export const PredictiveAnalytics = () => {
   const { user } = useAuth();
 
-  const { data: aiInsights, isLoading } = useQuery({
+  const { data: aiInsights, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["business-intelligence-ai", user?.id],
     queryFn: async () => {
+      if (!user?.id) throw new Error("Usuário não autenticado");
       const { data, error } = await supabase.functions.invoke("business-intelligence-ai", {
-        body: { user_id: user?.id },
+        body: { user_id: user.id },
       });
-      if (error) throw error;
-      return data;
+      if (error) throw new Error(error.message || "Falha ao carregar análise preditiva");
+      return data || fallbackInsights;
     },
     enabled: !!user,
+    retry: false,
   });
 
   if (isLoading) {
@@ -33,6 +53,29 @@ export const PredictiveAnalytics = () => {
           <Skeleton className="h-[150px] rounded-2xl" />
           <Skeleton className="h-[150px] rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  const insights = aiInsights || fallbackInsights;
+
+  if (isError) {
+    return (
+      <div className="glass-card rounded-2xl p-6 border border-destructive/30 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold">Inteligência Preditiva indisponível</h2>
+            <p className="text-sm text-muted-foreground">
+              {(error as Error)?.message || "Não foi possível carregar a análise de IA agora."}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          Tentar novamente
+        </Button>
       </div>
     );
   }
