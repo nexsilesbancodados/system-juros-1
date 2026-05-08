@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
+import { generateText, Output } from "npm:ai";
+import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
+import { z } from "npm:zod";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +14,28 @@ const jsonResponse = (body: unknown, status = 200) =>
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+const createLovableAiGatewayProvider = (lovableApiKey: string) =>
+  createOpenAICompatible({
+    name: "lovable",
+    baseURL: "https://ai.gateway.lovable.dev/v1",
+    headers: {
+      "Lovable-API-Key": lovableApiKey,
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+  });
+
+const BiInsightsSchema = z.object({
+  predictive_cashflow: z.array(z.object({
+    month: z.string(),
+    expected: z.number(),
+    likely: z.number(),
+  })).length(4),
+  risk_assessment: z.enum(["Baixo", "Médio", "Alto", "Crítico"]),
+  risk_reason: z.string(),
+  strategic_advice: z.array(z.string()).length(3),
+  top_client_segments: z.array(z.string()).length(3),
+});
 
 const buildLocalInsights = (data: { contracts: any[]; installments: any[]; clients: any[] }) => {
   const now = new Date();
