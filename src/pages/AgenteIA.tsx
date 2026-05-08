@@ -285,17 +285,11 @@ const AgenteIA = () => {
   const createInstance = async () => {
     setWhatsappStatus("connecting");
     try {
-      const data = await callEvolutionApi("create_instance");
-      setInstanceName(data.instance || "");
-      if (data.status === "connected") {
+      const data = await callEvolutionApi("createInstance", { instanceName: settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}` });
+      setInstanceName(data.instance?.instanceName || data.instanceName || "");
+      if (data.instance?.status === "open") {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
-        return;
-      }
-      if (data.status === "qr_ready" && data.qrcode) {
-        setQrCode(data.qrcode);
-        setWhatsappStatus("qr_ready");
-        startPolling();
         return;
       }
       await fetchQr();
