@@ -369,15 +369,6 @@ const Configuracoes = () => {
               {/* Name */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
-        {tab === "admin_global" && profile?.is_admin && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><Shield size={16} className="text-amber-500" /></div>
-              <div>
-                <h2 className="font-semibold text-foreground">Configurações de Administrador</h2>
-                <p className="text-xs text-muted-foreground">Parâmetros que afetam toda a infraestrutura</p>
-              </div>
-            </div>
 
             <div className="grid grid-cols-1 gap-4">
               <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
