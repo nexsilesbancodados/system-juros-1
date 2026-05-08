@@ -81,6 +81,8 @@ const SupportInbox = () => {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [internalNote, setInternalNote] = useState("");
+  const [showInternalNotes, setShowInternalNotes] = useState(false);
   const [sending, setSending] = useState(false);
 
   const fetchTickets = async () => {
@@ -280,22 +282,43 @@ const SupportInbox = () => {
             })}
           </div>
 
-          <div className="p-4 border-t border-border/40 bg-card/40">
+          <div className="p-4 border-t border-border/40 bg-card/40 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <button 
+                onClick={() => setShowInternalNotes(false)}
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md transition-all ${!showInternalNotes ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+              >
+                Resposta ao Usuário
+              </button>
+              <button 
+                onClick={() => setShowInternalNotes(true)}
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md transition-all ${showInternalNotes ? "bg-amber-500 text-white" : "text-muted-foreground hover:bg-accent"}`}
+              >
+                Nota Interna (Apenas Admins)
+              </button>
+            </div>
+
             <div className="flex gap-2 items-end">
               <Textarea
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                placeholder="Digite sua resposta como suporte..."
-                className="min-h-[70px] resize-none"
+                value={showInternalNotes ? internalNote : reply}
+                onChange={(e) => showInternalNotes ? setInternalNote(e.target.value) : setReply(e.target.value)}
+                placeholder={showInternalNotes ? "Adicione uma nota visível apenas para outros administradores..." : "Digite sua resposta como suporte..."}
+                className={`min-h-[70px] resize-none ${showInternalNotes ? "border-amber-500/30 focus-visible:ring-amber-500/30" : ""}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSendReply();
                 }}
               />
-              <Button onClick={handleSendReply} disabled={!reply.trim() || sending} className="shrink-0">
-                <Send size={14} />
+              <Button 
+                onClick={handleSendReply} 
+                disabled={!(showInternalNotes ? internalNote.trim() : reply.trim()) || sending} 
+                className={`shrink-0 ${showInternalNotes ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
+              >
+                {showInternalNotes ? <Lock size={14} /> : <Send size={14} />}
               </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Ctrl+Enter envia · O usuário receberá uma notificação</p>
+            <p className="text-[10px] text-muted-foreground">
+              {showInternalNotes ? "🔒 Notas internas nunca são enviadas ao usuário." : "Ctrl+Enter envia · O usuário receberá uma notificação."}
+            </p>
           </div>
         </div>
       </div>
