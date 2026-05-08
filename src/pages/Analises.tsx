@@ -285,8 +285,8 @@ const Analises = () => {
               <BarChart3 size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-shimmer">Análises</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Relatórios e gráficos avançados do seu portfólio</p>
+              <h1 className="text-2xl font-bold text-shimmer">Análises & BI</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Gestão de portfólio e inteligência preditiva</p>
             </div>
           </div>
           <button onClick={handleExport} className="btn-ghost">
@@ -295,26 +295,41 @@ const Analises = () => {
         </div>
       </div>
 
-      {/* ─── Period Selector ─── */}
-      <div className="glass-card rounded-2xl p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <span className="text-label shrink-0">Período</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {presets.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => handlePreset(p.key)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
-                  activePreset === p.key
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+      <Tabs defaultValue="classic" className="w-full">
+        <TabsList className="bg-muted/50 p-1 mb-6">
+          <TabsTrigger value="classic" className="flex items-center gap-2">
+            <FileText size={14} /> Relatórios Clássicos
+          </TabsTrigger>
+          <TabsTrigger value="predictive" className="flex items-center gap-2">
+            <Brain size={14} /> Inteligência Preditiva (IA)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="predictive">
+          <PredictiveAnalytics />
+        </TabsContent>
+
+        <TabsContent value="classic" className="space-y-6">
+          {/* ─── Period Selector ─── */}
+          <div className="glass-card rounded-2xl p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <span className="text-label shrink-0">Período</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {presets.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => handlePreset(p.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      activePreset === p.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
 
           {/* Date pickers - always visible */}
           <div className="flex items-center gap-2 ml-auto">
