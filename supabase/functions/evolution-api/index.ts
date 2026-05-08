@@ -65,7 +65,8 @@ serve(async (req) => {
           body: JSON.stringify({
             instanceName: instanceName,
             token: user.id.split("-")[0],
-            qrcode: true
+            qrcode: true,
+            integration: "WHATSAPP-BAILEYS"
           })
         });
         break;
