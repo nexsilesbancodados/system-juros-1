@@ -133,10 +133,11 @@ serve(async (req) => {
         });
     }
 
-    const result = await response.json();
-    return new Response(JSON.stringify(result), {
+    const result = await response.json().catch(() => ({}));
+    // Always return 200 to avoid runtime error overlays; embed upstream status in body
+    return new Response(JSON.stringify({ ...result, upstream_status: response.status }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: response.status,
+      status: 200,
     });
 
   } catch (error) {
