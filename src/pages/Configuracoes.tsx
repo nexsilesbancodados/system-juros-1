@@ -290,7 +290,7 @@ const Configuracoes = () => {
     { id: "webhooks", label: "Webhooks", icon: Webhook },
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
-    ...(profile?.is_admin ? [{ id: "admin_global", label: "Admin Global", icon: Shield }] : []),
+    ...(profile?.is_admin ? [{ id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
   ];
 
   return (
