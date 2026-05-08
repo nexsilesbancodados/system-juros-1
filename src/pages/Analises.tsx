@@ -538,9 +538,10 @@ const Analises = () => {
             </div>
           )}
         </div>
-      </TabsContent>
-    </Tabs>
-  </div>
+      </div>
+    </TabsContent>
+  </Tabs>
+</div>
 );
 };
 
