@@ -1,0 +1,1 @@
+ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_email_key UNIQUE (email);
