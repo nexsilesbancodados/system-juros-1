@@ -234,8 +234,8 @@ const Dashboard = () => {
   return (
     <div className="relative space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
       {/* ─── Background Eagle (Refined Overlay) ─── */}
-      <div className="fixed top-0 right-0 w-[500px] md:w-[800px] h-[500px] md:h-[800px] -mr-32 -mt-32 opacity-[0.03] dark:opacity-[0.07] pointer-events-none -z-10 transition-opacity duration-1000">
-        <img src={eagleLogo} alt="" className="w-full h-full object-contain grayscale brightness-200 rotate-12" />
+      <div className="eagle-bg-overlay overflow-hidden">
+        <img src={eagleLogo} alt="" className="w-full h-full object-contain animate-pulse-slow" />
       </div>
 
       {/* ─── Hero Header ─── */}
