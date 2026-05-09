@@ -84,5 +84,46 @@ export const templates = {
         </div>
       </div>
     `
+  }),
+  monthlyReport: (name: string, month: string, summary: any) => ({
+    subject: `📊 Seu Relatório de Performance - ${month}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #f9fafb;">
+        <div style="text-align: center; padding-bottom: 20px;">
+          <h1 style="color: #1e293b; margin: 0;">Relatório Mensal BI</h1>
+          <p style="color: #64748b; font-size: 14px;">System Juros - Inteligência de Negócios</p>
+        </div>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <h2 style="color: #334155; font-size: 18px; margin-top: 0;">Resumo de ${month}</h2>
+          <p style="color: #475569;">Olá, ${name}. Aqui estão os números do seu negócio no último mês:</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Lucro Total</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: bold; color: #10b981;">R$ ${summary.profit}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Gastos Total</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: bold; color: #ef4444;">R$ ${summary.expenses}</td>
+            </tr>
+            <tr style="background: #f8fafc;">
+              <td style="padding: 10px; border-radius: 4px 0 0 4px; font-weight: bold; color: #1e293b;">Saldo Líquido</td>
+              <td style="padding: 10px; border-radius: 0 4px 4px 0; text-align: right; font-weight: bold; color: #3b82f6;">R$ ${summary.balance}</td>
+            </tr>
+          </table>
+
+          <div style="margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px;">
+            <p style="margin: 0; font-size: 13px; color: #1e40af;"><strong>Insight IA:</strong> ${summary.insight}</p>
+          </div>
+        </div>
+
+        <div style="margin: 30px 0; text-align: center;">
+          <a href="https://app.systemjuros.com.br/relatorios" style="background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">Ver Detalhes no Sistema</a>
+        </div>
+        
+        <p style="font-size: 11px; color: #94a3b8; text-align: center;">Este é um relatório automático gerado pelo seu assistente de BI do System Juros.</p>
+      </div>
+    `
   })
 };
