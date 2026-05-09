@@ -237,6 +237,7 @@ const Configuracoes = () => {
       portal_logo_url: form.portal_logo_url,
       portal_contact_phone: form.portal_contact_phone,
       portal_contact_email: form.portal_contact_email,
+      custom_contract_template: form.custom_contract_template?.trim() || null,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
