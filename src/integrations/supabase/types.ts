@@ -937,6 +937,7 @@ export type Database = {
           profit_balance: number
           subscription_expires_at: string | null
           subscription_type: string | null
+          trial_ends_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -955,6 +956,7 @@ export type Database = {
           profit_balance?: number
           subscription_expires_at?: string | null
           subscription_type?: string | null
+          trial_ends_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -973,6 +975,7 @@ export type Database = {
           profit_balance?: number
           subscription_expires_at?: string | null
           subscription_type?: string | null
+          trial_ends_at?: string | null
         }
         Relationships: []
       }
