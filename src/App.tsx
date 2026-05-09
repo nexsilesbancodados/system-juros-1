@@ -40,7 +40,7 @@ const QRCodePage = lazy(() => import("./pages/QRCodePage"));
 const AgenteIA = lazy(() => import("./pages/AgenteIA"));
 const CobradorExterno = lazy(() => import("./pages/CobradorExterno"));
 const Auditoria = lazy(() => import("./pages/Auditoria"));
-const Automacoes = lazy(() => import("./pages/AdminAutomacoes"));
+const Automacoes = lazy(() => import("./pages/Automacoes"));
 const ClienteDetalhe = lazy(() => import("./pages/ClienteDetalhe"));
 const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 const Suporte = lazy(() => import("./pages/Suporte"));
