@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendEmail, templates } from "../_shared/brevo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,7 +189,41 @@ serve(async (req) => {
       }
     }
 
-    return new Response(
+    // ==========================================
+    // 5. AVISO EXPIRAÇÃO TESTE (3 dias antes)
+    // ==========================================
+    const threeDaysFromNow = new Date();
+    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const threeDaysStr = threeDaysFromNow.toISOString().split("T")[0];
+
+    const { data: expiringSoon } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, trial_ends_at")
+      .gte("trial_ends_at", `${threeDaysStr}T00:00:00Z`)
+      .lte("trial_ends_at", `${threeDaysStr}T23:59:59Z`);
+
+    if (expiringSoon) {
+      for (const user of expiringSoon) {
+        // Send internal notification
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          message: `⏳ Seu teste grátis expira em 3 dias. Não perca o acesso!`,
+          type: "trial_expiring_soon",
+          from: "Sistema",
+          link: "/configuracoes",
+        });
+
+        // Send Email via Brevo
+        const emailTemplate = templates.trialExpiring(user.full_name || user.email, 3);
+        await sendEmail({
+          to: [{ email: user.email, name: user.full_name }],
+          subject: emailTemplate.subject,
+          htmlContent: emailTemplate.html,
+        });
+        
+        created.push(`trial_expiring_email:${user.id}`);
+      }
+    }
       JSON.stringify({
         message: `Notificações criadas: ${created.length}`,
         details: created,
