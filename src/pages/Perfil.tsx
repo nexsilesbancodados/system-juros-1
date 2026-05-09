@@ -157,7 +157,7 @@ const Perfil = () => {
         <div className="pt-4 border-t border-border/50 relative z-10">
           <button 
             onClick={async () => {
-              const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+              const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
               if (settings?.hubla_checkout_url) {
                 window.location.href = settings.hubla_checkout_url;
               } else {
