@@ -288,13 +288,14 @@ const Dashboard = () => {
           <button
             key={action.label}
             onClick={() => navigate(action.path)}
-            className={`flex flex-col items-center justify-center p-4 rounded-3xl border ${action.border} ${action.color} hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg group`}
+            className={`flex flex-col items-center justify-center p-5 rounded-[32px] border ${action.border} ${action.color} hover:scale-[1.03] active:scale-95 transition-all duration-300 shadow-xl group relative overflow-hidden`}
             style={{ animationDelay: `${i * 50}ms` }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-2 group-hover:rotate-12 transition-transform">
-              <action.icon size={20} />
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-3 group-hover:rotate-6 transition-all duration-500 shadow-inner">
+              <action.icon size={22} />
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-widest">{action.label}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{action.label}</span>
           </button>
         ))}
       </div>
