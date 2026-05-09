@@ -9,9 +9,9 @@ const LandingDashboardPreview = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-display font-bold text-white mb-6"
+            className="text-4xl md:text-5xl font-display font-bold text-white mb-6"
           >
-            Visão Geral da sua <span className="text-gradient-gold">Operação</span>
+            Visão Geral da sua <br /><span className="text-gradient-gold">Operação Financeira</span>
           </motion.h2>
           <p className="text-white/40 max-w-2xl mx-auto">
             Tenha o controle total do seu negócio na palma da mão. Dados atualizados em tempo real para você decidir com confiança.
