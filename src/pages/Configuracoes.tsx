@@ -301,8 +301,7 @@ const Configuracoes = () => {
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
-    { id: "pagamentos", label: "Hubla Pagamentos", icon: CreditCard },
-    ...(profile?.is_admin ? [{ id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
+    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Hubla Pagamentos", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
   ];
 
   return (
@@ -1530,7 +1529,7 @@ const Configuracoes = () => {
           </div>
         )}
       </div>
-      {tab === "pagamentos" && (
+      {tab === "pagamentos" && profile?.is_admin && (
         <div className="space-y-6 animate-fade-in">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
