@@ -87,7 +87,11 @@ const Login = () => {
   const inputCls = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-body bg-black">
+    <div 
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-body bg-black bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: "url('/login-bg.png')" }}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0" />
       <ConstellationBackground />
 
       <button 
