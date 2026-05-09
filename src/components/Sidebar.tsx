@@ -180,7 +180,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`
-          group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
+          group relative w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[13px] font-medium
           transition-all duration-300 ease-out
           ${active
             ? "text-foreground sidebar-item-active"
@@ -191,13 +191,13 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       >
         {/* Indicador ativo - barra lateral */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)] animate-pulse-slow" />
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)]" />
         )}
 
         {/* Container do ícone */}
         <div
           className={`
-            relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0
+            relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0
             transition-all duration-300 ease-out
             ${active
               ? "bg-primary/20 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
@@ -324,8 +324,8 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       className={`
         fixed left-0 top-0 h-screen flex flex-col z-50
         transition-[width] duration-300 ease-out
-        border-r border-border/10
-        ${collapsed ? "w-[72px]" : "w-[260px]"}
+        border-r border-border/5 shadow-2xl shadow-black/40
+        ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
       style={{
         background: sidebarBg || "hsl(var(--card) / 0.98)",
@@ -335,7 +335,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       {/* Logo */}
       <div
         className={`
-          flex items-center h-16 border-b border-border/10 shrink-0
+          flex items-center h-20 border-b border-border/5 shrink-0
           transition-all duration-300
           ${collapsed ? "justify-center px-2" : "px-4 gap-3"}
         `}
@@ -369,7 +369,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={onToggleCollapse}
         className="
           absolute -right-3 top-[3.5rem] w-7 h-7
-          rounded-full bg-card border border-border/30
+          rounded-full bg-background border border-border/20 shadow-xl
           flex items-center justify-center
           text-muted-foreground hover:text-primary hover:border-primary/30
           hover:scale-110 hover:shadow-lg hover:shadow-primary/10
@@ -438,7 +438,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       {/* Footer do usuário */}
       <div
         className={`
-          shrink-0 border-t border-border/10 p-2.5
+          shrink-0 border-t border-border/5 p-3.5 bg-background/20
           ${collapsed ? "flex flex-col items-center gap-2" : ""}
         `}
       >
