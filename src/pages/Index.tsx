@@ -42,6 +42,8 @@ const Index = () => {
 
         <LandingFeatures />
         
+        <LandingDashboardPreview />
+        
         {/* Why Us Section Mockup */}
         <section id="benefits" className="py-24 bg-white/[0.02]">
            <div className="container mx-auto px-6">
