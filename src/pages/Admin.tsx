@@ -935,6 +935,31 @@ const GlobalAdminSettings = () => {
             />
           </div>
 
+          <div className="space-y-1.5 p-3 rounded-xl bg-primary/10 border border-primary/20">
+            <p className="text-sm font-semibold flex items-center gap-2">
+              <CreditCard size={14} className="text-primary" /> Checkout Hubla (URL)
+            </p>
+            <input 
+              type="text" 
+              value={form.hubla_checkout_url}
+              onChange={(e) => setForm({...form, hubla_checkout_url: e.target.value})}
+              placeholder="https://pay.hubla.com/..."
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground italic">Link para onde os usuários serão redirecionados para pagar</p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
+            <p className="text-sm font-semibold">Token de Webhook Hubla</p>
+            <input 
+              type="password" 
+              value={form.hubla_webhook_token}
+              onChange={(e) => setForm({...form, hubla_webhook_token: e.target.value})}
+              placeholder="Token para validar notificações da Hubla"
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+
           <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
             <p className="text-sm font-semibold">Dias de Trial Padrão</p>
             <input 
