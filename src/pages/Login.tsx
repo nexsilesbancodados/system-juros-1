@@ -30,16 +30,19 @@ const Login = () => {
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("email", email)
-        .maybeSingle();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_expires_at, trial_ends_at")
+        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .single();
 
-      if (!sub || sub.status !== 'active') {
+      const isSubscriptionActive = profile?.subscription_expires_at && new Date(profile.subscription_expires_at).getTime() > Date.now();
+      const isTrialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at).getTime() > Date.now();
+
+      if (!isSubscriptionActive && !isTrialActive) {
         const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
         if (settings?.hubla_checkout_url) {
-          toast({ title: "Assinatura pendente", description: "Redirecionando para o checkout..." });
+          toast({ title: "Acesso pendente", description: "Sua assinatura expirou. Redirecionando para o checkout..." });
           setTimeout(() => {
             window.location.href = settings.hubla_checkout_url;
           }, 2000);
