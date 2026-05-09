@@ -29,13 +29,16 @@ const DashboardLayout = () => {
     if (sessionStorage.getItem(key)) return;
 
     (async () => {
-      // Skip admins
+      // Skip admins or check trial/subscription
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_admin")
+        .select("is_admin, trial_ends_at")
         .eq("id", user.id)
         .maybeSingle();
-      if (cancelled || profile?.is_admin) {
+
+      const hasValidTrial = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+
+      if (cancelled || profile?.is_admin || hasValidTrial) {
         sessionStorage.setItem(key, "1");
         return;
       }
