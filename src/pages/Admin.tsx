@@ -3,7 +3,7 @@ import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
   Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
-  LayoutDashboard, Activity, Terminal, Lock, Globe, Settings2,
+  LayoutDashboard, Activity, Terminal, Lock, Globe, Settings2, CreditCard
 } from "lucide-react";
 import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
