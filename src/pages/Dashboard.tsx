@@ -4,7 +4,7 @@ import {
   AlertCircle, Calendar, Landmark, TrendingUp, Users, ArrowRight,
   DollarSign, Percent, FileSignature, Clock, CheckCircle, Sparkles,
   ArrowUpRight, Activity, Wallet, Target, ChevronRight, Zap,
-  BarChart3, PieChart,
+  BarChart3, PieChart, Receipt, Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
