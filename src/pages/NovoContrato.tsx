@@ -90,7 +90,7 @@ const NovoContrato = () => {
       if (!dailyInterestPercent) setDailyInterestPercent(String(settings.default_daily_interest ?? 0.33));
       if (!sim.frequency && settings.default_frequency) {
         const f = settings.default_frequency as Frequency;
-        if (["monthly", "weekly", "daily"].includes(f)) setFrequency(f);
+        if (["monthly", "biweekly", "weekly", "daily"].includes(f)) setFrequency(f);
       }
       setDefaultsLoaded(true);
     }
