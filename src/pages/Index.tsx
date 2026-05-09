@@ -78,6 +78,11 @@ const Index = () => {
         }, 3000);
       }
 
+      // Send welcome email via edge function
+      supabase.functions.invoke('send-welcome-email', {
+        body: { email, name }
+      }).catch(err => console.error('Error sending welcome email:', err));
+
       setIsRegister(false);
     }
   };
