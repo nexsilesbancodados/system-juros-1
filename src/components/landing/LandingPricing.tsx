@@ -10,8 +10,16 @@ const LandingPricing = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings-checkout"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("settings").select("hubla_checkout_url").single();
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from("settings")
+        .select("hubla_checkout_url")
+        .not("hubla_checkout_url", "is", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching checkout URL:", error);
+        return null;
+      }
       return data;
     },
   });
