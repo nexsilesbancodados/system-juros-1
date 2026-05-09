@@ -294,6 +294,7 @@ const ContratoDetalhe = () => {
     companyName: settings?.company_name || "Empresa",
     companyCnpj: settings?.company_cnpj || "",
     companyLogoUrl: settings?.company_logo_url || undefined,
+    customTemplate: (settings as any)?.custom_contract_template || null,
     installments: installments.map((i: any) => ({
       installment_number: i.installment_number,
       amount: Number(i.amount),
