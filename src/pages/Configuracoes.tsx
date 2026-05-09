@@ -1699,7 +1699,7 @@ const Configuracoes = () => {
                   </p>
                 </div>
 
-                <div>
+                <div key="webhook-token-field">
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
                   <div className="relative">
                     <input 
