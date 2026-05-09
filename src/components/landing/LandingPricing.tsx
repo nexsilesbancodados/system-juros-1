@@ -1,125 +1,117 @@
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const plans = [
-  {
-    name: "Starter",
-    price: "97",
-    description: "Ideal para pequenos operadores",
-    features: [
-      "Até 50 clientes",
-      "Controle de parcelas",
-      "Relatórios básicos",
-      "Suporte via e-mail",
-    ],
-    cta: "Começar Agora",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "197",
-    description: "O mais escolhido pelos profissionais",
-    features: [
-      "Clientes ilimitados",
-      "IA de Voz integrada",
-      "Relatórios avançados",
-      "Suporte prioritário",
-      "Automações WhatsApp",
-    ],
-    cta: "Escolher Pro",
-    popular: true,
-  },
-  {
-    name: "Elite",
-    price: "397",
-    description: "Para operações de larga escala",
-    features: [
-      "Tudo do Pro",
-      "Consultoria mensal",
-      "White Label completo",
-      "API de integração",
-      "Gerente de conta",
-    ],
-    cta: "Escolher Elite",
-    popular: false,
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const LandingPricing = () => {
   const navigate = useNavigate();
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings-checkout"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("settings").select("hubla_checkout_url").single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleCheckout = () => {
+    if (settings?.hubla_checkout_url) {
+      window.location.href = settings.hubla_checkout_url;
+    } else {
+      navigate("/login");
+    }
+  };
+
+  const features = [
+    "Clientes ilimitados",
+    "IA de Voz integrada",
+    "Automações WhatsApp",
+    "Relatórios avançados",
+    "Gestão de cobranças",
+    "Portal do Cliente",
+    "Suporte prioritário",
+    "Acesso PWA (Mobile App)",
+  ];
+
   return (
-    <section id="pricing" className="py-24 bg-black/50">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-20">
+    <section id="pricing" className="py-24 bg-black/50 relative overflow-hidden">
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="text-center mb-16">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-display font-bold text-white mb-6"
+            className="text-4xl md:text-5xl font-display font-bold text-white mb-6"
           >
-            Planos que cabem no seu <span className="text-gradient-gold">Crescimento</span>
+            Plano Único e <span className="text-gradient-gold">Completo</span>
           </motion.h2>
-          <p className="text-white/40">Escolha a melhor opção para a sua operação</p>
+          <p className="text-white/40 max-w-xl mx-auto">
+            Acesso total a todas as ferramentas de gestão, automação e IA por um preço justo e transparente.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className={`relative p-8 rounded-3xl border ${
-                plan.popular ? "bg-white/[0.05] border-white/20 scale-105" : "bg-white/[0.02] border-white/10"
-              } flex flex-col`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-white text-black text-[10px] font-bold uppercase tracking-widest">
-                  MAIS POPULAR
-                </div>
-              )}
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative p-10 md:p-16 rounded-[3rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl flex flex-col md:flex-row gap-12 items-center"
+          >
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1.5 rounded-full bg-white text-black text-xs font-bold uppercase tracking-widest shadow-lg shadow-white/20">
+              OFERTA ESPECIAL
+            </div>
 
-              <div className="mb-8">
-                <h3 className="text-xl font-display font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-white/40 text-sm">{plan.description}</p>
+            <div className="flex-1 space-y-8">
+              <div>
+                <h3 className="text-3xl font-display font-bold text-white mb-4">Acesso Ilimitado</h3>
+                <p className="text-white/40 leading-relaxed">
+                  Tenha em mãos a plataforma mais poderosa do mercado para gerenciar sua operação financeira com automação inteligente.
+                </p>
               </div>
 
-              <div className="mb-8">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-white/40 text-sm">R$</span>
-                  <span className="text-5xl font-bold text-white tracking-tight">{plan.price}</span>
-                  <span className="text-white/40 text-sm">/mês</span>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-10 flex-1">
-                {plan.features.map((feature) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
-                      <Check size={12} className="text-white" />
+                    <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Check size={12} className="text-blue-400" />
                     </div>
-                    <span className="text-sm text-white/60">{feature}</span>
+                    <span className="text-sm text-white/70">{feature}</span>
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="w-full md:w-[320px] p-8 rounded-3xl bg-white/[0.05] border border-white/10 text-center flex flex-col justify-center">
+              <div className="mb-6">
+                <span className="text-white/40 text-sm block mb-2">Por apenas</span>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-white/40 text-lg">R$</span>
+                  <span className="text-6xl font-bold text-white tracking-tight">79</span>
+                  <span className="text-white/40 text-lg">,00</span>
+                </div>
+                <span className="text-white/30 text-xs mt-2 block italic">Pagamento Mensal</span>
+              </div>
 
               <button
-                onClick={() => navigate("/login")}
-                className={`w-full py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${
-                  plan.popular
-                    ? "bg-white text-black hover:bg-white/90"
-                    : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
-                }`}
+                onClick={handleCheckout}
+                className="w-full py-5 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 transition-all shadow-xl shadow-white/10 flex items-center justify-center gap-2 group"
               >
-                {plan.cta}
+                ASSINAR AGORA
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
-            </motion.div>
-          ))}
+              
+              <p className="text-[10px] text-white/20 mt-4 leading-relaxed">
+                Pagamento seguro via Hubla.<br />Cancele quando quiser.
+              </p>
+            </div>
+          </motion.div>
         </div>
       </div>
+      
+      {/* Decorative Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-blue-500/[0.03] rounded-full blur-[120px] -z-10" />
     </section>
   );
 };
