@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
+import { sendEmail, templates } from "../_shared/brevo.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,6 +80,22 @@ serve(async (req) => {
       }, { onConflict: 'email' })
 
     if (subError) throw subError
+
+    // Send email notification on subscription activation
+    if (subscriptionStatus === 'active' && userData) {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userData.id)
+        .single()
+      
+      const emailTemplate = templates.subscriptionActive(profile?.full_name || email)
+      await sendEmail({
+        to: [{ email: email, name: profile?.full_name }],
+        subject: emailTemplate.subject,
+        htmlContent: emailTemplate.html,
+      })
+    }
 
     return new Response(JSON.stringify({ message: 'Webhook processed successfully' }), {
       status: 200,
