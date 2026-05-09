@@ -308,7 +308,7 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative rounded-[32px] border border-white/5 bg-white/[0.03] backdrop-blur-2xl overflow-hidden micro-press animate-fade-in shadow-2xl hover:bg-white/[0.06] hover:border-white/10 transition-all duration-500"
+            className="group relative rounded-[32px] glass-premium overflow-hidden micro-press animate-fade-in hover:bg-white/[0.08] hover:border-white/10 transition-all duration-500"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${card.accent} opacity-40 group-hover:opacity-100 transition-opacity`} />
