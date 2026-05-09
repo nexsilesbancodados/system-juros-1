@@ -100,7 +100,7 @@ const Perfil = () => {
             <p className="text-sm text-muted-foreground">{profile?.email}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
-                {profile?.subscription_type === "yearly" ? "Plano Anual" : "Plano Mensal"}
+                {profile?.subscription_type === "yearly" ? "Elite Anual" : "Pro Mensal"}
               </Badge>
               {profile?.is_admin && (
                 <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">
