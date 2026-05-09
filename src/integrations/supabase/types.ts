@@ -1088,6 +1088,7 @@ export type Database = {
           company_logo_url: string | null
           company_name: string | null
           created_at: string
+          custom_contract_template: string | null
           default_daily_interest: number | null
           default_frequency: string | null
           default_interest_rate: number | null
@@ -1142,6 +1143,7 @@ export type Database = {
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
+          custom_contract_template?: string | null
           default_daily_interest?: number | null
           default_frequency?: string | null
           default_interest_rate?: number | null
@@ -1196,6 +1198,7 @@ export type Database = {
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
+          custom_contract_template?: string | null
           default_daily_interest?: number | null
           default_frequency?: string | null
           default_interest_rate?: number | null
