@@ -1567,168 +1567,166 @@ const Configuracoes = () => {
                   </div>
                 </div>
               </div>
+          </div>
+        )}
+
+        {tab === "pwa" && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Zap size={16} className="text-primary" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">Transformar em Aplicativo Mobile</h2>
+                <p className="text-xs text-muted-foreground">Instale o sistema no Android ou iPhone sem precisar de loja</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-5 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-4">
+                <h3 className="text-sm font-bold text-foreground">🤖 Para Android</h3>
+                <div className="space-y-3 text-xs text-muted-foreground">
+                  <p>1. Acesse o sistema pelo <strong>Google Chrome</strong>.</p>
+                  <p>2. Toque nos <strong>três pontos (⋮)</strong> no canto superior direito.</p>
+                  <p>3. Clique em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</p>
+                  <p>4. O ícone aparecerá na sua lista de apps como um aplicativo nativo.</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-4">
+                <h3 className="text-sm font-bold text-foreground">🍎 Para iPhone (iOS)</h3>
+                <div className="space-y-3 text-xs text-muted-foreground">
+                  <p>1. Acesse o sistema pelo <strong>Safari</strong>.</p>
+                  <p>2. Toque no ícone de <strong>Compartilhar (quadrado com seta)</strong>.</p>
+                  <p>3. Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>.</p>
+                  <p>4. Confirme tocando em <strong>"Adicionar"</strong> no canto superior.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col items-center text-center space-y-3">
+               <div className="w-16 h-16 rounded-2xl bg-white p-2 shadow-xl mb-2">
+                  <img src="/favicon.webp" alt="App Icon" className="w-full h-full object-contain" />
+               </div>
+               <h4 className="font-bold text-foreground">Sua Logo no Celular</h4>
+               <p className="text-xs text-muted-foreground max-w-xs">Ao instalar o app, sua marca configurada na aba "Marca" será usada como ícone oficial na tela do cliente.</p>
             </div>
           </div>
         )}
-      </div>
-        </div>
-      )}
 
-      {tab === "pwa" && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Zap size={16} className="text-primary" /></div>
-            <div>
-              <h2 className="font-semibold text-foreground">Transformar em Aplicativo Mobile</h2>
-              <p className="text-xs text-muted-foreground">Instale o sistema no Android ou iPhone sem precisar de loja</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-4">
-              <h3 className="text-sm font-bold text-foreground">🤖 Para Android</h3>
-              <div className="space-y-3 text-xs text-muted-foreground">
-                <p>1. Acesse o sistema pelo <strong>Google Chrome</strong>.</p>
-                <p>2. Toque nos <strong>três pontos (⋮)</strong> no canto superior direito.</p>
-                <p>3. Clique em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</p>
-                <p>4. O ícone aparecerá na sua lista de apps como um aplicativo nativo.</p>
+        {tab === "ia-voz" && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center"><Volume2 size={16} className="text-violet-400" /></div>
+              <div>
+                <h2 className="font-semibold text-foreground">IA de Voz e Áudio Personalizado</h2>
+                <p className="text-xs text-muted-foreground">O Agente IA envia áudios que parecem humanos para seus devedores</p>
               </div>
             </div>
 
-            <div className="p-5 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-4">
-              <h3 className="text-sm font-bold text-foreground">🍎 Para iPhone (iOS)</h3>
-              <div className="space-y-3 text-xs text-muted-foreground">
-                <p>1. Acesse o sistema pelo <strong>Safari</strong>.</p>
-                <p>2. Toque no ícone de <strong>Compartilhar (quadrado com seta)</strong>.</p>
-                <p>3. Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>.</p>
-                <p>4. Confirme tocando em <strong>"Adicionar"</strong> no canto superior.</p>
-              </div>
-            </div>
-          </div>
+            <div className="space-y-4">
+              <div className="p-6 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-6">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-violet-500/5 border border-violet-500/20">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center animate-pulse">
+                        <Bot size={18} className="text-violet-400" />
+                     </div>
+                     <div>
+                        <p className="text-xs font-bold text-foreground">Voz Humanizada Ativa</p>
+                        <p className="text-[10px] text-muted-foreground">Usando ElevenLabs AI para realismo total</p>
+                     </div>
+                  </div>
+                  <div className="w-12 h-6 rounded-full bg-violet-500/30 relative cursor-not-allowed opacity-50">
+                     <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
+                  </div>
+                </div>
 
-          <div className="p-6 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col items-center text-center space-y-3">
-             <div className="w-16 h-16 rounded-2xl bg-white p-2 shadow-xl mb-2">
-                <img src="/favicon.webp" alt="App Icon" className="w-full h-full object-contain" />
-             </div>
-             <h4 className="font-bold text-foreground">Sua Logo no Celular</h4>
-             <p className="text-xs text-muted-foreground max-w-xs">Ao instalar o app, sua marca configurada na aba "Marca" será usada como ícone oficial na tela do cliente.</p>
-          </div>
-        </div>
-      )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Escolher Narrador</label>
+                     <select className={inputCls}>
+                        <option>Voz Masculina (Rodrigo - Firme)</option>
+                        <option>Voz Feminina (Helena - Amigável)</option>
+                        <option>Voz Masculina (Arthur - Formal)</option>
+                     </select>
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tom de Voz</label>
+                     <select className={inputCls}>
+                        <option>Persuasivo e Educado</option>
+                        <option>Urgente e Sério</option>
+                        <option>Conciliador (Acordos)</option>
+                     </select>
+                  </div>
+                </div>
 
-      {tab === "ia-voz" && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center"><Volume2 size={16} className="text-violet-400" /></div>
-            <div>
-              <h2 className="font-semibold text-foreground">IA de Voz e Áudio Personalizado</h2>
-              <p className="text-xs text-muted-foreground">O Agente IA envia áudios que parecem humanos para seus devedores</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-6 rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-violet-500/5 border border-violet-500/20">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center animate-pulse">
-                      <Bot size={18} className="text-violet-400" />
-                   </div>
-                   <div>
-                      <p className="text-xs font-bold text-foreground">Voz Humanizada Ativa</p>
-                      <p className="text-[10px] text-muted-foreground">Usando ElevenLabs AI para realismo total</p>
+                <div className="p-4 rounded-2xl bg-primary/5 border border-border/10 space-y-3">
+                   <p className="text-xs font-medium text-foreground">Exemplo de Roteiro Gerado pela IA:</p>
+                   <div className="p-3 rounded-xl bg-background/50 border border-border/5 text-[11px] italic text-muted-foreground leading-relaxed">
+                     "Olá {clientData?.name || 'Cliente'}, aqui é o assistente virtual da {form.company_name || 'System Juros'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
                    </div>
                 </div>
-                <div className="w-12 h-6 rounded-full bg-violet-500/30 relative cursor-not-allowed opacity-50">
-                   <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Escolher Narrador</label>
-                   <select className={inputCls}>
-                      <option>Voz Masculina (Rodrigo - Firme)</option>
-                      <option>Voz Feminina (Helena - Amigável)</option>
-                      <option>Voz Masculina (Arthur - Formal)</option>
-                   </select>
-                </div>
-                <div className="space-y-2">
-                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tom de Voz</label>
-                   <select className={inputCls}>
-                      <option>Persuasivo e Educado</option>
-                      <option>Urgente e Sério</option>
-                      <option>Conciliador (Acordos)</option>
-                   </select>
-                </div>
+                <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-xl shadow-violet-500/20 hover:scale-[1.02] active:scale-95 transition-all opacity-50 cursor-not-allowed">
+                   Disponível em Breve para sua Conta
+                </button>
               </div>
-
-              <div className="p-4 rounded-2xl bg-primary/5 border border-border/10 space-y-3">
-                 <p className="text-xs font-medium text-foreground">Exemplo de Roteiro Gerado pela IA:</p>
-                 <div className="p-3 rounded-xl bg-background/50 border border-border/5 text-[11px] italic text-muted-foreground leading-relaxed">
-                   "Olá {clientData?.name || 'Cliente'}, aqui é o assistente virtual da {form.company_name || 'System Juros'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
-                 </div>
-              </div>
-
-              <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-xl shadow-violet-500/20 hover:scale-[1.02] active:scale-95 transition-all opacity-50 cursor-not-allowed">
-                 Disponível em Breve para sua Conta
-              </button>
             </div>
           </div>
-        </div>
-      )}
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
-            <div>
-              <h2 className="font-semibold text-foreground">Integração Hubla</h2>
-              <p className="text-xs text-muted-foreground">Configure seu checkout e webhooks para automação de acesso</p>
-            </div>
-          </div>
+        )}
 
-          <div className="space-y-4">
-            <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
+        {tab === "pagamentos" && profile?.is_admin && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
-                <input 
-                  value={form.hubla_checkout_url} 
-                  onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })} 
-                  placeholder="https://pay.hub.la/seu-produto" 
-                  className={inputCls} 
-                />
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  Novos usuários serão redirecionados para esta URL caso não possuam assinatura ativa.
-                </p>
+                <h2 className="font-semibold text-foreground">Integração Hubla</h2>
+                <p className="text-xs text-muted-foreground">Configure seu checkout e webhooks para automação de acesso</p>
               </div>
+            </div>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
-                <div className="relative">
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
                   <input 
-                    type="password"
-                    value={form.hubla_webhook_token} 
-                    onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })} 
-                    placeholder="Seu token de segurança" 
+                    value={form.hubla_checkout_url} 
+                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })} 
+                    placeholder="https://pay.hub.la/seu-produto" 
                     className={inputCls} 
                   />
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    Novos usuários serão redirecionados para esta URL caso não possuam assinatura ativa.
+                  </p>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  Utilize este token na configuração do Webhook na Hubla para garantir a segurança da integração.
-                </p>
-              </div>
-            </div>
 
-            <div className="p-4 rounded-2xl border border-border bg-primary/5 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Instruções de Configuração</h3>
-              <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-                <p>1. Acesse sua conta na <strong>Hubla</strong> e vá em integrações de Webhook.</p>
-                <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">https://{window.location.hostname.split('.')[0]}.supabase.co/functions/v1/hubla-webhook</code></p>
-                <p>3. No campo de Token, insira o mesmo valor que você configurou acima.</p>
-                <p>4. Selecione os eventos: <strong>Compra Aprovada</strong>, <strong>Compra Cancelada</strong> e <strong>Assinatura Cancelada</strong>.</p>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
+                  <div className="relative">
+                    <input 
+                      type="password"
+                      value={form.hubla_webhook_token} 
+                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })} 
+                      placeholder="Seu token de segurança" 
+                      className={inputCls} 
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    Utilize este token na configuração do Webhook na Hubla para garantir a segurança da integração.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-border bg-primary/5 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Instruções de Configuração</h3>
+                <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+                  <p>1. Acesse sua conta na <strong>Hubla</strong> e vá em integrações de Webhook.</p>
+                  <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">https://{window.location.hostname.split('.')[0]}.supabase.co/functions/v1/hubla-webhook</code></p>
+                  <p>3. No campo de Token, insira o mesmo valor que você configurou acima.</p>
+                  <p>4. Selecione os eventos: <strong>Compra Aprovada</strong>, <strong>Compra Cancelada</strong> e <strong>Assinatura Cancelada</strong>.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
