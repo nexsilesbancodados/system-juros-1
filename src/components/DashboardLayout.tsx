@@ -4,10 +4,13 @@ import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { OnboardingTourAuto } from "@/components/onboarding/OnboardingTour";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
