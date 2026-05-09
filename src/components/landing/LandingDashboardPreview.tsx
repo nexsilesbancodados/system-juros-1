@@ -23,10 +23,10 @@ const LandingDashboardPreview = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="relative max-w-5xl mx-auto"
+          className="relative max-w-5xl mx-auto p-4 md:p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 backdrop-blur-md"
         >
           {/* Dashboard Visual Mockup */}
-          <div className="rounded-3xl border border-white/10 bg-black shadow-2xl overflow-hidden glass">
+          <div className="rounded-3xl border border-white/10 bg-black/60 shadow-2xl overflow-hidden backdrop-blur-xl">
             <div className="p-1 border-b border-white/5 bg-white/[0.02] flex items-center gap-2 px-6 h-12">
                <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/40" />
