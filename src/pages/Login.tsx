@@ -59,7 +59,7 @@ const Login = () => {
       password,
       options: {
         data: { name },
-        emailRedirectTo: window.location.origin + "/dashboard",
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
     setLoading(false);
