@@ -12,6 +12,7 @@ import DashboardLayout from "./components/DashboardLayout";
 
 import Index from "./pages/Index";
 
+const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -76,6 +77,7 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/cobrador-externo" element={<CobradorExterno />} />
                 <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
