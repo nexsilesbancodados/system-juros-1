@@ -92,6 +92,18 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
         </div>
       )}
 
+      {/* Quick Add Menu */}
+      {!isMobile && (
+        <div className="flex items-center mr-2">
+          <button 
+            onClick={() => navigate("/clientes/novo")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <Plus size={14} /> Novo
+          </button>
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="flex items-center gap-0.5">
         {isMobile && (
