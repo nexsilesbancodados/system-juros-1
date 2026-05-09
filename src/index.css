@@ -79,8 +79,8 @@
   }
 
   .dark {
-    --background: 222 30% 5%;
-    --foreground: 210 18% 88%;
+    --background: 222 47% 2%;
+    --foreground: 210 20% 98%;
 
     --card: 222 25% 8%;
     --card-foreground: 210 18% 88%;
@@ -111,7 +111,7 @@
     --gradient-gold: linear-gradient(135deg, hsl(217 91% 55%), hsl(217 91% 72%), hsl(217 91% 55%));
     --gradient-button: linear-gradient(135deg, hsl(217 91% 52%), hsl(217 91% 65%), hsl(217 91% 52%));
     --gradient-card: linear-gradient(145deg, hsl(222 25% 8%), hsl(222 22% 10%));
-    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.06), hsl(0 0% 100% / 0.01));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.03), hsl(0 0% 100% / 0.005));
     --gradient-accent: linear-gradient(135deg, hsl(217 91% 60% / 0.15), hsl(217 91% 75% / 0.05));
     --gradient-mesh: radial-gradient(at 20% 30%, hsl(217 91% 60% / 0.10) 0px, transparent 50%), radial-gradient(at 80% 70%, hsl(217 91% 75% / 0.06) 0px, transparent 50%);
     --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 4px 16px hsl(0 0% 0% / 0.22);
