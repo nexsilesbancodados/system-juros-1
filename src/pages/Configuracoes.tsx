@@ -1530,6 +1530,60 @@ const Configuracoes = () => {
           </div>
         )}
       </div>
+      {tab === "pagamentos" && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
+            <div>
+              <h2 className="font-semibold text-foreground">Integração Hubla</h2>
+              <p className="text-xs text-muted-foreground">Configure seu checkout e webhooks para automação de acesso</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
+                <input 
+                  value={form.hubla_checkout_url} 
+                  onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })} 
+                  placeholder="https://pay.hub.la/seu-produto" 
+                  className={inputCls} 
+                />
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Novos usuários serão redirecionados para esta URL caso não possuam assinatura ativa.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
+                <div className="relative">
+                  <input 
+                    type="password"
+                    value={form.hubla_webhook_token} 
+                    onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })} 
+                    placeholder="Seu token de segurança" 
+                    className={inputCls} 
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Utilize este token na configuração do Webhook na Hubla para garantir a segurança da integração.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-border bg-primary/5 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Instruções de Configuração</h3>
+              <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+                <p>1. Acesse sua conta na <strong>Hubla</strong> e vá em integrações de Webhook.</p>
+                <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">https://{window.location.hostname.split('.')[0]}.supabase.co/functions/v1/hubla-webhook</code></p>
+                <p>3. No campo de Token, insira o mesmo valor que você configurou acima.</p>
+                <p>4. Selecione os eventos: <strong>Compra Aprovada</strong>, <strong>Compra Cancelada</strong> e <strong>Assinatura Cancelada</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
