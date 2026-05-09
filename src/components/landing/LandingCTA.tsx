@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const LandingCTA = () => {
   const navigate = useNavigate();
@@ -41,7 +42,14 @@ const LandingCTA = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-6"
           >
             <button
-              onClick={() => navigate("/login")}
+              onClick={async () => {
+                const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
+                if (settings?.hubla_checkout_url) {
+                  window.location.href = settings.hubla_checkout_url;
+                } else {
+                  navigate("/login");
+                }
+              }}
               className="w-full sm:w-auto px-10 py-4 rounded-full bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all shadow-xl shadow-white/10"
             >
               TESTE GRÁTIS POR 7 DIAS

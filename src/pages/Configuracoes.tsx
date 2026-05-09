@@ -242,8 +242,8 @@ const Configuracoes = () => {
       portal_contact_phone: form.portal_contact_phone,
       portal_contact_email: form.portal_contact_email,
       custom_contract_template: form.custom_contract_template?.trim() || null,
-      hubla_checkout_url: form.hubla_checkout_url?.trim() || null,
-      hubla_webhook_token: form.hubla_webhook_token?.trim() || null,
+      hubla_checkout_url: form.hubla_checkout_url ? form.hubla_checkout_url.trim() : null,
+      hubla_webhook_token: form.hubla_webhook_token ? form.hubla_webhook_token.trim() : null, // Final sync
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
@@ -1686,11 +1686,11 @@ const Configuracoes = () => {
 
             <div className="space-y-4">
               <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
-                <div>
+                <div key="checkout-url-field">
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
                   <input 
                     value={form.hubla_checkout_url} 
-                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value.trim() })} 
                     placeholder="https://pay.hub.la/seu-produto" 
                     className={inputCls} 
                   />
@@ -1699,13 +1699,13 @@ const Configuracoes = () => {
                   </p>
                 </div>
 
-                <div>
+                <div key="webhook-token-field">
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
                   <div className="relative">
                     <input 
                       type="password"
                       value={form.hubla_webhook_token} 
-                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })} 
+                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value.trim() })} 
                       placeholder="Seu token de segurança" 
                       className={inputCls} 
                     />
