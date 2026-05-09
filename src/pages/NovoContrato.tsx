@@ -476,9 +476,10 @@ const NovoContrato = () => {
           {/* Frequency */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {([
                 { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
+                { v: "biweekly" as Frequency, label: "Quinzenal", Icon: Repeat },
                 { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
                 { v: "daily" as Frequency, label: "Diário", Icon: Clock },
               ]).map(f => (
