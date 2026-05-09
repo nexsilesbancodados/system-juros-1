@@ -242,8 +242,8 @@ const Configuracoes = () => {
       portal_contact_phone: form.portal_contact_phone,
       portal_contact_email: form.portal_contact_email,
       custom_contract_template: form.custom_contract_template?.trim() || null,
-      hubla_checkout_url: form.hubla_checkout_url?.trim() || null,
-      hubla_webhook_token: form.hubla_webhook_token?.trim() || null,
+      hubla_checkout_url: form.hubla_checkout_url ? form.hubla_checkout_url.trim() : null,
+      hubla_webhook_token: form.hubla_webhook_token ? form.hubla_webhook_token.trim() : null,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
