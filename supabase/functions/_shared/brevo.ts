@@ -52,7 +52,7 @@ export const templates = {
         <p>Sua conta foi criada com sucesso e seu <strong>teste grátis de 3 dias</strong> já está ativo!</p>
         <p>Aproveite todas as ferramentas de gestão de cobranças e automações para escalar seu negócio.</p>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://app.systemjuros.com.br" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Acessar Dashboard</a>
+          <a href="https://systemjuros.com.br" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Acessar Dashboard</a>
         </div>
         <p style="font-size: 12px; color: #666;">Se precisar de ajuda, responda a este e-mail.</p>
       </div>
@@ -66,7 +66,7 @@ export const templates = {
         <p>Passando para avisar que seu período de teste no <strong>System Juros</strong> termina em <strong>${daysLeft} dias</strong>.</p>
         <p>Para não perder o acesso às suas automações e dados, recomendamos que assine um de nossos planos agora mesmo.</p>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://app.systemjuros.com.br/checkout" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renovar Assinatura</a>
+          <a href="https://systemjuros.com.br/checkout" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renovar Assinatura</a>
         </div>
         <p style="font-size: 12px; color: #666;">Qualquer dúvida, estamos à disposição.</p>
       </div>
@@ -80,7 +80,7 @@ export const templates = {
         <p>Seu pagamento foi aprovado e sua assinatura no <strong>System Juros</strong> está <strong>Ativa</strong>!</p>
         <p>Agora você tem acesso ilimitado a todas as funcionalidades do sistema.</p>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://app.systemjuros.com.br" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir para o Sistema</a>
+          <a href="https://systemjuros.com.br" style="background: #fbbf24; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir para o Sistema</a>
         </div>
       </div>
     `
@@ -119,7 +119,7 @@ export const templates = {
         </div>
 
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://app.systemjuros.com.br/relatorios" style="background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">Ver Detalhes no Sistema</a>
+          <a href="https://systemjuros.com.br/relatorios" style="background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">Ver Detalhes no Sistema</a>
         </div>
         
         <p style="font-size: 11px; color: #94a3b8; text-align: center;">Este é um relatório automático gerado pelo seu assistente de BI do System Juros.</p>
