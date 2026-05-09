@@ -12,6 +12,7 @@ import DashboardLayout from "./components/DashboardLayout";
 
 import Index from "./pages/Index";
 
+const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
