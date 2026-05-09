@@ -288,8 +288,8 @@ const NovoContrato = () => {
     } finally { setLoading(false); }
   }, [user, selectedClientId, calc, capital, taxaJuros, frequency, dailyMode, startDate, lateFeePercent, dailyInterestPercent, notes, loanMode, toast, navigate, selectedClient, qc]);
 
-  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : "Mensal";
+  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : "mês";
+  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : "Mensal";
 
   // Validation checks
   const step1Valid = !!selectedClientId;
