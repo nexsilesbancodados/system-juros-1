@@ -98,8 +98,16 @@ const Admin = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const isExpired = (u: UserRow) =>
-    u.subscription_expires_at && new Date(u.subscription_expires_at) < new Date();
+  const isExpired = (u: any) => {
+    const expiresAt = u.subscription_expires_at;
+    const trialEndsAt = u.trial_ends_at;
+    const now = new Date();
+    
+    const isSubscriptionActive = expiresAt && new Date(expiresAt) > now;
+    const isTrialActive = trialEndsAt && new Date(trialEndsAt) > now;
+    
+    return !isSubscriptionActive && !isTrialActive;
+  };
 
   // ============ STATS ============
   const stats = useMemo(() => {
