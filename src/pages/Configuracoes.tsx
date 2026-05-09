@@ -1529,7 +1529,7 @@ const Configuracoes = () => {
           </div>
         )}
       </div>
-      {tab === "pagamentos" && (
+      {tab === "pagamentos" && profile?.is_admin && (
         <div className="space-y-6 animate-fade-in">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
