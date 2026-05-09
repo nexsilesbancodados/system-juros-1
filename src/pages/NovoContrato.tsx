@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Check, Search, UserPlus, X, Hash, Percent, Calendar, Clock, Repeat, AlertCircle, Loader2, DollarSign, Shield, Info, Sparkles, FileText } from "lucide-react";
 
 type LoanMode = "percentage" | "installments";
-type Frequency = "monthly" | "weekly" | "daily";
+type Frequency = "monthly" | "biweekly" | "weekly" | "daily";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
 
 const formatPhone = (v: string) => {
