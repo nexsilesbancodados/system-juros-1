@@ -36,7 +36,7 @@ const Configuracoes = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).single();
+      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -1720,7 +1720,7 @@ const Configuracoes = () => {
                 <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Instruções de Configuração</h3>
                 <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
                   <p>1. Acesse sua conta na <strong>Hubla</strong> e vá em integrações de Webhook.</p>
-                  <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">https://{window.location.hostname.split('.')[0]}.supabase.co/functions/v1/hubla-webhook</code></p>
+                  <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook</code></p>
                   <p>3. No campo de Token, insira o mesmo valor que você configurou acima.</p>
                   <p>4. Selecione os eventos: <strong>Compra Aprovada</strong>, <strong>Compra Cancelada</strong> e <strong>Assinatura Cancelada</strong>.</p>
                 </div>
