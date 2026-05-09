@@ -22,13 +22,13 @@ const LandingFooter = () => {
             </p>
             <div className="flex items-center gap-4">
               <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                <Instagram size={18} className="text-white/60" />
+                <Globe size={18} className="text-white/60" />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                <Facebook size={18} className="text-white/60" />
+                <Share2 size={18} className="text-white/60" />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                <Linkedin size={18} className="text-white/60" />
+                <Info size={18} className="text-white/60" />
               </a>
             </div>
           </div>
