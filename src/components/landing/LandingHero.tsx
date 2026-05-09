@@ -12,8 +12,8 @@ const LandingHero = () => {
   return (
     <section id="home" className="relative min-h-screen pt-32 pb-20 overflow-hidden flex items-center">
       {/* Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-white/[0.03] rounded-full blur-3xl -z-10" />
-      <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-white/[0.05] rounded-full blur-[120px] -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-blue-500/[0.05] rounded-full blur-3xl -z-10" />
+      <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-blue-600/[0.08] rounded-full blur-[120px] -z-10" />
       
       <div className="container mx-auto px-6">
         <div className="flex flex-col lg:flex-row items-center gap-16">
@@ -35,9 +35,10 @@ const LandingHero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-display font-bold text-white leading-[1.1] mb-8"
+              className="text-5xl md:text-8xl font-display font-bold text-white leading-[1.05] mb-8 tracking-tighter"
             >
-              Controle completo da sua operação de <br />
+              Controle a sua <br />
+              operação de <br />
               <span className="text-gradient-gold">Empréstimos.</span>
             </motion.h1>
 
@@ -98,9 +99,9 @@ const LandingHero = () => {
             initial={{ opacity: 0, scale: 0.8, rotateY: -10 }}
             animate={{ opacity: 1, scale: 1, rotateY: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="flex-1 relative"
+            className="flex-1 relative lg:block hidden"
           >
-            <div className="relative z-10 rounded-2xl border border-white/10 bg-black shadow-[0_0_100px_-20px_rgba(255,255,255,0.1)] overflow-hidden group">
+            <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_100px_-20px_rgba(59,130,246,0.2)] overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
               
               {/* Fake App Mock */}

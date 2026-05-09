@@ -9,9 +9,9 @@ const LandingDashboardPreview = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-display font-bold text-white mb-6"
+            className="text-4xl md:text-5xl font-display font-bold text-white mb-6"
           >
-            Visão Geral da sua <span className="text-gradient-gold">Operação</span>
+            Visão Geral da sua <br /><span className="text-gradient-gold">Operação Financeira</span>
           </motion.h2>
           <p className="text-white/40 max-w-2xl mx-auto">
             Tenha o controle total do seu negócio na palma da mão. Dados atualizados em tempo real para você decidir com confiança.
@@ -23,10 +23,10 @@ const LandingDashboardPreview = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="relative max-w-5xl mx-auto"
+          className="relative max-w-5xl mx-auto p-4 md:p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 backdrop-blur-md"
         >
           {/* Dashboard Visual Mockup */}
-          <div className="rounded-3xl border border-white/10 bg-black shadow-2xl overflow-hidden glass">
+          <div className="rounded-3xl border border-white/10 bg-black/60 shadow-2xl overflow-hidden backdrop-blur-xl">
             <div className="p-1 border-b border-white/5 bg-white/[0.02] flex items-center gap-2 px-6 h-12">
                <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/40" />
@@ -82,7 +82,7 @@ const LandingDashboardPreview = () => {
           </div>
 
           {/* Glowing Accents */}
-          <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-white/[0.05] rounded-full blur-[120px]" />
+          <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-blue-500/[0.08] rounded-full blur-[120px]" />
         </motion.div>
       </div>
     </section>
