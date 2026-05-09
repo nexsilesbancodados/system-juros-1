@@ -303,11 +303,12 @@ const Relatorios = () => {
           </div>
 
           {/* AI Insights Section */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden card-shine animate-fade-in">
+          <div className="rounded-[2rem] border border-border/10 bg-card/30 backdrop-blur-xl overflow-hidden shadow-2xl animate-fade-in relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-primary animate-pulse" />
-                <h2 className="text-sm font-bold text-foreground">Consultoria IA</h2>
+                <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Consultoria AI BI</h2>
               </div>
               {!aiAnalysis && !aiLoading && (
                 <button 
@@ -345,7 +346,7 @@ const Relatorios = () => {
                 <div className="space-y-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-bold text-foreground leading-tight">{aiAnalysis.title}</h3>
+                      <h3 className="text-2xl font-display font-bold text-foreground leading-tight tracking-tighter">{aiAnalysis.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1">{aiAnalysis.summary_text}</p>
                     </div>
                     <div className={`shrink-0 flex flex-col items-center px-3 py-2 rounded-xl border ${
