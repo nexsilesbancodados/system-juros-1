@@ -59,16 +59,19 @@ const Login = () => {
       password,
       options: {
         data: { name },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: window.location.origin + "/dashboard",
       },
     });
     setLoading(false);
     if (error) {
       toast({ title: "Erro ao registar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
+      toast({ 
+        title: "Conta criada!", 
+        description: "Verifique seu e-mail para confirmar o cadastro e ativar sua conta." 
+      });
       
-      const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+      const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
       if (settings?.hubla_checkout_url) {
         toast({ title: "Quase lá!", description: "Redirecionando para ativação da conta..." });
         setTimeout(() => {
