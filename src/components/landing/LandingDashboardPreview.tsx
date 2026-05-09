@@ -82,7 +82,7 @@ const LandingDashboardPreview = () => {
           </div>
 
           {/* Glowing Accents */}
-          <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-white/[0.05] rounded-full blur-[120px]" />
+          <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-blue-500/[0.08] rounded-full blur-[120px]" />
         </motion.div>
       </div>
     </section>
