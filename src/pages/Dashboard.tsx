@@ -210,7 +210,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-4 md:space-y-5 pb-8">
+    <div className="space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
       {/* ─── Hero Header ─── */}
       <div className="animate-fade-in">
         <div className="flex items-end justify-between gap-4">
@@ -220,7 +220,7 @@ const Dashboard = () => {
               <span className="text-label opacity-50">·</span>
               <p className="text-label">{timeStr}</p>
             </div>
-            <h1 className="text-display text-3xl md:text-5xl text-foreground">
+            <h1 className="text-display text-4xl md:text-6xl text-foreground tracking-tight">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
             <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
@@ -258,7 +258,7 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative glow-card overflow-hidden micro-press card-shine animate-fade-in"
+            className="group relative rounded-3xl border border-border/20 bg-card/40 backdrop-blur-xl overflow-hidden micro-press animate-fade-in shadow-lg hover:shadow-primary/5 transition-all duration-300"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-80`} />
@@ -288,7 +288,7 @@ const Dashboard = () => {
         ].map((item, i) => (
           <div
             key={item.label}
-            className="premium-card p-4 flex items-center gap-3 micro-press animate-fade-in"
+            className="rounded-2xl border border-border/10 bg-card/20 backdrop-blur-sm p-4 flex items-center gap-3 micro-press animate-fade-in hover:bg-card/40 transition-colors"
             style={{ animationDelay: `${(i + 4) * 60}ms` }}
           >
             <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
@@ -303,7 +303,7 @@ const Dashboard = () => {
       </div>
 
       {/* ─── Weekly Activity Bar ─── */}
-      <div className="premium-card p-5 animate-fade-in" style={{ animationDelay: "400ms" }}>
+      <div className="rounded-3xl border border-border/20 bg-card/30 backdrop-blur-md p-6 animate-fade-in shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -372,7 +372,7 @@ const Dashboard = () => {
           <div
             key={c.label}
             onClick={c.onClick}
-            className={`group premium-card p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : ""}`}
+            className={`group rounded-2xl border border-border/10 bg-card/30 backdrop-blur-sm p-5 cursor-pointer micro-press animate-fade-in transition-all duration-300 ${c.active ? `border ${c.border} ${c.glow}` : "hover:bg-card/50"}`}
             style={{ animationDelay: `${(i + 8) * 60}ms` }}
           >
             <div className="flex items-start justify-between">

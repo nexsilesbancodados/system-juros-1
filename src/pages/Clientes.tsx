@@ -159,7 +159,7 @@ const Clientes = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8 animate-fade-in max-w-[1600px] mx-auto">
       <div className="page-hero animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -167,7 +167,7 @@ const Clientes = () => {
               <Users size={22} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Clientes</h1>
+              <h1 className="text-display text-4xl md:text-5xl text-foreground tracking-tight">Clientes</h1>
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie seus clientes e contratos.</p>
             </div>
           </div>
@@ -190,7 +190,7 @@ const Clientes = () => {
           { label: "Inativos", value: stats.inactive, color: "text-muted-foreground", filter: "Inativo" as const },
         ].map(s => (
           <button key={s.label} onClick={() => setStatusFilter(s.filter)}
-            className={`rounded-2xl border p-4 text-left transition-colors ${statusFilter === s.filter ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+            className={`rounded-3xl border p-6 text-left transition-all duration-300 ${statusFilter === s.filter ? "border-primary/40 bg-card/60 shadow-xl shadow-primary/5 scale-105 z-10" : "border-border/10 bg-card/20 hover:bg-card/40"}`}>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
             <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
           </button>
@@ -202,7 +202,7 @@ const Clientes = () => {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-20 py-3 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+            className="w-full pl-11 pr-20 py-3.5 rounded-2xl bg-card/30 backdrop-blur-md border border-border/10 text-foreground placeholder:text-muted-foreground/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all" />
           {search && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
@@ -237,7 +237,7 @@ const Clientes = () => {
       ) : viewMode === "list" ? (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block rounded-2xl border border-border overflow-hidden bg-card">
+          <div className="hidden md:block rounded-3xl border border-border/10 overflow-hidden bg-card/30 backdrop-blur-xl shadow-2xl">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
@@ -313,7 +313,7 @@ const Clientes = () => {
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filtered.map((c: any) => (
             <div key={c.id} onClick={() => navigate(`/clientes/${c.id}`)}
-              className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 cursor-pointer transition-all group relative">
+              className="bg-card/30 backdrop-blur-md border border-border/10 rounded-3xl p-6 hover:border-primary/40 hover:bg-card/50 cursor-pointer transition-all group relative shadow-lg hover:shadow-primary/5">
               {/* Delete button */}
               <button onClick={(e) => handleDelete(c.id, e)}
                 className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"

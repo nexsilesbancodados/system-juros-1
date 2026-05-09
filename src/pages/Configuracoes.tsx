@@ -286,7 +286,7 @@ const Configuracoes = () => {
     queryClient.invalidateQueries({ queryKey: ["message-templates"] });
   };
 
-  const inputCls = "w-full px-4 py-2.5 rounded-2xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground input-enhanced";
+  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-background/50 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none";
 
   const tabs = [
     { id: "marca", label: "Marca", icon: Palette },
@@ -334,7 +334,7 @@ const Configuracoes = () => {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-5 animate-fade-in card-shine">
+      <div className="rounded-2xl border border-border/30 bg-card/30 backdrop-blur-md p-8 space-y-8 animate-fade-in shadow-2xl">
         {tab === "marca" && (
           <>
             <div className="flex items-center gap-2.5">
@@ -346,7 +346,7 @@ const Configuracoes = () => {
             </div>
 
             {/* Identity Section */}
-            <div className="space-y-4 p-4 rounded-2xl border border-border bg-accent/5">
+            <div className="space-y-6 p-6 rounded-2xl border border-border/20 bg-background/20 backdrop-blur-sm">
               <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Building size={12} className="text-primary" /> Identidade
               </p>
