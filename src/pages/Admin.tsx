@@ -865,8 +865,9 @@ const AdminLogs = () => {
   );
 };
 
-const GlobalAdminSettings = () => {
-  const { toast } = useToast();
+ const GlobalAdminSettings = () => {
+   const { toast } = useToast();
+   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     maintenance_mode: false,
