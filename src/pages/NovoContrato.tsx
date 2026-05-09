@@ -146,10 +146,33 @@ const NovoContrato = () => {
     return cap > 0 ? ((calc.totalInterest / cap) * 100) : 0;
   }, [calc, capital]);
 
-  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode) => {
+  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
     const s = new Date(start + "T12:00:00");
+    // If user defined a custom first due date, anchor the schedule on it
+    const anchor = firstDue ? new Date(firstDue + "T12:00:00") : null;
     for (let i = 0; i < count; i++) {
+      if (anchor) {
+        const d = new Date(anchor);
+        if (freq === "daily") {
+          let added = 0;
+          while (added < i) {
+            d.setDate(d.getDate() + 1);
+            const dow = d.getDay();
+            if (dMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+            if (dMode === "mon-sat" && dow === 0) continue;
+            added++;
+          }
+        } else if (freq === "weekly") {
+          d.setDate(anchor.getDate() + i * 7);
+        } else if (freq === "biweekly") {
+          d.setDate(anchor.getDate() + i * 15);
+        } else {
+          d.setMonth(anchor.getMonth() + i);
+        }
+        dates.push(d.toISOString());
+        continue;
+      }
       if (freq === "daily") {
         let added = 0;
         const cur = new Date(s);
@@ -163,6 +186,8 @@ const NovoContrato = () => {
         dates.push(cur.toISOString());
       } else if (freq === "weekly") {
         const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 7); dates.push(d.toISOString());
+      } else if (freq === "biweekly") {
+        const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 15); dates.push(d.toISOString());
       } else {
         const d = new Date(s); d.setMonth(s.getMonth() + (i + 1)); dates.push(d.toISOString());
       }
