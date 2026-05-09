@@ -96,7 +96,11 @@ const DashboardLayout = () => {
   }, [isMobile]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Mesh Gradients Background */}
+      <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-[120px] -z-10 animate-pulse-slow" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-500/[0.02] rounded-full blur-[100px] -z-10" />
+      
       {/* Desktop: sidebar */}
       {!isMobile && (
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
