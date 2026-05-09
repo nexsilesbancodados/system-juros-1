@@ -1,3 +1,5 @@
+import { renderContractTemplate } from "@/utils/contractTemplate";
+
 interface Installment {
   installment_number: number;
   amount: number;
@@ -6,6 +8,7 @@ interface Installment {
 }
 
 interface ContractData {
+  customTemplate?: string | null;
   clientName: string;
   cpfCnpj: string;
   phone: string;
