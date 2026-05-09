@@ -36,7 +36,7 @@ const Configuracoes = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).single();
+      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
