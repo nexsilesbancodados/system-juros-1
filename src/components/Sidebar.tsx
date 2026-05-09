@@ -197,7 +197,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         {/* Container do ícone */}
         <div
           className={`
-            relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0
+            relative w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0
             transition-all duration-300 ease-out
             ${active
               ? "bg-primary/20 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
