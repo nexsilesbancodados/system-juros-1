@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
