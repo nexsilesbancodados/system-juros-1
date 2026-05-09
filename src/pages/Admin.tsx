@@ -861,18 +861,43 @@ const GlobalAdminSettings = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     maintenance_mode: false,
-    default_trial_days: 7,
+    default_trial_days: 3,
     allow_new_registrations: true,
-    force_whatsapp_auth: false,
+    hubla_checkout_url: "",
+    hubla_webhook_token: "",
     global_announcement: "",
   });
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from("settings").select("*").single();
+      if (data) {
+        setForm({
+          maintenance_mode: false, // These aren't in the DB yet, but we'll show them
+          default_trial_days: 3,
+          allow_new_registrations: true,
+          hubla_checkout_url: data.hubla_checkout_url || "",
+          hubla_webhook_token: data.hubla_webhook_token || "",
+          global_announcement: "",
+        });
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    const { error } = await supabase.from("settings").update({
+      hubla_checkout_url: form.hubla_checkout_url,
+      hubla_webhook_token: form.hubla_webhook_token,
+    }).eq("id", (await supabase.from("settings").select("id").single()).data?.id);
+
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Configurações salvas", description: "As mudanças globais foram aplicadas." });
-    }, 1000);
+    }
   };
 
   return (
