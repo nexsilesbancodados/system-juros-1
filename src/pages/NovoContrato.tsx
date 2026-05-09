@@ -579,7 +579,7 @@ const NovoContrato = () => {
                     {calc.numParcelas > 0 && (
                       <span className="text-xs text-muted-foreground ml-2">Último vencimento: <span className="font-medium text-foreground">{
                         (() => {
-                          const dates = generateDueDates(startDate, frequency, calc.numParcelas, dailyMode);
+                          const dates = generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, firstDueDate || undefined);
                           return dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString("pt-BR") : "—";
                         })()
                       }</span></span>
@@ -655,7 +655,7 @@ const NovoContrato = () => {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cronograma</p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto scrollbar-hide">
-                {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode).map((dd, i) => (
+                {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, firstDueDate || undefined).map((dd, i) => (
                   <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/20 text-xs">
                     <span className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">{i + 1}</span>
                     <span className="text-muted-foreground">{new Date(dd).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
