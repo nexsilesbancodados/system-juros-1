@@ -150,6 +150,7 @@ const Configuracoes = () => {
         portal_logo_url: s.portal_logo_url || "",
         portal_contact_phone: s.portal_contact_phone || "",
         portal_contact_email: s.portal_contact_email || "",
+        custom_contract_template: s.custom_contract_template || "",
       }));
     }
   }, [settings]);
