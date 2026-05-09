@@ -9,7 +9,11 @@ import ConstellationBackground from "@/components/ConstellationBackground";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white/20">
+    <div 
+      className="min-h-screen bg-black text-white selection:bg-white/20 bg-cover bg-center bg-fixed bg-no-repeat"
+      style={{ backgroundImage: "url('/login-bg.png')" }}
+    >
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-[1px] -z-10" />
       <ConstellationBackground />
       
       <LandingNavbar />
