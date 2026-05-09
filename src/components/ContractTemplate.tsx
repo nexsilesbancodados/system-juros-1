@@ -1,3 +1,5 @@
+import { renderContractTemplate } from "@/utils/contractTemplate";
+
 interface Installment {
   installment_number: number;
   amount: number;
@@ -6,6 +8,7 @@ interface Installment {
 }
 
 interface ContractData {
+  customTemplate?: string | null;
   clientName: string;
   cpfCnpj: string;
   phone: string;
@@ -33,6 +36,27 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2,
 const ContractTemplate = ({ data }: { data: ContractData }) => {
   const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const startFormatted = new Date(data.startDate + "T12:00:00").toLocaleDateString("pt-BR");
+
+  // Template customizado do usuário: substitui o layout padrão preenchendo placeholders.
+  if (data.customTemplate && data.customTemplate.trim()) {
+    const filled = renderContractTemplate(data.customTemplate, data);
+    return (
+      <div
+        id="contract-template"
+        className="bg-card border border-border rounded-2xl p-8 sm:p-12 print:bg-white print:text-black print:border-none print:shadow-none print:p-10"
+        style={{ fontFamily: "'Inter', -apple-system, system-ui, sans-serif" }}
+      >
+        {data.companyLogoUrl && (
+          <div className="flex justify-center mb-6 print:mb-8">
+            <img src={data.companyLogoUrl} alt={data.companyName} className="h-16 object-contain" crossOrigin="anonymous" />
+          </div>
+        )}
+        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground print:text-black">
+          {filled}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <div

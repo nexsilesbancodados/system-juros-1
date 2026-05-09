@@ -422,6 +422,8 @@ const NovoCliente = () => {
       dailyInterestPercent: parseFloat(dailyInterestPercent),
       companyName: settings?.company_name || "SYSTEM JUROS",
       companyCnpj: settings?.company_cnpj || "",
+      companyLogoUrl: settings?.company_logo_url || undefined,
+      customTemplate: (settings as any)?.custom_contract_template || null,
     };
 
     return (
