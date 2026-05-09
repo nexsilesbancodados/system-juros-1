@@ -30,6 +30,24 @@ const Index = () => {
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
+      // Check subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (!sub || sub.status !== 'active') {
+        const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+        if (settings?.hubla_checkout_url) {
+          toast({ title: "Assinatura pendente", description: "Redirecionando para o checkout..." });
+          setTimeout(() => {
+            window.location.href = settings.hubla_checkout_url;
+          }, 2000);
+          return;
+        }
+      }
+      
       navigate("/dashboard");
     }
   };
