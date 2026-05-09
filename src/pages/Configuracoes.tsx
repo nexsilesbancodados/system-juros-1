@@ -292,6 +292,8 @@ const Configuracoes = () => {
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
     { id: "pix", label: "PIX", icon: CreditCard },
+    { id: "pwa", label: "Aplicativo Mobile", icon: Zap },
+    { id: "ia-voz", label: "IA Voz e Áudio", icon: Volume2 },
     { id: "bot", label: "Bot Cobranças", icon: Bot },
     { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
