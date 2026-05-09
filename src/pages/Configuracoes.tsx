@@ -153,6 +153,8 @@ const Configuracoes = () => {
         portal_contact_phone: s.portal_contact_phone || "",
         portal_contact_email: s.portal_contact_email || "",
         custom_contract_template: s.custom_contract_template || "",
+        hubla_checkout_url: s.hubla_checkout_url || "",
+        hubla_webhook_token: s.hubla_webhook_token || "",
       }));
     }
   }, [settings]);
