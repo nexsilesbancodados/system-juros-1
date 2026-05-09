@@ -896,16 +896,40 @@ const GlobalAdminSettings = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabase.from("settings").update({
-      hubla_checkout_url: form.hubla_checkout_url,
-      hubla_webhook_token: form.hubla_webhook_token,
-    }).eq("id", (await supabase.from("settings").select("id").single()).data?.id);
+    try {
+      const { data: currentSettings } = await supabase
+        .from("settings")
+        .select("id")
+        .eq("user_id", user?.id)
+        .maybeSingle();
 
-    setSaving(false);
-    if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
+      if (currentSettings) {
+        const { error } = await supabase
+          .from("settings")
+          .update({
+            hubla_checkout_url: form.hubla_checkout_url,
+            hubla_webhook_token: form.hubla_webhook_token,
+          })
+          .eq("id", currentSettings.id);
+
+        if (error) throw error;
+      } else {
+        // Create if doesn't exist
+        const { error } = await supabase
+          .from("settings")
+          .insert({
+            user_id: user?.id,
+            hubla_checkout_url: form.hubla_checkout_url,
+            hubla_webhook_token: form.hubla_webhook_token,
+          });
+        if (error) throw error;
+      }
+
       toast({ title: "Configurações salvas", description: "As mudanças globais foram aplicadas." });
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
