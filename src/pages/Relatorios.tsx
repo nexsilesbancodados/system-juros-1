@@ -257,29 +257,34 @@ const Relatorios = () => {
 
   return (
     <div className="space-y-5">
-      <div className="page-hero animate-fade-in">
-        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="page-hero-icon">
-              <BarChart3 size={22} />
+      <div className="page-hero animate-fade-in relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+        <div className="page-hero-content flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-3xl bg-primary/10 flex items-center justify-center shadow-2xl shadow-primary/20 ring-1 ring-primary/20 transition-transform group-hover:scale-110">
+              <BarChart3 size={28} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-shimmer">Relatórios</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Resumo mensal completo do seu negócio</p>
+              <h1 className="text-display text-4xl font-bold tracking-tighter text-foreground">Relatórios BI</h1>
+              <p className="text-muted-foreground text-sm font-medium opacity-70">Business Intelligence & Análise de Performance</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm">
-              <Calendar size={14} className="text-muted-foreground shrink-0" />
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-card/40 border border-border/10 backdrop-blur-md shadow-inner">
+              <Calendar size={16} className="text-primary shrink-0" />
               <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
-                className="bg-transparent text-sm text-foreground focus:outline-none" />
+                className="bg-transparent text-sm font-bold text-foreground focus:outline-none [color-scheme:dark]" />
             </div>
-            <button onClick={handleExportCSV} disabled={!data} className="btn-ghost disabled:opacity-50">
-              <Download size={16} /> CSV
-            </button>
-            <button onClick={handleExportPDF} disabled={!data} className="btn-premium disabled:opacity-50">
-              <FileDown size={16} /> PDF
-            </button>
+            <div className="h-10 w-px bg-border/20 hidden sm:block mx-1" />
+            <div className="flex items-center gap-2">
+              <button onClick={handleExportCSV} disabled={!data} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-muted/40 border border-border/20 text-xs font-bold hover:bg-muted/60 transition-all active:scale-95 disabled:opacity-50">
+                <Download size={15} /> CSV
+              </button>
+              <button onClick={handleExportPDF} disabled={!data} className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-50">
+                <FileDown size={15} /> PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>
