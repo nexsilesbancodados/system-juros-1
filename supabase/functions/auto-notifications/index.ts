@@ -224,6 +224,54 @@ serve(async (req) => {
         created.push(`trial_expiring_email:${user.id}`);
       }
     }
+    // ==========================================
+    // 6. RELATÓRIO MENSAL (No dia 1 de cada mês)
+    // ==========================================
+    if (now.getDate() === 1) {
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const year = lastMonth.getFullYear();
+      const month = lastMonth.getMonth();
+      const startDate = new Date(year, month, 1).toISOString();
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+      const monthName = lastMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+      const { data: users } = await supabase.from("profiles").select("id, full_name, email");
+
+      if (users) {
+        for (const user of users) {
+          // Fetch metrics for this user
+          const [profits, expenses] = await Promise.all([
+            supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", startDate).lte("date", endDate),
+            supabase.from("expenses").select("amount").eq("user_id", user.id).gte("date", startDate).lte("date", endDate),
+          ]);
+
+          const totalProfit = (profits.data || []).reduce((a, p) => a + Number(p.amount), 0);
+          const totalExpense = (expenses.data || []).reduce((a, e) => a + Number(e.amount), 0);
+          const balance = totalProfit - totalExpense;
+
+          if (totalProfit > 0 || totalExpense > 0) {
+            const emailTemplate = templates.monthlyReport(user.full_name || user.email, monthName, {
+              profit: totalProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+              expenses: totalExpense.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+              balance: balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+              insight: balance > 0 
+                ? "Seu saldo foi positivo este mês! Ótimo momento para reinvestir em novos contratos." 
+                : "Atenção aos custos operacionais. Analise seus gastos para melhorar a margem no próximo mês."
+            });
+
+            await sendEmail({
+              to: [{ email: user.email, name: user.full_name }],
+              subject: emailTemplate.subject,
+              htmlContent: emailTemplate.html,
+            });
+            
+            created.push(`monthly_report_email:${user.id}`);
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         message: `Notificações criadas: ${created.length}`,
