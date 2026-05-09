@@ -124,7 +124,7 @@ const Login = () => {
       </div>
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-[800px] mx-4 animate-scale-in">
+      <div className="relative z-10 w-full max-w-[800px] mx-4 lg:ml-[15%] lg:mr-auto animate-scale-in">
         <div className="rounded-2xl overflow-hidden border border-white/[0.06] shadow-2xl">
           {!isRegister ? (
             <div className="flex flex-col md:flex-row">
