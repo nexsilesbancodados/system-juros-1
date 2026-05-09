@@ -1,6 +1,6 @@
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import eagleLogo from "@/assets/eagle-logo.webp";
-import { Mail, Phone, MapPin, Instagram, Facebook, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Globe, Share2, Info } from "lucide-react";
 
 const LandingFooter = () => {
   const { config } = useWhiteLabel();
