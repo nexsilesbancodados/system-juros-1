@@ -115,12 +115,12 @@ const sections: MenuSection[] = [
       { label: "WhatsApp", icon: MessageCircle, path: "/configuracoes/whatsapp" },
       { label: "Notificações", icon: Bell, path: "/notificacoes" },
       { label: "Chat", icon: MessageCircle, path: "/chat" },
-      { label: "Histórico", icon: ClipboardList, path: "/historico" },
-      { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
-      { label: "Admin", icon: Crown, path: "/admin" },
       { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
       { label: "Sobre", icon: Info, path: "/sobre" },
+      { label: "Auditoria", icon: Shield, path: "/auditoria" },
+      { label: "Histórico", icon: ClipboardList, path: "/historico" },
+      { label: "Admin", icon: Crown, path: "/admin" },
     ],
   },
 ];
@@ -146,8 +146,12 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const visibleSections = useMemo(() =>
     sections.map((s) => ({
       ...s,
-      items: s.items.filter((i) => i.path !== "/admin" || isSuperAdmin),
-    })), [isSuperAdmin]);
+      items: s.items.filter((i) => {
+        if (i.path === "/admin") return isSuperAdmin;
+        if (["/auditoria", "/historico"].includes(i.path)) return profile?.is_admin;
+        return true;
+      }),
+    })), [isSuperAdmin, profile?.is_admin]);
 
   // Filtra por busca
   const filteredSections = useMemo(() => {
