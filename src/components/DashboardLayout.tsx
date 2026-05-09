@@ -32,7 +32,7 @@ const DashboardLayout = () => {
       // Skip admins or check trial/subscription
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_admin, trial_ends_at")
+        .select("is_admin, trial_ends_at, email")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -46,7 +46,7 @@ const DashboardLayout = () => {
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("status")
-        .eq("email", user.email!)
+        .eq("email", profile?.email || user.email!)
         .maybeSingle();
 
       sessionStorage.setItem(key, "1");
