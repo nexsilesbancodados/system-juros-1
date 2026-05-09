@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Lock, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth();
@@ -35,36 +36,57 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Subscription expiry check (skip for admin and on perfil/sobre pages)
+  // Subscription and Trial check (skip for admin and on exempt pages)
   const expiresAt = profile?.subscription_expires_at;
+  const trialEndsAt = profile?.trial_ends_at;
+  
   const exemptPaths = ["/perfil", "/sobre", "/configuracoes"];
   const isExempt = exemptPaths.some((p) => location.pathname.startsWith(p));
-  if (
-    !profile?.is_admin &&
-    !isExempt &&
-    expiresAt &&
-    new Date(expiresAt).getTime() < Date.now()
-  ) {
+
+  // Determine if account is active
+  const isSubscriptionActive = expiresAt && new Date(expiresAt).getTime() > Date.now();
+  const isTrialActive = trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
+  const isAccountActive = isSubscriptionActive || isTrialActive;
+
+  if (!profile?.is_admin && !isExempt && !isAccountActive) {
+    const expiredDate = expiresAt || trialEndsAt;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md w-full glass-card p-8 text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-warning/10 flex items-center justify-center mx-auto">
             <AlertCircle className="text-warning" size={28} />
           </div>
-          <h1 className="text-xl font-bold text-foreground">Assinatura Expirada</h1>
+          <h1 className="text-xl font-bold text-foreground">Acesso Restrito</h1>
           <p className="text-sm text-muted-foreground">
-            Sua assinatura expirou em{" "}
-            <span className="font-semibold text-foreground">
-              {new Date(expiresAt).toLocaleDateString("pt-BR")}
-            </span>
-            . Renove para continuar usando o sistema.
+            {expiredDate ? (
+              <>
+                Sua assinatura/período de teste expirou em{" "}
+                <span className="font-semibold text-foreground">
+                  {new Date(expiredDate).toLocaleDateString("pt-BR")}
+                </span>
+                . Renove para continuar usando o sistema.
+              </>
+            ) : (
+              "Você precisa de uma assinatura ativa para acessar esta área."
+            )}
           </p>
-          <a
-            href="/perfil"
-            className="inline-block px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            Ir para Perfil
-          </a>
+          <div className="flex flex-col gap-3">
+            <a
+              href="/perfil"
+              className="inline-block px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              Ir para Perfil
+            </a>
+            <button
+              onClick={async () => {
+                const { data } = await supabase.from("settings").select("hubla_checkout_url").single();
+                if (data?.hubla_checkout_url) window.location.href = data.hubla_checkout_url;
+              }}
+              className="inline-block px-6 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all"
+            >
+              Assinar Agora
+            </button>
+          </div>
         </div>
       </div>
     );

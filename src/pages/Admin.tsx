@@ -3,7 +3,7 @@ import {
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
   Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
-  LayoutDashboard, Activity, Terminal, Lock, Globe, Settings2,
+  LayoutDashboard, Activity, Terminal, Lock, Globe, Settings2, CreditCard
 } from "lucide-react";
 import SupportInbox from "@/components/admin/SupportInbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ type UserRow = {
   is_chat_blocked: boolean;
   subscription_type: string | null;
   subscription_expires_at: string | null;
+  trial_ends_at: string | null;
   created_at: string;
   loan_balance: number;
   profit_balance: number;
@@ -98,8 +99,16 @@ const Admin = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const isExpired = (u: UserRow) =>
-    u.subscription_expires_at && new Date(u.subscription_expires_at) < new Date();
+  const isExpired = (u: any) => {
+    const expiresAt = u.subscription_expires_at;
+    const trialEndsAt = u.trial_ends_at;
+    const now = new Date();
+    
+    const isSubscriptionActive = expiresAt && new Date(expiresAt) > now;
+    const isTrialActive = trialEndsAt && new Date(trialEndsAt) > now;
+    
+    return !isSubscriptionActive && !isTrialActive;
+  };
 
   // ============ STATS ============
   const stats = useMemo(() => {
@@ -856,23 +865,73 @@ const AdminLogs = () => {
   );
 };
 
-const GlobalAdminSettings = () => {
-  const { toast } = useToast();
+ const GlobalAdminSettings = () => {
+   const { toast } = useToast();
+   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     maintenance_mode: false,
-    default_trial_days: 7,
+    default_trial_days: 3,
     allow_new_registrations: true,
-    force_whatsapp_auth: false,
+    hubla_checkout_url: "",
+    hubla_webhook_token: "",
     global_announcement: "",
   });
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from("settings").select("*").single();
+      if (data) {
+        setForm({
+          maintenance_mode: false, // These aren't in the DB yet, but we'll show them
+          default_trial_days: 3,
+          allow_new_registrations: true,
+          hubla_checkout_url: data.hubla_checkout_url || "",
+          hubla_webhook_token: data.hubla_webhook_token || "",
+          global_announcement: "",
+        });
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const { data: currentSettings } = await supabase
+        .from("settings")
+        .select("id")
+        .eq("user_id", user?.id)
+        .maybeSingle();
+
+      if (currentSettings) {
+        const { error } = await supabase
+          .from("settings")
+          .update({
+            hubla_checkout_url: form.hubla_checkout_url,
+            hubla_webhook_token: form.hubla_webhook_token,
+          })
+          .eq("id", currentSettings.id);
+
+        if (error) throw error;
+      } else {
+        // Create if doesn't exist
+        const { error } = await supabase
+          .from("settings")
+          .insert({
+            user_id: user?.id,
+            hubla_checkout_url: form.hubla_checkout_url,
+            hubla_webhook_token: form.hubla_webhook_token,
+          });
+        if (error) throw error;
+      }
+
       toast({ title: "Configurações salvas", description: "As mudanças globais foram aplicadas." });
-    }, 1000);
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -907,6 +966,31 @@ const GlobalAdminSettings = () => {
               checked={form.allow_new_registrations} 
               onChange={(e) => setForm({...form, allow_new_registrations: e.target.checked})}
               className="w-5 h-5 accent-primary"
+            />
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-primary/10 border border-primary/20">
+            <p className="text-sm font-semibold flex items-center gap-2">
+              <CreditCard size={14} className="text-primary" /> Checkout Hubla (URL)
+            </p>
+            <input 
+              type="text" 
+              value={form.hubla_checkout_url}
+              onChange={(e) => setForm({...form, hubla_checkout_url: e.target.value})}
+              placeholder="https://pay.hubla.com/..."
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground italic">Link para onde os usuários serão redirecionados para pagar</p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
+            <p className="text-sm font-semibold">Token de Webhook Hubla</p>
+            <input 
+              type="password" 
+              value={form.hubla_webhook_token}
+              onChange={(e) => setForm({...form, hubla_webhook_token: e.target.value})}
+              placeholder="Token para validar notificações da Hubla"
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
 
