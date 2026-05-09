@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
@@ -30,6 +30,24 @@ const Index = () => {
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
+      // Check subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (!sub || sub.status !== 'active') {
+        const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+        if (settings?.hubla_checkout_url) {
+          toast({ title: "Assinatura pendente", description: "Redirecionando para o checkout..." });
+          setTimeout(() => {
+            window.location.href = settings.hubla_checkout_url;
+          }, 2000);
+          return;
+        }
+      }
+      
       navigate("/dashboard");
     }
   };
@@ -50,6 +68,16 @@ const Index = () => {
       toast({ title: "Erro ao registar", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
+      
+      // Auto-redirect to Hubla after register if not active
+      const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+      if (settings?.hubla_checkout_url) {
+        toast({ title: "Quase lá!", description: "Redirecionando para ativação da conta..." });
+        setTimeout(() => {
+          window.location.href = settings.hubla_checkout_url;
+        }, 3000);
+      }
+
       setIsRegister(false);
     }
   };

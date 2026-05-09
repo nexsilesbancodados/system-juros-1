@@ -1095,6 +1095,8 @@ export type Database = {
           default_late_fee: number | null
           font_family: string | null
           footer_text: string | null
+          hubla_checkout_url: string | null
+          hubla_webhook_token: string | null
           id: string
           login_subtitle: string | null
           login_title: string | null
@@ -1150,6 +1152,8 @@ export type Database = {
           default_late_fee?: number | null
           font_family?: string | null
           footer_text?: string | null
+          hubla_checkout_url?: string | null
+          hubla_webhook_token?: string | null
           id?: string
           login_subtitle?: string | null
           login_title?: string | null
@@ -1205,6 +1209,8 @@ export type Database = {
           default_late_fee?: number | null
           font_family?: string | null
           footer_text?: string | null
+          hubla_checkout_url?: string | null
+          hubla_webhook_token?: string | null
           id?: string
           login_subtitle?: string | null
           login_title?: string | null
@@ -1260,6 +1266,48 @@ export type Database = {
           status?: string
           storage?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount_paid: number | null
+          created_at: string | null
+          current_period_end: string | null
+          email: string
+          hubla_order_id: string | null
+          hubla_subscription_id: string | null
+          id: string
+          plan_name: string | null
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string | null
+          current_period_end?: string | null
+          email: string
+          hubla_order_id?: string | null
+          hubla_subscription_id?: string | null
+          id?: string
+          plan_name?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string | null
+          current_period_end?: string | null
+          email?: string
+          hubla_order_id?: string | null
+          hubla_subscription_id?: string | null
+          id?: string
+          plan_name?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

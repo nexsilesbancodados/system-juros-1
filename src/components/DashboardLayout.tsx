@@ -4,17 +4,54 @@ import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { OnboardingTourAuto } from "@/components/onboarding/OnboardingTour";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   usePushNotifications();
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user?.email) return;
+
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (!sub || sub.status !== 'active') {
+        const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+        if (settings?.hubla_checkout_url) {
+          toast({ 
+            title: "Assinatura Requerida", 
+            description: "Para acessar o painel, você precisa de uma assinatura ativa. Redirecionando...",
+            variant: "destructive"
+          });
+          setTimeout(() => {
+            window.location.href = settings.hubla_checkout_url;
+          }, 3000);
+        }
+      }
+    };
+
+    // Only check if not on public/support pages
+    if (user && !location.pathname.includes('/suporte') && !location.pathname.includes('/perfil')) {
+      checkSubscription();
+    }
+  }, [user, location.pathname, toast]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
