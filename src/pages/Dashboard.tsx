@@ -307,10 +307,11 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative rounded-3xl border border-border/20 bg-card/40 backdrop-blur-xl overflow-hidden micro-press animate-fade-in shadow-lg hover:shadow-primary/5 transition-all duration-300"
+            className="group relative rounded-[32px] border border-white/5 bg-white/[0.03] backdrop-blur-2xl overflow-hidden micro-press animate-fade-in shadow-2xl hover:bg-white/[0.06] hover:border-white/10 transition-all duration-500"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-80`} />
+            <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${card.accent} opacity-40 group-hover:opacity-100 transition-opacity`} />
+            <div className={`absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-gradient-to-br ${card.accent} opacity-[0.03] blur-2xl group-hover:scale-150 transition-transform duration-700`} />
             <div className="relative z-10 p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>
