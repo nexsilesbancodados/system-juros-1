@@ -92,6 +92,7 @@ const Configuracoes = () => {
     portal_logo_url: "",
     portal_contact_phone: "",
     portal_contact_email: "",
+    custom_contract_template: "",
   });
 
   useEffect(() => {
