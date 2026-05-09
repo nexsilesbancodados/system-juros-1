@@ -303,7 +303,7 @@ const Configuracoes = () => {
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
-    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Hubla Pagamentos", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
+    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
   ];
 
   const configSteps = [
@@ -1674,55 +1674,67 @@ const Configuracoes = () => {
           </div>
         )}
 
-        {tab === "pagamentos" && profile?.is_admin && (
+        {tab === "pagamentos" && (
           <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><CreditCard size={16} className="text-primary" /></div>
-              <div>
-                <h2 className="font-semibold text-foreground">Integração Hubla</h2>
-                <p className="text-xs text-muted-foreground">Configure seu checkout e webhooks para automação de acesso</p>
+            <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <CreditCard className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Checkout Hubla</h3>
+                  <p className="text-[11px] text-muted-foreground">Configure os links de pagamento para novos usuários</p>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
-                <div key="checkout-url-field">
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
+              
+              <div className="space-y-4 pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-label">URL de Checkout Principal</label>
                   <input 
+                    type="url" 
                     value={form.hubla_checkout_url} 
-                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value.trim() })} 
-                    placeholder="https://pay.hub.la/seu-produto" 
+                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })}
+                    placeholder="https://checkout.hubla.com/..." 
                     className={inputCls} 
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1.5">
-                    Novos usuários serão redirecionados para esta URL caso não possuam assinatura ativa.
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">Link para o qual o sistema redireciona quando a assinatura expira.</p>
                 </div>
 
-                <div key="webhook-token-field">
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Webhook Token (x-hubla-token)</label>
+                <div className="space-y-1.5">
+                  <label className="text-label">Token do Webhook Hubla (Segurança)</label>
                   <div className="relative">
+                    <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input 
-                      type="password"
+                      type="text" 
                       value={form.hubla_webhook_token} 
-                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value.trim() })} 
-                      placeholder="Seu token de segurança" 
-                      className={inputCls} 
+                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
+                      placeholder="Token de segurança registrado na Hubla" 
+                      className={`${inputCls} pl-10`} 
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1.5">
-                    Utilize este token na configuração do Webhook na Hubla para garantir a segurança da integração.
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla.</p>
                 </div>
-              </div>
-
-              <div className="p-4 rounded-2xl border border-border bg-primary/5 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-primary">Instruções de Configuração</h3>
-                <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-                  <p>1. Acesse sua conta na <strong>Hubla</strong> e vá em integrações de Webhook.</p>
-                  <p>2. Adicione uma nova URL: <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono select-all">{`https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook`}</code></p>
-                  <p>3. No campo de Token, insira o mesmo valor que você configurou acima.</p>
-                  <p>4. Selecione os eventos: <strong>Compra Aprovada</strong>, <strong>Compra Cancelada</strong> e <strong>Assinatura Cancelada</strong>.</p>
+                
+                <div className="bg-card/50 border border-border/40 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-foreground uppercase tracking-wider">
+                    <Webhook size={14} className="text-primary" />
+                    URL de Notificação (Webhook)
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-background/50 rounded-xl border border-border/30">
+                    <code className="flex-1 text-[10px] text-primary break-all select-all">
+                      https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook
+                    </code>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook");
+                        toast({ title: "Copiado!" });
+                      }}
+                      className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
+                    >
+                      <Copy size={12} className="text-muted-foreground" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Configure esta URL na sua dashboard da Hubla para ativar o processamento automático.</p>
                 </div>
               </div>
             </div>

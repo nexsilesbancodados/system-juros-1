@@ -61,7 +61,7 @@ const priorityLabels: Record<string, { label: string; className: string }> = {
 const statusBadge = (status: string) => {
   switch (status) {
     case "open":
-      return { label: "Aberto", icon: AlertCircle, className: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
+      return { label: "Em análise", icon: AlertCircle, className: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
     case "answered":
       return { label: "Respondido", icon: CheckCircle2, className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" };
     case "closed":

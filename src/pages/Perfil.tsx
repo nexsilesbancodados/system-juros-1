@@ -155,20 +155,20 @@ const Perfil = () => {
         </div>
 
         <div className="pt-4 border-t border-border/50 relative z-10">
-          <button 
-            onClick={async () => {
-              const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
-              if (settings?.hubla_checkout_url) {
-                window.location.href = settings.hubla_checkout_url;
-              } else {
-                toast({ title: "Checkout não configurado", description: "Contate o suporte.", variant: "destructive" });
-              }
-            }}
-            className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
-          >
-            RENOVAR OU UPGRADE
-            <ExternalLink size={14} />
-          </button>
+            <button 
+              onClick={async () => {
+                const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
+                if (settings?.hubla_checkout_url) {
+                  window.location.href = settings.hubla_checkout_url;
+                } else {
+                  toast({ title: "Checkout não configurado", description: "O link de pagamento ainda não foi definido pelo administrador.", variant: "destructive" });
+                }
+              }}
+              className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+            >
+              RENOVAR OU UPGRADE
+              <ExternalLink size={14} />
+            </button>
         </div>
 
         {/* Decorative Background Icon */}
