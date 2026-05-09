@@ -303,7 +303,7 @@ const Configuracoes = () => {
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
-    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Hubla Pagamentos", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
+    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
   ];
 
   const configSteps = [
