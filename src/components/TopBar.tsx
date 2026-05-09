@@ -1,4 +1,4 @@
-import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings } from "lucide-react";
+import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
