@@ -1661,9 +1661,9 @@ const Configuracoes = () => {
 
                 <div className="p-4 rounded-2xl bg-primary/5 border border-border/10 space-y-3">
                    <p className="text-xs font-medium text-foreground">Exemplo de Roteiro Gerado pela IA:</p>
-                   <div className="p-3 rounded-xl bg-background/50 border border-border/5 text-[11px] italic text-muted-foreground leading-relaxed">
-                     "Olá {nome}, aqui é o assistente virtual da {form.company_name || 'System Juros'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
-                   </div>
+                 <div className="p-3 rounded-xl bg-background/50 border border-border/5 text-[11px] italic text-muted-foreground leading-relaxed">
+                   "Olá Cliente, aqui é o assistente virtual da {form.company_name || 'System Juros'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
+                 </div>
                 </div>
 
                 <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm shadow-xl shadow-violet-500/20 hover:scale-[1.02] active:scale-95 transition-all opacity-50 cursor-not-allowed">
