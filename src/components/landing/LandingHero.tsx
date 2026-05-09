@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
+import { supabase } from "@/integrations/supabase/client";
 import eagleLogo from "@/assets/eagle-logo.webp";
 
 const LandingHero = () => {
