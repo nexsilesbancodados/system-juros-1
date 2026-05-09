@@ -332,6 +332,11 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         backdropFilter: "blur(40px)",
       }}
     >
+      {/* Background Subtle Eagle */}
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 opacity-[0.03] pointer-events-none rotate-[-15deg] -z-10">
+        <img src={eagleLogo} alt="" className="w-full h-full object-contain grayscale" />
+      </div>
+
       {/* Logo */}
       <div
         className={`
