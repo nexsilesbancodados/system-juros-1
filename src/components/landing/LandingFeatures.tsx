@@ -43,9 +43,9 @@ const LandingFeatures = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-display font-bold text-white mb-6"
+            className="text-4xl md:text-5xl font-display font-bold text-white mb-6"
           >
-            Recursos feitos para sua <span className="text-gradient-gold">Produtividade</span>
+            Gestão inteligente para <br /> sua <span className="text-gradient-gold">Produtividade</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
