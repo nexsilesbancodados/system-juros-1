@@ -112,6 +112,69 @@ const Perfil = () => {
         </div>
       </div>
 
+      {/* Subscription Card */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-6 card-shine relative overflow-hidden group">
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center">
+              <CreditCard size={16} className="text-primary" />
+            </div>
+            <h2 className="text-sm font-semibold text-foreground">Minha Assinatura</h2>
+          </div>
+          {profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date() && (
+            <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]">
+              Período de Teste
+            </Badge>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+          <div className="space-y-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Status do Plano</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-sm font-bold text-foreground capitalize">
+                {profile?.subscription_type === "yearly" ? "Elite Anual" : "Pro Mensal"}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Vencimento / Expiração</p>
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-primary" />
+              <p className="text-sm font-bold text-foreground">
+                {profile?.subscription_expires_at 
+                  ? new Date(profile.subscription_expires_at).toLocaleDateString("pt-BR")
+                  : profile?.trial_ends_at
+                    ? new Date(profile.trial_ends_at).toLocaleDateString("pt-BR")
+                    : "Pendente"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-border/50 relative z-10">
+          <button 
+            onClick={async () => {
+              const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+              if (settings?.hubla_checkout_url) {
+                window.location.href = settings.hubla_checkout_url;
+              } else {
+                toast({ title: "Checkout não configurado", description: "Contate o suporte.", variant: "destructive" });
+              }
+            }}
+            className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+          >
+            RENOVAR OU UPGRADE
+            <ExternalLink size={14} />
+          </button>
+        </div>
+
+        {/* Decorative Background Icon */}
+        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 text-primary/[0.03] -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+      </div>
+
       {/* Info */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4 card-shine">
         <div className="flex items-center gap-2.5">
