@@ -99,9 +99,9 @@ const LandingHero = () => {
             initial={{ opacity: 0, scale: 0.8, rotateY: -10 }}
             animate={{ opacity: 1, scale: 1, rotateY: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="flex-1 relative"
+            className="flex-1 relative lg:block hidden"
           >
-            <div className="relative z-10 rounded-2xl border border-white/10 bg-black shadow-[0_0_100px_-20px_rgba(255,255,255,0.1)] overflow-hidden group">
+            <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_100px_-20px_rgba(59,130,246,0.2)] overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
               
               {/* Fake App Mock */}
