@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Check, Search, UserPlus, X, Hash, Percent, Calendar, Clock, Repeat, AlertCircle, Loader2, DollarSign, Shield, Info, Sparkles, FileText } from "lucide-react";
 
 type LoanMode = "percentage" | "installments";
-type Frequency = "monthly" | "weekly" | "daily";
+type Frequency = "monthly" | "biweekly" | "weekly" | "daily";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
 
 const formatPhone = (v: string) => {
@@ -66,6 +66,7 @@ const NovoContrato = () => {
   const [taxaJuros, setTaxaJuros] = useState(sim.taxa || "");
   const [numInstallments, setNumInstallments] = useState(sim.parcelas?.toString() || "");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [firstDueDate, setFirstDueDate] = useState<string>("");
   const [lateFeePercent, setLateFeePercent] = useState("");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("");
   const [notes, setNotes] = useState("");
@@ -89,7 +90,7 @@ const NovoContrato = () => {
       if (!dailyInterestPercent) setDailyInterestPercent(String(settings.default_daily_interest ?? 0.33));
       if (!sim.frequency && settings.default_frequency) {
         const f = settings.default_frequency as Frequency;
-        if (["monthly", "weekly", "daily"].includes(f)) setFrequency(f);
+        if (["monthly", "biweekly", "weekly", "daily"].includes(f)) setFrequency(f);
       }
       setDefaultsLoaded(true);
     }
@@ -145,10 +146,33 @@ const NovoContrato = () => {
     return cap > 0 ? ((calc.totalInterest / cap) * 100) : 0;
   }, [calc, capital]);
 
-  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode) => {
+  const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
     const s = new Date(start + "T12:00:00");
+    // If user defined a custom first due date, anchor the schedule on it
+    const anchor = firstDue ? new Date(firstDue + "T12:00:00") : null;
     for (let i = 0; i < count; i++) {
+      if (anchor) {
+        const d = new Date(anchor);
+        if (freq === "daily") {
+          let added = 0;
+          while (added < i) {
+            d.setDate(d.getDate() + 1);
+            const dow = d.getDay();
+            if (dMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+            if (dMode === "mon-sat" && dow === 0) continue;
+            added++;
+          }
+        } else if (freq === "weekly") {
+          d.setDate(anchor.getDate() + i * 7);
+        } else if (freq === "biweekly") {
+          d.setDate(anchor.getDate() + i * 15);
+        } else {
+          d.setMonth(anchor.getMonth() + i);
+        }
+        dates.push(d.toISOString());
+        continue;
+      }
       if (freq === "daily") {
         let added = 0;
         const cur = new Date(s);
@@ -162,6 +186,8 @@ const NovoContrato = () => {
         dates.push(cur.toISOString());
       } else if (freq === "weekly") {
         const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 7); dates.push(d.toISOString());
+      } else if (freq === "biweekly") {
+        const d = new Date(s); d.setDate(s.getDate() + (i + 1) * 15); dates.push(d.toISOString());
       } else {
         const d = new Date(s); d.setMonth(s.getMonth() + (i + 1)); dates.push(d.toISOString());
       }
@@ -232,7 +258,7 @@ const NovoContrato = () => {
       }).select().single();
       if (cErr) throw cErr;
 
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode);
+      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, firstDueDate || undefined);
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id, contract_id: contract.id, client_id: selectedClientId,
         installment_number: i + 1, amount: calc.installmentAmount, due_date: dd, status: "pending",
@@ -262,8 +288,8 @@ const NovoContrato = () => {
     } finally { setLoading(false); }
   }, [user, selectedClientId, calc, capital, taxaJuros, frequency, dailyMode, startDate, lateFeePercent, dailyInterestPercent, notes, loanMode, toast, navigate, selectedClient, qc]);
 
-  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : "Mensal";
+  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : "mês";
+  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : "Mensal";
 
   // Validation checks
   const step1Valid = !!selectedClientId;
@@ -450,9 +476,10 @@ const NovoContrato = () => {
           {/* Frequency */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {([
                 { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
+                { v: "biweekly" as Frequency, label: "Quinzenal", Icon: Repeat },
                 { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
                 { v: "daily" as Frequency, label: "Diário", Icon: Clock },
               ]).map(f => (
@@ -504,8 +531,14 @@ const NovoContrato = () => {
                 <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">Data do Empréstimo</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  1º Vencimento <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <input type="date" value={firstDueDate} min={startDate} onChange={(e) => setFirstDueDate(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
@@ -546,7 +579,7 @@ const NovoContrato = () => {
                     {calc.numParcelas > 0 && (
                       <span className="text-xs text-muted-foreground ml-2">Último vencimento: <span className="font-medium text-foreground">{
                         (() => {
-                          const dates = generateDueDates(startDate, frequency, calc.numParcelas, dailyMode);
+                          const dates = generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, firstDueDate || undefined);
                           return dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString("pt-BR") : "—";
                         })()
                       }</span></span>
@@ -622,7 +655,7 @@ const NovoContrato = () => {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Cronograma</p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto scrollbar-hide">
-                {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode).map((dd, i) => (
+                {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, firstDueDate || undefined).map((dd, i) => (
                   <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/20 text-xs">
                     <span className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">{i + 1}</span>
                     <span className="text-muted-foreground">{new Date(dd).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</span>
