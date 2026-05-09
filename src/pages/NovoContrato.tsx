@@ -66,6 +66,7 @@ const NovoContrato = () => {
   const [taxaJuros, setTaxaJuros] = useState(sim.taxa || "");
   const [numInstallments, setNumInstallments] = useState(sim.parcelas?.toString() || "");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [firstDueDate, setFirstDueDate] = useState<string>("");
   const [lateFeePercent, setLateFeePercent] = useState("");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("");
   const [notes, setNotes] = useState("");
