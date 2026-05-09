@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Lock, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth();
