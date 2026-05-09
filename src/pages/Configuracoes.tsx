@@ -1686,7 +1686,7 @@ const Configuracoes = () => {
 
             <div className="space-y-4">
               <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-4">
-                <div>
+                <div key="checkout-url-field">
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
                   <input 
                     value={form.hubla_checkout_url} 
