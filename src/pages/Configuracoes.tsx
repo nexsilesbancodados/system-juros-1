@@ -1690,7 +1690,7 @@ const Configuracoes = () => {
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">URL do Checkout Hubla</label>
                   <input 
                     value={form.hubla_checkout_url} 
-                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value.trim() })} 
                     placeholder="https://pay.hub.la/seu-produto" 
                     className={inputCls} 
                   />
