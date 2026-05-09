@@ -1378,7 +1378,7 @@ const Configuracoes = () => {
           </div>
         )}
 
-
+        {tab === "portal" && (
           <div className="space-y-6">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><LayoutDashboard size={16} className="text-primary" /></div>
