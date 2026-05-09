@@ -100,14 +100,16 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           </button>
         )}
 
-        <button
-          onClick={() => navigate("/configuracoes")}
-          className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground/60 hover:text-foreground hover:rotate-45"
-          style={{ transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
-          title="Configurações"
-        >
-          <Settings size={17} />
-        </button>
+        {profile?.is_admin && (
+          <button
+            onClick={() => navigate("/configuracoes")}
+            className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground/60 hover:text-foreground hover:rotate-45"
+            style={{ transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
+            title="Configurações"
+          >
+            <Settings size={17} />
+          </button>
+        )}
 
         <button
           onClick={toggleTheme}
