@@ -94,7 +94,7 @@ const ConstellationBackground = memo(() => {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0"
-      style={{ background: "linear-gradient(160deg, hsl(0 0% 4%), hsl(0 0% 7%), hsl(0 0% 4%))" }}
+      style={{ background: "transparent" }}
     />
   );
 });
