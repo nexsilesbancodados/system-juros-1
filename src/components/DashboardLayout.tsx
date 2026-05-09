@@ -23,35 +23,52 @@ const DashboardLayout = () => {
   usePushNotifications();
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      if (!user?.email) return;
+    if (!user?.id) return;
+    let cancelled = false;
+    const key = `__sub_checked_${user.id}`;
+    if (sessionStorage.getItem(key)) return;
+
+    (async () => {
+      // Skip admins
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled || profile?.is_admin) {
+        sessionStorage.setItem(key, "1");
+        return;
+      }
 
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("status")
-        .eq("email", user.email)
+        .eq("email", user.email!)
         .maybeSingle();
 
-      if (!sub || sub.status !== 'active') {
-        const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
+      sessionStorage.setItem(key, "1");
+
+      if (!cancelled && (!sub || sub.status !== 'active')) {
+        const { data: settings } = await supabase
+          .from("settings")
+          .select("hubla_checkout_url")
+          .eq("user_id", user.id)
+          .maybeSingle();
         if (settings?.hubla_checkout_url) {
-          toast({ 
-            title: "Assinatura Requerida", 
-            description: "Para acessar o painel, você precisa de uma assinatura ativa. Redirecionando...",
-            variant: "destructive"
+          toast({
+            title: "Assinatura Requerida",
+            description: "Redirecionando para o checkout...",
+            variant: "destructive",
           });
           setTimeout(() => {
             window.location.href = settings.hubla_checkout_url;
           }, 3000);
         }
       }
-    };
+    })();
 
-    // Only check if not on public/support pages
-    if (user && !location.pathname.includes('/suporte') && !location.pathname.includes('/perfil')) {
-      checkSubscription();
-    }
-  }, [user, location.pathname, toast]);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
