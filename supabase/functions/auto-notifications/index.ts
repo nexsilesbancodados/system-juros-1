@@ -224,6 +224,7 @@ serve(async (req) => {
         created.push(`trial_expiring_email:${user.id}`);
       }
     }
+    return new Response(
       JSON.stringify({
         message: `Notificações criadas: ${created.length}`,
         details: created,
