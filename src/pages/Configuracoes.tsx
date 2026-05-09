@@ -297,7 +297,7 @@ const Configuracoes = () => {
     { id: "padroes", label: "Padrões", icon: Percent },
     { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
     { id: "templates", label: "Templates", icon: MessageSquare },
-    { id: "webhooks", label: "Webhooks", icon: Webhook },
+    ...(profile?.is_admin ? [{ id: "webhooks", label: "Webhooks", icon: Webhook } as any] : []),
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
@@ -1276,7 +1276,7 @@ const Configuracoes = () => {
           </>
         )}
 
-        {tab === "webhooks" && (
+        {tab === "webhooks" && profile?.is_admin && (
           <>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-info/8 flex items-center justify-center"><Webhook size={16} className="text-info" /></div>
