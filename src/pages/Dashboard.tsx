@@ -147,16 +147,37 @@ const Dashboard = () => {
 
   if (isLoading || !metrics) {
     return (
-      <div className="space-y-6 p-1">
-        <div className="h-28 rounded-2xl skeleton-shimmer" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-6 md:space-y-8 max-w-[1600px] mx-auto animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex items-end justify-between gap-4 mb-4">
+          <div className="space-y-3">
+            <div className="h-4 w-32 bg-white/5 rounded-full" />
+            <div className="h-12 w-48 bg-white/10 rounded-2xl" />
+          </div>
+          <div className="hidden md:flex gap-3">
+            <div className="h-10 w-28 bg-white/5 rounded-full" />
+            <div className="h-10 w-28 bg-white/5 rounded-full" />
+          </div>
+        </div>
+
+        {/* Quick Actions Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-36 rounded-2xl skeleton-shimmer" style={{ animationDelay: `${i * 120}ms` }} />
+            <div key={i} className="h-28 rounded-3xl bg-white/5 border border-white/5" />
           ))}
         </div>
+
+        {/* Main Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 rounded-3xl bg-white/5 border border-white/10" />
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="h-72 rounded-2xl skeleton-shimmer" />
-          <div className="h-72 rounded-2xl skeleton-shimmer" />
+          <div className="h-72 rounded-3xl bg-white/5 border border-white/5" />
+          <div className="h-72 rounded-3xl bg-white/5 border border-white/5" />
         </div>
       </div>
     );
