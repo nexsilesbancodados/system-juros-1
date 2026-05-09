@@ -139,7 +139,7 @@ const WhatsAppConfig = () => {
       if (error) throw error;
 
       const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
-      console.log("Connect response data:", data);
+      
       if (qr) {
         const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
         setQrCode(src);
