@@ -231,20 +231,25 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
+    <div className="relative space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
+      {/* ─── Background Eagle (Refined Overlay) ─── */}
+      <div className="fixed top-0 right-0 w-[500px] md:w-[800px] h-[500px] md:h-[800px] -mr-32 -mt-32 opacity-[0.03] dark:opacity-[0.07] pointer-events-none -z-10 transition-opacity duration-1000">
+        <img src={eagleLogo} alt="" className="w-full h-full object-contain grayscale brightness-200 rotate-12" />
+      </div>
+
       {/* ─── Hero Header ─── */}
-      <div className="animate-fade-in">
+      <div className="animate-fade-in relative z-10">
         <div className="flex items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <p className="text-label">{greeting}</p>
-              <span className="text-label opacity-50">·</span>
-              <p className="text-label">{timeStr}</p>
+              <p className="text-label font-medium opacity-70 tracking-wide uppercase">{greeting}</p>
+              <span className="text-label opacity-30">·</span>
+              <p className="text-label font-medium opacity-70 tracking-wide uppercase">{timeStr}</p>
             </div>
-            <h1 className="text-display text-4xl md:text-6xl text-foreground tracking-tight">
+            <h1 className="text-display text-4xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
-            <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
+            <p className="text-[11px] font-bold text-primary/60 tracking-[0.2em] uppercase mt-1.5">{dateStr}</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
             {metrics.paidTodayAmount > 0 && (
