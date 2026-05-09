@@ -34,6 +34,7 @@ type UserRow = {
   is_chat_blocked: boolean;
   subscription_type: string | null;
   subscription_expires_at: string | null;
+  trial_ends_at: string | null;
   created_at: string;
   loan_balance: number;
   profit_balance: number;
