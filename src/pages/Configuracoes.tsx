@@ -1705,7 +1705,7 @@ const Configuracoes = () => {
                     <input 
                       type="password"
                       value={form.hubla_webhook_token} 
-                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })} 
+                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value.trim() })} 
                       placeholder="Seu token de segurança" 
                       className={inputCls} 
                     />
