@@ -60,7 +60,7 @@ const DashboardLayout = () => {
         if (settings?.hubla_checkout_url) {
           toast({
             title: "Assinatura Requerida",
-            description: "Redirecionando para o checkout...",
+            description: "Seu teste grátis expirou. Redirecionando para o checkout...",
             variant: "destructive",
           });
           setTimeout(() => {
