@@ -155,16 +155,17 @@ const PortalCliente = () => {
         </div>
 
         <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
-          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-2xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-black/40 backdrop-blur-3xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.6)] ring-1 ring-white/10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="text-center">
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/20">
-                <Shield size={32} className="text-primary" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 border-4 border-[#121212] flex items-center justify-center">
-                  <Lock size={12} className="text-success" />
+              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/20 group">
+                <Shield size={40} className="text-primary transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-success/20 border-4 border-[#0a0a0a] flex items-center justify-center">
+                  <Lock size={14} className="text-success" />
                 </div>
               </div>
-              <h1 className="text-3xl font-display font-bold text-white tracking-tight">Portal do Cliente</h1>
-              <p className="text-sm text-slate-400 mt-2 px-4">Acesse seus contratos e realize pagamentos de forma segura</p>
+              <h1 className="text-4xl font-display font-bold text-white tracking-tighter mb-2">Portal <span className="text-primary">VIP</span></h1>
+              <p className="text-sm text-slate-400/80 px-4 leading-relaxed font-medium">Acesso seguro aos seus dados financeiros e pagamentos em tempo real</p>
             </div>
 
             <div className="space-y-4">
@@ -177,7 +178,7 @@ const PortalCliente = () => {
                   onChange={(e) => setCpf(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
                   required
-                  className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-xl tracking-widest font-mono text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-slate-600"
+                  className="w-full px-4 py-5 rounded-2xl bg-white/[0.03] border border-white/10 text-center text-2xl tracking-[0.2em] font-mono text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-700"
                   inputMode="numeric"
                 />
               </div>
@@ -191,7 +192,7 @@ const PortalCliente = () => {
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   required
-                  className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-lg text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all [color-scheme:dark]"
+                  className="w-full px-4 py-5 rounded-2xl bg-white/[0.03] border border-white/10 text-center text-lg text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all [color-scheme:dark]"
                 />
               </div>
 
@@ -266,16 +267,16 @@ const PortalCliente = () => {
 
       <main className="max-w-4xl mx-auto p-4 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 sm:w-[400px] h-14 p-1 rounded-2xl bg-card border border-border/50 mb-6 shadow-sm">
-            <TabsTrigger value="resumo" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2">
-              <BarChart3 size={14} /> Resumo
+          <TabsList className="grid grid-cols-3 w-full sm:w-[480px] h-16 p-1.5 rounded-[1.5rem] bg-card/40 backdrop-blur-xl border border-border/10 mb-8 shadow-2xl mx-auto">
+            <TabsTrigger value="resumo" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 text-xs font-bold transition-all gap-2.5">
+              <BarChart3 size={16} /> Resumo
             </TabsTrigger>
-            <TabsTrigger value="parcelas" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2">
-              <Receipt size={14} /> Parcelas
+            <TabsTrigger value="parcelas" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 text-xs font-bold transition-all gap-2.5">
+              <Receipt size={16} /> Parcelas
             </TabsTrigger>
-            <TabsTrigger value="negociar" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs font-bold transition-all gap-2 relative">
-              <MessageSquare size={14} /> Negociar
-              {overdue.length > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-white" />}
+            <TabsTrigger value="negociar" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 text-xs font-bold transition-all gap-2.5 relative">
+              <MessageSquare size={16} /> Negociar
+              {overdue.length > 0 && <span className="absolute top-1 right-2 w-2 h-2 bg-destructive rounded-full border border-white ring-4 ring-destructive/20 animate-pulse" />}
             </TabsTrigger>
           </TabsList>
 
