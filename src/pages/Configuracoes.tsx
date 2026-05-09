@@ -93,6 +93,8 @@ const Configuracoes = () => {
     portal_contact_phone: "",
     portal_contact_email: "",
     custom_contract_template: "",
+    hubla_checkout_url: "",
+    hubla_webhook_token: "",
   });
 
   useEffect(() => {
