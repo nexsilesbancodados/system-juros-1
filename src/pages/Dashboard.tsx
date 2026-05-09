@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import eagleLogo from "@/assets/eagle-logo.webp";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
