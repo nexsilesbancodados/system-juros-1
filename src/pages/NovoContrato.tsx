@@ -531,8 +531,14 @@ const NovoContrato = () => {
                 <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">Data do Empréstimo</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  1º Vencimento <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <input type="date" value={firstDueDate} min={startDate} onChange={(e) => setFirstDueDate(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
