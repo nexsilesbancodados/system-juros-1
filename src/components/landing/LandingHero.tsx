@@ -35,9 +35,10 @@ const LandingHero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-display font-bold text-white leading-[1.1] mb-8"
+              className="text-5xl md:text-8xl font-display font-bold text-white leading-[1.05] mb-8 tracking-tighter"
             >
-              Controle completo da sua operação de <br />
+              Controle a sua <br />
+              operação de <br />
               <span className="text-gradient-gold">Empréstimos.</span>
             </motion.h1>
 
