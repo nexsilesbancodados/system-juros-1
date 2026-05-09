@@ -258,7 +258,7 @@ const NovoContrato = () => {
       }).select().single();
       if (cErr) throw cErr;
 
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode);
+      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, firstDueDate || undefined);
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id, contract_id: contract.id, client_id: selectedClientId,
         installment_number: i + 1, amount: calc.installmentAmount, due_date: dd, status: "pending",
