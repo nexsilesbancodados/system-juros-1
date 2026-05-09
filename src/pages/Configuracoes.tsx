@@ -4,7 +4,7 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt, Info, Copy, ExternalLink, FileText, RotateCcw } from "lucide-react";
+import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt, Info, Copy, ExternalLink, FileText, RotateCcw, Sparkles } from "lucide-react";
 import { CONTRACT_PLACEHOLDERS, DEFAULT_CONTRACT_TEMPLATE } from "@/utils/contractTemplate";
 
 const COLOR_PRESETS = [
@@ -304,8 +304,48 @@ const Configuracoes = () => {
     ...(profile?.is_admin ? [{ id: "pagamentos", label: "Hubla Pagamentos", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
   ];
 
+  const configSteps = [
+    { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
+    { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
+    { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
+    { label: "WhatsApp API", done: !!form.whatsapp_api_url, tab: "whatsapp" },
+  ];
+  const completedSteps = configSteps.filter(s => s.done).length;
+  const progressPercent = (completedSteps / configSteps.length) * 100;
+
   return (
-    <div className="space-y-5 max-w-3xl mx-auto">
+    <div className="space-y-5 max-w-3xl mx-auto pb-20">
+      {progressPercent < 100 && (
+        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5 mb-6 animate-fade-in relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
+                <Sparkles size={18} className="text-primary animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Complete sua Configuração</h3>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{completedSteps} de {configSteps.length} etapas concluídas</p>
+              </div>
+            </div>
+            <span className="text-lg font-bold text-primary">{Math.round(progressPercent)}%</span>
+          </div>
+          <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden mb-4 relative z-10">
+            <div className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.4)]" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <div className="flex flex-wrap gap-2 relative z-10">
+            {configSteps.map(step => (
+              <button 
+                key={step.label} 
+                onClick={() => setTab(step.tab)}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${step.done ? "bg-success/10 text-success border border-success/20" : "bg-card border border-border/50 text-muted-foreground hover:border-primary/40"}`}
+              >
+                {step.done ? "✓ " : ""}{step.label}
+              </button>
+            ))}
+          </div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
+        </div>
+      )}
       <div className="page-hero animate-fade-in">
         <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">

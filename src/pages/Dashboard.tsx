@@ -4,7 +4,7 @@ import {
   AlertCircle, Calendar, Landmark, TrendingUp, Users, ArrowRight,
   DollarSign, Percent, FileSignature, Clock, CheckCircle, Sparkles,
   ArrowUpRight, Activity, Wallet, Target, ChevronRight, Zap,
-  BarChart3, PieChart,
+  BarChart3, PieChart, Receipt, Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -248,6 +248,28 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ─── Quick Actions Grid ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in">
+        {[
+          { label: "Novo Cliente", icon: Users, path: "/clientes/novo", color: "bg-primary/10 text-primary", border: "border-primary/20" },
+          { label: "Nova Cobrança", icon: Receipt, path: "/cobrancas", color: "bg-success/10 text-success", border: "border-success/20" },
+          { label: "Ver Carteira", icon: Wallet, path: "/carteira", color: "bg-indigo-500/10 text-indigo-400", border: "border-indigo-500/20" },
+          { label: "Agente IA", icon: Bot, path: "/agente-ia", color: "bg-violet-500/10 text-violet-400", border: "border-violet-500/20" },
+        ].map((action, i) => (
+          <button
+            key={action.label}
+            onClick={() => navigate(action.path)}
+            className={`flex flex-col items-center justify-center p-4 rounded-3xl border ${action.border} ${action.color} hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg group`}
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
+            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-2 group-hover:rotate-12 transition-transform">
+              <action.icon size={20} />
+            </div>
+            <span className="text-[11px] font-bold uppercase tracking-widest">{action.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* ─── Daily AI Briefing ─── */}

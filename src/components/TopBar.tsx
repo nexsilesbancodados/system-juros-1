@@ -1,4 +1,4 @@
-import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings } from "lucide-react";
+import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -88,6 +88,18 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           >
             <TrendingUp size={13} className="text-success/70 group-hover:text-success transition-colors" />
             <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Quick Add Menu */}
+      {!isMobile && (
+        <div className="flex items-center mr-2">
+          <button 
+            onClick={() => navigate("/clientes/novo")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <Plus size={14} /> Novo
           </button>
         </div>
       )}
