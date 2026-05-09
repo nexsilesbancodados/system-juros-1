@@ -12,8 +12,8 @@ const LandingHero = () => {
   return (
     <section id="home" className="relative min-h-screen pt-32 pb-20 overflow-hidden flex items-center">
       {/* Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-white/[0.03] rounded-full blur-3xl -z-10" />
-      <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-white/[0.05] rounded-full blur-[120px] -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-blue-500/[0.05] rounded-full blur-3xl -z-10" />
+      <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-blue-600/[0.08] rounded-full blur-[120px] -z-10" />
       
       <div className="container mx-auto px-6">
         <div className="flex flex-col lg:flex-row items-center gap-16">
