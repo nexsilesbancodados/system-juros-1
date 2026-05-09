@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import eagleLogo from "@/assets/eagle-logo.webp";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
@@ -147,16 +148,37 @@ const Dashboard = () => {
 
   if (isLoading || !metrics) {
     return (
-      <div className="space-y-6 p-1">
-        <div className="h-28 rounded-2xl skeleton-shimmer" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-6 md:space-y-8 max-w-[1600px] mx-auto animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex items-end justify-between gap-4 mb-4">
+          <div className="space-y-3">
+            <div className="h-4 w-32 bg-white/5 rounded-full" />
+            <div className="h-12 w-48 bg-white/10 rounded-2xl" />
+          </div>
+          <div className="hidden md:flex gap-3">
+            <div className="h-10 w-28 bg-white/5 rounded-full" />
+            <div className="h-10 w-28 bg-white/5 rounded-full" />
+          </div>
+        </div>
+
+        {/* Quick Actions Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-36 rounded-2xl skeleton-shimmer" style={{ animationDelay: `${i * 120}ms` }} />
+            <div key={i} className="h-28 rounded-3xl bg-white/5 border border-white/5" />
           ))}
         </div>
+
+        {/* Main Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 rounded-3xl bg-white/5 border border-white/10" />
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="h-72 rounded-2xl skeleton-shimmer" />
-          <div className="h-72 rounded-2xl skeleton-shimmer" />
+          <div className="h-72 rounded-3xl bg-white/5 border border-white/5" />
+          <div className="h-72 rounded-3xl bg-white/5 border border-white/5" />
         </div>
       </div>
     );
@@ -210,20 +232,25 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
+    <div className="relative space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
+      {/* ─── Background Eagle (Refined Overlay) ─── */}
+      <div className="eagle-bg-overlay overflow-hidden">
+        <img src={eagleLogo} alt="" className="w-full h-full object-contain animate-pulse-slow" />
+      </div>
+
       {/* ─── Hero Header ─── */}
-      <div className="animate-fade-in">
+      <div className="animate-fade-in relative z-10">
         <div className="flex items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <p className="text-label">{greeting}</p>
-              <span className="text-label opacity-50">·</span>
-              <p className="text-label">{timeStr}</p>
+              <p className="text-label font-medium opacity-70 tracking-wide uppercase">{greeting}</p>
+              <span className="text-label opacity-30">·</span>
+              <p className="text-label font-medium opacity-70 tracking-wide uppercase">{timeStr}</p>
             </div>
-            <h1 className="text-display text-4xl md:text-6xl text-foreground tracking-tight">
+            <h1 className="text-display text-4xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
               {profile?.name?.split(" ")[0] || "Usuário"}
             </h1>
-            <p className="text-[11px] text-muted-foreground capitalize mt-0.5">{dateStr}</p>
+            <p className="text-[11px] font-bold text-primary/60 tracking-[0.2em] uppercase mt-1.5">{dateStr}</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
             {metrics.paidTodayAmount > 0 && (
@@ -261,13 +288,14 @@ const Dashboard = () => {
           <button
             key={action.label}
             onClick={() => navigate(action.path)}
-            className={`flex flex-col items-center justify-center p-4 rounded-3xl border ${action.border} ${action.color} hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg group`}
+            className={`flex flex-col items-center justify-center p-5 rounded-[32px] border ${action.border} ${action.color} hover:scale-[1.03] active:scale-95 transition-all duration-300 shadow-xl group relative overflow-hidden`}
             style={{ animationDelay: `${i * 50}ms` }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-2 group-hover:rotate-12 transition-transform">
-              <action.icon size={20} />
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-3 group-hover:rotate-6 transition-all duration-500 shadow-inner">
+              <action.icon size={22} />
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-widest">{action.label}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{action.label}</span>
           </button>
         ))}
       </div>
@@ -280,10 +308,11 @@ const Dashboard = () => {
         {mainCards.map((card, i) => (
           <div
             key={card.title}
-            className="group relative rounded-3xl border border-border/20 bg-card/40 backdrop-blur-xl overflow-hidden micro-press animate-fade-in shadow-lg hover:shadow-primary/5 transition-all duration-300"
+            className="group relative rounded-[32px] glass-premium overflow-hidden micro-press animate-fade-in hover:bg-white/[0.08] hover:border-white/10 transition-all duration-500"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${card.accent} opacity-80`} />
+            <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${card.accent} opacity-40 group-hover:opacity-100 transition-opacity`} />
+            <div className={`absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-gradient-to-br ${card.accent} opacity-[0.03] blur-2xl group-hover:scale-150 transition-transform duration-700`} />
             <div className="relative z-10 p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
               <div className="flex items-center justify-between">
                 <span className="text-label">{card.title}</span>

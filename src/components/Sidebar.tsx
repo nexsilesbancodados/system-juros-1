@@ -197,7 +197,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         {/* Container do ícone */}
         <div
           className={`
-            relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0
+            relative w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0
             transition-all duration-300 ease-out
             ${active
               ? "bg-primary/20 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
@@ -328,10 +328,15 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
       style={{
-        background: sidebarBg || "hsl(var(--card) / 0.98)",
-        backdropFilter: "blur(20px)",
+        background: sidebarBg || "hsl(var(--card) / 0.4)",
+        backdropFilter: "blur(40px)",
       }}
     >
+      {/* Background Subtle Eagle */}
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 opacity-[0.03] pointer-events-none rotate-[-15deg] -z-10">
+        <img src={eagleLogo} alt="" className="w-full h-full object-contain grayscale" />
+      </div>
+
       {/* Logo */}
       <div
         className={`
