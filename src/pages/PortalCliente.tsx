@@ -30,10 +30,11 @@ const PortalCliente = () => {
     
     setLoading(true);
     try {
+      const formattedCpf = cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
       const { data: clients, error: clientError } = await supabase
         .from("clients")
         .select("*")
-        .eq("cpf_cnpj", cleanCpf)
+        .or(`cpf_cnpj.eq.${cleanCpf},cpf_cnpj.eq.${formattedCpf}`)
         .eq("birth_date", birthDate);
 
       if (clientError || !clients || clients.length === 0) {
