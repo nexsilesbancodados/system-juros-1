@@ -35,6 +35,7 @@ const SafeSuspense = ({ children, fallback }: { children: React.ReactNode, fallb
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
 const PortalCliente = () => {
+  console.log("PortalCliente rendering"); // Debug log
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");

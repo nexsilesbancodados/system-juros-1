@@ -12,8 +12,10 @@ import DashboardLayout from "./components/DashboardLayout";
 
 import Index from "./pages/Index";
 
-const Login = lazy(() => import("./pages/Login"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import PortalCliente from "./pages/PortalCliente";
+// ... keep existing code
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Analises = lazy(() => import("./pages/Analises"));
@@ -35,7 +37,6 @@ const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Historico = lazy(() => import("./pages/Historico"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Cobradores = lazy(() => import("./pages/Cobradores"));
-const PortalCliente = lazy(() => import("./pages/PortalCliente"));
 const QRCodePage = lazy(() => import("./pages/QRCodePage"));
 const AgenteIA = lazy(() => import("./pages/AgenteIA"));
 const CobradorExterno = lazy(() => import("./pages/CobradorExterno"));
