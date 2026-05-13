@@ -17,6 +17,21 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const NegotiationTab = lazy(() => import("@/components/ClientPortal/NegotiationTab").then(m => ({ default: m.NegotiationTab })));
 const PaymentModal = lazy(() => import("@/components/ClientPortal/PaymentModal").then(m => ({ default: m.PaymentModal })));
 
+// Error Boundary minimalista para componentes lazy
+const SafeSuspense = ({ children, fallback }: { children: React.ReactNode, fallback: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false);
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      if (e.message.includes("dynamically imported module")) setHasError(true);
+    };
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) return <div className="p-4 text-center text-xs text-muted-foreground">Erro ao carregar módulo. Tente recarregar a página.</div>;
+  return <Suspense fallback={fallback}>{children}</Suspense>;
+};
+
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
 const PortalCliente = () => {
@@ -139,30 +154,25 @@ const PortalCliente = () => {
   if (!clientData) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
-        {/* Background Image/Video with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80" 
-            alt="Atendimento humanizado" 
-            className="w-full h-full object-cover opacity-60 scale-105 animate-pulse-slow"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-900/70 to-primary/30 backdrop-blur-[2px]" />
+        {/* Simple Background */}
+        <div className="absolute inset-0 z-0 bg-slate-950">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-primary/20" />
         </div>
 
         {/* Animated Background Blobs */}
         <div className="pointer-events-none absolute inset-0 opacity-40 z-10">
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/30 blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/30 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
         </div>
 
         <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
           <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-black/40 backdrop-blur-3xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.6)] ring-1 ring-white/10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="text-center">
-              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/20 group">
-                <Shield size={40} className="text-primary transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-success/20 border-4 border-[#0a0a0a] flex items-center justify-center">
-                  <Lock size={14} className="text-success" />
+              <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-xl group">
+                <Shield size={36} className="text-primary" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success/20 border-2 border-slate-900 flex items-center justify-center">
+                  <Lock size={12} className="text-success" />
                 </div>
               </div>
               <h1 className="text-4xl font-display font-bold text-white tracking-tighter mb-2">Portal <span className="text-primary">VIP</span></h1>
@@ -503,9 +513,9 @@ const PortalCliente = () => {
                   Proponha acordos, tire dúvidas sobre valores e regularize suas parcelas em atraso de forma automatizada.
                 </CardDescription>
               </CardHeader>
-              <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
+              <SafeSuspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
                 <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
-              </Suspense>
+              </SafeSuspense>
             </Card>
           </TabsContent>
         </Tabs>
@@ -526,7 +536,7 @@ const PortalCliente = () => {
         </div>
       </footer>
 
-      <Suspense fallback={null}>
+      <SafeSuspense fallback={null}>
         <PaymentModal 
           isOpen={isPaymentModalOpen} 
           onOpenChange={setIsPaymentModalOpen} 
@@ -534,7 +544,7 @@ const PortalCliente = () => {
           ownerProfile={ownerProfile}
           clientData={clientData}
         />
-      </Suspense>
+      </SafeSuspense>
 
       {/* Footer Mobile Nav */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
