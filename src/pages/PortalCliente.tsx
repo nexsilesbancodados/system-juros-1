@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -196,14 +196,32 @@ const PortalCliente = () => {
                 />
               </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
-              >
-                {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
-                {loading ? "Verificando..." : "Entrar no Portal"}
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
+                >
+                  {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
+                  {loading ? "Verificando..." : "Entrar no Portal"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setCpf("100.200.300-10");
+                    setBirthDate("1990-01-01");
+                    toast({
+                      title: "Credenciais de Teste",
+                      description: "Dados preenchidos. Clique em 'Entrar no Portal'.",
+                    });
+                  }}
+                  className="w-full py-6 rounded-xl text-xs font-medium text-white/40 hover:text-white/80 border border-white/5 hover:bg-white/[0.02] transition-all"
+                >
+                  Acesso Rápido (Teste)
+                </Button>
+              </div>
             </div>
             <p className="text-[10px] text-center text-slate-500 leading-relaxed font-medium">
               Protegido por criptografia de ponta a ponta
