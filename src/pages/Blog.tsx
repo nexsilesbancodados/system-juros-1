@@ -48,11 +48,11 @@ const Blog = () => {
           </motion.div>
 
           {/* Overlapping Titles */}
-          <div className="relative">
+          <div className="relative isolate">
             <motion.h1 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-8xl md:text-[12rem] font-serif leading-none tracking-tighter"
+              className="text-8xl md:text-[12rem] font-serif leading-none tracking-tighter relative z-10"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Diário
@@ -61,7 +61,7 @@ const Blog = () => {
               initial={{ opacity: 0, scale: 1.5, rotate: -5 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ delay: 0.3, type: "spring" }}
-              className="absolute -bottom-4 -left-12 md:-left-20 text-[10rem] md:text-[18rem] font-serif italic text-[#c5a358] opacity-80 leading-none select-none z-[-1]"
+              className="absolute top-1/2 left-1/2 -translate-x-3/4 -translate-y-1/2 text-[15rem] md:text-[25rem] font-serif italic text-[#c5a358]/60 leading-none select-none z-0 pointer-events-none"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               F
