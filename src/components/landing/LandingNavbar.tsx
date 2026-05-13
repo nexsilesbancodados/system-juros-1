@@ -23,11 +23,12 @@ const LandingNavbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Início", href: "#home" },
-    { name: "Recursos", href: "#features" },
-    { name: "Benefícios", href: "#benefits" },
-    { name: "Planos", href: "#pricing" },
-    { name: "Contato", href: "#contact" },
+    { name: "Início", href: "/" },
+    { name: "Consignado", href: "#" },
+    { name: "Securitizadora", href: "#" },
+    { name: "Invista Conosco", href: "#" },
+    { name: "Blog", href: "/blog" },
+    { name: "Dúvidas", href: "#" },
   ];
 
   return (
@@ -70,10 +71,10 @@ const LandingNavbar = () => {
             Entrar
           </Link>
           <Link
-            to="/login"
-            className="px-6 py-2.5 rounded-full text-sm font-bold bg-white text-black hover:bg-white/90 transition-all shadow-lg shadow-white/10"
+            to="/ferramentas/simulador"
+            className="px-6 py-2.5 rounded-full text-sm font-bold bg-[#c5a358] text-black hover:bg-[#b08d42] transition-all shadow-lg shadow-white/10 uppercase"
           >
-            TESTE GRÁTIS
+            Simular Crédito
           </Link>
         </div>
 
