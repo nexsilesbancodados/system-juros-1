@@ -153,6 +153,7 @@ const PortalCliente = () => {
 
   // Render Login
   if (!clientData) {
+    console.log("Rendering Login screen"); // Debug log
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
         {/* Simple Background */}
@@ -244,6 +245,7 @@ const PortalCliente = () => {
     );
   }
 
+  console.log("Rendering Portal content"); // Debug log
   return (
     <div className="min-h-screen bg-accent/20 pb-24 lg:pb-8">
       {/* Header */}
