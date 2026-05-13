@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,8 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
-import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
+
+const NegotiationTab = lazy(() => import("@/components/ClientPortal/NegotiationTab").then(m => ({ default: m.NegotiationTab })));
+const PaymentModal = lazy(() => import("@/components/ClientPortal/PaymentModal").then(m => ({ default: m.PaymentModal })));
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -196,14 +197,32 @@ const PortalCliente = () => {
                 />
               </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
-              >
-                {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
-                {loading ? "Verificando..." : "Entrar no Portal"}
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
+                >
+                  {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
+                  {loading ? "Verificando..." : "Entrar no Portal"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setCpf("100.200.300-10");
+                    setBirthDate("1990-01-01");
+                    toast({
+                      title: "Credenciais de Teste",
+                      description: "Dados preenchidos. Clique em 'Entrar no Portal'.",
+                    });
+                  }}
+                  className="w-full py-6 rounded-xl text-xs font-medium text-white/40 hover:text-white/80 border border-white/5 hover:bg-white/[0.02] transition-all"
+                >
+                  Acesso Rápido (Teste)
+                </Button>
+              </div>
             </div>
             <p className="text-[10px] text-center text-slate-500 leading-relaxed font-medium">
               Protegido por criptografia de ponta a ponta
@@ -484,7 +503,9 @@ const PortalCliente = () => {
                   Proponha acordos, tire dúvidas sobre valores e regularize suas parcelas em atraso de forma automatizada.
                 </CardDescription>
               </CardHeader>
-              <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
+              <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
+                <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
+              </Suspense>
             </Card>
           </TabsContent>
         </Tabs>
@@ -505,13 +526,15 @@ const PortalCliente = () => {
         </div>
       </footer>
 
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onOpenChange={setIsPaymentModalOpen} 
-        installment={selectedInstallment}
-        ownerProfile={ownerProfile}
-        clientData={clientData}
-      />
+      <Suspense fallback={null}>
+        <PaymentModal 
+          isOpen={isPaymentModalOpen} 
+          onOpenChange={setIsPaymentModalOpen} 
+          installment={selectedInstallment}
+          ownerProfile={ownerProfile}
+          clientData={clientData}
+        />
+      </Suspense>
 
       {/* Footer Mobile Nav */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
