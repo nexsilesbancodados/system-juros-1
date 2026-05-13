@@ -13,8 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
-import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
+
+const NegotiationTab = lazy(() => import("@/components/ClientPortal/NegotiationTab").then(m => ({ default: m.NegotiationTab })));
+const PaymentModal = lazy(() => import("@/components/ClientPortal/PaymentModal").then(m => ({ default: m.PaymentModal })));
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
