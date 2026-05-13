@@ -153,95 +153,62 @@ const PortalCliente = () => {
   }, [pending, overdue]);
 
   // Render Login
-  if (!clientData) {
-    console.log("Rendering Login screen"); // Debug log
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="absolute inset-0 bg-slate-950" />
-        <div className="pointer-events-none absolute inset-0 opacity-40 z-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-[100px]" />
-        </div>
-
-        <div className="w-full max-w-sm relative z-20 px-4">
-          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-slate-900 p-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-            <div className="text-center">
-              <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-xl group">
-                <Shield size={36} className="text-primary" />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success/20 border-2 border-slate-900 flex items-center justify-center">
-                  <Lock size={12} className="text-success" />
-                </div>
-              </div>
-              <h1 className="text-4xl font-display font-bold text-white tracking-tighter mb-2">Portal <span className="text-primary">VIP</span></h1>
-              <p className="text-sm text-slate-400/80 px-4 leading-relaxed font-medium">Acesso seguro aos seus dados financeiros e pagamentos em tempo real</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">
-                  CPF
-                </label>
-                <input
-                  value={cpf}
-                  onChange={(e) => setCpf(formatCpf(e.target.value))}
-                  placeholder="000.000.000-00"
-                  required
-                  className="w-full px-4 py-5 rounded-2xl bg-white/[0.03] border border-white/10 text-center text-2xl tracking-[0.2em] font-mono text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all placeholder:text-slate-700"
-                  inputMode="numeric"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">
-                  Data de Nascimento
-                </label>
-                <input
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  required
-                  className="w-full px-4 py-5 rounded-2xl bg-white/[0.03] border border-white/10 text-center text-lg text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/[0.06] transition-all [color-scheme:dark]"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-transform bg-primary hover:bg-primary/90 text-white border-none"
-                >
-                  {loading ? <Clock className="animate-spin" size={20} /> : <ArrowRight size={20} />}
-                  {loading ? "Verificando..." : "Entrar no Portal"}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setCpf("100.200.300-10");
-                    setBirthDate("1990-01-01");
-                    toast({
-                      title: "Credenciais de Teste",
-                      description: "Dados preenchidos. Clique em 'Entrar no Portal'.",
-                    });
-                  }}
-                  className="w-full py-6 rounded-xl text-xs font-medium text-white/40 hover:text-white/80 border border-white/5 hover:bg-white/[0.02] transition-all"
-                >
-                  Acesso Rápido (Teste)
-                </Button>
-              </div>
-            </div>
-            <p className="text-[10px] text-center text-slate-500 leading-relaxed font-medium">
-              Protegido por criptografia de ponta a ponta
-            </p>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  console.log("Rendering Portal content"); // Debug log
   return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-10">
+      <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-2xl shadow-xl">
+        <h1 className="text-3xl font-bold text-center">Acesso ao Portal</h1>
+        
+        {!clientData ? (
+          <form onSubmit={handleAccess} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-400">CPF</label>
+              <input
+                value={cpf}
+                onChange={(e) => setCpf(formatCpf(e.target.value))}
+                placeholder="000.000.000-00"
+                required
+                className="w-full px-4 py-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-400">Data de Nascimento</label>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-primary [color-scheme:dark]"
+              />
+            </div>
+            
+            <Button type="submit" disabled={loading} className="w-full py-6 rounded-xl font-bold">
+              {loading ? "Verificando..." : "Entrar no Portal"}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCpf("100.200.300-10");
+                setBirthDate("1990-01-01");
+              }}
+              className="w-full py-4 rounded-xl text-xs"
+            >
+              Preencher Dados de Teste
+            </Button>
+          </form>
+        ) : (
+          <div className="text-center space-y-4">
+            <h2 className="text-xl font-bold">Olá, {clientData.name}!</h2>
+            <p>Seu acesso foi autorizado.</p>
+            <Button onClick={handleLogout} variant="destructive">Sair</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
     <div className="min-h-screen bg-accent/20 pb-24 lg:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-50 glass-strong border-b border-border/50 px-4 py-3 sm:py-4">
