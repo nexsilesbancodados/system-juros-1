@@ -14,8 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-const NegotiationTab = lazy(() => import("@/components/ClientPortal/NegotiationTab").then(m => ({ default: m.NegotiationTab })));
-const PaymentModal = lazy(() => import("@/components/ClientPortal/PaymentModal").then(m => ({ default: m.PaymentModal })));
+// Temporarily disabled lazy components for testing
+const NegotiationTab = ({ clientId, cpf }: { clientId: string, cpf: string }) => <div>NegotiationTab Mock</div>;
+const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, clientData }: any) => null;
 
 // Error Boundary minimalista para componentes lazy
 const SafeSuspense = ({ children, fallback }: { children: React.ReactNode, fallback: React.ReactNode }) => {
