@@ -513,9 +513,9 @@ const PortalCliente = () => {
                   Proponha acordos, tire dúvidas sobre valores e regularize suas parcelas em atraso de forma automatizada.
                 </CardDescription>
               </CardHeader>
-              <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
+              <SafeSuspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
                 <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
-              </Suspense>
+              </SafeSuspense>
             </Card>
           </TabsContent>
         </Tabs>
