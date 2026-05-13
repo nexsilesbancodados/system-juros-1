@@ -536,7 +536,7 @@ const PortalCliente = () => {
         </div>
       </footer>
 
-      <Suspense fallback={null}>
+      <SafeSuspense fallback={null}>
         <PaymentModal 
           isOpen={isPaymentModalOpen} 
           onOpenChange={setIsPaymentModalOpen} 
@@ -544,7 +544,7 @@ const PortalCliente = () => {
           ownerProfile={ownerProfile}
           clientData={clientData}
         />
-      </Suspense>
+      </SafeSuspense>
 
       {/* Footer Mobile Nav */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
