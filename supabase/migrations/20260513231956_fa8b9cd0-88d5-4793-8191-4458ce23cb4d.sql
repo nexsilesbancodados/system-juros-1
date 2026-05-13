@@ -1,1 +1,0 @@
-UPDATE public.clients SET birth_date = '1990-01-01' WHERE cpf_cnpj = '100.200.300-10' OR cpf_cnpj = '10020030010';
