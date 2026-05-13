@@ -17,6 +17,21 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const NegotiationTab = lazy(() => import("@/components/ClientPortal/NegotiationTab").then(m => ({ default: m.NegotiationTab })));
 const PaymentModal = lazy(() => import("@/components/ClientPortal/PaymentModal").then(m => ({ default: m.PaymentModal })));
 
+// Error Boundary minimalista para componentes lazy
+const SafeSuspense = ({ children, fallback }: { children: React.ReactNode, fallback: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false);
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      if (e.message.includes("dynamically imported module")) setHasError(true);
+    };
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) return <div className="p-4 text-center text-xs text-muted-foreground">Erro ao carregar módulo. Tente recarregar a página.</div>;
+  return <Suspense fallback={fallback}>{children}</Suspense>;
+};
+
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
 const PortalCliente = () => {
