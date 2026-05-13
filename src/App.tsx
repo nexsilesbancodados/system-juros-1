@@ -79,7 +79,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/portal-cliente" element={<div className="bg-red-500 min-h-screen text-white p-20">ROTA TESTE PORTAL</div>} />
+                <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/cobrador-externo" element={<CobradorExterno />} />
                 <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
