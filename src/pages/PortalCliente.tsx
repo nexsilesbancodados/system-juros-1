@@ -169,10 +169,10 @@ const PortalCliente = () => {
           <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-black/40 backdrop-blur-3xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.6)] ring-1 ring-white/10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="text-center">
-              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 border border-white/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/20 group">
-                <Shield size={40} className="text-primary transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-success/20 border-4 border-[#0a0a0a] flex items-center justify-center">
-                  <Lock size={14} className="text-success" />
+              <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-xl group">
+                <Shield size={36} className="text-primary" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success/20 border-2 border-slate-900 flex items-center justify-center">
+                  <Lock size={12} className="text-success" />
                 </div>
               </div>
               <h1 className="text-4xl font-display font-bold text-white tracking-tighter mb-2">Portal <span className="text-primary">VIP</span></h1>
