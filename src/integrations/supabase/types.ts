@@ -1596,6 +1596,10 @@ export type Database = {
         Args: { _thread_id: string; _user_id: string }
         Returns: boolean
       }
+      portal_client_login: {
+        Args: { _birth_date: string; _cpf: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "operator" | "viewer"
