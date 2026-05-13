@@ -503,7 +503,9 @@ const PortalCliente = () => {
                   Proponha acordos, tire dúvidas sobre valores e regularize suas parcelas em atraso de forma automatizada.
                 </CardDescription>
               </CardHeader>
-              <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
+              <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Carregando assistente...</div>}>
+                <NegotiationTab clientId={clientData.id} cpf={clientData.cpf_cnpj} />
+              </Suspense>
             </Card>
           </TabsContent>
         </Tabs>
@@ -524,13 +526,15 @@ const PortalCliente = () => {
         </div>
       </footer>
 
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onOpenChange={setIsPaymentModalOpen} 
-        installment={selectedInstallment}
-        ownerProfile={ownerProfile}
-        clientData={clientData}
-      />
+      <Suspense fallback={null}>
+        <PaymentModal 
+          isOpen={isPaymentModalOpen} 
+          onOpenChange={setIsPaymentModalOpen} 
+          installment={selectedInstallment}
+          ownerProfile={ownerProfile}
+          clientData={clientData}
+        />
+      </Suspense>
 
       {/* Footer Mobile Nav */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-t border-border/60 p-2 sm:hidden safe-area-bottom shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
