@@ -162,8 +162,8 @@ const PortalCliente = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-[100px]" />
         </div>
 
-        <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
-          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-black/40 backdrop-blur-3xl p-8 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.6)] ring-1 ring-white/10 relative overflow-hidden">
+        <div className="w-full max-w-sm relative z-20 px-4">
+          <form onSubmit={handleAccess} className="space-y-6 rounded-[2.5rem] border border-white/5 bg-slate-900 p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="text-center">
               <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-xl group">
