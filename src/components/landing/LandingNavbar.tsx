@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import eagleLogo from "@/assets/eagle-logo.webp";
 
@@ -30,6 +30,10 @@ const LandingNavbar = () => {
     { name: "Blog", href: "/blog" },
     { name: "Dúvidas", href: "#" },
   ];
+
+  const handlePortalClick = () => {
+    navigate("/portal-cliente");
+  };
 
   return (
     <nav
@@ -70,6 +74,13 @@ const LandingNavbar = () => {
           >
             Entrar
           </Link>
+          <button
+            onClick={handlePortalClick}
+            className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1.5"
+          >
+            <LogIn size={16} />
+            Sou Cliente
+          </button>
           <Link
             to="/ferramentas/simulador"
             className="px-6 py-2.5 rounded-full text-sm font-bold bg-[#c5a358] text-black hover:bg-[#b08d42] transition-all shadow-lg shadow-white/10 uppercase"
@@ -108,12 +119,19 @@ const LandingNavbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
+                <button
+                  onClick={() => { handlePortalClick(); setMobileMenuOpen(false); }}
+                  className="text-left py-3 text-white/70 font-medium flex items-center gap-2"
+                >
+                  <LogIn size={18} />
+                  Sou Cliente
+                </button>
                 <Link
                   to="/login"
                   className="text-center py-3 text-white/70 font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Entrar
+                  Entrar no Sistema
                 </Link>
                 <Link
                   to="/login"
