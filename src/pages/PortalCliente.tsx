@@ -156,16 +156,10 @@ const PortalCliente = () => {
   if (!clientData) {
     console.log("Rendering Login screen"); // Debug log
     return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
-        {/* Simple Background */}
-        <div className="absolute inset-0 z-0 bg-slate-950">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-primary/20" />
-        </div>
-
-        {/* Animated Background Blobs */}
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="absolute inset-0 bg-slate-950" />
         <div className="pointer-events-none absolute inset-0 opacity-40 z-10">
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/30 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
+          <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-[100px]" />
         </div>
 
         <div className="w-full max-w-sm animate-fade-in relative z-20 px-4">
