@@ -658,11 +658,13 @@ const NovoCliente = () => {
           {/* Frequency */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {([
-                { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
-                { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
                 { v: "daily" as Frequency, label: "Diário", Icon: Clock },
+                { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
+                { v: "biweekly" as Frequency, label: "Quinzenal", Icon: Repeat },
+                { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
+                { v: "custom" as Frequency, label: "Programado", Icon: Calendar },
               ]).map(f => (
                 <button key={f.v} onClick={() => setFrequency(f.v)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-colors ${frequency === f.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
@@ -683,6 +685,29 @@ const NovoCliente = () => {
                     {d.label}
                   </button>
                 ))}
+              </div>
+            )}
+            {frequency === "custom" && calc && calc.numParcelas > 0 && (
+              <div className="pt-3 border-t border-border space-y-2">
+                <p className="text-xs font-semibold text-foreground">Datas de cada parcela</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-auto">
+                  {Array.from({ length: calc.numParcelas }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground w-6">#{i + 1}</span>
+                      <input
+                        type="date"
+                        value={customDates[i] || ""}
+                        onChange={(e) => {
+                          const next = [...customDates];
+                          next[i] = e.target.value;
+                          setCustomDates(next);
+                        }}
+                        className={INPUT}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">Datas em branco serão preenchidas automaticamente (mensal).</p>
               </div>
             )}
           </div>
