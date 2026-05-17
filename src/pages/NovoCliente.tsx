@@ -240,8 +240,20 @@ const NovoCliente = () => {
 
   const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
+    if (freq === "custom") {
+      for (let i = 0; i < count; i++) {
+        const d = customDates[i];
+        if (d) dates.push(new Date(d + "T12:00:00").toISOString());
+        else {
+          // fallback: monthly cadence
+          const s = new Date(start + "T12:00:00");
+          s.setMonth(s.getMonth() + i + 1);
+          dates.push(s.toISOString());
+        }
+      }
+      return dates;
+    }
     const s = new Date(start + "T12:00:00");
-    // If a custom first due date is provided, anchor the first installment to it
     let firstDueDateObj: Date | null = null;
     if (firstDue) {
       firstDueDateObj = new Date(firstDue + "T12:00:00");
@@ -269,6 +281,11 @@ const NovoCliente = () => {
         const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
         d.setDate(baseDate.getDate() + offset);
         dates.push(d.toISOString());
+      } else if (freq === "biweekly") {
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i * 15 : (i + 1) * 15;
+        d.setDate(baseDate.getDate() + offset);
+        dates.push(d.toISOString());
       } else {
         const d = new Date(baseDate);
         const offset = firstDueDateObj ? i : i + 1;
@@ -279,8 +296,8 @@ const NovoCliente = () => {
     return dates;
   };
 
-  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : "Mensal";
+  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : frequency === "custom" ? "parcela" : "mês";
+  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : frequency === "custom" ? "Programado" : "Mensal";
 
   // ── Step validation ──
   const canGoStep2 = nome.trim().length > 0;
