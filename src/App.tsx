@@ -50,6 +50,7 @@ const Chat = lazy(() => import("./pages/Chat"));
 const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
 const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
+const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,6 +88,7 @@ const App = () => (
                   <Route path="/analises" element={<Analises />} />
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/clientes/novo" element={<NovoCliente />} />
+                  <Route path="/clientes/buscar" element={<BuscarClientes />} />
                   <Route path="/clientes/:id" element={<ClienteDetalhe />} />
                   <Route path="/contratos/:id" element={<ContractRedirect />} />
                   <Route path="/cobrancas" element={<Cobrancas />} />
