@@ -215,7 +215,7 @@ const NovoCliente = () => {
     const n = parseInt(numInstallments) || 0;
     if (!cap || !taxa) return null;
     if (loanMode === "percentage") {
-      if (frequency === "monthly") {
+      if (frequency === "monthly" && !n) {
         const juros = cap * (taxa / 100);
         return { totalInterest: juros, totalAmount: cap + juros, installmentAmount: cap + juros, numParcelas: 1 };
       }
