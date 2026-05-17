@@ -50,6 +50,7 @@ const Chat = lazy(() => import("./pages/Chat"));
 const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
 const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
+const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
