@@ -76,7 +76,7 @@ const parseCurrency = (v: string) => {
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type LoanMode = "percentage" | "installments";
-type Frequency = "monthly" | "weekly" | "daily";
+type Frequency = "monthly" | "weekly" | "daily" | "biweekly" | "custom";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
 
 const INPUT = "w-full px-3.5 py-2.5 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-ring transition-all duration-150";
@@ -122,6 +122,7 @@ const NovoCliente = () => {
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
+  const [customDates, setCustomDates] = useState<string[]>([]);
 
   // ── Step 2: Advanced contract fields ──
   const [graceDays, setGraceDays] = useState("0");
@@ -214,7 +215,7 @@ const NovoCliente = () => {
     const n = parseInt(numInstallments) || 0;
     if (!cap || !taxa) return null;
     if (loanMode === "percentage") {
-      if (frequency === "monthly") {
+      if (frequency === "monthly" && !n) {
         const juros = cap * (taxa / 100);
         return { totalInterest: juros, totalAmount: cap + juros, installmentAmount: cap + juros, numParcelas: 1 };
       }
@@ -239,8 +240,20 @@ const NovoCliente = () => {
 
   const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
     const dates: string[] = [];
+    if (freq === "custom") {
+      for (let i = 0; i < count; i++) {
+        const d = customDates[i];
+        if (d) dates.push(new Date(d + "T12:00:00").toISOString());
+        else {
+          // fallback: monthly cadence
+          const s = new Date(start + "T12:00:00");
+          s.setMonth(s.getMonth() + i + 1);
+          dates.push(s.toISOString());
+        }
+      }
+      return dates;
+    }
     const s = new Date(start + "T12:00:00");
-    // If a custom first due date is provided, anchor the first installment to it
     let firstDueDateObj: Date | null = null;
     if (firstDue) {
       firstDueDateObj = new Date(firstDue + "T12:00:00");
@@ -268,6 +281,11 @@ const NovoCliente = () => {
         const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
         d.setDate(baseDate.getDate() + offset);
         dates.push(d.toISOString());
+      } else if (freq === "biweekly") {
+        const d = new Date(baseDate);
+        const offset = firstDueDateObj ? i * 15 : (i + 1) * 15;
+        d.setDate(baseDate.getDate() + offset);
+        dates.push(d.toISOString());
       } else {
         const d = new Date(baseDate);
         const offset = firstDueDateObj ? i : i + 1;
@@ -278,8 +296,8 @@ const NovoCliente = () => {
     return dates;
   };
 
-  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : "Mensal";
+  const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : frequency === "custom" ? "parcela" : "mês";
+  const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : frequency === "custom" ? "Programado" : "Mensal";
 
   // ── Step validation ──
   const canGoStep2 = nome.trim().length > 0;
@@ -640,11 +658,13 @@ const NovoCliente = () => {
           {/* Frequency */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {([
-                { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
-                { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
                 { v: "daily" as Frequency, label: "Diário", Icon: Clock },
+                { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
+                { v: "biweekly" as Frequency, label: "Quinzenal", Icon: Repeat },
+                { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
+                { v: "custom" as Frequency, label: "Programado", Icon: Calendar },
               ]).map(f => (
                 <button key={f.v} onClick={() => setFrequency(f.v)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-colors ${frequency === f.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
@@ -665,6 +685,29 @@ const NovoCliente = () => {
                     {d.label}
                   </button>
                 ))}
+              </div>
+            )}
+            {frequency === "custom" && calc && calc.numParcelas > 0 && (
+              <div className="pt-3 border-t border-border space-y-2">
+                <p className="text-xs font-semibold text-foreground">Datas de cada parcela</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-auto">
+                  {Array.from({ length: calc.numParcelas }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground w-6">#{i + 1}</span>
+                      <input
+                        type="date"
+                        value={customDates[i] || ""}
+                        onChange={(e) => {
+                          const next = [...customDates];
+                          next[i] = e.target.value;
+                          setCustomDates(next);
+                        }}
+                        className={INPUT}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">Datas em branco serão preenchidas automaticamente (mensal).</p>
               </div>
             )}
           </div>
