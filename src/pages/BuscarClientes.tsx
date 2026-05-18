@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { onlyDigits, formatCpfCnpj, validateCpfCnpj } from "@/lib/cpfCnpj";
