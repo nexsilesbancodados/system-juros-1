@@ -225,15 +225,15 @@ const BuscarClientes = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="px-3 py-2 rounded-xl border border-border text-foreground disabled:opacity-40 hover:bg-muted/30"
+              disabled={page === 0 || isFetching}
+              className="px-3 py-2 rounded-xl border border-border text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/30"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
-              disabled={page + 1 >= totalPages}
-              className="px-3 py-2 rounded-xl border border-border text-foreground disabled:opacity-40 hover:bg-muted/30"
+              disabled={page + 1 >= totalPages || isFetching}
+              className="px-3 py-2 rounded-xl border border-border text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/30"
             >
               <ChevronRight size={16} />
             </button>
