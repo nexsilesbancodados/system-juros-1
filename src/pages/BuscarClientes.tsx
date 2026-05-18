@@ -161,11 +161,34 @@ const BuscarClientes = () => {
         )}
       </form>
 
+      {queryMode === "cpf" && query && total > 1 && (
+        <div className="flex items-start gap-2 p-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs">
+          <AlertCircle size={14} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">Inconsistência detectada</p>
+            <p className="opacity-90">
+              Foram encontrados <strong>{total}</strong> clientes com o mesmo CPF/CNPJ. Revise os cadastros duplicados para evitar erros nos contratos.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-card border border-border rounded-2xl divide-y divide-border min-h-[200px]">
         {isFetching ? (
           <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
         ) : data?.rows.length === 0 ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">Nenhum cliente encontrado.</div>
+          <div className="p-10 text-center space-y-2">
+            <p className="text-sm font-semibold text-foreground">
+              {queryMode === "cpf" && query
+                ? `Nenhum cliente cadastrado com o ${onlyDigits(query).length === 14 ? "CNPJ" : "CPF"} ${formatCpfCnpj(query)}.`
+                : "Nenhum cliente encontrado."}
+            </p>
+            {queryMode === "cpf" && query && (
+              <p className="text-xs text-muted-foreground">
+                Verifique se o documento foi digitado corretamente ou cadastre um novo cliente.
+              </p>
+            )}
+          </div>
         ) : (
           data?.rows.map((c) => <ResultRow key={c.id} c={c} />)
         )}
