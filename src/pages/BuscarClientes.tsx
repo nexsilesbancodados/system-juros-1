@@ -31,10 +31,11 @@ const BuscarClientes = () => {
     queryFn: async () => {
       const t = query.trim();
 
-      // Busca por CPF/CNPJ exato (ignora pontuação)
+      // Busca por CPF/CNPJ exato (somente após validação de dígitos verificadores)
       if (queryMode === "cpf" && t) {
+        const v = validateCpfCnpj(t);
+        if (!v.ok) return { rows: [], count: 0 };
         const digits = onlyDigits(t);
-        if (digits.length < 11) return { rows: [], count: 0 };
         const { data, error } = await supabase
           .from("clients")
           .select("id, name, email, phone, cpf_cnpj, status, avatar_url")
