@@ -57,7 +57,7 @@ const BuscarClientes = () => {
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Buscar Clientes</h1>
-        <p className="text-sm text-muted-foreground">Pesquise por nome (não diferencia maiúsculas/minúsculas).</p>
+        <p className="text-sm text-muted-foreground">Busca inteligente por similaridade — encontra variações como "Fabiãno", "Fabian", erros de digitação e acentos.</p>
       </div>
 
       <form onSubmit={onSubmit} className="flex gap-2">
