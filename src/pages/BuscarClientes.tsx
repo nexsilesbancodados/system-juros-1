@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { onlyDigits, formatCpfCnpj, validateCpfCnpj } from "@/lib/cpfCnpj";
@@ -169,30 +170,7 @@ const BuscarClientes = () => {
         ) : data?.rows.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">Nenhum cliente encontrado.</div>
         ) : (
-          data?.rows.map((c) => (
-            <Link
-              key={c.id}
-              to={`/clientes/${c.id}`}
-              className="flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors"
-            >
-              {c.avatar_url ? (
-                <img src={c.avatar_url} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserIcon size={18} className="text-primary" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {c.cpf_cnpj || "—"} {c.phone ? `• ${c.phone}` : ""} {c.email ? `• ${c.email}` : ""}
-                </p>
-              </div>
-              <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                {c.status}
-              </span>
-            </Link>
-          ))
+          data?.rows.map((c) => <ResultRow key={c.id} c={c} />)
         )}
       </div>
 
@@ -220,6 +198,67 @@ const BuscarClientes = () => {
         </div>
       )}
     </div>
+  );
+};
+
+type ResultClient = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  cpf_cnpj: string | null;
+  status: string;
+  avatar_url: string | null;
+};
+
+const ResultRow = ({ c }: { c: ResultClient }) => {
+  const [copied, setCopied] = useState(false);
+  const doc = c.cpf_cnpj || "";
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!doc) return;
+    try {
+      await navigator.clipboard.writeText(doc);
+      setCopied(true);
+      toast.success("Documento copiado", { description: doc });
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  return (
+    <Link to={`/clientes/${c.id}`} className="flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors">
+      {c.avatar_url ? (
+        <img src={c.avatar_url} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <UserIcon size={18} className="text-primary" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {doc || "—"} {c.phone ? `• ${c.phone}` : ""} {c.email ? `• ${c.email}` : ""}
+        </p>
+      </div>
+      {doc && (
+        <button
+          type="button"
+          onClick={handleCopy}
+          aria-label="Copiar CPF/CNPJ"
+          title="Copiar CPF/CNPJ"
+          className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+        >
+          {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+        </button>
+      )}
+      <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted text-muted-foreground">
+        {c.status}
+      </span>
+    </Link>
   );
 };
 
