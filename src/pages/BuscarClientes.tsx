@@ -26,7 +26,7 @@ const BuscarClientes = () => {
     return validateCpfCnpj(term);
   }, [mode, term]);
 
-  const { data, isFetching, error, isError } = useQuery({
+  const { data, isFetching, error, isError, refetch } = useQuery({
     queryKey: ["buscar-clientes", user?.id, queryMode, query, page],
     enabled: !!user,
     retry: 1,
