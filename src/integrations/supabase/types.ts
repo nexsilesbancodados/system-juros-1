@@ -1600,6 +1600,21 @@ export type Database = {
         Args: { _birth_date: string; _cpf: string }
         Returns: Json
       }
+      search_clients_fuzzy: {
+        Args: { _limit?: number; _term: string; _threshold?: number }
+        Returns: {
+          avatar_url: string
+          cpf_cnpj: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          similarity: number
+          status: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "operator" | "viewer"
