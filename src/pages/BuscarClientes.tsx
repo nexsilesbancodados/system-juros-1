@@ -188,7 +188,17 @@ const BuscarClientes = () => {
 
       <div className="bg-card border border-border rounded-2xl divide-y divide-border min-h-[200px]">
         {isFetching ? (
-          <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-4 animate-pulse">
+              <div className="w-10 h-10 rounded-full bg-muted/60" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-1/3 rounded bg-muted/60" />
+                <div className="h-2.5 w-2/3 rounded bg-muted/40" />
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-muted/40" />
+              <div className="w-12 h-5 rounded-full bg-muted/40" />
+            </div>
+          ))
         ) : data?.rows.length === 0 ? (
           <div className="p-10 text-center space-y-2">
             <p className="text-sm font-semibold text-foreground">
