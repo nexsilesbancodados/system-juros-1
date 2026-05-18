@@ -111,6 +111,7 @@ const BuscarClientes = () => {
             onClick={() => {
               setMode(m);
               setTerm("");
+              setValidationError(null);
             }}
             className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
               mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
