@@ -32,20 +32,17 @@ const BuscarClientes = () => {
     queryFn: async () => {
       const t = query.trim();
 
-      // Busca por CPF/CNPJ exato (somente após validação de dígitos verificadores)
+      // Busca por CPF/CNPJ exato — feita no banco via RPC (índice funcional sobre os dígitos)
       if (queryMode === "cpf" && t) {
         const v = validateCpfCnpj(t);
         if (!v.ok) return { rows: [], count: 0 };
-        const digits = onlyDigits(t);
-        const { data, error } = await supabase
-          .from("clients")
-          .select("id, name, email, phone, cpf_cnpj, status, avatar_url")
-          .not("cpf_cnpj", "is", null)
-          .limit(2000);
+        const { data, error } = await supabase.rpc("search_clients_by_document", {
+          _document: onlyDigits(t),
+        });
         if (error) throw error;
-        const matches = (data || []).filter((c) => onlyDigits(c.cpf_cnpj || "") === digits);
+        const all = (data || []) as any[];
         const from = page * PAGE_SIZE;
-        return { rows: matches.slice(from, from + PAGE_SIZE), count: matches.length };
+        return { rows: all.slice(from, from + PAGE_SIZE), count: all.length };
       }
 
       // Sem termo: listagem padrão paginada por nome
