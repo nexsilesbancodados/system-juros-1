@@ -170,30 +170,7 @@ const BuscarClientes = () => {
         ) : data?.rows.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">Nenhum cliente encontrado.</div>
         ) : (
-          data?.rows.map((c) => (
-            <Link
-              key={c.id}
-              to={`/clientes/${c.id}`}
-              className="flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors"
-            >
-              {c.avatar_url ? (
-                <img src={c.avatar_url} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserIcon size={18} className="text-primary" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {c.cpf_cnpj || "—"} {c.phone ? `• ${c.phone}` : ""} {c.email ? `• ${c.email}` : ""}
-                </p>
-              </div>
-              <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                {c.status}
-              </span>
-            </Link>
-          ))
+          data?.rows.map((c) => <ResultRow key={c.id} c={c} />)
         )}
       </div>
 
