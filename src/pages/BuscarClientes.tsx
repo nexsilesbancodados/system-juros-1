@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle, Copy, Check } from "lucide-react";
@@ -26,9 +26,10 @@ const BuscarClientes = () => {
     return validateCpfCnpj(term);
   }, [mode, term]);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, error, isError } = useQuery({
     queryKey: ["buscar-clientes", user?.id, queryMode, query, page],
     enabled: !!user,
+    retry: 1,
     queryFn: async () => {
       const t = query.trim();
 
@@ -39,7 +40,7 @@ const BuscarClientes = () => {
         const { data, error } = await supabase.rpc("search_clients_by_document", {
           _document: onlyDigits(t),
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message || "Falha ao consultar CPF/CNPJ no servidor.");
         const all = (data || []) as any[];
         const from = page * PAGE_SIZE;
         return { rows: all.slice(from, from + PAGE_SIZE), count: all.length };
@@ -54,7 +55,7 @@ const BuscarClientes = () => {
           .select("id, name, email, phone, cpf_cnpj, status, avatar_url", { count: "exact" })
           .order("name", { ascending: true })
           .range(from, to);
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         return { rows: data || [], count: count || 0 };
       }
 
@@ -64,12 +65,20 @@ const BuscarClientes = () => {
         _threshold: 0.2,
         _limit: 100,
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const all = (data || []) as any[];
       const from = page * PAGE_SIZE;
       return { rows: all.slice(from, from + PAGE_SIZE), count: all.length };
     },
   });
+
+  useEffect(() => {
+    if (!isError || !error) return;
+    toast.error(
+      queryMode === "cpf" ? "Falha ao buscar por CPF/CNPJ" : "Falha ao buscar clientes",
+      { description: (error as Error).message || "Tente novamente em instantes." }
+    );
+  }, [isError, error, queryMode]);
 
   const total = data?.count || 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -145,10 +154,11 @@ const BuscarClientes = () => {
           </div>
           <button
             type="submit"
-            disabled={isCpf && (!!validationError || (!!liveCpfValidation && !liveCpfValidation.ok))}
-            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isFetching || (isCpf && (!!validationError || (!!liveCpfValidation && !liveCpfValidation.ok)))}
+            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
-            Buscar
+            {isFetching ? <Loader2 size={14} className="animate-spin" /> : null}
+            {isFetching ? "Buscando..." : "Buscar"}
           </button>
         </div>
         {(validationError || (isCpf && liveCpfValidation && !liveCpfValidation.ok)) && (
