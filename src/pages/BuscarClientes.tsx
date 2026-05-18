@@ -17,17 +17,30 @@ const BuscarClientes = () => {
     queryKey: ["buscar-clientes", user?.id, query, page],
     enabled: !!user,
     queryFn: async () => {
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let req = supabase
-        .from("clients")
-        .select("id, name, email, phone, cpf_cnpj, status, avatar_url", { count: "exact" })
-        .order("name", { ascending: true })
-        .range(from, to);
-      if (query.trim()) req = req.ilike("name", `%${query.trim()}%`);
-      const { data, count, error } = await req;
+      const term = query.trim();
+      // Sem termo: listagem padrão paginada
+      if (!term) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, count, error } = await supabase
+          .from("clients")
+          .select("id, name, email, phone, cpf_cnpj, status, avatar_url", { count: "exact" })
+          .order("name", { ascending: true })
+          .range(from, to);
+        if (error) throw error;
+        return { rows: data || [], count: count || 0, fuzzy: false };
+      }
+      // Busca fuzzy via RPC (trigramas)
+      const { data, error } = await supabase.rpc("search_clients_fuzzy", {
+        _term: term,
+        _threshold: 0.2,
+        _limit: 100,
+      });
       if (error) throw error;
-      return { rows: data || [], count: count || 0 };
+      const all = (data || []) as any[];
+      const from = page * PAGE_SIZE;
+      const slice = all.slice(from, from + PAGE_SIZE);
+      return { rows: slice, count: all.length, fuzzy: true };
     },
   });
 
