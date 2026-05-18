@@ -16,6 +16,14 @@ const BuscarClientes = () => {
   const [query, setQuery] = useState("");
   const [queryMode, setQueryMode] = useState<Mode>("name");
   const [page, setPage] = useState(0);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const liveCpfValidation = useMemo(() => {
+    if (mode !== "cpf") return null;
+    const d = onlyDigits(term);
+    if (d.length !== 11 && d.length !== 14) return null;
+    return validateCpfCnpj(term);
+  }, [mode, term]);
 
   const { data, isFetching } = useQuery({
     queryKey: ["buscar-clientes", user?.id, queryMode, query, page],
