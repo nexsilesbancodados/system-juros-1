@@ -154,10 +154,11 @@ const BuscarClientes = () => {
           </div>
           <button
             type="submit"
-            disabled={isCpf && (!!validationError || (!!liveCpfValidation && !liveCpfValidation.ok))}
-            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isFetching || (isCpf && (!!validationError || (!!liveCpfValidation && !liveCpfValidation.ok)))}
+            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
-            Buscar
+            {isFetching ? <Loader2 size={14} className="animate-spin" /> : null}
+            {isFetching ? "Buscando..." : "Buscar"}
           </button>
         </div>
         {(validationError || (isCpf && liveCpfValidation && !liveCpfValidation.ok)) && (
