@@ -1,20 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2 } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, User as UserIcon, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { onlyDigits, formatCpfCnpj, validateCpfCnpj } from "@/lib/cpfCnpj";
 
 const PAGE_SIZE = 10;
 type Mode = "name" | "cpf";
-
-const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
-const formatCpfCnpj = (raw: string) => {
-  const d = onlyDigits(raw);
-  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-  return raw;
-};
 
 const BuscarClientes = () => {
   const { user } = useAuth();
