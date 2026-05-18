@@ -78,6 +78,14 @@ const BuscarClientes = () => {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "cpf") {
+      const v = validateCpfCnpj(term);
+      if (!v.ok) {
+        setValidationError(v.error || "CPF/CNPJ inválido.");
+        return;
+      }
+    }
+    setValidationError(null);
     setPage(0);
     setQuery(term);
     setQueryMode(mode);
