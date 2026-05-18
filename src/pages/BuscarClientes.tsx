@@ -90,6 +90,7 @@ const BuscarClientes = () => {
   };
 
   const isCpf = mode === "cpf";
+  const cpfNotFound = !isFetching && queryMode === "cpf" && !!query && (data?.rows.length ?? 0) === 0;
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
@@ -133,10 +134,12 @@ const BuscarClientes = () => {
               inputMode={isCpf ? "numeric" : "text"}
               maxLength={isCpf ? 18 : 120}
               placeholder={isCpf ? "000.000.000-00 ou 00.000.000/0000-00" : "Digite o nome..."}
-              className={`w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border text-foreground text-sm focus:outline-none ${
+              className={`w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border text-foreground text-sm focus:outline-none transition-colors ${
                 validationError || (liveCpfValidation && !liveCpfValidation.ok)
-                  ? "border-destructive focus:border-destructive"
-                  : "border-border focus:border-ring"
+                  ? "border-destructive focus:border-destructive ring-2 ring-destructive/20"
+                  : cpfNotFound
+                    ? "border-amber-500/70 focus:border-amber-500 ring-2 ring-amber-500/20"
+                    : "border-border focus:border-ring"
               }`}
             />
           </div>
