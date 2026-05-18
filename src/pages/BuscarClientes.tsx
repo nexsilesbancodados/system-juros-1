@@ -122,23 +122,45 @@ const BuscarClientes = () => {
         ))}
       </div>
 
-      <form onSubmit={onSubmit} className="flex gap-2">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={term}
-            onChange={(e) => setTerm(isCpf ? formatCpfCnpj(e.target.value) : e.target.value)}
-            inputMode={isCpf ? "numeric" : "text"}
-            placeholder={isCpf ? "000.000.000-00" : "Digite o nome..."}
-            className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border border-border text-foreground text-sm focus:outline-none focus:border-ring"
-          />
+      <form onSubmit={onSubmit} className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={term}
+              onChange={(e) => {
+                setValidationError(null);
+                setTerm(isCpf ? formatCpfCnpj(e.target.value) : e.target.value);
+              }}
+              inputMode={isCpf ? "numeric" : "text"}
+              maxLength={isCpf ? 18 : 120}
+              placeholder={isCpf ? "000.000.000-00 ou 00.000.000/0000-00" : "Digite o nome..."}
+              className={`w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border text-foreground text-sm focus:outline-none ${
+                validationError || (liveCpfValidation && !liveCpfValidation.ok)
+                  ? "border-destructive focus:border-destructive"
+                  : "border-border focus:border-ring"
+              }`}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isCpf && (!!validationError || (!!liveCpfValidation && !liveCpfValidation.ok))}
+            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Buscar
+          </button>
         </div>
-        <button
-          type="submit"
-          className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-        >
-          Buscar
-        </button>
+        {(validationError || (isCpf && liveCpfValidation && !liveCpfValidation.ok)) && (
+          <div className="flex items-center gap-1.5 text-xs text-destructive">
+            <AlertCircle size={12} />
+            <span>{validationError || liveCpfValidation?.error}</span>
+          </div>
+        )}
+        {isCpf && liveCpfValidation?.ok && (
+          <p className="text-xs text-emerald-500">
+            {liveCpfValidation.type === "cpf" ? "CPF" : "CNPJ"} válido ✓
+          </p>
+        )}
       </form>
 
       <div className="bg-card border border-border rounded-2xl divide-y divide-border min-h-[200px]">
