@@ -79,8 +79,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             </a>
             <button
               onClick={async () => {
-                const { data } = await supabase.from("settings").select("hubla_checkout_url").single();
-                if (data?.hubla_checkout_url) window.location.href = data.hubla_checkout_url;
+                const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
+                if (checkoutUrl) window.location.href = checkoutUrl as string;
               }}
               className="inline-block px-6 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all"
             >
