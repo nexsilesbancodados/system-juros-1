@@ -1573,30 +1573,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          id: string | null
-          is_admin: boolean | null
-          is_chat_blocked: boolean | null
-          name: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          id?: string | null
-          is_admin?: boolean | null
-          is_chat_blocked?: boolean | null
-          name?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          id?: string | null
-          is_admin?: boolean | null
-          is_chat_blocked?: boolean | null
-          name?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_or_create_dm_thread: {
@@ -1619,6 +1596,16 @@ export type Database = {
       is_dm_participant: {
         Args: { _thread_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_public_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          id: string
+          is_admin: boolean
+          is_chat_blocked: boolean
+          name: string
+        }[]
       }
       portal_client_login: {
         Args: { _birth_date: string; _cpf: string }
