@@ -14,11 +14,14 @@ const Simulador = () => {
   const [loanMode, setLoanMode] = useState<LoanMode>("installments");
   const [frequency, setFrequency] = useState<Frequency>("monthly");
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
+  const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
+  const [installmentValue, setInstallmentValue] = useState("");
   const navigate = useNavigate();
 
   const valorNum = parseFloat(valor) || 0;
   const taxaNum = parseFloat(taxa) || 0;
   const parcelasNum = parseInt(parcelas) || 0;
+  const installmentNum = parseFloat(installmentValue) || 0;
 
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
