@@ -74,11 +74,11 @@ const Login = () => {
         description: "Verifique seu e-mail para confirmar o cadastro e ativar sua conta." 
       });
       
-      const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
-      if (settings?.hubla_checkout_url) {
+      const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
+      if (checkoutUrl) {
         toast({ title: "Quase lá!", description: "Redirecionando para ativação da conta..." });
         setTimeout(() => {
-          window.location.href = settings.hubla_checkout_url;
+          window.location.href = checkoutUrl as string;
         }, 3000);
       }
 
