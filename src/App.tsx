@@ -13,6 +13,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Index from "./pages/Index";
 
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import PortalCliente from "./pages/PortalCliente";
 // ... keep existing code
@@ -80,6 +81,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/cobrador-externo" element={<CobradorExterno />} />
                 <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
