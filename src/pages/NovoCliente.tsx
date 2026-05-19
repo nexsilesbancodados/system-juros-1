@@ -387,7 +387,7 @@ const NovoCliente = () => {
         user_id: user.id,
         client_id: clientId,
         capital: parseFloat(capital),
-        interest_rate: parseFloat(taxaJuros),
+        interest_rate: valueMode === "installment" ? Number((calc as any).derivedRate?.toFixed(4) ?? 0) : parseFloat(taxaJuros),
         num_installments: n,
         installment_amount: calc.installmentAmount,
         frequency: freqValue,
