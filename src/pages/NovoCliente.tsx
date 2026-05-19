@@ -321,9 +321,52 @@ const NovoCliente = () => {
   const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : frequency === "custom" ? "parcela" : "mês";
   const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : frequency === "custom" ? "Programado" : "Mensal";
 
+  // ── Loan field validations (modo Taxa e modo Valor da Parcela) ──
+  const loanErrors = useMemo(() => {
+    const errs: { capital?: string; taxa?: string; parcela?: string; n?: string; geral?: string } = {};
+    const cap = parseFloat(capital);
+    const n = parseInt(numInstallments);
+
+    if (!capital || isNaN(cap) || cap <= 0) errs.capital = "Informe um capital maior que zero";
+    else if (cap > 1_000_000_000) errs.capital = "Capital acima do limite permitido";
+
+    const requiresN = !(loanMode === "percentage" && valueMode === "rate");
+    if (requiresN) {
+      if (!numInstallments || isNaN(n) || n <= 0) errs.n = "Informe o número de parcelas";
+      else if (!Number.isInteger(n)) errs.n = "Use um número inteiro";
+      else if (n > 360) errs.n = "Máximo de 360 parcelas";
+    } else if (numInstallments && (isNaN(n) || n <= 0 || !Number.isInteger(n) || n > 360)) {
+      errs.n = "Valor inválido (1 a 360)";
+    }
+
+    if (valueMode === "rate") {
+      const taxa = parseFloat(taxaJuros);
+      if (!taxaJuros || isNaN(taxa) || taxa <= 0) errs.taxa = "Informe uma taxa maior que zero";
+      else if (taxa > 100) errs.taxa = `Taxa muito alta (máx. 100% por ${periodLabel})`;
+    } else {
+      const parcela = parseFloat(installmentValue);
+      if (!installmentValue || isNaN(parcela) || parcela <= 0) {
+        errs.parcela = "Informe o valor da parcela";
+      } else if (!isNaN(cap) && !isNaN(n) && n > 0) {
+        const total = parcela * n;
+        if (total < cap) {
+          errs.parcela = "Parcela × nº de parcelas é menor que o capital";
+        } else if (total === cap) {
+          errs.geral = "Sem juros: parcela × nº de parcelas é igual ao capital";
+        } else {
+          const taxaCalc = ((total - cap) / (cap * n)) * 100;
+          if (taxaCalc > 100) errs.parcela = `Taxa derivada inviável (${taxaCalc.toFixed(1)}% por ${periodLabel})`;
+        }
+      }
+    }
+    return errs;
+  }, [capital, taxaJuros, numInstallments, installmentValue, valueMode, loanMode, periodLabel]);
+
+  const hasLoanErrors = Object.keys(loanErrors).length > 0;
+
   // ── Step validation ──
   const canGoStep2 = nome.trim().length > 0;
-  const canGoStep3 = !!calc;
+  const canGoStep3 = !!calc && !hasLoanErrors;
 
   // ── Step navigation ──
   const goNext = () => {
