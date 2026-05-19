@@ -241,12 +241,26 @@ const ResetPassword = () => {
               <p className="text-white/50 text-sm mb-6">
                 Enviamos um link de recuperação para <span className="text-white">{email}</span>. O link expira em 1 hora.
               </p>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
-              >
-                Voltar ao login
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleResend}
+                  disabled={loading || resendCooldown > 0}
+                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
+                  style={{ background: "var(--gradient-button)", color: "white" }}
+                >
+                  {loading
+                    ? "Reenviando…"
+                    : resendCooldown > 0
+                    ? `Reenviar em ${resendCooldown}s`
+                    : "Reenviar link"}
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
+                >
+                  Voltar ao login
+                </button>
+              </div>
             </div>
           )}
         </div>
