@@ -116,6 +116,9 @@ const NovoCliente = () => {
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const [taxaJuros, setTaxaJuros] = useState("10");
   const [numInstallments, setNumInstallments] = useState("");
+  const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
+  const [installmentValue, setInstallmentValue] = useState("");
+  const [installmentValueDisplay, setInstallmentValueDisplay] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [firstDueDate, setFirstDueDate] = useState("");
   const [autoFirstDue, setAutoFirstDue] = useState(true);
