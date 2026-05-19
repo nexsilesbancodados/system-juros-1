@@ -214,9 +214,28 @@ const NovoCliente = () => {
   // ── Loan calc ──
   const calc = useMemo(() => {
     const cap = parseFloat(capital) || 0;
-    const taxa = parseFloat(taxaJuros) || 0;
     const n = parseInt(numInstallments) || 0;
-    if (!cap || !taxa) return null;
+    if (!cap) return null;
+
+    // Modo: valor da parcela informado pelo usuário (deriva a taxa)
+    if (valueMode === "installment") {
+      const parcela = parseFloat(installmentValue) || 0;
+      if (!parcela || !n) return null;
+      const totalAmount = parcela * n;
+      const totalInterest = totalAmount - cap;
+      const taxaCalc = cap > 0 && n > 0 ? (totalInterest / (cap * n)) * 100 : 0;
+      return {
+        totalInterest,
+        totalAmount,
+        installmentAmount: parcela,
+        numParcelas: n,
+        derivedRate: taxaCalc,
+      };
+    }
+
+    // Modo: taxa informada (calcula valor da parcela)
+    const taxa = parseFloat(taxaJuros) || 0;
+    if (!taxa) return null;
     if (loanMode === "percentage") {
       if (frequency === "monthly" && !n) {
         const juros = cap * (taxa / 100);
@@ -234,7 +253,7 @@ const NovoCliente = () => {
     if (!n) return null;
     const juros = cap * (taxa / 100) * n;
     return { totalInterest: juros, totalAmount: cap + juros, installmentAmount: (cap + juros) / n, numParcelas: n };
-  }, [capital, taxaJuros, numInstallments, loanMode, frequency]);
+  }, [capital, taxaJuros, numInstallments, loanMode, frequency, valueMode, installmentValue]);
 
   const handleCapitalChange = (v: string) => {
     setCapitalDisplay(formatCurrency(v));
