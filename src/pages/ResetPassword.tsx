@@ -266,22 +266,76 @@ const ResetPassword = () => {
                 <CheckCircle2 size={28} className="text-emerald-300" />
               </div>
               <h2 className="font-display text-xl font-semibold text-white mb-2">Verifique seu e-mail</h2>
-              <p className="text-white/50 text-sm mb-6">
+              <p className="text-white/50 text-sm mb-4">
                 Enviamos um link de recuperação para <span className="text-white">{email}</span>. O link expira em 1 hora.
               </p>
+
+              {lastSentAt && (
+                <div
+                  key={nowTick}
+                  className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 flex items-center justify-center gap-2 text-[12px] text-white/60"
+                >
+                  <Clock size={13} className="text-white/40" />
+                  <span>
+                    Último envio: <span className="text-white/85 font-medium">{formatTime(lastSentAt)}</span>
+                    <span className="text-white/40"> · {formatRelative(lastSentAt)}</span>
+                  </span>
+                  {resendCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/50 text-[10px] font-medium">
+                      {resendCount}x reenviado
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleResend}
-                  disabled={loading || resendCooldown > 0}
-                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
-                  style={{ background: "var(--gradient-button)", color: "white" }}
+                  disabled={resendState === "sending" || resendCooldown > 0}
+                  aria-live="polite"
+                  className={`w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2 ${
+                    resendState === "success" ? "ring-1 ring-emerald-400/40" : ""
+                  }`}
+                  style={{
+                    background:
+                      resendState === "success"
+                        ? "linear-gradient(135deg, hsl(152 60% 35%), hsl(160 65% 40%))"
+                        : "var(--gradient-button)",
+                    color: "white",
+                  }}
                 >
-                  {loading
-                    ? "Reenviando…"
-                    : resendCooldown > 0
-                    ? `Reenviar em ${resendCooldown}s`
-                    : "Reenviar link"}
+                  {resendState === "sending" ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      Reenviando link…
+                    </>
+                  ) : resendState === "success" ? (
+                    <>
+                      <Check size={16} />
+                      Link enviado!
+                    </>
+                  ) : resendCooldown > 0 ? (
+                    <>
+                      <Clock size={14} />
+                      Aguarde {resendCooldown}s para reenviar
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      Reenviar link
+                    </>
+                  )}
                 </button>
+
+                {resendCooldown > 0 && resendState !== "sending" && (
+                  <div className="h-0.5 w-full bg-white/[0.06] rounded-full overflow-hidden -mt-1">
+                    <div
+                      className="h-full bg-white/40 transition-all duration-1000 ease-linear"
+                      style={{ width: `${((45 - resendCooldown) / 45) * 100}%` }}
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={() => navigate("/login")}
                   className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
