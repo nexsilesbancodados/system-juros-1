@@ -321,9 +321,52 @@ const NovoCliente = () => {
   const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : frequency === "custom" ? "parcela" : "mês";
   const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : frequency === "custom" ? "Programado" : "Mensal";
 
+  // ── Loan field validations (modo Taxa e modo Valor da Parcela) ──
+  const loanErrors = useMemo(() => {
+    const errs: { capital?: string; taxa?: string; parcela?: string; n?: string; geral?: string } = {};
+    const cap = parseFloat(capital);
+    const n = parseInt(numInstallments);
+
+    if (!capital || isNaN(cap) || cap <= 0) errs.capital = "Informe um capital maior que zero";
+    else if (cap > 1_000_000_000) errs.capital = "Capital acima do limite permitido";
+
+    const requiresN = !(loanMode === "percentage" && valueMode === "rate");
+    if (requiresN) {
+      if (!numInstallments || isNaN(n) || n <= 0) errs.n = "Informe o número de parcelas";
+      else if (!Number.isInteger(n)) errs.n = "Use um número inteiro";
+      else if (n > 360) errs.n = "Máximo de 360 parcelas";
+    } else if (numInstallments && (isNaN(n) || n <= 0 || !Number.isInteger(n) || n > 360)) {
+      errs.n = "Valor inválido (1 a 360)";
+    }
+
+    if (valueMode === "rate") {
+      const taxa = parseFloat(taxaJuros);
+      if (!taxaJuros || isNaN(taxa) || taxa <= 0) errs.taxa = "Informe uma taxa maior que zero";
+      else if (taxa > 100) errs.taxa = `Taxa muito alta (máx. 100% por ${periodLabel})`;
+    } else {
+      const parcela = parseFloat(installmentValue);
+      if (!installmentValue || isNaN(parcela) || parcela <= 0) {
+        errs.parcela = "Informe o valor da parcela";
+      } else if (!isNaN(cap) && !isNaN(n) && n > 0) {
+        const total = parcela * n;
+        if (total < cap) {
+          errs.parcela = "Parcela × nº de parcelas é menor que o capital";
+        } else if (total === cap) {
+          errs.geral = "Sem juros: parcela × nº de parcelas é igual ao capital";
+        } else {
+          const taxaCalc = ((total - cap) / (cap * n)) * 100;
+          if (taxaCalc > 100) errs.parcela = `Taxa derivada inviável (${taxaCalc.toFixed(1)}% por ${periodLabel})`;
+        }
+      }
+    }
+    return errs;
+  }, [capital, taxaJuros, numInstallments, installmentValue, valueMode, loanMode, periodLabel]);
+
+  const hasLoanErrors = Object.keys(loanErrors).length > 0;
+
   // ── Step validation ──
   const canGoStep2 = nome.trim().length > 0;
-  const canGoStep3 = !!calc;
+  const canGoStep3 = !!calc && !hasLoanErrors;
 
   // ── Step navigation ──
   const goNext = () => {
@@ -339,7 +382,8 @@ const NovoCliente = () => {
       }
     }
     if (step === 2 && !canGoStep3) {
-      toast({ title: "Preencha os dados do empréstimo", variant: "destructive" });
+      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+      toast({ title: firstErr || "Preencha os dados do empréstimo", variant: "destructive" });
       return;
     }
     setStep(step + 1);
@@ -348,6 +392,11 @@ const NovoCliente = () => {
   // ── Save all ──
   const handleSave = async () => {
     if (!user || !calc) return;
+    if (hasLoanErrors) {
+      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+      toast({ title: firstErr || "Corrija os campos do empréstimo", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     try {
@@ -761,16 +810,18 @@ const NovoCliente = () => {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital (R$) *</label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8`} inputMode="numeric" />
+                  <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8 ${loanErrors.capital ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.capital} />
                 </div>
+                {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
               </div>
               {valueMode === "rate" ? (
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
                   <div className="relative">
                     <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8`} />
+                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8 ${loanErrors.taxa ? "border-destructive/60" : ""}`} aria-invalid={!!loanErrors.taxa} min={0} max={100} step="0.01" />
                   </div>
+                  {loanErrors.taxa && <p className="text-[10px] text-destructive mt-1">{loanErrors.taxa}</p>}
                 </div>
               ) : (
                 <div>
@@ -785,11 +836,13 @@ const NovoCliente = () => {
                         setInstallmentValue(parseCurrency(e.target.value));
                       }}
                       placeholder="0,00"
-                      className={`${INPUT} pl-8`}
+                      className={`${INPUT} pl-8 ${loanErrors.parcela ? "border-destructive/60" : ""}`}
                       inputMode="numeric"
+                      aria-invalid={!!loanErrors.parcela}
                     />
                   </div>
-                  {calc && (calc as any).derivedRate !== undefined && (
+                  {loanErrors.parcela && <p className="text-[10px] text-destructive mt-1">{loanErrors.parcela}</p>}
+                  {!loanErrors.parcela && calc && (calc as any).derivedRate !== undefined && (
                     <p className="text-[10px] text-muted-foreground mt-1">Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {periodLabel}</p>
                   )}
                 </div>
@@ -798,7 +851,8 @@ const NovoCliente = () => {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
                 </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
+                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
+                {loanErrors.n && <p className="text-[10px] text-destructive mt-1">{loanErrors.n}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
