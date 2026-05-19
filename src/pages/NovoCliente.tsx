@@ -736,7 +736,25 @@ const NovoCliente = () => {
 
           {/* Values */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Valores</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Valores</h2>
+              <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setValueMode("rate")}
+                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                >
+                  Por Taxa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValueMode("installment")}
+                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                >
+                  Por Valor da Parcela
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital (R$) *</label>
@@ -745,18 +763,41 @@ const NovoCliente = () => {
                   <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8`} inputMode="numeric" />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
-                <div className="relative">
-                  <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8`} />
+              {valueMode === "rate" ? (
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
+                  <div className="relative">
+                    <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8`} />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Valor da Parcela (R$) *</label>
+                  <div className="relative">
+                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={installmentValueDisplay}
+                      onChange={(e) => {
+                        setInstallmentValueDisplay(formatCurrency(e.target.value));
+                        setInstallmentValue(parseCurrency(e.target.value));
+                      }}
+                      placeholder="0,00"
+                      className={`${INPUT} pl-8`}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  {calc && (calc as any).derivedRate !== undefined && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {periodLabel}</p>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                  {loanMode === "percentage" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
+                  {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
                 </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
+                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
@@ -775,12 +816,22 @@ const NovoCliente = () => {
                 </div>
                 <input
                   type="date"
-                  value={autoFirstDue ? "" : firstDueDate}
+                  value={
+                    autoFirstDue
+                      ? (() => {
+                          if (!startDate) return "";
+                          const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
+                          return preview[0] ? preview[0].split("T")[0] : "";
+                        })()
+                      : firstDueDate
+                  }
                   onChange={(e) => setFirstDueDate(e.target.value)}
                   disabled={autoFirstDue}
-                  placeholder="Calculado automaticamente"
-                  className={`${INPUT} ${autoFirstDue ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`${INPUT} ${autoFirstDue ? "opacity-70 cursor-not-allowed" : ""}`}
                 />
+                {autoFirstDue && (
+                  <p className="text-[10px] text-muted-foreground mt-1">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
