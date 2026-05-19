@@ -382,7 +382,8 @@ const NovoCliente = () => {
       }
     }
     if (step === 2 && !canGoStep3) {
-      toast({ title: "Preencha os dados do empréstimo", variant: "destructive" });
+      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+      toast({ title: firstErr || "Preencha os dados do empréstimo", variant: "destructive" });
       return;
     }
     setStep(step + 1);
