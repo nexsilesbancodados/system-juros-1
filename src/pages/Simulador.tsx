@@ -260,6 +260,26 @@ const Simulador = () => {
 
       {/* Input form */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5 card-shine">
+        <div className="flex items-center justify-between">
+          <label className="text-label block">Modo de Entrada</label>
+          <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+            <button
+              type="button"
+              onClick={() => setValueMode("rate")}
+              className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Por Taxa
+            </button>
+            <button
+              type="button"
+              onClick={() => { setValueMode("installment"); setLoanMode("installments"); }}
+              className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Por Valor da Parcela
+            </button>
+          </div>
+        </div>
+
         <div>
           <label className="text-label mb-1.5 block">Valor do Empréstimo (R$)</label>
           <div className="relative">
@@ -268,21 +288,36 @@ const Simulador = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-label mb-1.5 block">
-              Taxa de Juros (%)
-              <span className="text-[9px] text-muted-foreground ml-1">
-                {frequency === "daily" ? "ao dia" : frequency === "weekly" ? "por semana" : "ao mês"}
-              </span>
-            </label>
-            <div className="relative">
-              <Percent size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="number" value={taxa} onChange={(e) => setTaxa(e.target.value)} placeholder="10" className={`${inputCls} pl-10`} />
+          {valueMode === "rate" ? (
+            <div>
+              <label className="text-label mb-1.5 block">
+                Taxa de Juros (%)
+                <span className="text-[9px] text-muted-foreground ml-1">
+                  {frequency === "daily" ? "ao dia" : frequency === "weekly" ? "por semana" : "ao mês"}
+                </span>
+              </label>
+              <div className="relative">
+                <Percent size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="number" value={taxa} onChange={(e) => setTaxa(e.target.value)} placeholder="10" className={`${inputCls} pl-10`} />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className="text-label mb-1.5 block">Valor da Parcela (R$)</label>
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="number" value={installmentValue} onChange={(e) => setInstallmentValue(e.target.value)} placeholder="120" className={`${inputCls} pl-10`} />
+              </div>
+              {calc && (calc as any).derivedRate !== undefined && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {calc.perPeriodLabel}
+                </p>
+              )}
+            </div>
+          )}
           <div>
             <label className="text-label mb-1.5 block">
-              {loanMode === "percentage" ? "Nº de Períodos (opcional)" : "Nº de Parcelas"}
+              {loanMode === "percentage" && valueMode === "rate" ? "Nº de Períodos (opcional)" : "Nº de Parcelas"}
             </label>
             <div className="relative">
               <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -290,7 +325,7 @@ const Simulador = () => {
                 type="number"
                 value={parcelas}
                 onChange={(e) => setParcelas(e.target.value)}
-                placeholder={loanMode === "percentage" ? "Auto" : "10"}
+                placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"}
                 className={`${inputCls} pl-10`}
               />
             </div>
@@ -298,7 +333,7 @@ const Simulador = () => {
         </div>
 
         {/* Quick example text */}
-        {valorNum > 0 && taxaNum > 0 && (
+        {valueMode === "rate" && valorNum > 0 && taxaNum > 0 && (
           <div className="bg-muted/30 rounded-lg p-3">
             <p className="text-xs text-muted-foreground">
               {loanMode === "percentage" && frequency === "monthly" && (
@@ -316,6 +351,14 @@ const Simulador = () => {
               {loanMode === "installments" && parcelasNum > 0 && (
                 <>💡 R$ {fmt(valorNum)} + {taxaNum}% × {parcelasNum} parcelas = {parcelasNum}x de R$ {fmt((valorNum + valorNum * taxaNum / 100 * parcelasNum) / parcelasNum)}</>
               )}
+            </p>
+          </div>
+        )}
+        {valueMode === "installment" && calc && (calc as any).derivedRate !== undefined && (
+          <div className="bg-muted/30 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">
+              💡 R$ {fmt(valorNum)} em {parcelasNum}x de R$ {fmt(installmentNum)} ={" "}
+              <strong className="text-foreground">{(calc as any).derivedRate.toFixed(2)}%</strong> por {calc.perPeriodLabel}
             </p>
           </div>
         )}
