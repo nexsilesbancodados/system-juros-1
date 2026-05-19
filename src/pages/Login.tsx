@@ -40,11 +40,11 @@ const Login = () => {
       const isTrialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at).getTime() > Date.now();
 
       if (!isSubscriptionActive && !isTrialActive) {
-        const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").single();
-        if (settings?.hubla_checkout_url) {
+        const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
+        if (checkoutUrl) {
           toast({ title: "Acesso pendente", description: "Sua assinatura expirou. Redirecionando para o checkout..." });
           setTimeout(() => {
-            window.location.href = settings.hubla_checkout_url;
+            window.location.href = checkoutUrl as string;
           }, 2000);
           return;
         }
