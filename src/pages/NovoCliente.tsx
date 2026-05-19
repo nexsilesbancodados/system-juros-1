@@ -392,6 +392,11 @@ const NovoCliente = () => {
   // ── Save all ──
   const handleSave = async () => {
     if (!user || !calc) return;
+    if (hasLoanErrors) {
+      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+      toast({ title: firstErr || "Corrija os campos do empréstimo", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     try {
