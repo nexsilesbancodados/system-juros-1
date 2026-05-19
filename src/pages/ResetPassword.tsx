@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2, Loader2, Send, Check, Clock } from "lucide-react";
 
 type Mode = "request" | "update" | "done";
 
@@ -38,12 +38,35 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "success">("idle");
+  const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
+  const [resendCount, setResendCount] = useState(0);
+  const [nowTick, setNowTick] = useState(0);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [resendCooldown]);
+
+  // Tick a cada 30s para atualizar o "há X minutos"
+  useEffect(() => {
+    if (!lastSentAt) return;
+    const t = setInterval(() => setNowTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, [lastSentAt]);
+
+  const formatRelative = (date: Date) => {
+    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diffSec < 60) return "agora mesmo";
+    const mins = Math.floor(diffSec / 60);
+    if (mins < 60) return `há ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    return `há ${hrs}h`;
+  };
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   const sendRecoveryEmail = async (targetEmail: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
@@ -53,16 +76,20 @@ const ResetPassword = () => {
   };
 
   const handleResend = async () => {
-    if (!email.trim() || resendCooldown > 0 || loading) return;
-    setLoading(true);
+    if (!email.trim() || resendCooldown > 0 || resendState === "sending") return;
+    setResendState("sending");
     const error = await sendRecoveryEmail(email.trim());
-    setLoading(false);
     if (error) {
+      setResendState("idle");
       toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
       return;
     }
-    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setResendState("success");
+    setLastSentAt(new Date());
+    setResendCount((c) => c + 1);
     setResendCooldown(45);
+    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setTimeout(() => setResendState("idle"), 2500);
   };
 
   // Detecta token de recuperação na URL (Supabase usa hash: #access_token=...&type=recovery)
@@ -103,6 +130,7 @@ const ResetPassword = () => {
       title: "✉️ E-mail enviado",
       description: "Verifique sua caixa de entrada (e o spam) para redefinir a senha.",
     });
+    setLastSentAt(new Date());
     setMode("done");
   };
 
@@ -238,22 +266,76 @@ const ResetPassword = () => {
                 <CheckCircle2 size={28} className="text-emerald-300" />
               </div>
               <h2 className="font-display text-xl font-semibold text-white mb-2">Verifique seu e-mail</h2>
-              <p className="text-white/50 text-sm mb-6">
+              <p className="text-white/50 text-sm mb-4">
                 Enviamos um link de recuperação para <span className="text-white">{email}</span>. O link expira em 1 hora.
               </p>
+
+              {lastSentAt && (
+                <div
+                  key={nowTick}
+                  className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 flex items-center justify-center gap-2 text-[12px] text-white/60"
+                >
+                  <Clock size={13} className="text-white/40" />
+                  <span>
+                    Último envio: <span className="text-white/85 font-medium">{formatTime(lastSentAt)}</span>
+                    <span className="text-white/40"> · {formatRelative(lastSentAt)}</span>
+                  </span>
+                  {resendCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/50 text-[10px] font-medium">
+                      {resendCount}x reenviado
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleResend}
-                  disabled={loading || resendCooldown > 0}
-                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
-                  style={{ background: "var(--gradient-button)", color: "white" }}
+                  disabled={resendState === "sending" || resendCooldown > 0}
+                  aria-live="polite"
+                  className={`w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2 ${
+                    resendState === "success" ? "ring-1 ring-emerald-400/40" : ""
+                  }`}
+                  style={{
+                    background:
+                      resendState === "success"
+                        ? "linear-gradient(135deg, hsl(152 60% 35%), hsl(160 65% 40%))"
+                        : "var(--gradient-button)",
+                    color: "white",
+                  }}
                 >
-                  {loading
-                    ? "Reenviando…"
-                    : resendCooldown > 0
-                    ? `Reenviar em ${resendCooldown}s`
-                    : "Reenviar link"}
+                  {resendState === "sending" ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      Reenviando link…
+                    </>
+                  ) : resendState === "success" ? (
+                    <>
+                      <Check size={16} />
+                      Link enviado!
+                    </>
+                  ) : resendCooldown > 0 ? (
+                    <>
+                      <Clock size={14} />
+                      Aguarde {resendCooldown}s para reenviar
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      Reenviar link
+                    </>
+                  )}
                 </button>
+
+                {resendCooldown > 0 && resendState !== "sending" && (
+                  <div className="h-0.5 w-full bg-white/[0.06] rounded-full overflow-hidden -mt-1">
+                    <div
+                      className="h-full bg-white/40 transition-all duration-1000 ease-linear"
+                      style={{ width: `${((45 - resendCooldown) / 45) * 100}%` }}
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={() => navigate("/login")}
                   className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
