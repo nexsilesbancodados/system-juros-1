@@ -157,9 +157,9 @@ const Perfil = () => {
         <div className="pt-4 border-t border-border/50 relative z-10">
             <button 
               onClick={async () => {
-                const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
-                if (settings?.hubla_checkout_url) {
-                  window.location.href = settings.hubla_checkout_url;
+                const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
+                if (checkoutUrl) {
+                  window.location.href = checkoutUrl as string;
                 } else {
                   toast({ title: "Checkout não configurado", description: "O link de pagamento ainda não foi definido pelo administrador.", variant: "destructive" });
                 }
