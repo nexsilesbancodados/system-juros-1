@@ -37,6 +37,33 @@ const ResetPassword = () => {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const sendRecoveryEmail = async (targetEmail: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return error;
+  };
+
+  const handleResend = async () => {
+    if (!email.trim() || resendCooldown > 0 || loading) return;
+    setLoading(true);
+    const error = await sendRecoveryEmail(email.trim());
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      return;
+    }
+    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setResendCooldown(45);
+  };
 
   // Detecta token de recuperação na URL (Supabase usa hash: #access_token=...&type=recovery)
   useEffect(() => {
