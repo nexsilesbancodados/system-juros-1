@@ -38,12 +38,35 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "success">("idle");
+  const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
+  const [resendCount, setResendCount] = useState(0);
+  const [nowTick, setNowTick] = useState(0);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [resendCooldown]);
+
+  // Tick a cada 30s para atualizar o "há X minutos"
+  useEffect(() => {
+    if (!lastSentAt) return;
+    const t = setInterval(() => setNowTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, [lastSentAt]);
+
+  const formatRelative = (date: Date) => {
+    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diffSec < 60) return "agora mesmo";
+    const mins = Math.floor(diffSec / 60);
+    if (mins < 60) return `há ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    return `há ${hrs}h`;
+  };
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   const sendRecoveryEmail = async (targetEmail: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
@@ -53,16 +76,20 @@ const ResetPassword = () => {
   };
 
   const handleResend = async () => {
-    if (!email.trim() || resendCooldown > 0 || loading) return;
-    setLoading(true);
+    if (!email.trim() || resendCooldown > 0 || resendState === "sending") return;
+    setResendState("sending");
     const error = await sendRecoveryEmail(email.trim());
-    setLoading(false);
     if (error) {
+      setResendState("idle");
       toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
       return;
     }
-    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setResendState("success");
+    setLastSentAt(new Date());
+    setResendCount((c) => c + 1);
     setResendCooldown(45);
+    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setTimeout(() => setResendState("idle"), 2500);
   };
 
   // Detecta token de recuperação na URL (Supabase usa hash: #access_token=...&type=recovery)
