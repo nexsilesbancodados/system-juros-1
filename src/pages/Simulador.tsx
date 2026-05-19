@@ -26,33 +26,35 @@ const Simulador = () => {
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
   const calc = useMemo(() => {
-    if (valorNum <= 0 || taxaNum <= 0) return null;
+    if (valorNum <= 0) return null;
+
+    // Modo "valor da parcela" → deriva a taxa (apenas com parcelas fixas)
+    if (valueMode === "installment") {
+      if (loanMode !== "installments" || parcelasNum <= 0 || installmentNum <= 0) return null;
+      const totalReceber = installmentNum * parcelasNum;
+      const jurosTotal = totalReceber - valorNum;
+      const derivedRate = (jurosTotal / (valorNum * parcelasNum)) * 100;
+      const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
+      return {
+        jurosTotal,
+        totalReceber,
+        valorParcela: installmentNum,
+        numParcelas: parcelasNum,
+        perPeriodLabel: periodLabel,
+        derivedRate,
+      };
+    }
+
+    if (taxaNum <= 0) return null;
 
     if (loanMode === "percentage") {
-      // Percentage mode: pays X% per period until capital is paid
-      const paymentPerPeriod = valorNum * (taxaNum / 100);
-      // How many periods to pay off capital if each payment = percentage of original
-      // Each payment covers interest only if interest = payment, so we need to think differently
-      // In this mode: client pays a fixed amount (percentage of capital) each period
-      // That payment IS the total (capital + interest mixed). The total paid = payments * amount
-      // User defines how many periods OR we calculate based on daily percentage
-      
       if (frequency === "daily") {
-        // Daily percentage: pays taxaNum% of capital per day
-        // e.g., 1000 at 10% = pays R$100/day for 10 days = R$1000 total
-        // But the lender wants profit, so total = capital + (capital * taxa/100 * days)
-        // Actually per user: "pega 1000 a 10% paga 10 dias de 110"
-        // That means: 1000 + 10% = 1100, divided by 10 days = 110/day
-        // OR: "pagar 10% ao dia todo dia 100 ate quitar"
-        // 10% of 1000 = 100/day, pays until capital is covered
-        // Let's support both: if parcelas > 0, use fixed days; otherwise calculate
         if (parcelasNum > 0) {
           const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
           const totalReceber = valorNum + jurosTotal;
           const valorParcela = totalReceber / parcelasNum;
           return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "dia" };
         } else {
-          // Pay percentage per day until capital covered: days = 100/taxa
           const days = Math.ceil(100 / taxaNum);
           const payPerDay = valorNum * (taxaNum / 100);
           const totalReceber = payPerDay * days;
@@ -73,13 +75,11 @@ const Simulador = () => {
           return { jurosTotal, totalReceber, valorParcela: payPerWeek, numParcelas: weeks, perPeriodLabel: "semana" };
         }
       } else {
-        // Monthly single payment: 1000 at 10% = 1100
         const jurosTotal = valorNum * (taxaNum / 100);
         const totalReceber = valorNum + jurosTotal;
         return { jurosTotal, totalReceber, valorParcela: totalReceber, numParcelas: 1, perPeriodLabel: "mês" };
       }
     } else {
-      // Installments mode: capital + (capital * taxa% * parcelas) / parcelas
       if (parcelasNum <= 0) return null;
       const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
       const totalReceber = valorNum + jurosTotal;
@@ -87,7 +87,7 @@ const Simulador = () => {
       const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
       return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: periodLabel };
     }
-  }, [valorNum, taxaNum, parcelasNum, loanMode, frequency, dailyMode]);
+  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
