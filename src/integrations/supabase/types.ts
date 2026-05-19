@@ -1580,6 +1580,7 @@ export type Database = {
         Args: { _other_user: string }
         Returns: string
       }
+      get_signup_checkout_url: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1595,6 +1596,16 @@ export type Database = {
       is_dm_participant: {
         Args: { _thread_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_public_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          id: string
+          is_admin: boolean
+          is_chat_blocked: boolean
+          name: string
+        }[]
       }
       portal_client_login: {
         Args: { _birth_date: string; _cpf: string }

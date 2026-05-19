@@ -106,7 +106,7 @@ const Chat = () => {
         supabase.from("chat_channels").select("*").order("is_default", { ascending: false }).order("name"),
         supabase.from("chat_channel_members").select("*"),
         supabase.from("chat_dm_threads").select("*").or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order("last_message_at", { ascending: false }),
-        supabase.from("profiles").select("id, name, avatar_url, is_admin, is_chat_blocked"),
+        supabase.rpc("list_public_profiles"),
       ]);
       setChannels(chRes.data || []);
       setMemberships(memRes.data || []);
