@@ -1573,13 +1573,37 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          id: string | null
+          is_admin: boolean | null
+          is_chat_blocked: boolean | null
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id?: string | null
+          is_admin?: boolean | null
+          is_chat_blocked?: boolean | null
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string | null
+          is_admin?: boolean | null
+          is_chat_blocked?: boolean | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_or_create_dm_thread: {
         Args: { _other_user: string }
         Returns: string
       }
+      get_signup_checkout_url: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
