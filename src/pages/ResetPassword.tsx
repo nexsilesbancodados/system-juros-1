@@ -134,8 +134,19 @@ const ResetPassword = () => {
     setMode("done");
   };
 
+  const finishAndRedirect = async (delayMs = 600) => {
+    // Sempre limpa a sessão de recuperação (best-effort) e redireciona.
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("[reset-password] signOut falhou, prosseguindo com redirect", e);
+    }
+    setTimeout(() => navigate("/login", { replace: true }), delayMs);
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validações locais — usuário pode corrigir sem perder a sessão de recuperação.
     if (password.length < 6) {
       toast({ title: "Senha muito curta", description: "Mínimo de 6 caracteres.", variant: "destructive" });
       return;
@@ -144,16 +155,34 @@ const ResetPassword = () => {
       toast({ title: "Senhas não coincidem", variant: "destructive" });
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
-      return;
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        toast({
+          title: "Não foi possível atualizar",
+          description: `${friendlyError(error.message)} Faça login novamente para tentar de novo.`,
+          variant: "destructive",
+        });
+        // Em erro de API (token expirado/inválido, rate-limit, etc), encerramos
+        // a sessão de recuperação e levamos o usuário ao login.
+        await finishAndRedirect(1500);
+        return;
+      }
+      toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
+      await finishAndRedirect(800);
+    } catch (err: any) {
+      // Falha inesperada (rede, etc) — também limpa e redireciona por segurança.
+      toast({
+        title: "Erro inesperado",
+        description: `${friendlyError(err?.message)} Redirecionando para o login…`,
+        variant: "destructive",
+      });
+      await finishAndRedirect(1500);
+    } finally {
+      setLoading(false);
     }
-    toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
-    await supabase.auth.signOut();
-    setTimeout(() => navigate("/login"), 800);
   };
 
   return (
