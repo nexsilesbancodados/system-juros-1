@@ -805,16 +805,18 @@ const NovoCliente = () => {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital (R$) *</label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8`} inputMode="numeric" />
+                  <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8 ${loanErrors.capital ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.capital} />
                 </div>
+                {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
               </div>
               {valueMode === "rate" ? (
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
                   <div className="relative">
                     <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8`} />
+                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8 ${loanErrors.taxa ? "border-destructive/60" : ""}`} aria-invalid={!!loanErrors.taxa} min={0} max={100} step="0.01" />
                   </div>
+                  {loanErrors.taxa && <p className="text-[10px] text-destructive mt-1">{loanErrors.taxa}</p>}
                 </div>
               ) : (
                 <div>
@@ -829,11 +831,13 @@ const NovoCliente = () => {
                         setInstallmentValue(parseCurrency(e.target.value));
                       }}
                       placeholder="0,00"
-                      className={`${INPUT} pl-8`}
+                      className={`${INPUT} pl-8 ${loanErrors.parcela ? "border-destructive/60" : ""}`}
                       inputMode="numeric"
+                      aria-invalid={!!loanErrors.parcela}
                     />
                   </div>
-                  {calc && (calc as any).derivedRate !== undefined && (
+                  {loanErrors.parcela && <p className="text-[10px] text-destructive mt-1">{loanErrors.parcela}</p>}
+                  {!loanErrors.parcela && calc && (calc as any).derivedRate !== undefined && (
                     <p className="text-[10px] text-muted-foreground mt-1">Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {periodLabel}</p>
                   )}
                 </div>
@@ -842,7 +846,8 @@ const NovoCliente = () => {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
                 </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={INPUT} inputMode="numeric" />
+                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
+                {loanErrors.n && <p className="text-[10px] text-destructive mt-1">{loanErrors.n}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
