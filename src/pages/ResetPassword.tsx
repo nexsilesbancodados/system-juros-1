@@ -37,6 +37,33 @@ const ResetPassword = () => {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const sendRecoveryEmail = async (targetEmail: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return error;
+  };
+
+  const handleResend = async () => {
+    if (!email.trim() || resendCooldown > 0 || loading) return;
+    setLoading(true);
+    const error = await sendRecoveryEmail(email.trim());
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      return;
+    }
+    toast({ title: "✉️ Link reenviado", description: `Novo e-mail enviado para ${email}.` });
+    setResendCooldown(45);
+  };
 
   // Detecta token de recuperação na URL (Supabase usa hash: #access_token=...&type=recovery)
   useEffect(() => {
@@ -214,12 +241,26 @@ const ResetPassword = () => {
               <p className="text-white/50 text-sm mb-6">
                 Enviamos um link de recuperação para <span className="text-white">{email}</span>. O link expira em 1 hora.
               </p>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
-              >
-                Voltar ao login
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleResend}
+                  disabled={loading || resendCooldown > 0}
+                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
+                  style={{ background: "var(--gradient-button)", color: "white" }}
+                >
+                  {loading
+                    ? "Reenviando…"
+                    : resendCooldown > 0
+                    ? `Reenviar em ${resendCooldown}s`
+                    : "Reenviar link"}
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
+                >
+                  Voltar ao login
+                </button>
+              </div>
             </div>
           )}
         </div>
