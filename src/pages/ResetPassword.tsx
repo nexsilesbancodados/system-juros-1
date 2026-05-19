@@ -130,6 +130,7 @@ const ResetPassword = () => {
       title: "✉️ E-mail enviado",
       description: "Verifique sua caixa de entrada (e o spam) para redefinir a senha.",
     });
+    setLastSentAt(new Date());
     setMode("done");
   };
 
