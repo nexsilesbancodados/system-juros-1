@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2, Loader2, Send, Check, Clock } from "lucide-react";
 
 type Mode = "request" | "update" | "done";
 
