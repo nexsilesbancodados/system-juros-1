@@ -167,8 +167,8 @@ const Login = () => {
                     </div>
                   </div>
 
-                  <p 
-                    onClick={() => navigate("/suporte")}
+                  <p
+                    onClick={() => navigate("/reset-password")}
                     className="text-right text-xs text-white/30 cursor-pointer hover:text-white/70 transition-colors"
                   >
                     Esqueceu a senha?
