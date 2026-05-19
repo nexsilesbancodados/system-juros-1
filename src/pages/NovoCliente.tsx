@@ -858,6 +858,9 @@ const NovoCliente = () => {
                     { label: "Total", value: `R$ ${fmt(calc.totalAmount)}` },
                     { label: `Valor/${periodLabel}`, value: `R$ ${fmt(calc.installmentAmount)}` },
                     { label: "Pagamentos", value: `${calc.numParcelas}x` },
+                    ...(valueMode === "installment" && (calc as any).derivedRate !== undefined
+                      ? [{ label: `Taxa equiv./${periodLabel}`, value: `${(calc as any).derivedRate.toFixed(2)}%` }]
+                      : []),
                   ].map(i => (
                     <div key={i.label}>
                       <p className="text-muted-foreground text-[10px] uppercase tracking-wider">{i.label}</p>
@@ -866,6 +869,28 @@ const NovoCliente = () => {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Preview das datas de vencimento */}
+            {calc && calc.numParcelas > 0 && frequency !== "custom" && (
+              <details className="bg-muted/20 border border-border rounded-xl group">
+                <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <Calendar size={14} className="text-primary" /> Ver datas de vencimento ({calc.numParcelas})
+                  </p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-open:hidden">Abrir</span>
+                  <span className="text-[10px] uppercase tracking-wider text-primary hidden group-open:inline">Fechar</span>
+                </summary>
+                <div className="border-t border-border max-h-72 overflow-auto divide-y divide-border/40">
+                  {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, autoFirstDue ? undefined : firstDueDate || undefined).map((iso, i) => (
+                    <div key={i} className="grid grid-cols-3 items-center px-4 py-2 text-xs gap-2">
+                      <span className="text-muted-foreground">Parcela #{String(i + 1).padStart(2, "0")}</span>
+                      <span className="text-foreground font-medium text-center">{new Date(iso).toLocaleDateString("pt-BR")}</span>
+                      <span className="text-foreground font-semibold text-right">R$ {fmt(calc.installmentAmount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </details>
             )}
 
             {!calc && capital && taxaJuros && loanMode === "installments" && !numInstallments && (
@@ -1056,7 +1081,7 @@ const NovoCliente = () => {
                 { label: "Capital", value: `R$ ${fmt(parseFloat(capital))}` },
                 { label: "Modo", value: loanMode === "percentage" ? "Porcentagem" : "Parcelas" },
                 { label: "Frequência", value: `${freqLabel}${frequency === "daily" ? ` (${dailyMode === "mon-fri" ? "Seg-Sex" : dailyMode === "mon-sat" ? "Seg-Sáb" : "Seg-Dom"})` : ""}` },
-                { label: "Taxa", value: `${taxaJuros}% por ${periodLabel}` },
+                { label: "Taxa", value: valueMode === "installment" && (calc as any).derivedRate !== undefined ? `${(calc as any).derivedRate.toFixed(2)}% por ${periodLabel} (derivada)` : `${taxaJuros}% por ${periodLabel}` },
                 { label: "Pagamentos", value: `${calc.numParcelas}x R$ ${fmt(calc.installmentAmount)}` },
                 { label: "1º Vencimento", value: new Date(startDate + "T12:00:00").toLocaleDateString("pt-BR") },
                 { label: "Total a Receber", value: `R$ ${fmt(calc.totalAmount)}` },

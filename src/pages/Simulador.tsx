@@ -14,42 +14,47 @@ const Simulador = () => {
   const [loanMode, setLoanMode] = useState<LoanMode>("installments");
   const [frequency, setFrequency] = useState<Frequency>("monthly");
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
+  const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
+  const [installmentValue, setInstallmentValue] = useState("");
   const navigate = useNavigate();
 
   const valorNum = parseFloat(valor) || 0;
   const taxaNum = parseFloat(taxa) || 0;
   const parcelasNum = parseInt(parcelas) || 0;
+  const installmentNum = parseFloat(installmentValue) || 0;
 
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
   const calc = useMemo(() => {
-    if (valorNum <= 0 || taxaNum <= 0) return null;
+    if (valorNum <= 0) return null;
+
+    // Modo "valor da parcela" → deriva a taxa (apenas com parcelas fixas)
+    if (valueMode === "installment") {
+      if (loanMode !== "installments" || parcelasNum <= 0 || installmentNum <= 0) return null;
+      const totalReceber = installmentNum * parcelasNum;
+      const jurosTotal = totalReceber - valorNum;
+      const derivedRate = (jurosTotal / (valorNum * parcelasNum)) * 100;
+      const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
+      return {
+        jurosTotal,
+        totalReceber,
+        valorParcela: installmentNum,
+        numParcelas: parcelasNum,
+        perPeriodLabel: periodLabel,
+        derivedRate,
+      };
+    }
+
+    if (taxaNum <= 0) return null;
 
     if (loanMode === "percentage") {
-      // Percentage mode: pays X% per period until capital is paid
-      const paymentPerPeriod = valorNum * (taxaNum / 100);
-      // How many periods to pay off capital if each payment = percentage of original
-      // Each payment covers interest only if interest = payment, so we need to think differently
-      // In this mode: client pays a fixed amount (percentage of capital) each period
-      // That payment IS the total (capital + interest mixed). The total paid = payments * amount
-      // User defines how many periods OR we calculate based on daily percentage
-      
       if (frequency === "daily") {
-        // Daily percentage: pays taxaNum% of capital per day
-        // e.g., 1000 at 10% = pays R$100/day for 10 days = R$1000 total
-        // But the lender wants profit, so total = capital + (capital * taxa/100 * days)
-        // Actually per user: "pega 1000 a 10% paga 10 dias de 110"
-        // That means: 1000 + 10% = 1100, divided by 10 days = 110/day
-        // OR: "pagar 10% ao dia todo dia 100 ate quitar"
-        // 10% of 1000 = 100/day, pays until capital is covered
-        // Let's support both: if parcelas > 0, use fixed days; otherwise calculate
         if (parcelasNum > 0) {
           const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
           const totalReceber = valorNum + jurosTotal;
           const valorParcela = totalReceber / parcelasNum;
           return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "dia" };
         } else {
-          // Pay percentage per day until capital covered: days = 100/taxa
           const days = Math.ceil(100 / taxaNum);
           const payPerDay = valorNum * (taxaNum / 100);
           const totalReceber = payPerDay * days;
@@ -70,13 +75,11 @@ const Simulador = () => {
           return { jurosTotal, totalReceber, valorParcela: payPerWeek, numParcelas: weeks, perPeriodLabel: "semana" };
         }
       } else {
-        // Monthly single payment: 1000 at 10% = 1100
         const jurosTotal = valorNum * (taxaNum / 100);
         const totalReceber = valorNum + jurosTotal;
         return { jurosTotal, totalReceber, valorParcela: totalReceber, numParcelas: 1, perPeriodLabel: "mês" };
       }
     } else {
-      // Installments mode: capital + (capital * taxa% * parcelas) / parcelas
       if (parcelasNum <= 0) return null;
       const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
       const totalReceber = valorNum + jurosTotal;
@@ -84,7 +87,7 @@ const Simulador = () => {
       const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
       return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: periodLabel };
     }
-  }, [valorNum, taxaNum, parcelasNum, loanMode, frequency, dailyMode]);
+  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -257,6 +260,26 @@ const Simulador = () => {
 
       {/* Input form */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5 card-shine">
+        <div className="flex items-center justify-between">
+          <label className="text-label block">Modo de Entrada</label>
+          <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+            <button
+              type="button"
+              onClick={() => setValueMode("rate")}
+              className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Por Taxa
+            </button>
+            <button
+              type="button"
+              onClick={() => { setValueMode("installment"); setLoanMode("installments"); }}
+              className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              Por Valor da Parcela
+            </button>
+          </div>
+        </div>
+
         <div>
           <label className="text-label mb-1.5 block">Valor do Empréstimo (R$)</label>
           <div className="relative">
@@ -265,21 +288,36 @@ const Simulador = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-label mb-1.5 block">
-              Taxa de Juros (%)
-              <span className="text-[9px] text-muted-foreground ml-1">
-                {frequency === "daily" ? "ao dia" : frequency === "weekly" ? "por semana" : "ao mês"}
-              </span>
-            </label>
-            <div className="relative">
-              <Percent size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="number" value={taxa} onChange={(e) => setTaxa(e.target.value)} placeholder="10" className={`${inputCls} pl-10`} />
+          {valueMode === "rate" ? (
+            <div>
+              <label className="text-label mb-1.5 block">
+                Taxa de Juros (%)
+                <span className="text-[9px] text-muted-foreground ml-1">
+                  {frequency === "daily" ? "ao dia" : frequency === "weekly" ? "por semana" : "ao mês"}
+                </span>
+              </label>
+              <div className="relative">
+                <Percent size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="number" value={taxa} onChange={(e) => setTaxa(e.target.value)} placeholder="10" className={`${inputCls} pl-10`} />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className="text-label mb-1.5 block">Valor da Parcela (R$)</label>
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="number" value={installmentValue} onChange={(e) => setInstallmentValue(e.target.value)} placeholder="120" className={`${inputCls} pl-10`} />
+              </div>
+              {calc && (calc as any).derivedRate !== undefined && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {calc.perPeriodLabel}
+                </p>
+              )}
+            </div>
+          )}
           <div>
             <label className="text-label mb-1.5 block">
-              {loanMode === "percentage" ? "Nº de Períodos (opcional)" : "Nº de Parcelas"}
+              {loanMode === "percentage" && valueMode === "rate" ? "Nº de Períodos (opcional)" : "Nº de Parcelas"}
             </label>
             <div className="relative">
               <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -287,7 +325,7 @@ const Simulador = () => {
                 type="number"
                 value={parcelas}
                 onChange={(e) => setParcelas(e.target.value)}
-                placeholder={loanMode === "percentage" ? "Auto" : "10"}
+                placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"}
                 className={`${inputCls} pl-10`}
               />
             </div>
@@ -295,7 +333,7 @@ const Simulador = () => {
         </div>
 
         {/* Quick example text */}
-        {valorNum > 0 && taxaNum > 0 && (
+        {valueMode === "rate" && valorNum > 0 && taxaNum > 0 && (
           <div className="bg-muted/30 rounded-lg p-3">
             <p className="text-xs text-muted-foreground">
               {loanMode === "percentage" && frequency === "monthly" && (
@@ -313,6 +351,14 @@ const Simulador = () => {
               {loanMode === "installments" && parcelasNum > 0 && (
                 <>💡 R$ {fmt(valorNum)} + {taxaNum}% × {parcelasNum} parcelas = {parcelasNum}x de R$ {fmt((valorNum + valorNum * taxaNum / 100 * parcelasNum) / parcelasNum)}</>
               )}
+            </p>
+          </div>
+        )}
+        {valueMode === "installment" && calc && (calc as any).derivedRate !== undefined && (
+          <div className="bg-muted/30 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">
+              💡 R$ {fmt(valorNum)} em {parcelasNum}x de R$ {fmt(installmentNum)} ={" "}
+              <strong className="text-foreground">{(calc as any).derivedRate.toFixed(2)}%</strong> por {calc.perPeriodLabel}
             </p>
           </div>
         )}
