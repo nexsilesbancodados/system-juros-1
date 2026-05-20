@@ -393,14 +393,28 @@ const ClienteDetalhe = () => {
 
   const toggleStatus = async () => {
     const s = client?.status === "Ativo" ? "Inativo" : "Ativo";
-    await supabase.from("clients").update({ status: s }).eq("id", id!);
-    toast({ title: `Status: ${s}` }); inv("client-detail");
+    const key = ["client-detail", id];
+    const prev = qc.getQueryData<any>(key);
+    qc.setQueryData(key, (old: any) => (old ? { ...old, status: s } : old));
+    toast({ title: `Status: ${s}` });
+    const { error } = await supabase.from("clients").update({ status: s }).eq("id", id!);
+    if (error) {
+      qc.setQueryData(key, prev);
+      toast({ title: "Erro ao atualizar status", variant: "destructive" });
+    }
   };
 
   const updateScore = async (delta: number) => {
     const ns = Math.max(0, Math.min(1000, (client?.credit_score || 100) + delta));
-    await supabase.from("clients").update({ credit_score: ns }).eq("id", id!);
-    toast({ title: `Score: ${ns}` }); inv("client-detail");
+    const key = ["client-detail", id];
+    const prev = qc.getQueryData<any>(key);
+    qc.setQueryData(key, (old: any) => (old ? { ...old, credit_score: ns } : old));
+    toast({ title: `Score: ${ns}` });
+    const { error } = await supabase.from("clients").update({ credit_score: ns }).eq("id", id!);
+    if (error) {
+      qc.setQueryData(key, prev);
+      toast({ title: "Erro ao atualizar score", variant: "destructive" });
+    }
   };
 
   const handleDelete = async () => {
