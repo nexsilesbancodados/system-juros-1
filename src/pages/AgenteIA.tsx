@@ -7,7 +7,8 @@ import {
   Send, Bot, User, BarChart3, FileText, Wifi, WifiOff,
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
   Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
-  ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff
+  ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
+  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
 } from "lucide-react";
 
 interface Message {
@@ -174,6 +175,9 @@ const AgenteIA = () => {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const [chatSearch, setChatSearch] = useState("");
+  const [chatFilter, setChatFilter] = useState<"all" | "unread" | "groups">("all");
 
   // Agent config state
   const [agentConfig, setAgentConfig] = useState({
@@ -538,9 +542,10 @@ const AgenteIA = () => {
     };
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg: Message = { role: "user", content: input, timestamp: new Date() };
+  const handleSend = async (override?: string) => {
+    const text = (override ?? input).trim();
+    if (!text || loading) return;
+    const userMsg: Message = { role: "user", content: text, timestamp: new Date() };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setInput("");
@@ -608,6 +613,66 @@ const AgenteIA = () => {
 
   const now = new Date();
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
+  const overdueAmount = dashData?.installments
+    .filter((i: any) => i.status === "pending" && new Date(i.due_date) < now)
+    .reduce((s: number, i: any) => s + Number(i.amount), 0) || 0;
+  const capitalOnStreet = dashData?.contracts
+    .filter((c: any) => c.status === "active")
+    .reduce((s: number, c: any) => s + Number(c.capital), 0) || 0;
+  const totalProfit = dashData?.contracts
+    .reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0) || 0;
+  const unreadCount = whatsappChats.reduce((s, c) => s + (c.unreadCount || 0), 0);
+
+  const fmt = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+  const filteredChats = whatsappChats.filter((c) => {
+    if (chatFilter === "unread" && !c.unreadCount) return false;
+    if (chatFilter === "groups" && !c.remoteJid.endsWith("@g.us")) return false;
+    if (chatSearch.trim()) {
+      const q = chatSearch.toLowerCase();
+      return (
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.toLowerCase().includes(q) ||
+        c.lastMessage?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const quickPrompts = [
+    { icon: <AlertTriangle size={14} />, label: "Quem deve mais?", prompt: "Liste os 5 clientes com maior valor em atraso e sugira uma abordagem para cada um." },
+    { icon: <TrendingUp size={14} />, label: "Como está o caixa?", prompt: "Analise o capital na rua, lucro acumulado e me dê um resumo executivo do desempenho." },
+    { icon: <Zap size={14} />, label: "O que cobrar hoje?", prompt: "Quais parcelas vencem hoje ou estão atrasadas? Priorize e me diga o que fazer primeiro." },
+    { icon: <Users size={14} />, label: "Risco de crédito", prompt: "Quais clientes têm maior risco de inadimplência baseado em score e histórico? Sugira ações." },
+  ];
+
+  const runQuickPrompt = (p: string) => {
+    handleSend(p);
+  };
+
+  const clearChat = () => {
+    setMessages([
+      { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Como posso ajudar?", timestamp: new Date() },
+    ]);
+  };
+
+  const copyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado!" });
+  };
+
+  // "/" to focus chat input
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "/" && tab === "chat" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        chatInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tab]);
 
   const getMessageText = (msg: WhatsAppMsg) =>
     extractWhatsAppText(msg.message) || "[mídia]";
@@ -676,42 +741,85 @@ const AgenteIA = () => {
             </div>
           ) : !selectedChat ? (
             <>
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <h2 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Conversas</h2>
-                <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                  <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
-                </button>
+              <div className="p-4 border-b border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-foreground flex items-center gap-2">
+                    <Inbox size={18} /> Conversas
+                    {unreadCount > 0 && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </h2>
+                  <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                    <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={chatSearch}
+                    onChange={(e) => setChatSearch(e.target.value)}
+                    placeholder="Buscar por nome, telefone ou mensagem..."
+                    className="w-full pl-9 pr-9 py-2 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {chatSearch && (
+                    <button onClick={() => setChatSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted">
+                      <X size={12} className="text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
+                  {([
+                    { id: "all", label: "Todas", count: whatsappChats.length },
+                    { id: "unread", label: "Não lidas", count: whatsappChats.filter(c => c.unreadCount).length },
+                    { id: "groups", label: "Grupos", count: whatsappChats.filter(c => c.remoteJid.endsWith("@g.us")).length },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setChatFilter(f.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${chatFilter === f.id ? "bg-primary text-primary-foreground" : "bg-muted/30 border border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {f.label}
+                      <span className="opacity-70">{f.count}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {loadingChats ? (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 size={24} className="animate-spin text-muted-foreground" />
                   </div>
-                ) : whatsappChats.length === 0 ? (
-                  <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                    Nenhuma conversa encontrada
+                ) : filteredChats.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-sm text-muted-foreground gap-2">
+                    <Inbox size={28} className="opacity-40" />
+                    {chatSearch || chatFilter !== "all" ? "Nenhuma conversa corresponde aos filtros" : "Nenhuma conversa encontrada"}
                   </div>
                 ) : (
-                  whatsappChats.map((chat) => (
-                    <button
-                      key={chat.id}
-                      onClick={() => openChat(chat)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <User size={18} className="text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{chat.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
-                      </div>
-                      {chat.unreadCount ? (
-                        <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
-                          {chat.unreadCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))
+                  filteredChats.map((chat) => {
+                    const isGroup = chat.remoteJid.endsWith("@g.us");
+                    return (
+                      <button
+                        key={chat.id}
+                        onClick={() => openChat(chat)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${chat.unreadCount ? "bg-primary/20 ring-2 ring-primary/30" : "bg-primary/10"}`}>
+                          {isGroup ? <Users size={18} className="text-primary" /> : <User size={18} className="text-primary" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{chat.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
+                        </div>
+                        {chat.unreadCount ? (
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
+                            {chat.unreadCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </>
@@ -950,33 +1058,111 @@ const AgenteIA = () => {
 
       {/* ========== CHAT IA TAB ========== */}
       {tab === "chat" && (
-        <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "assistant" ? "bg-primary/10" : "bg-accent"}`}>
-                  {msg.role === "assistant" ? <Bot size={16} className="text-primary" /> : <User size={16} className="text-foreground" />}
+        <div className="space-y-4">
+          {/* KPI Strip - Contexto que a IA vê */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { icon: <Users size={14} />, label: "Clientes", value: dashData?.clients.length || 0, color: "text-primary" },
+              { icon: <DollarSign size={14} />, label: "Capital na rua", value: fmt(capitalOnStreet), color: "text-foreground" },
+              { icon: <AlertTriangle size={14} />, label: "Em atraso", value: `${overdue} · ${fmt(overdueAmount)}`, color: overdue > 0 ? "text-destructive" : "text-success" },
+              { icon: <TrendingUp size={14} />, label: "Lucro total", value: fmt(totalProfit), color: "text-success" },
+            ].map((k) => (
+              <div key={k.label} className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {k.icon} {k.label}
                 </div>
-                <div className={`max-w-[70%] rounded-xl px-4 py-2.5 text-sm ${msg.role === "assistant" ? "bg-muted/50 text-foreground" : "bg-primary text-primary-foreground"}`}>
-                  <p className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") }} />
-                  <p className={`text-[10px] mt-1 ${msg.role === "assistant" ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
-                    {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
+                <p className={`text-base font-bold mt-1 ${k.color}`}>{k.value}</p>
               </div>
             ))}
-            {loading && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Bot size={16} className="text-primary" /></div>
-                <div className="bg-muted/50 rounded-xl px-4 py-3 text-sm text-muted-foreground">Pensando...</div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 400px)", minHeight: "420px" }}>
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles size={12} className="text-primary" />
+                <span>IA conectada · {messages.filter(m => m.role === "user").length} pergunta{messages.filter(m => m.role === "user").length !== 1 ? "s" : ""}</span>
+              </div>
+              <button onClick={clearChat} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 size={12} /> Limpar
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((msg, i) => (
+                <div key={i} className={`group flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "assistant" ? "bg-primary/10" : "bg-accent"}`}>
+                    {msg.role === "assistant" ? <Bot size={16} className="text-primary" /> : <User size={16} className="text-foreground" />}
+                  </div>
+                  <div className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm relative ${msg.role === "assistant" ? "bg-muted/50 text-foreground" : "bg-primary text-primary-foreground"}`}>
+                    <div
+                      className="whitespace-pre-wrap leading-relaxed prose-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: msg.content
+                          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                          .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                          .replace(/`([^`]+)`/g, '<code class="bg-background/40 px-1 py-0.5 rounded text-xs">$1</code>')
+                          .replace(/^- (.+)$/gm, '• $1')
+                      }}
+                    />
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                      <p className={`text-[10px] ${msg.role === "assistant" ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
+                        {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {msg.role === "assistant" && msg.content.length > 20 && (
+                        <button onClick={() => copyMessage(msg.content)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-background/40">
+                          <Copy size={11} className="text-muted-foreground" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Bot size={16} className="text-primary" /></div>
+                  <div className="bg-muted/50 rounded-xl px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 size={12} className="animate-spin" /> Analisando seus dados...
+                  </div>
+                </div>
+              )}
+              <div ref={scrollRef} />
+            </div>
+
+            {/* Quick prompts */}
+            {messages.length <= 1 && !loading && (
+              <div className="px-4 pb-2">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Sparkles size={10} /> Sugestões rápidas
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {quickPrompts.map((q) => (
+                    <button
+                      key={q.label}
+                      onClick={() => runQuickPrompt(q.prompt)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border text-xs text-foreground hover:bg-muted/60 hover:border-primary/40 transition-colors text-left"
+                    >
+                      <span className="text-primary">{q.icon}</span>
+                      <span className="truncate">{q.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <div ref={scrollRef} />
-          </div>
-          <div className="border-t border-border p-3">
-            <div className="flex gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="Pergunte algo..." className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-              <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"><Send size={16} /></button>
+
+            <div className="border-t border-border p-3">
+              <div className="flex gap-2">
+                <input
+                  ref={chatInputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder='Pergunte algo... (atalho: "/")'
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <button onClick={() => handleSend()} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity">
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -984,18 +1170,40 @@ const AgenteIA = () => {
 
       {/* Metrics */}
       {tab === "metricas" && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Conversas IA", value: messages.filter((m) => m.role === "user").length },
-            { label: "Mensagens", value: messages.length },
-            { label: "Parcelas Atrasadas", value: overdue },
-            { label: "WhatsApp", value: whatsappStatus === "connected" ? "✅ Online" : "❌ Offline" },
-          ].map((m) => (
-            <div key={m.label} className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-xs text-muted-foreground">{m.label}</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{m.value}</p>
-            </div>
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Capital na rua", value: fmt(capitalOnStreet), icon: <DollarSign size={16} />, color: "text-primary" },
+              { label: "Lucro acumulado", value: fmt(totalProfit), icon: <TrendingUp size={16} />, color: "text-success" },
+              { label: "Em atraso", value: fmt(overdueAmount), icon: <AlertTriangle size={16} />, color: overdue > 0 ? "text-destructive" : "text-muted-foreground" },
+              { label: "Clientes ativos", value: dashData?.clients.filter((c: any) => c.status === "Ativo").length || 0, icon: <Users size={16} />, color: "text-foreground" },
+            ].map((m) => (
+              <div key={m.label} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                  <span className={m.color}>{m.icon}</span>
+                </div>
+                <p className={`text-2xl font-bold ${m.color}`}>{m.value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Conversas IA", value: messages.filter((m) => m.role === "user").length },
+              { label: "Mensagens trocadas", value: messages.length },
+              { label: "Conversas WhatsApp", value: whatsappChats.length },
+              { label: "Não lidas", value: unreadCount },
+              { label: "Parcelas atrasadas", value: overdue },
+              { label: "Total contratos", value: dashData?.contracts.length || 0 },
+              { label: "WhatsApp", value: whatsappStatus === "connected" ? "Online" : "Offline" },
+              { label: "Chatbot", value: agentConfig.chatbotEnabled ? "Ativo" : "Pausado" },
+            ].map((m) => (
+              <div key={m.label} className="rounded-xl border border-border bg-card/60 p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                <p className="text-lg font-semibold text-foreground mt-1">{m.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
