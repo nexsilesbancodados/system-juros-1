@@ -425,7 +425,7 @@ const ResetPassword = () => {
                 )}
 
                 <button
-                  onClick={() => navigate("/login", { replace: true })}
+                  onClick={() => navigate(loginHref, { replace: true })}
                   className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
                 >
                   Voltar ao login
