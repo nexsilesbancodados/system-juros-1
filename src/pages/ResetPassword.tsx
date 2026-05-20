@@ -195,7 +195,8 @@ const ResetPassword = () => {
     const error = await sendRecoveryEmail(email.trim());
     if (error) {
       setResendState("idle");
-      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      const f = friendlyError(error);
+      toast({ title: f.title, description: f.description, variant: "destructive" });
       return;
     }
     setResendState("success");
