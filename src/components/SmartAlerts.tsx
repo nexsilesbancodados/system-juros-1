@@ -114,6 +114,9 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${critOverdue.length} crítica${critOverdue.length !== 1 ? "s" : ""}`, critOverdue) },
         secondaryAction: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
       });
+    }
+
+
 
     // 2) Warning: recent overdue (<7d)
     const lightOverdue = overdue.filter((i: any) => {
