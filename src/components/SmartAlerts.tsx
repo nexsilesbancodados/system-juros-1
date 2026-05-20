@@ -288,19 +288,38 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.description}</p>
-                {a.action && (
-                  <button
-                    onClick={a.action.onClick}
-                    className={`mt-2 text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5`}
-                  >
-                    {a.action.label} <ChevronRight size={11} />
-                  </button>
+                {(a.action || a.secondaryAction) && (
+                  <div className="mt-2 flex items-center gap-3 flex-wrap">
+                    {a.action && (
+                      <button
+                        onClick={a.action.onClick}
+                        className={`text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded`}
+                      >
+                        {a.action.label} <ChevronRight size={11} />
+                      </button>
+                    )}
+                    {a.secondaryAction && (
+                      <button
+                        onClick={a.secondaryAction.onClick}
+                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                      >
+                        {a.secondaryAction.label}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <CobrarAgoraModal
+        open={cobrarOpen}
+        onClose={() => setCobrarOpen(false)}
+        title={cobrarTitle}
+        installments={cobrarList}
+      />
     </div>
   );
 };
