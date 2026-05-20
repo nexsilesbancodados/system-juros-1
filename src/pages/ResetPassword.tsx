@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2, Loader2, Send, Check, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, CheckCircle2, Loader2, Send, Check, Clock, AlertTriangle } from "lucide-react";
 
-type Mode = "request" | "update" | "done";
+type Mode = "request" | "update" | "done" | "error";
 
 const inputCls =
   "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
@@ -42,6 +42,29 @@ const ResetPassword = () => {
   const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
   const [resendCount, setResendCount] = useState(0);
   const [nowTick, setNowTick] = useState(0);
+  const [errorInfo, setErrorInfo] = useState<{ title: string; description: string } | null>(null);
+  const [redirectIn, setRedirectIn] = useState(0);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearRedirectTimers = () => {
+    if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+    if (redirectIntervalRef.current) clearInterval(redirectIntervalRef.current);
+    redirectTimeoutRef.current = null;
+    redirectIntervalRef.current = null;
+  };
+
+  useEffect(() => () => clearRedirectTimers(), []);
+
+  const goToLoginNow = async () => {
+    clearRedirectTimers();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("[reset-password] signOut falhou no clique, prosseguindo", e);
+    }
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -141,7 +164,16 @@ const ResetPassword = () => {
     } catch (e) {
       console.warn("[reset-password] signOut falhou, prosseguindo com redirect", e);
     }
-    setTimeout(() => navigate("/login", { replace: true }), delayMs);
+    clearRedirectTimers();
+    const seconds = Math.max(1, Math.ceil(delayMs / 1000));
+    setRedirectIn(seconds);
+    redirectIntervalRef.current = setInterval(() => {
+      setRedirectIn((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    redirectTimeoutRef.current = setTimeout(() => {
+      clearRedirectTimers();
+      navigate("/login", { replace: true });
+    }, delayMs);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -160,26 +192,35 @@ const ResetPassword = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
+        const friendly = friendlyError(error.message);
         toast({
           title: "Não foi possível atualizar",
-          description: `${friendlyError(error.message)} Faça login novamente para tentar de novo.`,
+          description: `${friendly} Faça login novamente para tentar de novo.`,
           variant: "destructive",
         });
-        // Em erro de API (token expirado/inválido, rate-limit, etc), encerramos
-        // a sessão de recuperação e levamos o usuário ao login.
-        await finishAndRedirect(1500);
+        setErrorInfo({
+          title: "Não foi possível atualizar a senha",
+          description: `${friendly} Por segurança, sua sessão de recuperação foi encerrada.`,
+        });
+        setMode("error");
+        await finishAndRedirect(8000);
         return;
       }
       toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
       await finishAndRedirect(800);
     } catch (err: any) {
-      // Falha inesperada (rede, etc) — também limpa e redireciona por segurança.
+      const friendly = friendlyError(err?.message);
       toast({
         title: "Erro inesperado",
-        description: `${friendlyError(err?.message)} Redirecionando para o login…`,
+        description: `${friendly} Redirecionando para o login…`,
         variant: "destructive",
       });
-      await finishAndRedirect(1500);
+      setErrorInfo({
+        title: "Erro inesperado",
+        description: `${friendly} Você pode tentar novamente a partir da tela de login.`,
+      });
+      setMode("error");
+      await finishAndRedirect(8000);
     } finally {
       setLoading(false);
     }
@@ -289,7 +330,7 @@ const ResetPassword = () => {
                 </button>
               </form>
             </>
-          ) : (
+          ) : mode === "done" ? (
             <div className="text-center">
               <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={28} className="text-emerald-300" />
@@ -370,6 +411,38 @@ const ResetPassword = () => {
                   className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
                 >
                   Voltar ao login
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-4 ring-1 ring-red-400/30">
+                <AlertTriangle size={26} className="text-red-300" />
+              </div>
+              <h2 className="font-display text-xl font-semibold text-white mb-2">
+                {errorInfo?.title ?? "Algo deu errado"}
+              </h2>
+              <p className="text-white/55 text-sm mb-5">
+                {errorInfo?.description ?? "Não foi possível concluir a operação."}
+              </p>
+
+              {redirectIn > 0 && (
+                <div className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 flex items-center justify-center gap-2 text-[12px] text-white/55">
+                  <Clock size={13} className="text-white/40" />
+                  <span>
+                    Redirecionando em <span className="text-white/85 font-medium">{redirectIn}s</span>…
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={goToLoginNow}
+                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
+                  style={{ background: "var(--gradient-button)", color: "white" }}
+                >
+                  Ir para o login
+                  <ArrowRight size={16} />
                 </button>
               </div>
             </div>
