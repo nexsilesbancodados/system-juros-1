@@ -81,6 +81,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <OfflineIndicator />
       <AuthProvider>
         <WhiteLabelProvider>
           <ThemeProvider>
