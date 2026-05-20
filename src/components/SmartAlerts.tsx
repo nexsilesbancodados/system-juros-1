@@ -8,6 +8,7 @@ import {
   AlertTriangle, Clock, Cake, Bell, CheckCheck, ChevronRight,
   X, Sparkles, TrendingDown, FileSignature, Loader2
 } from "lucide-react";
+import CobrarAgoraModal, { CobrarInstallment } from "./CobrarAgoraModal";
 
 type Alert = {
   id: string;
