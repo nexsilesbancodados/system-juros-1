@@ -190,7 +190,7 @@ const ResetPassword = () => {
     }, 1000);
     redirectTimeoutRef.current = setTimeout(() => {
       clearRedirectTimers();
-      navigate("/login", { replace: true });
+      navigate(loginHref, { replace: true });
     }, delayMs);
   };
 
