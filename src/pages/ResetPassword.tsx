@@ -194,7 +194,7 @@ const ResetPassword = () => {
       <ConstellationBackground />
 
       <button
-        onClick={() => navigate("/login")}
+        onClick={() => navigate("/login", { replace: true })}
         className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/50 hover:text-white transition-colors group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
