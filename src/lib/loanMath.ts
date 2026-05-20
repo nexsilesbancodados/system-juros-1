@@ -1,8 +1,13 @@
 // Núcleo unificado de cálculo de empréstimos.
-// Mantém EXATAMENTE a lógica que já estava espalhada em Simulador.tsx e
-// NovoCliente.tsx (juros simples) para não mudar nenhum valor mostrado ao usuário.
+// Suporta 6 modos: installments, percentage, interest_only, price, bullet, grace.
 
-export type LoanMode = "percentage" | "installments";
+export type LoanMode =
+  | "percentage"
+  | "installments"
+  | "interest_only"
+  | "price"
+  | "bullet"
+  | "grace";
 export type Frequency = "monthly" | "weekly" | "daily" | "biweekly" | "custom";
 export type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
 export type ValueMode = "rate" | "installment";
@@ -18,6 +23,8 @@ export interface CalculateLoanInput {
   valueMode?: ValueMode;
   /** Valor da parcela quando valueMode = "installment". */
   installmentValue?: number;
+  /** Períodos de carência (apenas para loanMode = "grace"). */
+  gracePeriods?: number;
 }
 
 export interface CalculateLoanResult {
@@ -25,6 +32,8 @@ export interface CalculateLoanResult {
   totalAmount: number;
   totalInterest: number;
   numInstallments: number;
+  /** Valor real de cada parcela (mesma length de numInstallments). */
+  schedule: number[];
   /** Taxa derivada (%) quando valueMode = "installment". */
   derivedRate?: number;
   perPeriodLabel: string;
@@ -40,21 +49,29 @@ export const periodLabelFor = (f: Frequency): string => {
   }
 };
 
-/**
- * Calcula um empréstimo de juros simples conforme as regras do app.
- * Retorna `null` quando faltam inputs essenciais (mesma semântica das useMemos antigas).
- */
+export const LOAN_MODE_LABEL: Record<LoanMode, string> = {
+  installments: "Por Parcelas",
+  percentage: "Por Porcentagem",
+  interest_only: "Só Juros + Capital no Fim",
+  price: "Juros Compostos (Price)",
+  bullet: "Pagamento Único no Vencimento",
+  grace: "Com Carência",
+};
+
+const uniform = (value: number, n: number): number[] => Array.from({ length: n }, () => value);
+
 export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | null {
   const { capital, frequency, loanMode } = input;
   const valueMode: ValueMode = input.valueMode ?? "rate";
   const periods = input.periods ?? 0;
   const rate = input.rate ?? 0;
   const installmentValue = input.installmentValue ?? 0;
+  const grace = Math.max(0, Math.floor(input.gracePeriods ?? 0));
   const label = periodLabelFor(frequency);
 
   if (!capital || capital <= 0) return null;
 
-  // Modo "valor da parcela" → deriva a taxa (apenas com parcelas fixas).
+  // Modo "valor da parcela" → deriva a taxa (apenas com parcelas fixas/installments).
   if (valueMode === "installment") {
     if (loanMode !== "installments" || periods <= 0 || installmentValue <= 0) return null;
     const totalAmount = installmentValue * periods;
@@ -65,6 +82,7 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       totalAmount,
       totalInterest,
       numInstallments: periods,
+      schedule: uniform(installmentValue, periods),
       derivedRate,
       perPeriodLabel: label,
     };
@@ -72,31 +90,50 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
 
   if (rate <= 0) return null;
 
+  // ── installments (juros simples, parcelas iguais) ──
+  if (loanMode === "installments") {
+    if (periods <= 0) return null;
+    const juros = capital * (rate / 100) * periods;
+    const total = capital + juros;
+    const parcela = total / periods;
+    return {
+      installmentAmount: parcela,
+      totalAmount: total,
+      totalInterest: juros,
+      numInstallments: periods,
+      schedule: uniform(parcela, periods),
+      perPeriodLabel: label,
+    };
+  }
+
+  // ── percentage ──
   if (loanMode === "percentage") {
-    // Mensal sem nº de parcelas → 1 pagamento único.
     if (frequency === "monthly" && periods <= 0) {
       const juros = capital * (rate / 100);
+      const total = capital + juros;
       return {
-        installmentAmount: capital + juros,
-        totalAmount: capital + juros,
+        installmentAmount: total,
+        totalAmount: total,
         totalInterest: juros,
         numInstallments: 1,
+        schedule: [total],
         perPeriodLabel: label,
       };
     }
-    // Periódico com nº de parcelas informado.
     if (periods > 0) {
       const juros = capital * (rate / 100) * periods;
       const total = capital + juros;
+      const parcela = total / periods;
       return {
-        installmentAmount: total / periods,
+        installmentAmount: parcela,
         totalAmount: total,
         totalInterest: juros,
         numInstallments: periods,
+        schedule: uniform(parcela, periods),
         perPeriodLabel: label,
       };
     }
-    // Periódico sem nº → calcula até quitar (paga capital * taxa por período).
+    // auto
     const autoPeriods = Math.ceil(100 / rate);
     const payPer = capital * (rate / 100);
     const total = payPer * autoPeriods;
@@ -105,26 +142,85 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       totalAmount: total,
       totalInterest: total - capital,
       numInstallments: autoPeriods,
+      schedule: uniform(payPer, autoPeriods),
       perPeriodLabel: label,
     };
   }
 
-  // loanMode === "installments"
-  if (periods <= 0) return null;
-  const juros = capital * (rate / 100) * periods;
-  const total = capital + juros;
-  return {
-    installmentAmount: total / periods,
-    totalAmount: total,
-    totalInterest: juros,
-    numInstallments: periods,
-    perPeriodLabel: label,
-  };
+  // ── interest_only: n-1 parcelas de juros + última com juros + capital ──
+  if (loanMode === "interest_only") {
+    if (periods <= 0) return null;
+    const jurosPeriodo = capital * (rate / 100);
+    const schedule: number[] = [];
+    for (let i = 0; i < periods - 1; i++) schedule.push(jurosPeriodo);
+    schedule.push(jurosPeriodo + capital);
+    const totalAmount = schedule.reduce((a, b) => a + b, 0);
+    return {
+      installmentAmount: jurosPeriodo,
+      totalAmount,
+      totalInterest: totalAmount - capital,
+      numInstallments: periods,
+      schedule,
+      perPeriodLabel: label,
+    };
+  }
+
+  // ── price: PMT = PV * i / (1 - (1+i)^-n) ──
+  if (loanMode === "price") {
+    if (periods <= 0) return null;
+    const i = rate / 100;
+    const pmt = i === 0 ? capital / periods : (capital * i) / (1 - Math.pow(1 + i, -periods));
+    const total = pmt * periods;
+    return {
+      installmentAmount: pmt,
+      totalAmount: total,
+      totalInterest: total - capital,
+      numInstallments: periods,
+      schedule: uniform(pmt, periods),
+      perPeriodLabel: label,
+    };
+  }
+
+  // ── bullet: 1 pagamento ao fim de N períodos (juros simples) ──
+  if (loanMode === "bullet") {
+    if (periods <= 0) return null;
+    const total = capital * (1 + (rate / 100) * periods);
+    return {
+      installmentAmount: total,
+      totalAmount: total,
+      totalInterest: total - capital,
+      numInstallments: 1,
+      schedule: [total],
+      perPeriodLabel: label,
+    };
+  }
+
+  // ── grace: g períodos sem pagar (juros simples acumulam) + n parcelas iguais ──
+  if (loanMode === "grace") {
+    if (periods <= 0) return null;
+    const capitalApos = capital * (1 + (rate / 100) * grace);
+    const juros = capitalApos * (rate / 100) * periods;
+    const totalPosCarencia = capitalApos + juros;
+    const parcela = totalPosCarencia / periods;
+    const schedule: number[] = [];
+    for (let i = 0; i < grace; i++) schedule.push(0);
+    for (let i = 0; i < periods; i++) schedule.push(parcela);
+    const totalAmount = schedule.reduce((a, b) => a + b, 0);
+    return {
+      installmentAmount: parcela,
+      totalAmount,
+      totalInterest: totalAmount - capital,
+      numInstallments: schedule.length,
+      schedule,
+      perPeriodLabel: label,
+    };
+  }
+
+  return null;
 }
 
 /**
- * Deriva a taxa periódica (%) a partir do valor da parcela.
- * (Juros simples: total = parcela * n; juros = total - capital; taxa = juros / (capital * n) * 100)
+ * Deriva a taxa periódica (%) a partir do valor da parcela (juros simples).
  */
 export function deriveRateFromInstallment(params: {
   capital: number;
@@ -140,23 +236,41 @@ export function deriveRateFromInstallment(params: {
 
 /**
  * Gera as datas de vencimento das parcelas.
- * Mantém o comportamento atual: NÃO empurra fim de semana/feriado (exceto o skip de
- * fim de semana no modo "daily" conforme dailyMode).
  */
 export function generateInstallmentSchedule(params: {
-  /** Data base (ISO string ou "YYYY-MM-DD"). */
   startDate: string;
-  /** Data da 1ª parcela (opcional). Quando ausente, soma 1 período sobre startDate. */
   firstDueDate?: string;
   count: number;
   frequency: Frequency;
   dailyMode?: DailyMode;
-  /** Datas customizadas quando frequency = "custom" (uma por parcela, "YYYY-MM-DD"). */
   customDates?: (string | undefined)[];
+  /** Para bullet: o único pagamento cai N períodos após a data base. */
+  periodsAhead?: number;
 }): string[] {
-  const { startDate, firstDueDate, count, frequency } = params;
+  const { startDate, firstDueDate, count, frequency, periodsAhead } = params;
   const dailyMode: DailyMode = params.dailyMode ?? "mon-fri";
   const customDates = params.customDates ?? [];
+
+  // Caso bullet: 1 data, N períodos no futuro
+  if (periodsAhead && periodsAhead > 0 && count === 1) {
+    const s = new Date(startDate + "T12:00:00");
+    if (frequency === "daily") {
+      let added = 0;
+      const cur = new Date(s);
+      while (added < periodsAhead) {
+        cur.setDate(cur.getDate() + 1);
+        const dow = cur.getDay();
+        if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+        if (dailyMode === "mon-sat" && dow === 0) continue;
+        added++;
+      }
+      return [cur.toISOString()];
+    }
+    if (frequency === "weekly") { s.setDate(s.getDate() + 7 * periodsAhead); return [s.toISOString()]; }
+    if (frequency === "biweekly") { s.setDate(s.getDate() + 15 * periodsAhead); return [s.toISOString()]; }
+    s.setMonth(s.getMonth() + periodsAhead);
+    return [s.toISOString()];
+  }
 
   const dates: string[] = [];
 
@@ -166,7 +280,6 @@ export function generateInstallmentSchedule(params: {
       if (d) {
         dates.push(new Date(d + "T12:00:00").toISOString());
       } else {
-        // fallback: cadência mensal a partir do startDate
         const s = new Date(startDate + "T12:00:00");
         s.setMonth(s.getMonth() + i + 1);
         dates.push(s.toISOString());
@@ -208,7 +321,6 @@ export function generateInstallmentSchedule(params: {
       d.setDate(baseDate.getDate() + offset);
       dates.push(d.toISOString());
     } else {
-      // monthly
       const d = new Date(baseDate);
       const offset = firstDueDateObj ? i : i + 1;
       d.setMonth(baseDate.getMonth() + offset);
