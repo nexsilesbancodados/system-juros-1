@@ -1058,33 +1058,111 @@ const AgenteIA = () => {
 
       {/* ========== CHAT IA TAB ========== */}
       {tab === "chat" && (
-        <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 280px)" }}>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "assistant" ? "bg-primary/10" : "bg-accent"}`}>
-                  {msg.role === "assistant" ? <Bot size={16} className="text-primary" /> : <User size={16} className="text-foreground" />}
+        <div className="space-y-4">
+          {/* KPI Strip - Contexto que a IA vê */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { icon: <Users size={14} />, label: "Clientes", value: dashData?.clients.length || 0, color: "text-primary" },
+              { icon: <DollarSign size={14} />, label: "Capital na rua", value: fmt(capitalOnStreet), color: "text-foreground" },
+              { icon: <AlertTriangle size={14} />, label: "Em atraso", value: `${overdue} · ${fmt(overdueAmount)}`, color: overdue > 0 ? "text-destructive" : "text-success" },
+              { icon: <TrendingUp size={14} />, label: "Lucro total", value: fmt(totalProfit), color: "text-success" },
+            ].map((k) => (
+              <div key={k.label} className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {k.icon} {k.label}
                 </div>
-                <div className={`max-w-[70%] rounded-xl px-4 py-2.5 text-sm ${msg.role === "assistant" ? "bg-muted/50 text-foreground" : "bg-primary text-primary-foreground"}`}>
-                  <p className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") }} />
-                  <p className={`text-[10px] mt-1 ${msg.role === "assistant" ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
-                    {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
+                <p className={`text-base font-bold mt-1 ${k.color}`}>{k.value}</p>
               </div>
             ))}
-            {loading && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Bot size={16} className="text-primary" /></div>
-                <div className="bg-muted/50 rounded-xl px-4 py-3 text-sm text-muted-foreground">Pensando...</div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ height: "calc(100vh - 400px)", minHeight: "420px" }}>
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles size={12} className="text-primary" />
+                <span>IA conectada · {messages.filter(m => m.role === "user").length} pergunta{messages.filter(m => m.role === "user").length !== 1 ? "s" : ""}</span>
+              </div>
+              <button onClick={clearChat} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 size={12} /> Limpar
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((msg, i) => (
+                <div key={i} className={`group flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "assistant" ? "bg-primary/10" : "bg-accent"}`}>
+                    {msg.role === "assistant" ? <Bot size={16} className="text-primary" /> : <User size={16} className="text-foreground" />}
+                  </div>
+                  <div className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm relative ${msg.role === "assistant" ? "bg-muted/50 text-foreground" : "bg-primary text-primary-foreground"}`}>
+                    <div
+                      className="whitespace-pre-wrap leading-relaxed prose-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: msg.content
+                          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                          .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                          .replace(/`([^`]+)`/g, '<code class="bg-background/40 px-1 py-0.5 rounded text-xs">$1</code>')
+                          .replace(/^- (.+)$/gm, '• $1')
+                      }}
+                    />
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                      <p className={`text-[10px] ${msg.role === "assistant" ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
+                        {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {msg.role === "assistant" && msg.content.length > 20 && (
+                        <button onClick={() => copyMessage(msg.content)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-background/40">
+                          <Copy size={11} className="text-muted-foreground" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Bot size={16} className="text-primary" /></div>
+                  <div className="bg-muted/50 rounded-xl px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 size={12} className="animate-spin" /> Analisando seus dados...
+                  </div>
+                </div>
+              )}
+              <div ref={scrollRef} />
+            </div>
+
+            {/* Quick prompts */}
+            {messages.length <= 1 && !loading && (
+              <div className="px-4 pb-2">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Sparkles size={10} /> Sugestões rápidas
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {quickPrompts.map((q) => (
+                    <button
+                      key={q.label}
+                      onClick={() => runQuickPrompt(q.prompt)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border text-xs text-foreground hover:bg-muted/60 hover:border-primary/40 transition-colors text-left"
+                    >
+                      <span className="text-primary">{q.icon}</span>
+                      <span className="truncate">{q.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <div ref={scrollRef} />
-          </div>
-          <div className="border-t border-border p-3">
-            <div className="flex gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="Pergunte algo..." className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-              <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"><Send size={16} /></button>
+
+            <div className="border-t border-border p-3">
+              <div className="flex gap-2">
+                <input
+                  ref={chatInputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder='Pergunte algo... (atalho: "/")'
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <button onClick={handleSend} disabled={!input.trim() || loading} className="p-2.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity">
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1092,18 +1170,40 @@ const AgenteIA = () => {
 
       {/* Metrics */}
       {tab === "metricas" && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Conversas IA", value: messages.filter((m) => m.role === "user").length },
-            { label: "Mensagens", value: messages.length },
-            { label: "Parcelas Atrasadas", value: overdue },
-            { label: "WhatsApp", value: whatsappStatus === "connected" ? "✅ Online" : "❌ Offline" },
-          ].map((m) => (
-            <div key={m.label} className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-xs text-muted-foreground">{m.label}</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{m.value}</p>
-            </div>
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Capital na rua", value: fmt(capitalOnStreet), icon: <DollarSign size={16} />, color: "text-primary" },
+              { label: "Lucro acumulado", value: fmt(totalProfit), icon: <TrendingUp size={16} />, color: "text-success" },
+              { label: "Em atraso", value: fmt(overdueAmount), icon: <AlertTriangle size={16} />, color: overdue > 0 ? "text-destructive" : "text-muted-foreground" },
+              { label: "Clientes ativos", value: dashData?.clients.filter((c: any) => c.status === "Ativo").length || 0, icon: <Users size={16} />, color: "text-foreground" },
+            ].map((m) => (
+              <div key={m.label} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                  <span className={m.color}>{m.icon}</span>
+                </div>
+                <p className={`text-2xl font-bold ${m.color}`}>{m.value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Conversas IA", value: messages.filter((m) => m.role === "user").length },
+              { label: "Mensagens trocadas", value: messages.length },
+              { label: "Conversas WhatsApp", value: whatsappChats.length },
+              { label: "Não lidas", value: unreadCount },
+              { label: "Parcelas atrasadas", value: overdue },
+              { label: "Total contratos", value: dashData?.contracts.length || 0 },
+              { label: "WhatsApp", value: whatsappStatus === "connected" ? "Online" : "Offline" },
+              { label: "Chatbot", value: agentConfig.chatbotEnabled ? "Ativo" : "Pausado" },
+            ].map((m) => (
+              <div key={m.label} className="rounded-xl border border-border bg-card/60 p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                <p className="text-lg font-semibold text-foreground mt-1">{m.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
