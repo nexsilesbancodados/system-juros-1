@@ -5,6 +5,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import QuickPaymentModal from "@/components/QuickPaymentModal";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -16,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,11 +78,17 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      const inField = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
       }
-      if (e.key === "Escape") setSearchOpen(false);
+      if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        setPayOpen((prev) => !prev);
+      }
+      if (e.key === "Escape") { setSearchOpen(false); setPayOpen(false); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
