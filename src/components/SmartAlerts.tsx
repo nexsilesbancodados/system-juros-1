@@ -8,6 +8,7 @@ import {
   AlertTriangle, Clock, Cake, Bell, CheckCheck, ChevronRight,
   X, Sparkles, TrendingDown, FileSignature, Loader2
 } from "lucide-react";
+import CobrarAgoraModal, { CobrarInstallment } from "./CobrarAgoraModal";
 
 type Alert = {
   id: string;
@@ -43,6 +44,15 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
   const qc = useQueryClient();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [cobrarOpen, setCobrarOpen] = useState(false);
+  const [cobrarTitle, setCobrarTitle] = useState("Cobrar agora");
+  const [cobrarList, setCobrarList] = useState<CobrarInstallment[]>([]);
+
+  const openCobrar = (title: string, list: any[]) => {
+    setCobrarTitle(title);
+    setCobrarList(list as CobrarInstallment[]);
+    setCobrarOpen(true);
+  };
 
   // Birthdays today
   const { data: birthdays } = useQuery({
@@ -101,9 +111,12 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         description: `Mais de 7 dias em atraso · R$ ${fmtBRL(total)}`,
         count: critOverdue.length,
         amount: total,
-        action: { label: "Cobrar agora", onClick: () => navigate("/cobrancas?filter=overdue") },
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${critOverdue.length} crítica${critOverdue.length !== 1 ? "s" : ""}`, critOverdue) },
+        secondaryAction: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
       });
     }
+
+
 
     // 2) Warning: recent overdue (<7d)
     const lightOverdue = overdue.filter((i: any) => {
@@ -119,7 +132,8 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         title: `${lightOverdue.length} atraso${lightOverdue.length !== 1 ? "s" : ""} recente${lightOverdue.length !== 1 ? "s" : ""}`,
         description: `Atrasados há menos de 7 dias · R$ ${fmtBRL(total)}`,
         count: lightOverdue.length,
-        action: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${lightOverdue.length} atraso${lightOverdue.length !== 1 ? "s" : ""} recente${lightOverdue.length !== 1 ? "s" : ""}`, lightOverdue) },
+        secondaryAction: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
       });
     }
 
@@ -133,7 +147,8 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         title: `${dueToday.length} vence${dueToday.length !== 1 ? "m" : ""} hoje`,
         description: `Total previsto · R$ ${fmtBRL(total)}`,
         count: dueToday.length,
-        action: { label: "Enviar lembretes", onClick: () => navigate("/cobrancas?filter=today") },
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${dueToday.length} de hoje`, dueToday) },
+        secondaryAction: { label: "Enviar lembretes", onClick: () => navigate("/cobrancas?filter=today") },
       });
     }
 
@@ -273,19 +288,38 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.description}</p>
-                {a.action && (
-                  <button
-                    onClick={a.action.onClick}
-                    className={`mt-2 text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5`}
-                  >
-                    {a.action.label} <ChevronRight size={11} />
-                  </button>
+                {(a.action || a.secondaryAction) && (
+                  <div className="mt-2 flex items-center gap-3 flex-wrap">
+                    {a.action && (
+                      <button
+                        onClick={a.action.onClick}
+                        className={`text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded`}
+                      >
+                        {a.action.label} <ChevronRight size={11} />
+                      </button>
+                    )}
+                    {a.secondaryAction && (
+                      <button
+                        onClick={a.secondaryAction.onClick}
+                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                      >
+                        {a.secondaryAction.label}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <CobrarAgoraModal
+        open={cobrarOpen}
+        onClose={() => setCobrarOpen(false)}
+        title={cobrarTitle}
+        installments={cobrarList}
+      />
     </div>
   );
 };
