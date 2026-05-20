@@ -112,33 +112,6 @@ const LandingHero = () => {
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_100px_-20px_rgba(59,130,246,0.2)] overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
               
-              {/* Fake App Mock */}
-              <div className="aspect-video w-full bg-[#0a0a0a] p-4 flex flex-col gap-4">
-                 {/* Sidebar Mock */}
-                 <div className="flex gap-4 h-full">
-                    <div className="w-12 flex flex-col gap-4">
-                      {[1,2,3,4,5].map(i => (
-                        <div key={i} className="w-10 h-10 rounded-xl bg-white/[0.03]" />
-                      ))}
-                    </div>
-                    <div className="flex-1 flex flex-col gap-4">
-                      <div className="h-10 rounded-xl bg-white/[0.03] w-1/3" />
-                      <div className="grid grid-cols-3 gap-4">
-                        {[1,2,3].map(i => (
-                          <div key={i} className="h-24 rounded-2xl bg-white/[0.02] border border-white/[0.05]" />
-                        ))}
-                      </div>
-                      <div className="flex-1 rounded-2xl bg-white/[0.01] border border-white/[0.05] p-4">
-                         <div className="h-4 bg-white/[0.03] rounded w-1/4 mb-4" />
-                         <div className="space-y-2">
-                           {[1,2,3,4].map(i => (
-                             <div key={i} className="h-8 bg-white/[0.02] rounded" />
-                           ))}
-                         </div>
-                      </div>
-                    </div>
-                 </div>
-              </div>
 
               {/* Eagle Overlay like in the screenshot */}
               <div className="absolute -right-20 -top-20 opacity-20 pointer-events-none">
