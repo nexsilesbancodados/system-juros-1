@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   AlertTriangle, Clock, Cake, Bell, CheckCheck, ChevronRight,
-  X, Sparkles, TrendingDown, FileSignature, Loader2
+  X, Sparkles, TrendingDown, FileSignature, Loader2, RotateCcw
 } from "lucide-react";
 import CobrarAgoraModal, { CobrarInstallment } from "./CobrarAgoraModal";
+
+// Persisted-dismiss helpers (localStorage, per-user, with TTL)
+const DISMISS_KEY = (uid?: string) => `smart-alerts:dismissed:${uid || "anon"}`;
+const DAY_MS = 86_400_000;
+// Group alerts reset daily; notification-bound alerts persist 30 days
+const ttlForId = (id: string) => (id.startsWith("notif-") ? 30 * DAY_MS : DAY_MS);
+
+type DismissMap = Record<string, number>; // id -> expiresAt (ms)
+
+const loadDismissed = (uid?: string): DismissMap => {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY(uid));
+    if (!raw) return {};
+    const parsed: DismissMap = JSON.parse(raw);
+    const now = Date.now();
+    const clean: DismissMap = {};
+    Object.entries(parsed).forEach(([k, exp]) => { if (exp > now) clean[k] = exp; });
+    return clean;
+  } catch { return {}; }
+};
+
+const saveDismissed = (uid: string | undefined, map: DismissMap) => {
+  try { localStorage.setItem(DISMISS_KEY(uid), JSON.stringify(map)); } catch {}
+};
 
 type Alert = {
   id: string;
@@ -42,7 +66,13 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissedMap, setDismissedMap] = useState<DismissMap>({});
+  const dismissed = useMemo(() => new Set(Object.keys(dismissedMap)), [dismissedMap]);
+
+  // Hydrate from localStorage on mount / user change
+  useEffect(() => {
+    setDismissedMap(loadDismissed(user?.id));
+  }, [user?.id]);
   const [busy, setBusy] = useState(false);
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [cobrarTitle, setCobrarTitle] = useState("Cobrar agora");
@@ -213,8 +243,18 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     return list.filter(a => !dismissed.has(a.id));
   }, [overdue, dueToday, notifications, birthdays, pendingSigs, dismissed, navigate]);
 
+  const persistDismiss = (ids: string[]) => {
+    setDismissedMap((prev) => {
+      const now = Date.now();
+      const next = { ...prev };
+      ids.forEach((id) => { next[id] = now + ttlForId(id); });
+      saveDismissed(user?.id, next);
+      return next;
+    });
+  };
+
   const dismissAlert = async (alert: Alert) => {
-    setDismissed(prev => new Set(prev).add(alert.id));
+    persistDismiss([alert.id]);
     if (alert.dismissIds?.length) {
       await supabase.from("notifications").update({ is_read: true }).in("id", alert.dismissIds);
       qc.invalidateQueries({ queryKey: ["hoje"] });
@@ -228,11 +268,27 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     if (allNotifIds.length > 0) {
       await supabase.from("notifications").update({ is_read: true }).in("id", allNotifIds);
     }
-    setDismissed(new Set(alerts.map(a => a.id)));
+    persistDismiss(alerts.map(a => a.id));
     qc.invalidateQueries({ queryKey: ["hoje"] });
     setBusy(false);
-    toast.success("Alertas limpos");
+    toast.success("Alertas limpos", {
+      action: {
+        label: "Restaurar",
+        onClick: () => {
+          setDismissedMap({});
+          saveDismissed(user?.id, {});
+        },
+      },
+    });
   };
+
+  const restoreAll = () => {
+    setDismissedMap({});
+    saveDismissed(user?.id, {});
+    toast.success("Alertas restaurados");
+  };
+
+  const hiddenCount = Object.keys(dismissedMap).length;
 
   // Group alerts by severity for sectioned rendering
   const order: Array<Alert["group"]> = ["critical", "warning", "info", "system"];
@@ -257,16 +313,27 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
             </span>
           )}
         </h2>
-        {alerts.length > 1 && (
-          <button
-            onClick={dismissAll}
-            disabled={busy}
-            className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors disabled:opacity-50"
-          >
-            {busy ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
-            Limpar todos
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {hiddenCount > 0 && (
+            <button
+              onClick={restoreAll}
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              title={`${hiddenCount} alerta${hiddenCount !== 1 ? "s" : ""} dispensado${hiddenCount !== 1 ? "s" : ""}`}
+            >
+              <RotateCcw size={11} /> Restaurar ({hiddenCount})
+            </button>
+          )}
+          {alerts.length > 1 && (
+            <button
+              onClick={dismissAll}
+              disabled={busy}
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              {busy ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
+              Limpar todos
+            </button>
+          )}
+        </div>
       </div>
       <div className="max-h-[440px] overflow-y-auto">
         {grouped.length === 0 && (
