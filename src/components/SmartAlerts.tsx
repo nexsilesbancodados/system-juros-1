@@ -243,8 +243,18 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     return list.filter(a => !dismissed.has(a.id));
   }, [overdue, dueToday, notifications, birthdays, pendingSigs, dismissed, navigate]);
 
+  const persistDismiss = (ids: string[]) => {
+    setDismissedMap((prev) => {
+      const now = Date.now();
+      const next = { ...prev };
+      ids.forEach((id) => { next[id] = now + ttlForId(id); });
+      saveDismissed(user?.id, next);
+      return next;
+    });
+  };
+
   const dismissAlert = async (alert: Alert) => {
-    setDismissed(prev => new Set(prev).add(alert.id));
+    persistDismiss([alert.id]);
     if (alert.dismissIds?.length) {
       await supabase.from("notifications").update({ is_read: true }).in("id", alert.dismissIds);
       qc.invalidateQueries({ queryKey: ["hoje"] });
@@ -258,11 +268,27 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     if (allNotifIds.length > 0) {
       await supabase.from("notifications").update({ is_read: true }).in("id", allNotifIds);
     }
-    setDismissed(new Set(alerts.map(a => a.id)));
+    persistDismiss(alerts.map(a => a.id));
     qc.invalidateQueries({ queryKey: ["hoje"] });
     setBusy(false);
-    toast.success("Alertas limpos");
+    toast.success("Alertas limpos", {
+      action: {
+        label: "Restaurar",
+        onClick: () => {
+          setDismissedMap({});
+          saveDismissed(user?.id, {});
+        },
+      },
+    });
   };
+
+  const restoreAll = () => {
+    setDismissedMap({});
+    saveDismissed(user?.id, {});
+    toast.success("Alertas restaurados");
+  };
+
+  const hiddenCount = Object.keys(dismissedMap).length;
 
   // Group alerts by severity for sectioned rendering
   const order: Array<Alert["group"]> = ["critical", "warning", "info", "system"];
