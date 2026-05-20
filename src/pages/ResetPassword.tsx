@@ -12,15 +12,88 @@ type Mode = "request" | "update" | "done" | "error";
 const inputCls =
   "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
 
-const friendlyError = (msg?: string) => {
-  if (!msg) return "Algo deu errado. Tente novamente.";
-  const m = msg.toLowerCase();
-  if (m.includes("rate limit")) return "Muitas tentativas. Aguarde alguns minutos.";
-  if (m.includes("user not found") || m.includes("invalid")) return "E-mail não encontrado.";
-  if (m.includes("expired") || m.includes("token")) return "Link expirado. Solicite um novo e-mail de recuperação.";
-  if (m.includes("same as the old")) return "A nova senha deve ser diferente da atual.";
-  if (m.includes("weak") || m.includes("at least")) return "Senha muito fraca. Use ao menos 6 caracteres.";
-  return msg;
+type FriendlyError = { title: string; description: string };
+
+// Mapeia códigos comuns do Supabase Auth para mensagens em PT-BR.
+// Aceita o objeto de erro inteiro (com .status, .code, .name, .message).
+const friendlyError = (err: unknown): FriendlyError => {
+  if (!err) return { title: "Erro", description: "Algo deu errado. Tente novamente." };
+
+  const e = err as { status?: number; code?: string; name?: string; message?: string; __isAuthError?: boolean };
+  const status = e.status;
+  const code = (e.code || "").toLowerCase();
+  const msg = (e.message || "").toLowerCase();
+
+  // Sessão ausente / não autenticado
+  if (
+    code === "no_session" ||
+    code === "session_not_found" ||
+    msg.includes("auth session missing") ||
+    msg.includes("session not found") ||
+    msg.includes("not authenticated") ||
+    status === 401
+  ) {
+    return {
+      title: "Sessão expirou",
+      description: "Sua sessão de recuperação não está mais ativa. Solicite um novo link e tente novamente.",
+    };
+  }
+
+  // Token de recuperação inválido / expirado
+  if (
+    code === "otp_expired" ||
+    code === "invalid_token" ||
+    code === "token_expired" ||
+    msg.includes("token has expired") ||
+    msg.includes("invalid token") ||
+    msg.includes("jwt expired") ||
+    msg.includes("link is invalid") ||
+    msg.includes("expired") ||
+    (msg.includes("token") && msg.includes("invalid"))
+  ) {
+    return {
+      title: "Link inválido ou expirado",
+      description: "O link de recuperação não é mais válido. Solicite um novo e-mail para continuar.",
+    };
+  }
+
+  // Rate limit
+  if (code === "over_email_send_rate_limit" || code === "rate_limit_exceeded" || msg.includes("rate limit") || status === 429) {
+    return {
+      title: "Muitas tentativas",
+      description: "Você fez muitas solicitações em pouco tempo. Aguarde alguns minutos antes de tentar de novo.",
+    };
+  }
+
+  // Usuário não encontrado
+  if (code === "user_not_found" || msg.includes("user not found")) {
+    return { title: "E-mail não encontrado", description: "Não encontramos uma conta com este e-mail." };
+  }
+
+  // Mesma senha
+  if (code === "same_password" || msg.includes("same as the old") || msg.includes("new password should be different")) {
+    return { title: "Senha repetida", description: "A nova senha deve ser diferente da senha atual." };
+  }
+
+  // Senha fraca
+  if (code === "weak_password" || msg.includes("weak") || msg.includes("at least") || status === 422) {
+    return { title: "Senha muito fraca", description: "Use ao menos 6 caracteres, combinando letras e números." };
+  }
+
+  // E-mail inválido / formato
+  if (code === "validation_failed" || msg.includes("invalid email") || msg.includes("invalid format")) {
+    return { title: "Dados inválidos", description: "Verifique se o e-mail informado está correto." };
+  }
+
+  // Servidor / rede
+  if (status && status >= 500) {
+    return { title: "Servidor indisponível", description: "Estamos com instabilidade. Tente novamente em instantes." };
+  }
+  if (msg.includes("network") || msg.includes("failed to fetch") || e.name === "TypeError") {
+    return { title: "Sem conexão", description: "Falha de rede ao falar com o servidor. Verifique sua internet." };
+  }
+
+  return { title: "Não foi possível concluir", description: e.message || "Algo deu errado. Tente novamente." };
 };
 
 const ResetPassword = () => {
@@ -122,7 +195,8 @@ const ResetPassword = () => {
     const error = await sendRecoveryEmail(email.trim());
     if (error) {
       setResendState("idle");
-      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      const f = friendlyError(error);
+      toast({ title: f.title, description: f.description, variant: "destructive" });
       return;
     }
     setResendState("success");
@@ -164,7 +238,8 @@ const ResetPassword = () => {
     });
     setLoading(false);
     if (error) {
-      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      const f = friendlyError(error);
+      toast({ title: f.title, description: f.description, variant: "destructive" });
       return;
     }
     toast({
@@ -207,40 +282,40 @@ const ResetPassword = () => {
     }
 
     setLoading(true);
+    let failure: FriendlyError | null = null;
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        const friendly = friendlyError(error.message);
+        failure = friendlyError(error);
+      } else {
+        toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
+        await finishAndRedirect(800);
+        return;
+      }
+    } catch (err: unknown) {
+      failure = friendlyError(err);
+    } finally {
+      setLoading(false);
+    }
+
+    // Qualquer falha (API ou exceção) sempre cai aqui e segue o mesmo caminho:
+    // toast → estado de erro → logout → redirect para /login.
+    if (failure) {
+      try {
         toast({
-          title: "Não foi possível atualizar",
-          description: `${friendly} Faça login novamente para tentar de novo.`,
+          title: failure.title,
+          description: `${failure.description} Você será redirecionado para o login.`,
           variant: "destructive",
         });
         setErrorInfo({
-          title: "Não foi possível atualizar a senha",
-          description: `${friendly} Por segurança, sua sessão de recuperação foi encerrada.`,
+          title: failure.title,
+          description: `${failure.description} Por segurança, sua sessão de recuperação foi encerrada.`,
         });
         setMode("error");
-        await finishAndRedirect(8000);
-        return;
+      } catch (uiErr) {
+        console.warn("[reset-password] falha ao montar tela de erro, prosseguindo com redirect", uiErr);
       }
-      toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
-      await finishAndRedirect(800);
-    } catch (err: any) {
-      const friendly = friendlyError(err?.message);
-      toast({
-        title: "Erro inesperado",
-        description: `${friendly} Redirecionando para o login…`,
-        variant: "destructive",
-      });
-      setErrorInfo({
-        title: "Erro inesperado",
-        description: `${friendly} Você pode tentar novamente a partir da tela de login.`,
-      });
-      setMode("error");
       await finishAndRedirect(8000);
-    } finally {
-      setLoading(false);
     }
   };
 
