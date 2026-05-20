@@ -275,7 +275,7 @@ const Hoje = () => {
                 </li>
               ))}
             </ul>
-          </section
+          </section>
 
           {/* Alertas inteligentes agrupados */}
           <SmartAlerts
@@ -283,9 +283,9 @@ const Hoje = () => {
             dueToday={data?.dueToday || []}
             notifications={data?.notifications || []}
           />
-        </div>
+        </aside>
       </div>
-    </div>
+    </section>
   );
 };
 
