@@ -192,26 +192,35 @@ const ResetPassword = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
+        const friendly = friendlyError(error.message);
         toast({
           title: "Não foi possível atualizar",
-          description: `${friendlyError(error.message)} Faça login novamente para tentar de novo.`,
+          description: `${friendly} Faça login novamente para tentar de novo.`,
           variant: "destructive",
         });
-        // Em erro de API (token expirado/inválido, rate-limit, etc), encerramos
-        // a sessão de recuperação e levamos o usuário ao login.
-        await finishAndRedirect(1500);
+        setErrorInfo({
+          title: "Não foi possível atualizar a senha",
+          description: `${friendly} Por segurança, sua sessão de recuperação foi encerrada.`,
+        });
+        setMode("error");
+        await finishAndRedirect(8000);
         return;
       }
       toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
       await finishAndRedirect(800);
     } catch (err: any) {
-      // Falha inesperada (rede, etc) — também limpa e redireciona por segurança.
+      const friendly = friendlyError(err?.message);
       toast({
         title: "Erro inesperado",
-        description: `${friendlyError(err?.message)} Redirecionando para o login…`,
+        description: `${friendly} Redirecionando para o login…`,
         variant: "destructive",
       });
-      await finishAndRedirect(1500);
+      setErrorInfo({
+        title: "Erro inesperado",
+        description: `${friendly} Você pode tentar novamente a partir da tela de login.`,
+      });
+      setMode("error");
+      await finishAndRedirect(8000);
     } finally {
       setLoading(false);
     }
