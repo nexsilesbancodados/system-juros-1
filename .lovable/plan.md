@@ -1,66 +1,52 @@
-# Melhorias nas funções de empréstimo
+# Novos tipos de empréstimo
 
-Você pediu para mexer nas 4 áreas. Como é bastante coisa, vou entregar em **4 fases sequenciais**, cada uma testável sozinha. Você pode aprovar este plano inteiro e eu sigo fase por fase, mostrando o resultado antes de seguir para a próxima.
+Adicionar 4 novos modos além dos atuais "Por Parcelas" e "Por Porcentagem", no Simulador **e** no Novo Cliente.
 
-Regras já definidas por você:
-- Dias úteis: **mantém o comportamento atual** (não mexer).
-- Quitação antecipada: **sem desconto** (cobra o valor cheio das parcelas restantes).
+## Tipos novos
 
----
+| Tipo | Como funciona | Parcelas geradas |
+|---|---|---|
+| **Só juros + capital no final** (`interest_only`) | Cliente paga só os juros todo período. No último, paga juros + capital. | N-1 parcelas de juros + 1 final maior |
+| **Juros compostos / Tabela Price** (`price`) | PMT fixo com amortização real: `PMT = PV·i / (1−(1+i)^−n)` | N parcelas iguais (compostas) |
+| **Pagamento único no vencimento** (`bullet`) | Capital + juros simples × períodos, num único pagamento na data final. | 1 parcela só |
+| **Empréstimo com carência** (`grace`) | X períodos iniciais sem pagar nada (juros acumulam — juros simples). Depois entra em parcelas normais. | X parcelas de R$ 0,00 + N parcelas iguais do saldo capitalizado |
 
-## Fase 1 — Núcleo de cálculo unificado (`src/lib/loanMath.ts`)
+## Mudanças
 
-Hoje a fórmula está duplicada em `Simulador.tsx` e `NovoCliente.tsx`, com pequenas divergências. Vou:
+### 1. Núcleo (`src/lib/loanMath.ts`)
+- Estender `LoanMode` com os 4 novos valores.
+- `calculateLoan` retorna agora também `schedule: number[]` (valor de cada parcela), permitindo parcelas não-uniformes.
+- Novo input opcional `gracePeriods` (usado só por `grace`).
+- Testes Vitest para cada tipo.
 
-- Criar `src/lib/loanMath.ts` com funções puras:
-  - `calculateLoan({ capital, rate, periods, frequency, loanMode, valueMode, installmentValue })` → retorna `{ installmentAmount, totalAmount, totalInterest, numInstallments, derivedRate? }`.
-  - `deriveRateFromInstallment({ capital, installment, periods })`.
-  - `generateInstallmentSchedule({ startDate, periods, frequency })` (mantendo a lógica de datas atual).
-- Substituir os cálculos inline em `Simulador.tsx` e `NovoCliente.tsx` por chamadas a esse módulo.
-- Adicionar testes em `src/test/loanMath.test.ts` cobrindo: juros simples mensal, diário, semanal, modo porcentagem, modo parcelas, e derivação de taxa.
+### 2. UI Simulador + NovoCliente
+- Trocar o grid de 2 cards do "Modo do Empréstimo" para um grid de 6 cards (2×3 mobile, 3×2 desktop) com ícone + descrição curta.
+- Quando `grace` é selecionado, mostra campo extra "Períodos de carência".
+- Painel de resultado mostra a tabela de parcelas com valores reais (já existe parcial — só passa a usar `schedule`).
 
-**Resultado:** mesma lógica visível ao usuário, mas centralizada, testada e sem divergências.
+### 3. Persistência (NovoCliente → Supabase)
+- **Migration necessária**: adicionar colunas em `contracts`:
+  - `loan_mode text not null default 'installments'`
+  - `grace_periods integer not null default 0`
+- Ao salvar, gravar `loan_mode` e `grace_periods`, e inserir cada `contract_installments.amount` com o valor real da parcela (não mais um único `installment_amount` repetido).
+- `installment_amount` continua sendo a parcela "representativa" (1ª parcela paga, ou PMT) para retrocompatibilidade do resto do app.
 
-## Fase 2 — Simulador (UX + IA)
+## Riscos / não escopo
 
-- Presets rápidos de capital (R$ 500 / 1k / 5k / 10k) e de parcelas (3, 6, 12).
-- Validações inline com mensagens claras (taxa > 100%/período, capital negativo, parcela menor que capital÷n).
-- Painel "Comparar cenários": mostra lado a lado os 3 cenários da IA (`simulator-ai`) com diferença em R$ vs o atual.
-- Botão "Aplicar cenário" que preenche os campos do simulador.
-- Tratamento explícito dos códigos 429/402 do gateway (toast amigável já existe parcialmente).
+- **AI Simulator** (`simulator-ai`): vou passar o novo `loan_mode` no prompt; análise da IA pode ficar genérica nos modos novos até refinar prompts depois.
+- **Cobranças automáticas e juros de mora**: continuam usando a mesma regra; não muda.
+- **Renegociação/quitação** (Fase 4 do plano anterior): não é parte desta tarefa.
 
-## Fase 3 — Criação/edição de contrato (`NovoCliente.tsx`)
+## Migration
 
-- Schema Zod único para o passo de empréstimo (capital, taxa, parcelas, datas, garantia).
-- Preview da tabela de parcelas (datas + valor) **antes** de salvar, com possibilidade de:
-  - Ajustar a data da 1ª parcela (já existe parcial).
-  - Editar manualmente o valor de uma parcela específica (ex: parcela balão).
-- Resumo final do contrato com CET aproximado (juros totais ÷ capital).
-- Bloquear submit enquanto houver erro de validação (hoje alguns erros só viram toast).
+```sql
+ALTER TABLE public.contracts
+  ADD COLUMN loan_mode text NOT NULL DEFAULT 'installments',
+  ADD COLUMN grace_periods integer NOT NULL DEFAULT 0;
+```
 
-## Fase 4 — Quitação antecipada e renegociação
-
-Em `src/pages/ClienteDetalhe.tsx` (ou onde estiver a gestão de parcelas):
-
-- Botão **"Quitar contrato"** que:
-  - Lista todas as parcelas `pending`.
-  - Soma o valor cheio (sem desconto, conforme sua escolha).
-  - Marca todas como `paid` na mesma transação, registra `paid_at = now()` e cria 1 `transaction` consolidada + `profit`.
-- Botão **"Pagamento parcial"** numa parcela: aceita valor menor, registra `paid_amount`, mantém status `pending` até completar.
-- Botão **"Renegociar saldo"**: cria um novo contrato a partir do saldo devedor restante (capital = soma das parcelas pendentes), encerra o contrato antigo como `renegotiated`, mantém histórico.
-- Tudo registrado em `audit_logs`.
+Contratos existentes ficam como `installments` (comportamento atual preservado).
 
 ---
 
-## Detalhes técnicos
-
-- Sem mudanças de schema necessárias nas 3 primeiras fases. A Fase 4 adiciona:
-  - Coluna `paid_amount` em `contract_installments` já existe ✓.
-  - Novo status `renegotiated` em `contracts.status` (string livre, sem enum — não precisa de migration).
-  - Opcional: coluna `renegotiated_from` (uuid) em `contracts` para linkar contrato original → renegociado. Confirmo com você antes de aplicar a migration.
-- Sem mudanças visuais profundas — mantém tema dark/glassmorphism.
-- Testes com Vitest na Fase 1 (já configurado no projeto).
-
----
-
-**Confirma o plano?** Se sim, começo pela **Fase 1** (núcleo de cálculo + testes), te mostro funcionando e seguimos.
+**Confirma?** Se sim, eu rodo a migration e implemento tudo numa tacada só.
