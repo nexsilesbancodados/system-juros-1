@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
-import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat } from "lucide-react";
+import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat, Coins, TrendingDown, Target, PauseCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
-import { calculateLoan } from "@/lib/loanMath";
+import { calculateLoan, type LoanMode } from "@/lib/loanMath";
 
 
-type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
+
 
 const Simulador = () => {
   const [valor, setValor] = useState("");
@@ -18,12 +18,14 @@ const Simulador = () => {
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
   const [installmentValue, setInstallmentValue] = useState("");
+  const [gracePeriods, setGracePeriods] = useState("2");
   const navigate = useNavigate();
 
   const valorNum = parseFloat(valor) || 0;
   const taxaNum = parseFloat(taxa) || 0;
   const parcelasNum = parseInt(parcelas) || 0;
   const installmentNum = parseFloat(installmentValue) || 0;
+  const graceNum = parseInt(gracePeriods) || 0;
 
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
@@ -36,18 +38,20 @@ const Simulador = () => {
       loanMode,
       valueMode,
       installmentValue: installmentNum,
+      gracePeriods: graceNum,
     });
     if (!r) return null;
-    // Mantém shape antigo (jurosTotal/totalReceber/valorParcela) usado no JSX existente.
     return {
       jurosTotal: r.totalInterest,
       totalReceber: r.totalAmount,
       valorParcela: r.installmentAmount,
       numParcelas: r.numInstallments,
+      schedule: r.schedule,
       perPeriodLabel: r.perPeriodLabel,
       ...(r.derivedRate !== undefined ? { derivedRate: r.derivedRate } : {}),
     };
-  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode]);
+  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode, graceNum]);
+
 
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -73,37 +77,55 @@ const Simulador = () => {
   const lucroPercent = calc && valorNum > 0 ? (calc.jurosTotal / valorNum) * 100 : 0;
   const profitClamped = Math.min(lucroPercent, maxProfit);
 
-  // Generate installment breakdown with proper dates
+  // Generate installment breakdown with proper dates, usando o schedule real
   const generateBreakdown = () => {
     if (!calc) return [];
     const items: { num: number; date: string; value: number }[] = [];
     const start = new Date();
-    
-    for (let i = 0; i < Math.min(calc.numParcelas, 60); i++) {
+    const sched = calc.schedule;
+
+    // Modo bullet: 1 pagamento N períodos no futuro
+    if (loanMode === "bullet" && sched.length === 1) {
       const d = new Date(start);
-      
       if (frequency === "daily") {
-        // Skip weekends based on dailyMode
+        let added = 0;
+        while (added < parcelasNum) {
+          d.setDate(d.getDate() + 1);
+          const dow = d.getDay();
+          if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+          if (dailyMode === "mon-sat" && dow === 0) continue;
+          added++;
+        }
+      } else if (frequency === "weekly") d.setDate(start.getDate() + 7 * parcelasNum);
+      else d.setMonth(start.getMonth() + parcelasNum);
+      items.push({ num: 1, date: d.toLocaleDateString("pt-BR"), value: sched[0] });
+      return items;
+    }
+
+    for (let i = 0; i < Math.min(sched.length, 60); i++) {
+      const d = new Date(start);
+      if (frequency === "daily") {
         let daysAdded = 0;
-        let currentDay = new Date(start);
+        const currentDay = new Date(start);
         while (daysAdded < i + 1) {
           currentDay.setDate(currentDay.getDate() + 1);
-          const dow = currentDay.getDay(); // 0=Sun, 6=Sat
+          const dow = currentDay.getDay();
           if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
           if (dailyMode === "mon-sat" && dow === 0) continue;
           daysAdded++;
         }
-        items.push({ num: i + 1, date: currentDay.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: currentDay.toLocaleDateString("pt-BR"), value: sched[i] });
       } else if (frequency === "weekly") {
         d.setDate(start.getDate() + (i + 1) * 7);
-        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: sched[i] });
       } else {
         d.setMonth(start.getMonth() + (i + 1));
-        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: sched[i] });
       }
     }
     return items;
   };
+
 
   const breakdown = generateBreakdown();
 
@@ -134,37 +156,53 @@ const Simulador = () => {
       {/* Loan Mode Selection */}
       <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">
         <label className="text-label mb-1 block">Modo do Empréstimo</label>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setLoanMode("installments")}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-              loanMode === "installments"
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-muted-foreground/30"
-            }`}
-          >
-            <Hash size={20} className={loanMode === "installments" ? "text-primary" : "text-muted-foreground"} />
-            <div className="text-left">
-              <p className={`text-sm font-semibold ${loanMode === "installments" ? "text-primary" : "text-foreground"}`}>Por Parcelas</p>
-              <p className="text-[10px] text-muted-foreground">Nº fixo de parcelas</p>
-            </div>
-          </button>
-          <button
-            onClick={() => setLoanMode("percentage")}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-              loanMode === "percentage"
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-muted-foreground/30"
-            }`}
-          >
-            <Percent size={20} className={loanMode === "percentage" ? "text-primary" : "text-muted-foreground"} />
-            <div className="text-left">
-              <p className={`text-sm font-semibold ${loanMode === "percentage" ? "text-primary" : "text-foreground"}`}>Por Porcentagem</p>
-              <p className="text-[10px] text-muted-foreground">Paga % até quitar</p>
-            </div>
-          </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {([
+            { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
+            { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
+            { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros mensais, capital no último", Icon: Coins },
+            { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
+            { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
+            { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
+          ]).map(m => (
+            <button
+              key={m.v}
+              onClick={() => {
+                setLoanMode(m.v);
+                if (m.v !== "installments") setValueMode("rate");
+              }}
+              className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${
+                loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
+              <div className="min-w-0">
+                <p className={`text-xs font-semibold ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{m.desc}</p>
+              </div>
+            </button>
+          ))}
         </div>
+
+        {loanMode === "grace" && (
+          <div className="pt-3 border-t border-border">
+            <label className="text-label mb-1.5 block">Períodos de Carência</label>
+            <input
+              type="number"
+              min={1}
+              max={24}
+              value={gracePeriods}
+              onChange={(e) => setGracePeriods(e.target.value)}
+              className={inputCls}
+              placeholder="2"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Durante a carência o cliente não paga, mas os juros simples acumulam sobre o capital.
+            </p>
+          </div>
+        )}
       </div>
+
 
       {/* Frequency Selection */}
       <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">

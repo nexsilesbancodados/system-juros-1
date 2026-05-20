@@ -2,14 +2,16 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
-  Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield
+  Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
+  Coins, TrendingDown, Target, PauseCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
-import { calculateLoan } from "@/lib/loanMath";
+import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
+
 
 
 // ── Validation ──
@@ -77,9 +79,9 @@ const parseCurrency = (v: string) => {
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily" | "biweekly" | "custom";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
+
 
 const INPUT = "w-full px-3.5 py-2.5 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-ring transition-all duration-150";
 
@@ -127,6 +129,8 @@ const NovoCliente = () => {
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
+  const [gracePeriods, setGracePeriods] = useState("2");
+
   const [customDates, setCustomDates] = useState<string[]>([]);
 
   // ── Step 2: Advanced contract fields ──
@@ -219,6 +223,7 @@ const NovoCliente = () => {
     const n = parseInt(numInstallments) || 0;
     const taxa = parseFloat(taxaJuros) || 0;
     const parcela = parseFloat(installmentValue) || 0;
+    const grace = parseInt(gracePeriods) || 0;
     const r = calculateLoan({
       capital: cap,
       rate: taxa,
@@ -227,17 +232,19 @@ const NovoCliente = () => {
       loanMode,
       valueMode,
       installmentValue: parcela,
+      gracePeriods: grace,
     });
     if (!r) return null;
-    // Mantém shape antigo usado no resto do componente.
     return {
       totalInterest: r.totalInterest,
       totalAmount: r.totalAmount,
       installmentAmount: r.installmentAmount,
       numParcelas: r.numInstallments,
+      schedule: r.schedule,
       ...(r.derivedRate !== undefined ? { derivedRate: r.derivedRate } : {}),
     };
-  }, [capital, taxaJuros, numInstallments, loanMode, frequency, valueMode, installmentValue]);
+  }, [capital, taxaJuros, numInstallments, loanMode, frequency, valueMode, installmentValue, gracePeriods]);
+
 
 
   const handleCapitalChange = (v: string) => {
@@ -431,7 +438,9 @@ const NovoCliente = () => {
         total_amount: calc.totalAmount,
         total_interest: calc.totalInterest,
         status: "active",
-        notes: notes || (loanMode === "percentage" ? "Modo: Porcentagem" : "Modo: Parcelas"),
+        notes: notes || `Modo: ${loanMode}`,
+        loan_mode: loanMode,
+        grace_periods: loanMode === "grace" ? (parseInt(gracePeriods) || 0) : 0,
         grace_days: parseInt(graceDays) || 0,
         payment_method: paymentMethod,
         auto_renew: autoRenew,
@@ -445,22 +454,35 @@ const NovoCliente = () => {
         attachments: attachments,
         signature_status: requireSignature ? "pending" : "not_required",
         signature_token: requireSignature ? crypto.randomUUID() : null,
-      }).select().single();
+      } as any).select().single();
       if (contractErr) throw contractErr;
 
-      // 3. Create installments
-      // Mesma assinatura usada no preview (Step 2) — garante que as datas salvas == datas exibidas
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, autoFirstDue ? undefined : (firstDueDate || undefined));
+      // 3. Create installments — usa o schedule real (parcelas podem ter valores diferentes)
+      let dueDates: string[];
+      if (loanMode === "bullet") {
+        // Pagamento único N períodos no futuro
+        const inputPeriods = parseInt(numInstallments) || 1;
+        dueDates = generateInstallmentSchedule({
+          startDate, count: 1, frequency: frequency === "custom" ? "monthly" : frequency,
+          dailyMode, periodsAhead: inputPeriods,
+        });
+      } else {
+        dueDates = generateDueDates(
+          startDate, frequency, calc.numParcelas, dailyMode,
+          autoFirstDue ? undefined : (firstDueDate || undefined),
+        );
+      }
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id,
         contract_id: contract.id,
         client_id: clientId,
         installment_number: i + 1,
-        amount: calc.installmentAmount,
+        amount: calc.schedule[i] ?? calc.installmentAmount,
         due_date: dd,
         status: "pending",
       }));
       const { error: instErr } = await supabase.from("contract_installments").insert(installments);
+
       if (instErr) throw instErr;
 
       setCreatedContractId(contract.id);
@@ -695,22 +717,50 @@ const NovoCliente = () => {
           {/* Loan Mode */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {([
-                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas", Icon: Hash },
+                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
                 { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
+                { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros por período, capital no último", Icon: Coins },
+                { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
+                { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
+                { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
               ]).map(m => (
-                <button key={m.v} onClick={() => setLoanMode(m.v)}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
-                  <m.Icon size={20} className={loanMode === m.v ? "text-primary" : "text-muted-foreground"} />
-                  <div className="text-left">
-                    <p className={`text-sm font-semibold ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.desc}</p>
+                <button key={m.v} onClick={() => {
+                  setLoanMode(m.v);
+                  if (m.v !== "installments") setValueMode("rate");
+                }}
+                  className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="min-w-0">
+                    <p className={`text-xs font-semibold ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{m.desc}</p>
                   </div>
                 </button>
               ))}
             </div>
+            {loanMode === "grace" && (
+              <div className="pt-3 border-t border-border">
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">Períodos de Carência</label>
+                <input
+                  type="number" min={1} max={24}
+                  value={gracePeriods}
+                  onChange={(e) => setGracePeriods(e.target.value)}
+                  className={INPUT}
+                  placeholder="2"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Durante a carência o cliente não paga; os juros simples acumulam sobre o capital. Total de parcelas será carência + nº de parcelas.
+                </p>
+              </div>
+            )}
+            {loanMode === "bullet" && (
+              <p className="text-[10px] text-muted-foreground pt-2 border-t border-border">
+                💡 No modo "Pagamento Único", o campo <strong>Nº de Parcelas</strong> representa quantos períodos até o vencimento (ex.: 3 meses).
+              </p>
+            )}
           </div>
+
 
           {/* Frequency */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">

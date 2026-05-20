@@ -581,6 +581,7 @@ export type Database = {
           early_payment_discount_percent: number
           frequency: string
           grace_days: number
+          grace_periods: number
           guarantee_description: string | null
           guarantee_type: string | null
           guarantor_cpf: string | null
@@ -590,6 +591,7 @@ export type Database = {
           installment_amount: number
           interest_rate: number
           late_fee_percent: number
+          loan_mode: string
           max_interest_cap_percent: number | null
           notes: string | null
           num_installments: number
@@ -614,6 +616,7 @@ export type Database = {
           early_payment_discount_percent?: number
           frequency?: string
           grace_days?: number
+          grace_periods?: number
           guarantee_description?: string | null
           guarantee_type?: string | null
           guarantor_cpf?: string | null
@@ -623,6 +626,7 @@ export type Database = {
           installment_amount: number
           interest_rate?: number
           late_fee_percent?: number
+          loan_mode?: string
           max_interest_cap_percent?: number | null
           notes?: string | null
           num_installments: number
@@ -647,6 +651,7 @@ export type Database = {
           early_payment_discount_percent?: number
           frequency?: string
           grace_days?: number
+          grace_periods?: number
           guarantee_description?: string | null
           guarantee_type?: string | null
           guarantor_cpf?: string | null
@@ -656,6 +661,7 @@ export type Database = {
           installment_amount?: number
           interest_rate?: number
           late_fee_percent?: number
+          loan_mode?: string
           max_interest_cap_percent?: number | null
           notes?: string | null
           num_installments?: number
