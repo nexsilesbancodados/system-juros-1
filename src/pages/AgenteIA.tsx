@@ -648,8 +648,7 @@ const AgenteIA = () => {
   ];
 
   const runQuickPrompt = (p: string) => {
-    setInput(p);
-    setTimeout(() => handleSend(), 50);
+    handleSend(p);
   };
 
   const clearChat = () => {
