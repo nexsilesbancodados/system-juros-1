@@ -62,7 +62,7 @@ const Login = () => {
         }
       }
       
-      navigate("/dashboard");
+      navigate(nextPath ?? "/dashboard", { replace: true });
     }
   };
 
