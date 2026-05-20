@@ -175,6 +175,9 @@ const AgenteIA = () => {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const [chatSearch, setChatSearch] = useState("");
+  const [chatFilter, setChatFilter] = useState<"all" | "unread" | "groups">("all");
 
   // Agent config state
   const [agentConfig, setAgentConfig] = useState({
