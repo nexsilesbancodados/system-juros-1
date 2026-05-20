@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
@@ -569,6 +569,14 @@ const NovoCliente = () => {
             <h1 className="text-xl font-bold text-shimmer">Cadastrar Novo Cliente</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setExpressMode(!expressMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+            title="Reduz o formulário aos campos essenciais"
+          >
+            ⚡ {expressMode ? "Express ON" : "Modo Express"}
+          </button>
         </div>
       </div>
 
