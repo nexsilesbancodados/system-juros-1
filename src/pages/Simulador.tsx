@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
-import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat } from "lucide-react";
+import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat, Coins, TrendingDown, Target, PauseCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
-import { calculateLoan } from "@/lib/loanMath";
+import { calculateLoan, type LoanMode } from "@/lib/loanMath";
 
 
-type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
+
 
 const Simulador = () => {
   const [valor, setValor] = useState("");
