@@ -34,6 +34,14 @@
 
   <body>
     <div id="root"></div>
+    <div id="app-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at top,#1a2342 0%,#0a0e1a 60%);transition:opacity .35s ease;font-family:system-ui,-apple-system,sans-serif;color:#e6ebf5;">
+      <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#3b6fc4,#1a2f5c);display:flex;align-items:center;justify-content:center;box-shadow:0 20px 60px rgba(45,90,168,.4);margin-bottom:1rem;animation:sj-pulse 1.6s ease-in-out infinite;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div style="font-size:.95rem;font-weight:700;letter-spacing:-.01em;">System Juros</div>
+      <div style="margin-top:1rem;width:32px;height:32px;border:3px solid rgba(120,140,200,.2);border-top-color:#3b6fc4;border-radius:50%;animation:sj-spin .9s linear infinite;"></div>
+      <style>@keyframes sj-spin{to{transform:rotate(360deg)}}@keyframes sj-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}</style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

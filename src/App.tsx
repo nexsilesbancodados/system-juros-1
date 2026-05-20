@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WhiteLabelProvider } from "@/contexts/WhiteLabelContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
+import OfflineIndicator from "./components/OfflineIndicator";
 
 import Index from "./pages/Index";
 
@@ -80,6 +81,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <OfflineIndicator />
       <AuthProvider>
         <WhiteLabelProvider>
           <ThemeProvider>

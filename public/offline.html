@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0e1a" />
+    <title>System Juros — Offline</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        background: radial-gradient(ellipse at top, #1a2342 0%, #0a0e1a 60%);
+        color: #e6ebf5;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .card {
+        max-width: 420px;
+        width: 100%;
+        background: rgba(20, 27, 48, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(120, 140, 200, 0.15);
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+      }
+      .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.25rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2d4a8a, #1a2f5c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(70, 130, 230, 0.4); }
+        50% { box-shadow: 0 0 0 18px rgba(70, 130, 230, 0); }
+      }
+      h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+      p { font-size: 0.9rem; color: #9aa6c2; line-height: 1.55; margin-bottom: 1.5rem; }
+      button {
+        background: linear-gradient(135deg, #3b6fc4, #2d5aa8);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 8px 24px rgba(45, 90, 168, 0.35);
+      }
+      button:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(45, 90, 168, 0.5); }
+      .status {
+        margin-top: 1rem;
+        font-size: 0.75rem;
+        color: #6b7a99;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #ef4444;
+        animation: blink 1.5s infinite;
+      }
+      @keyframes blink { 50% { opacity: 0.3; } }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"/>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+          <line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+      </div>
+      <h1>Você está offline</h1>
+      <p>Sem conexão no momento. Verifique sua internet — os dados já carregados continuam disponíveis.</p>
+      <button onclick="location.reload()">Tentar novamente</button>
+      <div class="status"><span class="dot"></span><span id="net-status">Sem conexão</span></div>
+    </div>
+    <script>
+      window.addEventListener("online", () => location.reload());
+      const upd = () => document.getElementById("net-status").textContent =
+        navigator.onLine ? "Conexão restaurada" : "Sem conexão";
+      window.addEventListener("online", upd);
+      window.addEventListener("offline", upd);
+    </script>
+  </body>
+</html>
