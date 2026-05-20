@@ -180,7 +180,7 @@ const Login = () => {
                   </div>
 
                   <p
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => navigate(nextPath ? `/reset-password?next=${encodeURIComponent(nextPath)}` : "/reset-password")}
                     className="text-right text-xs text-white/30 cursor-pointer hover:text-white/70 transition-colors"
                   >
                     Esqueceu a senha?
