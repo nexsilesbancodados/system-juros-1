@@ -8,6 +8,7 @@ import {
   Sunrise, AlertCircle, CheckCircle2, Bell, ListTodo, Receipt,
   TrendingUp, ArrowRight, Phone, MessageSquare, Loader2, Plus, Clock
 } from "lucide-react";
+import SmartAlerts from "@/components/SmartAlerts";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
