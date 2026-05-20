@@ -44,6 +44,15 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
   const qc = useQueryClient();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [cobrarOpen, setCobrarOpen] = useState(false);
+  const [cobrarTitle, setCobrarTitle] = useState("Cobrar agora");
+  const [cobrarList, setCobrarList] = useState<CobrarInstallment[]>([]);
+
+  const openCobrar = (title: string, list: any[]) => {
+    setCobrarTitle(title);
+    setCobrarList(list as CobrarInstallment[]);
+    setCobrarOpen(true);
+  };
 
   // Birthdays today
   const { data: birthdays } = useQuery({
