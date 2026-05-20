@@ -93,6 +93,12 @@ const NovoCliente = () => {
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
+  const [expressMode, setExpressMode] = useState<boolean>(() => {
+    try { return localStorage.getItem("novo_cliente_express") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("novo_cliente_express", expressMode ? "1" : "0"); } catch {}
+  }, [expressMode]);
 
   // ── Step 1: Client data ──
   const [nome, setNome] = useState("");
