@@ -438,7 +438,9 @@ const NovoCliente = () => {
         total_amount: calc.totalAmount,
         total_interest: calc.totalInterest,
         status: "active",
-        notes: notes || (loanMode === "percentage" ? "Modo: Porcentagem" : "Modo: Parcelas"),
+        notes: notes || `Modo: ${loanMode}`,
+        loan_mode: loanMode,
+        grace_periods: loanMode === "grace" ? (parseInt(gracePeriods) || 0) : 0,
         grace_days: parseInt(graceDays) || 0,
         payment_method: paymentMethod,
         auto_renew: autoRenew,
@@ -452,22 +454,35 @@ const NovoCliente = () => {
         attachments: attachments,
         signature_status: requireSignature ? "pending" : "not_required",
         signature_token: requireSignature ? crypto.randomUUID() : null,
-      }).select().single();
+      } as any).select().single();
       if (contractErr) throw contractErr;
 
-      // 3. Create installments
-      // Mesma assinatura usada no preview (Step 2) — garante que as datas salvas == datas exibidas
-      const dueDates = generateDueDates(startDate, frequency, n, dailyMode, autoFirstDue ? undefined : (firstDueDate || undefined));
+      // 3. Create installments — usa o schedule real (parcelas podem ter valores diferentes)
+      let dueDates: string[];
+      if (loanMode === "bullet") {
+        // Pagamento único N períodos no futuro
+        const inputPeriods = parseInt(numInstallments) || 1;
+        dueDates = generateInstallmentSchedule({
+          startDate, count: 1, frequency: frequency === "custom" ? "monthly" : frequency,
+          dailyMode, periodsAhead: inputPeriods,
+        });
+      } else {
+        dueDates = generateDueDates(
+          startDate, frequency, calc.numParcelas, dailyMode,
+          autoFirstDue ? undefined : (firstDueDate || undefined),
+        );
+      }
       const installments = dueDates.map((dd, i) => ({
         user_id: user.id,
         contract_id: contract.id,
         client_id: clientId,
         installment_number: i + 1,
-        amount: calc.installmentAmount,
+        amount: calc.schedule[i] ?? calc.installmentAmount,
         due_date: dd,
         status: "pending",
       }));
       const { error: instErr } = await supabase.from("contract_installments").insert(installments);
+
       if (instErr) throw instErr;
 
       setCreatedContractId(contract.id);
