@@ -234,22 +234,30 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     toast.success("Alertas limpos");
   };
 
-  // Sort: critical > warning > info > system
-  const order = { critical: 0, warning: 1, info: 2, system: 3 };
-  const sorted = [...alerts].sort((a, b) => order[a.group] - order[b.group]);
+  // Group alerts by severity for sectioned rendering
+  const order: Array<Alert["group"]> = ["critical", "warning", "info", "system"];
+  const groupMeta: Record<Alert["group"], { label: string; to: string }> = {
+    critical: { label: "Crítico", to: "/cobrancas?filter=overdue" },
+    warning:  { label: "Atenção", to: "/cobrancas?filter=overdue" },
+    info:     { label: "Informativo", to: "/cobrancas?filter=today" },
+    system:   { label: "Sistema", to: "/notificacoes" },
+  };
+  const grouped = order
+    .map((g) => ({ group: g, items: alerts.filter((a) => a.group === g) }))
+    .filter((s) => s.items.length > 0);
 
   return (
     <div className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
       <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Sparkles size={14} className="text-primary" /> Alertas inteligentes
-          {sorted.length > 0 && (
+          {alerts.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-bold">
-              {sorted.length}
+              {alerts.length}
             </span>
           )}
         </h2>
-        {sorted.length > 1 && (
+        {alerts.length > 1 && (
           <button
             onClick={dismissAll}
             disabled={busy}
@@ -260,14 +268,37 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
           </button>
         )}
       </div>
-      <div className="divide-y divide-border/20 max-h-[440px] overflow-y-auto">
-        {sorted.length === 0 && (
+      <div className="max-h-[440px] overflow-y-auto">
+        {grouped.length === 0 && (
           <div className="py-10 text-center">
             <CheckCheck size={28} className="mx-auto text-success/60 mb-2" />
             <p className="text-sm font-semibold text-foreground">Nada urgente</p>
             <p className="text-xs text-muted-foreground mt-1">Você está em dia com tudo</p>
           </div>
         )}
+        {grouped.map((section) => {
+          const ss = groupStyles[section.group];
+          const meta = groupMeta[section.group];
+          return (
+            <section key={section.group} aria-label={meta.label}>
+              <header className={`px-4 py-1.5 flex items-center justify-between border-y border-border/20 ${ss.bg}`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${ss.icon} flex items-center gap-1.5`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${ss.icon.replace("text-", "bg-")}`} />
+                  {meta.label}
+                  <span className="text-muted-foreground font-semibold normal-case tracking-normal">
+                    · {section.items.length}
+                  </span>
+                </span>
+                <button
+                  onClick={() => navigate(meta.to)}
+                  className="text-[10px] font-bold text-muted-foreground hover:text-foreground hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  aria-label={`Ver lista completa de ${meta.label}`}
+                >
+                  Ver todos <ChevronRight size={10} />
+                </button>
+              </header>
+              <div className="divide-y divide-border/20">
+
         {sorted.map(a => {
           const s = groupStyles[a.group];
           const Icon = a.icon;
