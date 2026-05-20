@@ -313,16 +313,27 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
             </span>
           )}
         </h2>
-        {alerts.length > 1 && (
-          <button
-            onClick={dismissAll}
-            disabled={busy}
-            className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors disabled:opacity-50"
-          >
-            {busy ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
-            Limpar todos
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {hiddenCount > 0 && (
+            <button
+              onClick={restoreAll}
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              title={`${hiddenCount} alerta${hiddenCount !== 1 ? "s" : ""} dispensado${hiddenCount !== 1 ? "s" : ""}`}
+            >
+              <RotateCcw size={11} /> Restaurar ({hiddenCount})
+            </button>
+          )}
+          {alerts.length > 1 && (
+            <button
+              onClick={dismissAll}
+              disabled={busy}
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              {busy ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
+              Limpar todos
+            </button>
+          )}
+        </div>
       </div>
       <div className="max-h-[440px] overflow-y-auto">
         {grouped.length === 0 && (
