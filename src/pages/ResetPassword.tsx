@@ -414,6 +414,38 @@ const ResetPassword = () => {
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-4 ring-1 ring-red-400/30">
+                <AlertTriangle size={26} className="text-red-300" />
+              </div>
+              <h2 className="font-display text-xl font-semibold text-white mb-2">
+                {errorInfo?.title ?? "Algo deu errado"}
+              </h2>
+              <p className="text-white/55 text-sm mb-5">
+                {errorInfo?.description ?? "Não foi possível concluir a operação."}
+              </p>
+
+              {redirectIn > 0 && (
+                <div className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 flex items-center justify-center gap-2 text-[12px] text-white/55">
+                  <Clock size={13} className="text-white/40" />
+                  <span>
+                    Redirecionando em <span className="text-white/85 font-medium">{redirectIn}s</span>…
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={goToLoginNow}
+                  className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all hover:shadow-lg hover:shadow-white/10 flex items-center justify-center gap-2"
+                  style={{ background: "var(--gradient-button)", color: "white" }}
+                >
+                  Ir para o login
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
