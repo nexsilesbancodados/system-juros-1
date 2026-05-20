@@ -111,12 +111,6 @@ const LandingHero = () => {
           >
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_100px_-20px_rgba(59,130,246,0.2)] overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
-              
-
-              {/* Eagle Overlay like in the screenshot */}
-              <div className="absolute -right-20 -top-20 opacity-20 pointer-events-none">
-                 <img src={eagleLogo} alt="" className="w-80 h-80 grayscale brightness-200" />
-              </div>
             </div>
 
             {/* Floating elements */}
