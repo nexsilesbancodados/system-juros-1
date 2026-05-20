@@ -847,6 +847,14 @@ const NovoCliente = () => {
                   <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8 ${loanErrors.capital ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.capital} />
                 </div>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {[500, 1000, 2000, 5000, 10000].map(v => (
+                    <button key={v} type="button" onClick={() => handleCapitalChange(String(v * 100))}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary transition-colors">
+                      R$ {v >= 1000 ? `${v / 1000}k` : v}
+                    </button>
+                  ))}
+                </div>
                 {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
               </div>
               {valueMode === "rate" ? (
@@ -855,6 +863,14 @@ const NovoCliente = () => {
                   <div className="relative">
                     <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8 ${loanErrors.taxa ? "border-destructive/60" : ""}`} aria-invalid={!!loanErrors.taxa} min={0} max={100} step="0.01" />
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {[5, 10, 15, 20, 30].map(v => (
+                      <button key={v} type="button" onClick={() => setTaxaJuros(String(v))}
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${taxaJuros === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
+                        {v}%
+                      </button>
+                    ))}
                   </div>
                   {loanErrors.taxa && <p className="text-[10px] text-destructive mt-1">{loanErrors.taxa}</p>}
                 </div>
@@ -887,11 +903,34 @@ const NovoCliente = () => {
                   {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
                 </label>
                 <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {[4, 6, 8, 10, 12, 24].map(v => (
+                    <button key={v} type="button" onClick={() => setNumInstallments(String(v))}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${numInstallments === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
+                      {v}x
+                    </button>
+                  ))}
+                </div>
                 {loanErrors.n && <p className="text-[10px] text-destructive mt-1">{loanErrors.n}</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {[
+                    { label: "Hoje", days: 0 },
+                    { label: "+1d", days: 1 },
+                    { label: "+7d", days: 7 },
+                    { label: "+15d", days: 15 },
+                  ].map(o => (
+                    <button key={o.label} type="button" onClick={() => {
+                      const d = new Date(); d.setDate(d.getDate() + o.days);
+                      setStartDate(d.toISOString().split("T")[0]);
+                    }} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary transition-colors">
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -932,6 +971,68 @@ const NovoCliente = () => {
                 <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={INPUT} />
               </div>
             </div>
+
+            {/* Opções rápidas extras */}
+            <div className="border-t border-border/60 pt-4 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
+                    Carência (dias)
+                    <span className="text-[9px] text-muted-foreground font-normal">sem multa</span>
+                  </label>
+                  <input type="number" min={0} value={graceDays} onChange={(e) => setGraceDays(e.target.value)} placeholder="0" className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
+                    Desc. Antecipação (%)
+                    <span className="text-[9px] text-muted-foreground font-normal">pgto antes</span>
+                  </label>
+                  <input type="number" step="0.1" min={0} max={100} value={earlyDiscount} onChange={(e) => setEarlyDiscount(e.target.value)} placeholder="0" className={INPUT} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
+                    Teto de Juros (%)
+                    <span className="text-[9px] text-muted-foreground font-normal">opcional</span>
+                  </label>
+                  <input type="number" step="1" min={0} value={maxInterestCap} onChange={(e) => setMaxInterestCap(e.target.value)} placeholder="Sem limite" className={INPUT} />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">Forma de Pagamento Preferida</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([
+                    { v: "pix", label: "PIX" },
+                    { v: "cash", label: "Dinheiro" },
+                    { v: "boleto", label: "Boleto" },
+                    { v: "transfer", label: "Transf." },
+                  ] as const).map(p => (
+                    <button key={p.v} type="button" onClick={() => setPaymentMethod(p.v)}
+                      className={`text-xs font-semibold py-2 rounded-lg border-2 transition-colors ${paymentMethod === p.v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setAutoRenew(!autoRenew)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors text-left ${autoRenew ? "border-primary bg-primary/5" : "border-border"}`}>
+                  <div className={`w-8 h-4 rounded-full transition-colors relative ${autoRenew ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${autoRenew ? "left-4" : "left-0.5"}`} />
+                  </div>
+                  <span className="text-xs font-semibold text-foreground">Renovação Automática</span>
+                </button>
+                <button type="button" onClick={() => setRequireSignature(!requireSignature)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors text-left ${requireSignature ? "border-primary bg-primary/5" : "border-border"}`}>
+                  <div className={`w-8 h-4 rounded-full transition-colors relative ${requireSignature ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${requireSignature ? "left-4" : "left-0.5"}`} />
+                  </div>
+                  <span className="text-xs font-semibold text-foreground">Exigir Assinatura</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-foreground mb-1.5 block">Observações</label>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2} className={`${INPUT} resize-none`} />
