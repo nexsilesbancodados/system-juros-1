@@ -7,7 +7,8 @@ import {
   Send, Bot, User, BarChart3, FileText, Wifi, WifiOff,
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
   Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
-  ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff
+  ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
+  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
 } from "lucide-react";
 
 interface Message {
