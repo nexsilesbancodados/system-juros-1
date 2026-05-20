@@ -147,7 +147,8 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         title: `${dueToday.length} vence${dueToday.length !== 1 ? "m" : ""} hoje`,
         description: `Total previsto · R$ ${fmtBRL(total)}`,
         count: dueToday.length,
-        action: { label: "Enviar lembretes", onClick: () => navigate("/cobrancas?filter=today") },
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${dueToday.length} de hoje`, dueToday) },
+        secondaryAction: { label: "Enviar lembretes", onClick: () => navigate("/cobrancas?filter=today") },
       });
     }
 
