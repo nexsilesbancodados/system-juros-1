@@ -124,36 +124,53 @@ const Cobrancas = () => {
     }
   };
 
+  const optimisticMarkPaid = (ids: string[]) => {
+    const key = ["cobrancas-installments", user?.id];
+    const prev = qc.getQueryData<any[]>(key);
+    qc.setQueryData<any[]>(key, (old) =>
+      (old || []).map((i: any) =>
+        ids.includes(i.id)
+          ? { ...i, status: "paid", paid_at: new Date().toISOString(), paid_amount: i.amount, _optimistic: true }
+          : i
+      )
+    );
+    return prev;
+  };
+
   const handleMarkPaid = async (id: string) => {
     const inst = installments.find((i: any) => i.id === id);
     if (!inst) return;
+    const snapshot = optimisticMarkPaid([id]);
+    setConfirmPayId(null);
+    toast({ title: "✓ Parcela marcada como paga!" });
     try {
       await markPaidOne(inst);
-      toast({ title: "✓ Parcela marcada como paga!" });
-      setConfirmPayId(null);
       qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
       qc.invalidateQueries({ queryKey: ["dashboard-data"] });
     } catch (e: any) {
-      toast({ title: "Erro", description: e.message, variant: "destructive" });
+      qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
+      toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" });
     }
   };
 
   const handleBulkMarkPaid = async () => {
     const items = installments.filter((i: any) => selected.has(i.id) && i.status !== "paid");
     if (items.length === 0) { toast({ title: "Nada para pagar" }); return; }
+    const snapshot = optimisticMarkPaid(items.map((i: any) => i.id));
     setBulkPaying(true);
+    setBulkPayOpen(false);
+    setSelected(new Set());
     let ok = 0, fail = 0;
     for (const inst of items) {
       try { await markPaidOne(inst); ok++; } catch { fail++; }
     }
     setBulkPaying(false);
-    setBulkPayOpen(false);
-    setSelected(new Set());
+    if (fail > 0) qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
     qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
     toast({
       title: `✓ ${ok} parcela(s) pagas`,
-      description: fail > 0 ? `${fail} falha(s).` : undefined,
+      description: fail > 0 ? `${fail} falha(s) revertida(s).` : undefined,
     });
   };
 
