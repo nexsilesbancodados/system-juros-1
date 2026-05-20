@@ -42,6 +42,29 @@ const ResetPassword = () => {
   const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
   const [resendCount, setResendCount] = useState(0);
   const [nowTick, setNowTick] = useState(0);
+  const [errorInfo, setErrorInfo] = useState<{ title: string; description: string } | null>(null);
+  const [redirectIn, setRedirectIn] = useState(0);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearRedirectTimers = () => {
+    if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+    if (redirectIntervalRef.current) clearInterval(redirectIntervalRef.current);
+    redirectTimeoutRef.current = null;
+    redirectIntervalRef.current = null;
+  };
+
+  useEffect(() => () => clearRedirectTimers(), []);
+
+  const goToLoginNow = async () => {
+    clearRedirectTimers();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("[reset-password] signOut falhou no clique, prosseguindo", e);
+    }
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
