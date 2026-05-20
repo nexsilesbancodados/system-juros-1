@@ -79,9 +79,9 @@ const parseCurrency = (v: string) => {
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type LoanMode = "percentage" | "installments";
 type Frequency = "monthly" | "weekly" | "daily" | "biweekly" | "custom";
 type DailyMode = "mon-fri" | "mon-sat" | "mon-sun";
+
 
 const INPUT = "w-full px-3.5 py-2.5 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-ring transition-all duration-150";
 
