@@ -545,7 +545,7 @@ const AgenteIA = () => {
   const handleSend = async (override?: string) => {
     const text = (override ?? input).trim();
     if (!text || loading) return;
-    const userMsg: Message = { role: "user", content: input, timestamp: new Date() };
+    const userMsg: Message = { role: "user", content: text, timestamp: new Date() };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setInput("");
