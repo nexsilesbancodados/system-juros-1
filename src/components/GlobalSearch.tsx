@@ -31,6 +31,7 @@ const ACTIONS: SearchResult[] = [
 ];
 
 const PAGES: SearchResult[] = [
+  { id: "p-hoje", group: "Páginas", title: "Hoje", subtitle: "Tarefas, cobranças e alertas do dia", path: "/hoje", Icon: Zap, shortcut: "g h", keywords: "hoje agenda agora" },
   { id: "p-dashboard", group: "Páginas", title: "Painel", path: "/dashboard", Icon: LayoutDashboard, shortcut: "g d" },
   { id: "p-clientes", group: "Páginas", title: "Clientes", path: "/clientes", Icon: Users, shortcut: "g c" },
   { id: "p-cobrancas", group: "Páginas", title: "Cobranças", path: "/cobrancas", Icon: Receipt, shortcut: "g b" },

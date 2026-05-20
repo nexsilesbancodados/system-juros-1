@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
@@ -93,6 +93,12 @@ const NovoCliente = () => {
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
+  const [expressMode, setExpressMode] = useState<boolean>(() => {
+    try { return localStorage.getItem("novo_cliente_express") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("novo_cliente_express", expressMode ? "1" : "0"); } catch {}
+  }, [expressMode]);
 
   // ── Step 1: Client data ──
   const [nome, setNome] = useState("");
@@ -563,6 +569,14 @@ const NovoCliente = () => {
             <h1 className="text-xl font-bold text-shimmer">Cadastrar Novo Cliente</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setExpressMode(!expressMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+            title="Reduz o formulário aos campos essenciais"
+          >
+            ⚡ {expressMode ? "Express ON" : "Modo Express"}
+          </button>
         </div>
       </div>
 
@@ -1092,6 +1106,7 @@ const NovoCliente = () => {
           </div>
 
           {/* ── ADVANCED CONTRACT FIELDS ── */}
+          {!expressMode && (
           <details className="bg-card border border-border rounded-2xl p-5 group">
             <summary className="cursor-pointer flex items-center justify-between list-none">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -1243,6 +1258,7 @@ const NovoCliente = () => {
               </div>
             </div>
           </details>
+          )}
         </div>
       )}
 

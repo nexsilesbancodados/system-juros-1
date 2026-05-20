@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Keyboard } from "lucide-react";
 
 const SHORTCUTS: { keys: string[]; label: string; path?: string; action?: () => void }[] = [
+  { keys: ["g", "h"], label: "Ir para Hoje", path: "/hoje" },
   { keys: ["g", "d"], label: "Ir para Painel", path: "/dashboard" },
   { keys: ["g", "c"], label: "Ir para Clientes", path: "/clientes" },
   { keys: ["g", "b"], label: "Ir para Cobranças", path: "/cobrancas" },
@@ -14,6 +15,7 @@ const SHORTCUTS: { keys: string[]; label: string; path?: string; action?: () => 
   { keys: ["g", "a"], label: "Ir para Análises", path: "/analises" },
   { keys: ["g", "m"], label: "Ir para Chat", path: "/chat" },
   { keys: ["n", "c"], label: "Novo cliente", path: "/clientes/novo" },
+  { keys: ["p"], label: "Registrar pagamento" },
   { keys: ["⌘/Ctrl", "K"], label: "Abrir busca global" },
   { keys: ["?"], label: "Mostrar atalhos" },
 ];
