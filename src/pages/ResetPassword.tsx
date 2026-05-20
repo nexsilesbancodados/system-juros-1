@@ -164,7 +164,16 @@ const ResetPassword = () => {
     } catch (e) {
       console.warn("[reset-password] signOut falhou, prosseguindo com redirect", e);
     }
-    setTimeout(() => navigate("/login", { replace: true }), delayMs);
+    clearRedirectTimers();
+    const seconds = Math.max(1, Math.ceil(delayMs / 1000));
+    setRedirectIn(seconds);
+    redirectIntervalRef.current = setInterval(() => {
+      setRedirectIn((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    redirectTimeoutRef.current = setTimeout(() => {
+      clearRedirectTimers();
+      navigate("/login", { replace: true });
+    }, delayMs);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
