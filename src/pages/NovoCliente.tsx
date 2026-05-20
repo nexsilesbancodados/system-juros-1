@@ -129,6 +129,8 @@ const NovoCliente = () => {
   const [lateFeePercent, setLateFeePercent] = useState("2");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0.33");
   const [notes, setNotes] = useState("");
+  const [gracePeriods, setGracePeriods] = useState("2");
+
   const [customDates, setCustomDates] = useState<string[]>([]);
 
   // ── Step 2: Advanced contract fields ──
