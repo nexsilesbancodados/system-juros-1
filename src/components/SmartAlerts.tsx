@@ -132,7 +132,8 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         title: `${lightOverdue.length} atraso${lightOverdue.length !== 1 ? "s" : ""} recente${lightOverdue.length !== 1 ? "s" : ""}`,
         description: `Atrasados há menos de 7 dias · R$ ${fmtBRL(total)}`,
         count: lightOverdue.length,
-        action: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${lightOverdue.length} atraso${lightOverdue.length !== 1 ? "s" : ""} recente${lightOverdue.length !== 1 ? "s" : ""}`, lightOverdue) },
+        secondaryAction: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
       });
     }
 
