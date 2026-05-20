@@ -234,22 +234,30 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     toast.success("Alertas limpos");
   };
 
-  // Sort: critical > warning > info > system
-  const order = { critical: 0, warning: 1, info: 2, system: 3 };
-  const sorted = [...alerts].sort((a, b) => order[a.group] - order[b.group]);
+  // Group alerts by severity for sectioned rendering
+  const order: Array<Alert["group"]> = ["critical", "warning", "info", "system"];
+  const groupMeta: Record<Alert["group"], { label: string; to: string }> = {
+    critical: { label: "Crítico", to: "/cobrancas?filter=overdue" },
+    warning:  { label: "Atenção", to: "/cobrancas?filter=overdue" },
+    info:     { label: "Informativo", to: "/cobrancas?filter=today" },
+    system:   { label: "Sistema", to: "/notificacoes" },
+  };
+  const grouped = order
+    .map((g) => ({ group: g, items: alerts.filter((a) => a.group === g) }))
+    .filter((s) => s.items.length > 0);
 
   return (
     <div className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
       <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Sparkles size={14} className="text-primary" /> Alertas inteligentes
-          {sorted.length > 0 && (
+          {alerts.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-bold">
-              {sorted.length}
+              {alerts.length}
             </span>
           )}
         </h2>
-        {sorted.length > 1 && (
+        {alerts.length > 1 && (
           <button
             onClick={dismissAll}
             disabled={busy}
@@ -260,56 +268,83 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
           </button>
         )}
       </div>
-      <div className="divide-y divide-border/20 max-h-[440px] overflow-y-auto">
-        {sorted.length === 0 && (
+      <div className="max-h-[440px] overflow-y-auto">
+        {grouped.length === 0 && (
           <div className="py-10 text-center">
             <CheckCheck size={28} className="mx-auto text-success/60 mb-2" />
             <p className="text-sm font-semibold text-foreground">Nada urgente</p>
             <p className="text-xs text-muted-foreground mt-1">Você está em dia com tudo</p>
           </div>
         )}
-        {sorted.map(a => {
-          const s = groupStyles[a.group];
-          const Icon = a.icon;
+        {grouped.map((section) => {
+          const ss = groupStyles[section.group];
+          const meta = groupMeta[section.group];
           return (
-            <div key={a.id} className={`px-4 py-3 flex items-start gap-3 hover:bg-accent/20 transition-colors group ${s.bg}`}>
-              <div className={`w-8 h-8 rounded-lg ${s.chip} flex items-center justify-center shrink-0`}>
-                <Icon size={15} />
+            <section key={section.group} aria-label={meta.label}>
+              <header className={`px-4 py-1.5 flex items-center justify-between border-y border-border/20 ${ss.bg}`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${ss.icon} flex items-center gap-1.5`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${ss.icon.replace("text-", "bg-")}`} />
+                  {meta.label}
+                  <span className="text-muted-foreground font-semibold normal-case tracking-normal">
+                    · {section.items.length}
+                  </span>
+                </span>
+                <button
+                  onClick={() => navigate(meta.to)}
+                  className="text-[10px] font-bold text-muted-foreground hover:text-foreground hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  aria-label={`Ver lista completa de ${meta.label}`}
+                >
+                  Ver todos <ChevronRight size={10} />
+                </button>
+              </header>
+              <div className="divide-y divide-border/20">
+                {section.items.map((a) => {
+                  const s = groupStyles[a.group];
+                  const Icon = a.icon;
+                  return (
+                    <div key={a.id} className={`px-4 py-3 flex items-start gap-3 hover:bg-accent/20 transition-colors group ${s.bg}`}>
+                      <div className={`w-8 h-8 rounded-lg ${s.chip} flex items-center justify-center shrink-0`}>
+                        <Icon size={15} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground leading-tight">{a.title}</p>
+                          <button
+                            onClick={() => dismissAlert(a)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-accent/40 shrink-0"
+                            title="Dispensar"
+                            aria-label="Dispensar alerta"
+                          >
+                            <X size={12} className="text-muted-foreground" />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.description}</p>
+                        {(a.action || a.secondaryAction) && (
+                          <div className="mt-2 flex items-center gap-3 flex-wrap">
+                            {a.action && (
+                              <button
+                                onClick={a.action.onClick}
+                                className={`text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded`}
+                              >
+                                {a.action.label} <ChevronRight size={11} />
+                              </button>
+                            )}
+                            {a.secondaryAction && (
+                              <button
+                                onClick={a.secondaryAction.onClick}
+                                className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                              >
+                                {a.secondaryAction.label}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground leading-tight">{a.title}</p>
-                  <button
-                    onClick={() => dismissAlert(a)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-accent/40 shrink-0"
-                    title="Dispensar"
-                  >
-                    <X size={12} className="text-muted-foreground" />
-                  </button>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{a.description}</p>
-                {(a.action || a.secondaryAction) && (
-                  <div className="mt-2 flex items-center gap-3 flex-wrap">
-                    {a.action && (
-                      <button
-                        onClick={a.action.onClick}
-                        className={`text-[11px] font-bold ${s.icon} hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded`}
-                      >
-                        {a.action.label} <ChevronRight size={11} />
-                      </button>
-                    )}
-                    {a.secondaryAction && (
-                      <button
-                        onClick={a.secondaryAction.onClick}
-                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                      >
-                        {a.secondaryAction.label}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+            </section>
           );
         })}
       </div>
