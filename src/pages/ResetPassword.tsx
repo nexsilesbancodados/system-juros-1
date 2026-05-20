@@ -238,7 +238,8 @@ const ResetPassword = () => {
     });
     setLoading(false);
     if (error) {
-      toast({ title: "Erro", description: friendlyError(error.message), variant: "destructive" });
+      const f = friendlyError(error);
+      toast({ title: f.title, description: f.description, variant: "destructive" });
       return;
     }
     toast({
