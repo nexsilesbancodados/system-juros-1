@@ -111,7 +111,7 @@ const ResetPassword = () => {
 
   const sendRecoveryEmail = async (targetEmail: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: recoveryRedirect,
     });
     return error;
   };
