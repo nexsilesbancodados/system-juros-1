@@ -282,40 +282,40 @@ const ResetPassword = () => {
     }
 
     setLoading(true);
+    let failure: FriendlyError | null = null;
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        const friendly = friendlyError(error.message);
+        failure = friendlyError(error);
+      } else {
+        toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
+        await finishAndRedirect(800);
+        return;
+      }
+    } catch (err: unknown) {
+      failure = friendlyError(err);
+    } finally {
+      setLoading(false);
+    }
+
+    // Qualquer falha (API ou exceção) sempre cai aqui e segue o mesmo caminho:
+    // toast → estado de erro → logout → redirect para /login.
+    if (failure) {
+      try {
         toast({
-          title: "Não foi possível atualizar",
-          description: `${friendly} Faça login novamente para tentar de novo.`,
+          title: failure.title,
+          description: `${failure.description} Você será redirecionado para o login.`,
           variant: "destructive",
         });
         setErrorInfo({
-          title: "Não foi possível atualizar a senha",
-          description: `${friendly} Por segurança, sua sessão de recuperação foi encerrada.`,
+          title: failure.title,
+          description: `${failure.description} Por segurança, sua sessão de recuperação foi encerrada.`,
         });
         setMode("error");
-        await finishAndRedirect(8000);
-        return;
+      } catch (uiErr) {
+        console.warn("[reset-password] falha ao montar tela de erro, prosseguindo com redirect", uiErr);
       }
-      toast({ title: "✓ Senha atualizada", description: "Faça login com a nova senha." });
-      await finishAndRedirect(800);
-    } catch (err: any) {
-      const friendly = friendlyError(err?.message);
-      toast({
-        title: "Erro inesperado",
-        description: `${friendly} Redirecionando para o login…`,
-        variant: "destructive",
-      });
-      setErrorInfo({
-        title: "Erro inesperado",
-        description: `${friendly} Você pode tentar novamente a partir da tela de login.`,
-      });
-      setMode("error");
       await finishAndRedirect(8000);
-    } finally {
-      setLoading(false);
     }
   };
 
