@@ -66,7 +66,13 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissedMap, setDismissedMap] = useState<DismissMap>({});
+  const dismissed = useMemo(() => new Set(Object.keys(dismissedMap)), [dismissedMap]);
+
+  // Hydrate from localStorage on mount / user change
+  useEffect(() => {
+    setDismissedMap(loadDismissed(user?.id));
+  }, [user?.id]);
   const [busy, setBusy] = useState(false);
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [cobrarTitle, setCobrarTitle] = useState("Cobrar agora");
