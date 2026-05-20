@@ -128,6 +128,7 @@ const DashboardLayout = () => {
       {isMobile && <MobileBottomNav />}
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <QuickPaymentModal open={payOpen} onClose={() => setPayOpen(false)} />
       <KeyboardShortcutsHelp />
       <OnboardingTourAuto />
     </div>

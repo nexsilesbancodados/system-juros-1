@@ -52,6 +52,7 @@ const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
 const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
+const Hoje = lazy(() => import("./pages/Hoje"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,7 @@ const App = () => (
                 <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/hoje" element={<Hoje />}/>
                   <Route path="/analises" element={<Analises />} />
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/clientes/novo" element={<NovoCliente />} />
