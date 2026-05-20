@@ -8,6 +8,7 @@ import {
   Sunrise, AlertCircle, CheckCircle2, Bell, ListTodo, Receipt,
   TrendingUp, ArrowRight, Phone, MessageSquare, Loader2, Plus, Clock
 } from "lucide-react";
+import SmartAlerts from "@/components/SmartAlerts";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
@@ -233,30 +234,12 @@ const Hoje = () => {
             </div>
           </div>
 
-          {/* Notificações */}
-          <div className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Bell size={14} className="text-orange-400" /> Notificações
-              </h2>
-              <button onClick={() => navigate("/notificacoes")} className="text-[11px] text-primary hover:underline">Ver tudo</button>
-            </div>
-            <div className="divide-y divide-border/20 max-h-60 overflow-y-auto">
-              {data?.notifications.length === 0 && (
-                <p className="px-4 py-6 text-xs text-muted-foreground text-center">Tudo lido</p>
-              )}
-              {data?.notifications.map((n: any) => (
-                <button
-                  key={n.id}
-                  onClick={() => n.link && navigate(n.link)}
-                  className="w-full px-4 py-2.5 hover:bg-accent/20 transition-colors text-left"
-                >
-                  <p className="text-xs text-foreground leading-snug">{n.message}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(n.sent_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Alertas inteligentes agrupados */}
+          <SmartAlerts
+            overdue={data?.overdue || []}
+            dueToday={data?.dueToday || []}
+            notifications={data?.notifications || []}
+          />
         </div>
       </div>
     </div>
