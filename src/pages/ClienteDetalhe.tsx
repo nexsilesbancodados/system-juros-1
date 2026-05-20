@@ -220,10 +220,27 @@ const ClienteDetalhe = () => {
     } finally { setLoanLoading(false); }
   };
 
+  const patchInstallment = (instId: string, patch: any) => {
+    const key = ["client-installments", id];
+    const prev = qc.getQueryData<any[]>(key);
+    qc.setQueryData<any[]>(key, (old) =>
+      (old || []).map((i: any) => (i.id === instId ? { ...i, ...patch, _optimistic: true } : i))
+    );
+    return prev;
+  };
+
   const payFull = async (instId: string, amount: number) => {
     if (!user) return;
+    const snapshot = patchInstallment(instId, {
+      status: "paid", paid_at: new Date().toISOString(), paid_amount: amount,
+    });
+    toast({ title: "Parcela quitada!" });
     const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) {
+      qc.setQueryData(["client-installments", id], snapshot);
+      toast({ title: "Erro ao quitar", description: error.message, variant: "destructive" });
+      return;
+    }
 
     const inst = installments.find((i: any) => i.id === instId);
     if (inst) {
@@ -237,7 +254,7 @@ const ClienteDetalhe = () => {
       const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
       if (otherUnpaid.length === 0) await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }
-    toast({ title: "Parcela quitada!" }); invAll();
+    invAll();
   };
 
   const handlePartialPay = async () => {
@@ -249,18 +266,31 @@ const ClienteDetalhe = () => {
     if (val + alreadyPaid >= instAmount) {
       await payFull(partialPayModal.id, instAmount);
     } else {
-      await supabase.from("contract_installments").update({ paid_amount: alreadyPaid + val }).eq("id", partialPayModal.id);
-      await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`, client_id: id, contract_id: partialPayModal.contract_id });
+      const snapshot = patchInstallment(partialPayModal.id, { paid_amount: alreadyPaid + val });
       toast({ title: `R$ ${fmt(val)} registrado!` });
-      invAll();
+      const { error } = await supabase.from("contract_installments").update({ paid_amount: alreadyPaid + val }).eq("id", partialPayModal.id);
+      if (error) {
+        qc.setQueryData(["client-installments", id], snapshot);
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+      } else {
+        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`, client_id: id, contract_id: partialPayModal.contract_id });
+        invAll();
+      }
     }
     setPartialPayModal(null);
   };
 
   const reversePayment = async (instId: string) => {
     if (!confirm("Estornar pagamento?")) return;
-    await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
-    toast({ title: "Estornado!" }); invAll();
+    const snapshot = patchInstallment(instId, { status: "pending", paid_at: null, paid_amount: null });
+    toast({ title: "Estornado!" });
+    const { error } = await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
+    if (error) {
+      qc.setQueryData(["client-installments", id], snapshot);
+      toast({ title: "Erro ao estornar", description: error.message, variant: "destructive" });
+      return;
+    }
+    invAll();
   };
 
   const getPhone = () => (client?.whatsapp || client?.phone || "").replace(/\D/g, "");
