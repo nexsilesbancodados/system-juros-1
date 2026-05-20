@@ -28,68 +28,27 @@ const Simulador = () => {
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
   const calc = useMemo(() => {
-    if (valorNum <= 0) return null;
-
-    // Modo "valor da parcela" → deriva a taxa (apenas com parcelas fixas)
-    if (valueMode === "installment") {
-      if (loanMode !== "installments" || parcelasNum <= 0 || installmentNum <= 0) return null;
-      const totalReceber = installmentNum * parcelasNum;
-      const jurosTotal = totalReceber - valorNum;
-      const derivedRate = (jurosTotal / (valorNum * parcelasNum)) * 100;
-      const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-      return {
-        jurosTotal,
-        totalReceber,
-        valorParcela: installmentNum,
-        numParcelas: parcelasNum,
-        perPeriodLabel: periodLabel,
-        derivedRate,
-      };
-    }
-
-    if (taxaNum <= 0) return null;
-
-    if (loanMode === "percentage") {
-      if (frequency === "daily") {
-        if (parcelasNum > 0) {
-          const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
-          const totalReceber = valorNum + jurosTotal;
-          const valorParcela = totalReceber / parcelasNum;
-          return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "dia" };
-        } else {
-          const days = Math.ceil(100 / taxaNum);
-          const payPerDay = valorNum * (taxaNum / 100);
-          const totalReceber = payPerDay * days;
-          const jurosTotal = totalReceber - valorNum;
-          return { jurosTotal, totalReceber, valorParcela: payPerDay, numParcelas: days, perPeriodLabel: "dia" };
-        }
-      } else if (frequency === "weekly") {
-        if (parcelasNum > 0) {
-          const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
-          const totalReceber = valorNum + jurosTotal;
-          const valorParcela = totalReceber / parcelasNum;
-          return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: "semana" };
-        } else {
-          const weeks = Math.ceil(100 / taxaNum);
-          const payPerWeek = valorNum * (taxaNum / 100);
-          const totalReceber = payPerWeek * weeks;
-          const jurosTotal = totalReceber - valorNum;
-          return { jurosTotal, totalReceber, valorParcela: payPerWeek, numParcelas: weeks, perPeriodLabel: "semana" };
-        }
-      } else {
-        const jurosTotal = valorNum * (taxaNum / 100);
-        const totalReceber = valorNum + jurosTotal;
-        return { jurosTotal, totalReceber, valorParcela: totalReceber, numParcelas: 1, perPeriodLabel: "mês" };
-      }
-    } else {
-      if (parcelasNum <= 0) return null;
-      const jurosTotal = valorNum * (taxaNum / 100) * parcelasNum;
-      const totalReceber = valorNum + jurosTotal;
-      const valorParcela = totalReceber / parcelasNum;
-      const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : "mês";
-      return { jurosTotal, totalReceber, valorParcela, numParcelas: parcelasNum, perPeriodLabel: periodLabel };
-    }
+    const r = calculateLoan({
+      capital: valorNum,
+      rate: taxaNum,
+      periods: parcelasNum,
+      frequency,
+      loanMode,
+      valueMode,
+      installmentValue: installmentNum,
+    });
+    if (!r) return null;
+    // Mantém shape antigo (jurosTotal/totalReceber/valorParcela) usado no JSX existente.
+    return {
+      jurosTotal: r.totalInterest,
+      totalReceber: r.totalAmount,
+      valorParcela: r.installmentAmount,
+      numParcelas: r.numInstallments,
+      perPeriodLabel: r.perPeriodLabel,
+      ...(r.derivedRate !== undefined ? { derivedRate: r.derivedRate } : {}),
+    };
   }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode]);
+
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
