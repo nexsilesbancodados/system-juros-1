@@ -81,7 +81,7 @@ const ResetPassword = () => {
     } catch (e) {
       console.warn("[reset-password] signOut falhou no clique, prosseguindo", e);
     }
-    navigate("/login", { replace: true });
+    navigate(loginHref, { replace: true });
   };
 
   useEffect(() => {
