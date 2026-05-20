@@ -15,6 +15,18 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Aceita apenas paths internos (começam com "/" mas não "//" ou "/\") para
+  // evitar open-redirect via ?next=https://evil.com.
+  const sanitizeNext = (raw: string | null): string | null => {
+    if (!raw) return null;
+    if (!raw.startsWith("/")) return null;
+    if (raw.startsWith("//") || raw.startsWith("/\\")) return null;
+    if (raw.toLowerCase().startsWith("/login") || raw.toLowerCase().startsWith("/reset-password")) return null;
+    return raw;
+  };
+  const nextPath = sanitizeNext(searchParams.get("next"));
   const { toast } = useToast();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
