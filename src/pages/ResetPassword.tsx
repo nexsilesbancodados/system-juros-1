@@ -25,6 +25,24 @@ const friendlyError = (msg?: string) => {
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Sanitiza ?next= para evitar open-redirect. Apenas paths internos válidos.
+  const nextPath = useMemo(() => {
+    const raw = searchParams.get("next");
+    if (!raw) return null;
+    if (!raw.startsWith("/")) return null;
+    if (raw.startsWith("//") || raw.startsWith("/\\")) return null;
+    const low = raw.toLowerCase();
+    if (low.startsWith("/login") || low.startsWith("/reset-password")) return null;
+    return raw;
+  }, [searchParams]);
+
+  const loginHref = nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+  const recoveryRedirect = nextPath
+    ? `${window.location.origin}/reset-password?next=${encodeURIComponent(nextPath)}`
+    : `${window.location.origin}/reset-password`;
+
   const { toast } = useToast();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
