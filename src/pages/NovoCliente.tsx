@@ -1106,6 +1106,7 @@ const NovoCliente = () => {
           </div>
 
           {/* ── ADVANCED CONTRACT FIELDS ── */}
+          {!expressMode && (
           <details className="bg-card border border-border rounded-2xl p-5 group">
             <summary className="cursor-pointer flex items-center justify-between list-none">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -1257,6 +1258,7 @@ const NovoCliente = () => {
               </div>
             </div>
           </details>
+          )}
         </div>
       )}
 
