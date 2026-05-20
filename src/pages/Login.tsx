@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,18 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Aceita apenas paths internos (começam com "/" mas não "//" ou "/\") para
+  // evitar open-redirect via ?next=https://evil.com.
+  const sanitizeNext = (raw: string | null): string | null => {
+    if (!raw) return null;
+    if (!raw.startsWith("/")) return null;
+    if (raw.startsWith("//") || raw.startsWith("/\\")) return null;
+    if (raw.toLowerCase().startsWith("/login") || raw.toLowerCase().startsWith("/reset-password")) return null;
+    return raw;
+  };
+  const nextPath = sanitizeNext(searchParams.get("next"));
   const { toast } = useToast();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
@@ -50,7 +62,7 @@ const Login = () => {
         }
       }
       
-      navigate("/dashboard");
+      navigate(nextPath ?? "/dashboard", { replace: true });
     }
   };
 
@@ -168,7 +180,7 @@ const Login = () => {
                   </div>
 
                   <p
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => navigate(nextPath ? `/reset-password?next=${encodeURIComponent(nextPath)}` : "/reset-password")}
                     className="text-right text-xs text-white/30 cursor-pointer hover:text-white/70 transition-colors"
                   >
                     Esqueceu a senha?

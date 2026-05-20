@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ConstellationBackground from "@/components/ConstellationBackground";
@@ -25,6 +25,24 @@ const friendlyError = (msg?: string) => {
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Sanitiza ?next= para evitar open-redirect. Apenas paths internos válidos.
+  const nextPath = useMemo(() => {
+    const raw = searchParams.get("next");
+    if (!raw) return null;
+    if (!raw.startsWith("/")) return null;
+    if (raw.startsWith("//") || raw.startsWith("/\\")) return null;
+    const low = raw.toLowerCase();
+    if (low.startsWith("/login") || low.startsWith("/reset-password")) return null;
+    return raw;
+  }, [searchParams]);
+
+  const loginHref = nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+  const recoveryRedirect = nextPath
+    ? `${window.location.origin}/reset-password?next=${encodeURIComponent(nextPath)}`
+    : `${window.location.origin}/reset-password`;
+
   const { toast } = useToast();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
@@ -63,7 +81,7 @@ const ResetPassword = () => {
     } catch (e) {
       console.warn("[reset-password] signOut falhou no clique, prosseguindo", e);
     }
-    navigate("/login", { replace: true });
+    navigate(loginHref, { replace: true });
   };
 
   useEffect(() => {
@@ -93,7 +111,7 @@ const ResetPassword = () => {
 
   const sendRecoveryEmail = async (targetEmail: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: recoveryRedirect,
     });
     return error;
   };
@@ -142,7 +160,7 @@ const ResetPassword = () => {
     }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: recoveryRedirect,
     });
     setLoading(false);
     if (error) {
@@ -172,7 +190,7 @@ const ResetPassword = () => {
     }, 1000);
     redirectTimeoutRef.current = setTimeout(() => {
       clearRedirectTimers();
-      navigate("/login", { replace: true });
+      navigate(loginHref, { replace: true });
     }, delayMs);
   };
 
@@ -235,7 +253,7 @@ const ResetPassword = () => {
       <ConstellationBackground />
 
       <button
-        onClick={() => navigate("/login", { replace: true })}
+        onClick={() => navigate(loginHref, { replace: true })}
         className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/50 hover:text-white transition-colors group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -407,7 +425,7 @@ const ResetPassword = () => {
                 )}
 
                 <button
-                  onClick={() => navigate("/login", { replace: true })}
+                  onClick={() => navigate(loginHref, { replace: true })}
                   className="px-6 py-2.5 rounded-2xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-all"
                 >
                   Voltar ao login
