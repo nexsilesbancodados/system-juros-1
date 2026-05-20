@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   AlertTriangle, Clock, Cake, Bell, CheckCheck, ChevronRight,
-  X, Sparkles, TrendingDown, FileSignature, Loader2
+  X, Sparkles, TrendingDown, FileSignature, Loader2, RotateCcw
 } from "lucide-react";
 import CobrarAgoraModal, { CobrarInstallment } from "./CobrarAgoraModal";
+
+// Persisted-dismiss helpers (localStorage, per-user, with TTL)
+const DISMISS_KEY = (uid?: string) => `smart-alerts:dismissed:${uid || "anon"}`;
+const DAY_MS = 86_400_000;
+// Group alerts reset daily; notification-bound alerts persist 30 days
+const ttlForId = (id: string) => (id.startsWith("notif-") ? 30 * DAY_MS : DAY_MS);
+
+type DismissMap = Record<string, number>; // id -> expiresAt (ms)
+
+const loadDismissed = (uid?: string): DismissMap => {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY(uid));
+    if (!raw) return {};
+    const parsed: DismissMap = JSON.parse(raw);
+    const now = Date.now();
+    const clean: DismissMap = {};
+    Object.entries(parsed).forEach(([k, exp]) => { if (exp > now) clean[k] = exp; });
+    return clean;
+  } catch { return {}; }
+};
+
+const saveDismissed = (uid: string | undefined, map: DismissMap) => {
+  try { localStorage.setItem(DISMISS_KEY(uid), JSON.stringify(map)); } catch {}
+};
 
 type Alert = {
   id: string;
