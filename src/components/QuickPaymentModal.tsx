@@ -14,10 +14,17 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
   const qc = useQueryClient();
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    if (open) { setQuery(""); setTimeout(() => inputRef.current?.focus(), 30); }
+    if (open) {
+      setQuery("");
+      setActiveIdx(0);
+      setTimeout(() => inputRef.current?.focus(), 30);
+    }
   }, [open]);
 
   const { data: installments, isLoading } = useQuery({
@@ -45,6 +52,13 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     ).slice(0, 50);
   }, [installments, query]);
 
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  // Scroll active row into view
+  useEffect(() => {
+    itemRefs.current[activeIdx]?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
   const handlePay = async (id: string, amount: number) => {
     setSaving(id);
     const { error } = await supabase.from("contract_installments")
@@ -67,66 +81,147 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     qc.invalidateQueries({ queryKey: ["hoje"] });
   };
 
+  // Keyboard navigation: Esc closes, ArrowUp/Down navigate, Enter pays active
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIdx((i) => Math.min(filtered.length - 1, i + 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === "Enter" && filtered[activeIdx] && document.activeElement === inputRef.current) {
+        e.preventDefault();
+        const inst = filtered[activeIdx];
+        handlePay(inst.id, Number(inst.amount));
+      } else if (e.key === "Tab") {
+        // Simple focus trap within dialog
+        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button, input, [href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusables || focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, filtered, activeIdx, onClose]);
+
   if (!open) return null;
 
   const today = new Date(); today.setHours(0,0,0,0);
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in" onClick={onClose} />
-      <div className="fixed top-[10%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in">
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-pay-title"
+        aria-describedby="quick-pay-desc"
+        className="fixed top-[10%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in"
+      >
         <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
-            <Receipt size={16} className="text-primary" />
+            <Receipt size={16} className="text-primary" aria-hidden="true" />
             <div className="flex-1">
-              <p className="text-xs font-bold text-foreground">Registrar pagamento</p>
-              <p className="text-[10px] text-muted-foreground">Busque por nome ou CPF</p>
+              <h2 id="quick-pay-title" className="text-xs font-bold text-foreground">Registrar pagamento</h2>
+              <p id="quick-pay-desc" className="text-[10px] text-muted-foreground">
+                Busque por nome ou CPF · ↑↓ navega · Enter paga · Esc fecha
+              </p>
             </div>
-            <kbd className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-mono">ESC</kbd>
+            <kbd className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-mono" aria-hidden="true">ESC</kbd>
+            <button
+              onClick={onClose}
+              aria-label="Fechar modal de pagamento"
+              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
           </div>
 
           <div className="px-4 py-3 border-b border-border/30">
+            <label htmlFor="quick-pay-search" className="sr-only">Buscar parcela por nome do cliente ou CPF</label>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <input
                 ref={inputRef}
+                id="quick-pay-search"
+                type="search"
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="quick-pay-list"
+                aria-activedescendant={filtered[activeIdx] ? `qpay-item-${filtered[activeIdx].id}` : undefined}
+                aria-autocomplete="list"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Nome do cliente ou CPF..."
-                className="w-full h-10 pl-9 pr-9 rounded-xl bg-muted/30 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-10 pl-9 pr-9 rounded-xl bg-muted/30 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground">
-                  <X size={12} />
+                <button
+                  onClick={() => setQuery("")}
+                  aria-label="Limpar busca"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <X size={12} aria-hidden="true" />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="max-h-[55vh] overflow-y-auto">
+          <div
+            id="quick-pay-list"
+            role="listbox"
+            aria-label="Parcelas pendentes"
+            className="max-h-[55vh] overflow-y-auto"
+          >
             {isLoading && (
-              <div className="py-12 text-center">
-                <Loader2 size={20} className="mx-auto animate-spin text-muted-foreground" />
+              <div className="py-12 text-center" role="status" aria-live="polite">
+                <Loader2 size={20} className="mx-auto animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Carregando parcelas</span>
               </div>
             )}
             {!isLoading && filtered.length === 0 && (
-              <div className="py-12 text-center">
-                <CheckCircle2 size={28} className="mx-auto text-success/50 mb-2" />
+              <div className="py-12 text-center" role="status">
+                <CheckCircle2 size={28} className="mx-auto text-success/50 mb-2" aria-hidden="true" />
                 <p className="text-sm text-foreground font-semibold">Nada pendente</p>
                 <p className="text-[11px] text-muted-foreground">{query ? "Nenhuma parcela encontrada" : "Todas as parcelas estão pagas"}</p>
               </div>
             )}
-            {filtered.map((inst: any) => {
+            {filtered.map((inst: any, idx: number) => {
               const due = new Date(inst.due_date);
               const isOverdue = due < today;
               const isToday = due.toDateString() === new Date().toDateString();
+              const isActive = idx === activeIdx;
+              const status = isOverdue ? "atrasada" : isToday ? "vence hoje" : "pendente";
               return (
-                <div key={inst.id} className="px-4 py-3 flex items-center gap-3 border-b border-border/20 hover:bg-accent/20 transition-colors">
+                <div
+                  key={inst.id}
+                  ref={(el) => (itemRefs.current[idx] = el)}
+                  id={`qpay-item-${inst.id}`}
+                  role="option"
+                  aria-selected={isActive}
+                  onMouseEnter={() => setActiveIdx(idx)}
+                  className={`px-4 py-3 flex items-center gap-3 border-b border-border/20 transition-colors ${
+                    isActive ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-accent/20"
+                  }`}
+                >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     isOverdue ? "bg-destructive/10 text-destructive" :
                     isToday ? "bg-primary/10 text-primary" :
                     "bg-muted text-muted-foreground"
-                  }`}>
+                  }`} aria-hidden="true">
                     {isOverdue ? <AlertCircle size={14} /> : <Clock size={14} />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -137,13 +232,16 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                       {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-foreground shrink-0">R$ {fmtBRL(Number(inst.amount))}</p>
+                  <p className="text-sm font-bold text-foreground shrink-0" aria-label={`Valor R$ ${fmtBRL(Number(inst.amount))}`}>
+                    R$ {fmtBRL(Number(inst.amount))}
+                  </p>
                   <button
                     onClick={() => handlePay(inst.id, Number(inst.amount))}
                     disabled={saving === inst.id}
-                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0"
+                    aria-label={`Pagar parcela ${inst.installment_number} de ${inst.clients?.name || "cliente"}, ${status}, R$ ${fmtBRL(Number(inst.amount))}`}
+                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   >
-                    {saving === inst.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                    {saving === inst.id ? <Loader2 size={11} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={11} aria-hidden="true" />}
                     Pagar
                   </button>
                 </div>
@@ -151,9 +249,12 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
             })}
           </div>
 
-          <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground/60 flex items-center justify-between">
-            <span>Atalho global: <kbd className="px-1 py-0.5 rounded bg-muted font-mono">p</kbd></span>
-            <span>{filtered.length} parcela{filtered.length !== 1 ? "s" : ""}</span>
+          <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground/80 flex items-center justify-between">
+            <span>
+              <kbd className="px-1 py-0.5 rounded bg-muted font-mono">↑↓</kbd> navegar ·
+              <kbd className="px-1 py-0.5 rounded bg-muted font-mono ml-1">Enter</kbd> pagar
+            </span>
+            <span aria-live="polite">{filtered.length} parcela{filtered.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
