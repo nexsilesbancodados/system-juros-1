@@ -1,135 +1,176 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, X, FileSignature, Users, LayoutDashboard, ArrowRight, CornerDownLeft } from "lucide-react";
+import {
+  Search, X, FileSignature, Users, LayoutDashboard, CornerDownLeft,
+  UserPlus, Receipt, TrendingUp, Wrench, Calculator, ListTodo,
+  Bell, Settings, MessageSquare, Bot, Wallet, BarChart3, History, Zap, Clock
+} from "lucide-react";
+
+type Group = "Ações" | "Páginas" | "Clientes" | "Contratos" | "Recentes";
 
 interface SearchResult {
-  type: "client" | "contract" | "page";
+  id: string;
+  group: Group;
   title: string;
   subtitle?: string;
   path: string;
+  keywords?: string;
+  Icon: any;
+  shortcut?: string;
 }
 
-const pages: SearchResult[] = [
-  { type: "page", title: "Painel", path: "/dashboard" },
-  { type: "page", title: "Clientes", path: "/clientes" },
-  { type: "page", title: "Cobranças", path: "/cobrancas" },
-  { type: "page", title: "Carteira", path: "/carteira" },
-  { type: "page", title: "Análises", path: "/analises" },
-  { type: "page", title: "Relatórios", path: "/relatorios" },
-  { type: "page", title: "Cobradores", path: "/cobradores" },
-  { type: "page", title: "Lucros", path: "/lucros" },
-  { type: "page", title: "Gastos", path: "/gastos" },
-  { type: "page", title: "Agente IA", path: "/agente-ia" },
-  { type: "page", title: "Configurações", path: "/configuracoes" },
-  { type: "page", title: "Histórico", path: "/historico" },
-  { type: "page", title: "Portais", path: "/qrcode" },
-  { type: "page", title: "Simulador", path: "/ferramentas/simulador" },
-  { type: "page", title: "Metas", path: "/ferramentas/metas" },
-  { type: "page", title: "Tarefas", path: "/ferramentas/tarefas" },
-  { type: "page", title: "Anotações", path: "/ferramentas/anotacoes" },
-  { type: "page", title: "Planilha", path: "/ferramentas/planilha" },
-  { type: "page", title: "Puxada de Dados", path: "/puxada-dados" },
+const ACTIONS: SearchResult[] = [
+  { id: "a-novo-cliente", group: "Ações", title: "Novo cliente", subtitle: "Cadastrar e criar contrato", path: "/clientes/novo", Icon: UserPlus, keywords: "cadastrar adicionar criar novo", shortcut: "n c" },
+  { id: "a-cobrancas", group: "Ações", title: "Registrar pagamento", subtitle: "Abrir cobranças do dia", path: "/cobrancas", Icon: Receipt, keywords: "pagamento receber baixar parcela" },
+  { id: "a-lucro", group: "Ações", title: "Lançar lucro", subtitle: "Registrar entrada de lucro", path: "/lucros", Icon: TrendingUp, keywords: "lucro receita entrada" },
+  { id: "a-gasto", group: "Ações", title: "Lançar gasto", subtitle: "Registrar despesa", path: "/gastos", Icon: Wallet, keywords: "gasto despesa saida" },
+  { id: "a-tarefa", group: "Ações", title: "Nova tarefa", subtitle: "Lembretes e to-dos", path: "/ferramentas/tarefas", Icon: ListTodo, keywords: "tarefa todo lembrete" },
+  { id: "a-simulador", group: "Ações", title: "Simular empréstimo", subtitle: "Calcular juros e parcelas", path: "/ferramentas/simulador", Icon: Calculator, keywords: "simular calcular juros" },
 ];
+
+const PAGES: SearchResult[] = [
+  { id: "p-dashboard", group: "Páginas", title: "Painel", path: "/dashboard", Icon: LayoutDashboard, shortcut: "g d" },
+  { id: "p-clientes", group: "Páginas", title: "Clientes", path: "/clientes", Icon: Users, shortcut: "g c" },
+  { id: "p-cobrancas", group: "Páginas", title: "Cobranças", path: "/cobrancas", Icon: Receipt, shortcut: "g b" },
+  { id: "p-inadimplencia", group: "Páginas", title: "Inadimplência", path: "/inadimplencia", Icon: Zap, shortcut: "g i" },
+  { id: "p-carteira", group: "Páginas", title: "Carteira", path: "/carteira", Icon: Wallet, shortcut: "g w" },
+  { id: "p-lucros", group: "Páginas", title: "Lucros", path: "/lucros", Icon: TrendingUp, shortcut: "g l" },
+  { id: "p-gastos", group: "Páginas", title: "Gastos", path: "/gastos", Icon: Wallet, shortcut: "g g" },
+  { id: "p-analises", group: "Páginas", title: "Análises", path: "/analises", Icon: BarChart3, shortcut: "g a" },
+  { id: "p-relatorios", group: "Páginas", title: "Relatórios", path: "/relatorios", Icon: BarChart3 },
+  { id: "p-cobradores", group: "Páginas", title: "Cobradores", path: "/cobradores", Icon: Users },
+  { id: "p-ia", group: "Páginas", title: "Agente IA", path: "/agente-ia", Icon: Bot },
+  { id: "p-chat", group: "Páginas", title: "Chat", path: "/chat", Icon: MessageSquare, shortcut: "g m" },
+  { id: "p-automacoes", group: "Páginas", title: "Automações", path: "/automacoes", Icon: Zap },
+  { id: "p-notificacoes", group: "Páginas", title: "Notificações", path: "/notificacoes", Icon: Bell },
+  { id: "p-historico", group: "Páginas", title: "Histórico", path: "/historico", Icon: History },
+  { id: "p-configuracoes", group: "Páginas", title: "Configurações", path: "/configuracoes", Icon: Settings },
+  { id: "p-qrcode", group: "Páginas", title: "Portais (QR)", path: "/qrcode", Icon: Wrench },
+  { id: "p-simulador", group: "Páginas", title: "Simulador", path: "/ferramentas/simulador", Icon: Calculator },
+  { id: "p-metas", group: "Páginas", title: "Metas", path: "/ferramentas/metas", Icon: TrendingUp },
+  { id: "p-tarefas", group: "Páginas", title: "Tarefas", path: "/ferramentas/tarefas", Icon: ListTodo },
+  { id: "p-anotacoes", group: "Páginas", title: "Anotações", path: "/ferramentas/anotacoes", Icon: FileSignature },
+  { id: "p-planilha", group: "Páginas", title: "Planilha", path: "/ferramentas/planilha", Icon: FileSignature },
+  { id: "p-puxada", group: "Páginas", title: "Puxada de Dados", path: "/puxada-dados", Icon: BarChart3 },
+];
+
+const RECENT_KEY = "lov_palette_recent_v1";
+const loadRecents = (): string[] => {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+};
+const saveRecent = (id: string) => {
+  try {
+    const cur = loadRecents().filter(x => x !== id);
+    cur.unshift(id);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 5)));
+  } catch {}
+};
 
 const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [dynamicResults, setDynamicResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  // Improvement #16: Keyboard navigation in search
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) { setQuery(""); setResults([]); setSelectedIndex(0); }
+    if (open) {
+      setRecentIds(loadRecents());
+      setQuery("");
+      setDynamicResults([]);
+      setSelectedIndex(0);
+    }
   }, [open]);
 
+  // Fetch clients/contracts only when querying
   useEffect(() => {
-    if (!query.trim()) {
-      setResults(pages.slice(0, 8));
-      setSelectedIndex(0);
-      return;
-    }
-
+    if (!query.trim() || !user) { setDynamicResults([]); return; }
     const q = query.toLowerCase();
-    const pageResults = pages.filter((p) => p.title.toLowerCase().includes(q));
 
     const fetchData = async () => {
-      if (!user) return;
       setLoading(true);
       const [clientsRes, contractsRes] = await Promise.all([
-        supabase.from("clients").select("id, name, cpf_cnpj").eq("user_id", user.id).or(`name.ilike.%${query}%,cpf_cnpj.ilike.%${query}%`).limit(5),
-        supabase.from("contracts").select("id, capital, client_id, clients(id, name)").eq("user_id", user.id).limit(5),
+        supabase.from("clients").select("id, name, cpf_cnpj").eq("user_id", user.id)
+          .or(`name.ilike.%${query}%,cpf_cnpj.ilike.%${query}%`).limit(5),
+        supabase.from("contracts").select("id, capital, status, clients(id, name)").eq("user_id", user.id).limit(20),
       ]);
 
-      const clientResults: SearchResult[] = (clientsRes.data || []).map((c: any) => ({
-        type: "client", title: c.name, subtitle: c.cpf_cnpj, path: `/clientes/${c.id}`,
+      const clients: SearchResult[] = (clientsRes.data || []).map((c: any) => ({
+        id: `c-${c.id}`, group: "Clientes", title: c.name, subtitle: c.cpf_cnpj || "Sem CPF",
+        path: `/clientes/${c.id}`, Icon: Users,
       }));
 
-      const contractResults: SearchResult[] = (contractsRes.data || [])
+      const contracts: SearchResult[] = (contractsRes.data || [])
         .filter((c: any) => c.clients?.name?.toLowerCase().includes(q))
+        .slice(0, 5)
         .map((c: any) => ({
-          type: "client", title: `${c.clients?.name} — Contrato`, subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")}`, path: `/clientes/${c.clients?.id || ""}`,
+          id: `k-${c.id}`, group: "Contratos", title: c.clients?.name,
+          subtitle: `R$ ${Number(c.capital).toLocaleString("pt-BR")} • ${c.status}`,
+          path: `/clientes/${c.clients?.id || ""}`, Icon: FileSignature,
         }));
 
-      const combined = [...pageResults, ...clientResults, ...contractResults];
-      setResults(combined);
-      setSelectedIndex(0);
+      setDynamicResults([...clients, ...contracts]);
       setLoading(false);
     };
 
-    const timer = setTimeout(fetchData, 250);
+    const timer = setTimeout(fetchData, 220);
     return () => clearTimeout(timer);
   }, [query, user]);
 
-  // Improvement #17: Keyboard up/down/enter
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.max(prev - 1, 0));
-    } else if (e.key === "Enter" && results[selectedIndex]) {
-      navigate(results[selectedIndex].path);
-      onClose();
+  const results = useMemo<SearchResult[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      const recents = recentIds
+        .map(id => [...ACTIONS, ...PAGES].find(r => r.id === id))
+        .filter(Boolean)
+        .map(r => ({ ...(r as SearchResult), group: "Recentes" as Group }));
+      return [...recents, ...ACTIONS, ...PAGES.slice(0, 10)];
     }
-  }, [results, selectedIndex, navigate, onClose]);
+    const match = (r: SearchResult) =>
+      r.title.toLowerCase().includes(q) ||
+      (r.keywords || "").toLowerCase().includes(q) ||
+      (r.subtitle || "").toLowerCase().includes(q);
 
-  // Improvement #18: Scroll selected item into view
+    const actions = ACTIONS.filter(match);
+    const pages = PAGES.filter(match);
+    return [...actions, ...pages, ...dynamicResults];
+  }, [query, dynamicResults, recentIds]);
+
+  useEffect(() => { setSelectedIndex(0); }, [results.length]);
+
+  const handleSelect = useCallback((r: SearchResult) => {
+    saveRecent(r.id);
+    navigate(r.path);
+    onClose();
+  }, [navigate, onClose]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex(p => Math.min(p + 1, results.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex(p => Math.max(p - 1, 0)); }
+    else if (e.key === "Enter" && results[selectedIndex]) { e.preventDefault(); handleSelect(results[selectedIndex]); }
+  }, [results, selectedIndex, handleSelect]);
+
   useEffect(() => {
-    const el = listRef.current?.children[selectedIndex] as HTMLElement;
+    const el = listRef.current?.querySelector(`[data-idx="${selectedIndex}"]`) as HTMLElement | null;
     el?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  const handleSelect = (result: SearchResult) => {
-    navigate(result.path);
-    onClose();
-  };
-
   if (!open) return null;
 
-  const icons: Record<string, any> = {
-    page: <LayoutDashboard size={14} />,
-    client: <Users size={14} />,
-    contract: <FileSignature size={14} />,
-  };
-
-  const typeLabels: Record<string, string> = {
-    page: "Página",
-    client: "Cliente",
-    contract: "Contrato",
-  };
+  // Render grouped
+  let lastGroup: Group | null = null;
+  let runningIdx = -1;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-[60] animate-fade-in" onClick={onClose} />
-      <div className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg z-[61] px-4 animate-scale-in">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in" onClick={onClose} />
+      <div className="fixed top-[12%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in">
         <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
-          {/* Improvement #19: Enhanced search input with clear button */}
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
             <Search size={16} className={`transition-colors ${loading ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
             <input
@@ -137,57 +178,79 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Buscar clientes, contratos, páginas..."
+              placeholder="Buscar ações, clientes, contratos, páginas..."
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             {query && (
-              <button onClick={() => setQuery("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground transition-colors">
+              <button onClick={() => setQuery("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground transition-colors" aria-label="Limpar busca">
                 <X size={14} />
               </button>
             )}
             <kbd className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-mono">ESC</kbd>
           </div>
 
-          <div ref={listRef} className="max-h-80 overflow-y-auto">
-            {results.length === 0 && query && !loading && (
+          <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-1">
+            {results.length === 0 && (
               <div className="py-12 text-center">
-                <Search size={32} className="mx-auto text-muted-foreground/20 mb-3" />
+                <Search size={28} className="mx-auto text-muted-foreground/20 mb-3" />
                 <p className="text-sm text-muted-foreground">Nenhum resultado para "{query}"</p>
+                <p className="text-[11px] text-muted-foreground/60 mt-1">Tente nome do cliente, CPF ou ação</p>
               </div>
             )}
-            {results.map((r, i) => (
-              <button
-                key={`${r.path}-${i}`}
-                onClick={() => handleSelect(r)}
-                onMouseEnter={() => setSelectedIndex(i)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left ${
-                  i === selectedIndex ? "bg-accent/60" : "hover:bg-accent/30"
-                }`}
-              >
-                <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  r.type === "client" ? "bg-primary/8 text-primary" :
-                  r.type === "contract" ? "bg-success/8 text-success" :
-                  "bg-muted text-muted-foreground"
-                }`}>
-                  {icons[r.type]}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
-                  {r.subtitle && <p className="text-xs text-muted-foreground truncate">{r.subtitle}</p>}
+            {results.map((r) => {
+              runningIdx++;
+              const idx = runningIdx;
+              const showHeader = r.group !== lastGroup;
+              lastGroup = r.group;
+              const Icon = r.Icon;
+              const selected = idx === selectedIndex;
+              return (
+                <div key={r.id}>
+                  {showHeader && (
+                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
+                      {r.group === "Recentes" && <Clock size={10} />}
+                      {r.group}
+                    </p>
+                  )}
+                  <button
+                    data-idx={idx}
+                    onClick={() => handleSelect(r)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${selected ? "bg-accent/60" : "hover:bg-accent/30"}`}
+                  >
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      r.group === "Ações" ? "bg-primary/10 text-primary" :
+                      r.group === "Clientes" ? "bg-success/10 text-success" :
+                      r.group === "Contratos" ? "bg-indigo-500/10 text-indigo-400" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                      <Icon size={14} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
+                      {r.subtitle && <p className="text-[11px] text-muted-foreground truncate">{r.subtitle}</p>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {r.shortcut && (
+                        <span className="hidden sm:flex gap-0.5">
+                          {r.shortcut.split(" ").map((k, j) => (
+                            <kbd key={j} className="text-[9px] px-1 py-0.5 rounded bg-muted font-mono text-muted-foreground">{k}</kbd>
+                          ))}
+                        </span>
+                      )}
+                      {selected && <CornerDownLeft size={12} className="text-muted-foreground/50" />}
+                    </div>
+                  </button>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted/50 text-muted-foreground">{typeLabels[r.type]}</span>
-                  {i === selectedIndex && <CornerDownLeft size={12} className="text-muted-foreground/50" />}
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Improvement #20: Search footer with keyboard hints */}
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-border text-[10px] text-muted-foreground/60">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-muted font-mono">↑↓</kbd> navegar</span>
               <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-muted font-mono">↵</kbd> abrir</span>
+              <span className="hidden sm:flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-muted font-mono">?</kbd> atalhos</span>
             </div>
             <span>{results.length} resultado{results.length !== 1 ? "s" : ""}</span>
           </div>

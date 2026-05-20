@@ -1,4 +1,5 @@
-import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark, UserPlus, ListTodo, Calculator, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,22 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!quickOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (quickRef.current && !quickRef.current.contains(e.target as Node)) setQuickOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setQuickOpen(false); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [quickOpen]);
 
   const { data: financials } = useQuery({
     queryKey: ["topbar-financials", user?.id],
@@ -94,13 +111,50 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
       {/* Quick Add Menu */}
       {!isMobile && (
-        <div className="flex items-center mr-2">
-          <button 
-            onClick={() => navigate("/clientes/novo")}
+        <div ref={quickRef} className="relative flex items-center mr-2">
+          <button
+            onClick={() => setQuickOpen(o => !o)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+            aria-haspopup="menu"
+            aria-expanded={quickOpen}
           >
             <Plus size={14} /> Novo
+            <ChevronDown size={11} className={`transition-transform ${quickOpen ? "rotate-180" : ""}`} />
           </button>
+          {quickOpen && (
+            <div className="absolute top-full right-0 mt-2 w-60 rounded-xl border border-border bg-card shadow-2xl overflow-hidden z-50 animate-scale-in origin-top-right">
+              <p className="px-3 pt-2.5 pb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">Ações rápidas</p>
+              {[
+                { Icon: UserPlus, label: "Novo cliente", desc: "Cadastrar + contrato", path: "/clientes/novo" },
+                { Icon: Receipt, label: "Registrar pagamento", desc: "Abrir cobranças", path: "/cobrancas" },
+                { Icon: TrendingUp, label: "Lançar lucro", desc: "Entrada manual", path: "/lucros" },
+                { Icon: Wallet, label: "Lançar gasto", desc: "Despesa manual", path: "/gastos" },
+                { Icon: ListTodo, label: "Nova tarefa", desc: "Lembretes & to-dos", path: "/ferramentas/tarefas" },
+                { Icon: Calculator, label: "Simular empréstimo", desc: "Calcular juros", path: "/ferramentas/simulador" },
+              ].map(item => (
+                <button
+                  key={item.path}
+                  onClick={() => { setQuickOpen(false); navigate(item.path); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <item.Icon size={14} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-foreground truncate">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
+                  </div>
+                </button>
+              ))}
+              <button
+                onClick={() => { setQuickOpen(false); onSearchClick?.(); }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 border-t border-border/40 text-[11px] text-muted-foreground hover:bg-accent/30 transition-colors"
+              >
+                <span className="flex items-center gap-2"><Search size={12} /> Buscar tudo</span>
+                <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-muted font-mono">⌘K</kbd>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
