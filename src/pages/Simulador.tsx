@@ -77,37 +77,55 @@ const Simulador = () => {
   const lucroPercent = calc && valorNum > 0 ? (calc.jurosTotal / valorNum) * 100 : 0;
   const profitClamped = Math.min(lucroPercent, maxProfit);
 
-  // Generate installment breakdown with proper dates
+  // Generate installment breakdown with proper dates, usando o schedule real
   const generateBreakdown = () => {
     if (!calc) return [];
     const items: { num: number; date: string; value: number }[] = [];
     const start = new Date();
-    
-    for (let i = 0; i < Math.min(calc.numParcelas, 60); i++) {
+    const sched = calc.schedule;
+
+    // Modo bullet: 1 pagamento N períodos no futuro
+    if (loanMode === "bullet" && sched.length === 1) {
       const d = new Date(start);
-      
       if (frequency === "daily") {
-        // Skip weekends based on dailyMode
+        let added = 0;
+        while (added < parcelasNum) {
+          d.setDate(d.getDate() + 1);
+          const dow = d.getDay();
+          if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
+          if (dailyMode === "mon-sat" && dow === 0) continue;
+          added++;
+        }
+      } else if (frequency === "weekly") d.setDate(start.getDate() + 7 * parcelasNum);
+      else d.setMonth(start.getMonth() + parcelasNum);
+      items.push({ num: 1, date: d.toLocaleDateString("pt-BR"), value: sched[0] });
+      return items;
+    }
+
+    for (let i = 0; i < Math.min(sched.length, 60); i++) {
+      const d = new Date(start);
+      if (frequency === "daily") {
         let daysAdded = 0;
-        let currentDay = new Date(start);
+        const currentDay = new Date(start);
         while (daysAdded < i + 1) {
           currentDay.setDate(currentDay.getDate() + 1);
-          const dow = currentDay.getDay(); // 0=Sun, 6=Sat
+          const dow = currentDay.getDay();
           if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
           if (dailyMode === "mon-sat" && dow === 0) continue;
           daysAdded++;
         }
-        items.push({ num: i + 1, date: currentDay.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: currentDay.toLocaleDateString("pt-BR"), value: sched[i] });
       } else if (frequency === "weekly") {
         d.setDate(start.getDate() + (i + 1) * 7);
-        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: sched[i] });
       } else {
         d.setMonth(start.getMonth() + (i + 1));
-        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: calc.valorParcela });
+        items.push({ num: i + 1, date: d.toLocaleDateString("pt-BR"), value: sched[i] });
       }
     }
     return items;
   };
+
 
   const breakdown = generateBreakdown();
 
