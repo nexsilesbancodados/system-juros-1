@@ -18,12 +18,14 @@ const Simulador = () => {
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
   const [installmentValue, setInstallmentValue] = useState("");
+  const [gracePeriods, setGracePeriods] = useState("2");
   const navigate = useNavigate();
 
   const valorNum = parseFloat(valor) || 0;
   const taxaNum = parseFloat(taxa) || 0;
   const parcelasNum = parseInt(parcelas) || 0;
   const installmentNum = parseFloat(installmentValue) || 0;
+  const graceNum = parseInt(gracePeriods) || 0;
 
   const daysPerWeek = dailyMode === "mon-fri" ? 5 : dailyMode === "mon-sat" ? 6 : 7;
 
@@ -36,18 +38,20 @@ const Simulador = () => {
       loanMode,
       valueMode,
       installmentValue: installmentNum,
+      gracePeriods: graceNum,
     });
     if (!r) return null;
-    // Mantém shape antigo (jurosTotal/totalReceber/valorParcela) usado no JSX existente.
     return {
       jurosTotal: r.totalInterest,
       totalReceber: r.totalAmount,
       valorParcela: r.installmentAmount,
       numParcelas: r.numInstallments,
+      schedule: r.schedule,
       perPeriodLabel: r.perPeriodLabel,
       ...(r.derivedRate !== undefined ? { derivedRate: r.derivedRate } : {}),
     };
-  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode]);
+  }, [valorNum, taxaNum, parcelasNum, installmentNum, valueMode, loanMode, frequency, dailyMode, graceNum]);
+
 
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
