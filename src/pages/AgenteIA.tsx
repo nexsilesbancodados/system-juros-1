@@ -612,6 +612,67 @@ const AgenteIA = () => {
 
   const now = new Date();
   const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
+  const overdueAmount = dashData?.installments
+    .filter((i: any) => i.status === "pending" && new Date(i.due_date) < now)
+    .reduce((s: number, i: any) => s + Number(i.amount), 0) || 0;
+  const capitalOnStreet = dashData?.contracts
+    .filter((c: any) => c.status === "active")
+    .reduce((s: number, c: any) => s + Number(c.capital), 0) || 0;
+  const totalProfit = dashData?.contracts
+    .reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0) || 0;
+  const unreadCount = whatsappChats.reduce((s, c) => s + (c.unreadCount || 0), 0);
+
+  const fmt = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+  const filteredChats = whatsappChats.filter((c) => {
+    if (chatFilter === "unread" && !c.unreadCount) return false;
+    if (chatFilter === "groups" && !c.remoteJid.endsWith("@g.us")) return false;
+    if (chatSearch.trim()) {
+      const q = chatSearch.toLowerCase();
+      return (
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.toLowerCase().includes(q) ||
+        c.lastMessage?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const quickPrompts = [
+    { icon: <AlertTriangle size={14} />, label: "Quem deve mais?", prompt: "Liste os 5 clientes com maior valor em atraso e sugira uma abordagem para cada um." },
+    { icon: <TrendingUp size={14} />, label: "Como está o caixa?", prompt: "Analise o capital na rua, lucro acumulado e me dê um resumo executivo do desempenho." },
+    { icon: <Zap size={14} />, label: "O que cobrar hoje?", prompt: "Quais parcelas vencem hoje ou estão atrasadas? Priorize e me diga o que fazer primeiro." },
+    { icon: <Users size={14} />, label: "Risco de crédito", prompt: "Quais clientes têm maior risco de inadimplência baseado em score e histórico? Sugira ações." },
+  ];
+
+  const runQuickPrompt = (p: string) => {
+    setInput(p);
+    setTimeout(() => handleSend(), 50);
+  };
+
+  const clearChat = () => {
+    setMessages([
+      { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Como posso ajudar?", timestamp: new Date() },
+    ]);
+  };
+
+  const copyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado!" });
+  };
+
+  // "/" to focus chat input
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "/" && tab === "chat" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        chatInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tab]);
 
   const getMessageText = (msg: WhatsAppMsg) =>
     extractWhatsAppText(msg.message) || "[mídia]";
