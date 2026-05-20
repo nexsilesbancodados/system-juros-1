@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
+import { calculateLoan } from "@/lib/loanMath";
+
 
 // ── Validation ──
 const validateCPF = (cpf: string): boolean => {
