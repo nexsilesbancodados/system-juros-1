@@ -741,42 +741,85 @@ const AgenteIA = () => {
             </div>
           ) : !selectedChat ? (
             <>
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <h2 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Conversas</h2>
-                <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                  <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
-                </button>
+              <div className="p-4 border-b border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-foreground flex items-center gap-2">
+                    <Inbox size={18} /> Conversas
+                    {unreadCount > 0 && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </h2>
+                  <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                    <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={chatSearch}
+                    onChange={(e) => setChatSearch(e.target.value)}
+                    placeholder="Buscar por nome, telefone ou mensagem..."
+                    className="w-full pl-9 pr-9 py-2 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {chatSearch && (
+                    <button onClick={() => setChatSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted">
+                      <X size={12} className="text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
+                  {([
+                    { id: "all", label: "Todas", count: whatsappChats.length },
+                    { id: "unread", label: "Não lidas", count: whatsappChats.filter(c => c.unreadCount).length },
+                    { id: "groups", label: "Grupos", count: whatsappChats.filter(c => c.remoteJid.endsWith("@g.us")).length },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setChatFilter(f.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${chatFilter === f.id ? "bg-primary text-primary-foreground" : "bg-muted/30 border border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {f.label}
+                      <span className="opacity-70">{f.count}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {loadingChats ? (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 size={24} className="animate-spin text-muted-foreground" />
                   </div>
-                ) : whatsappChats.length === 0 ? (
-                  <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                    Nenhuma conversa encontrada
+                ) : filteredChats.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-sm text-muted-foreground gap-2">
+                    <Inbox size={28} className="opacity-40" />
+                    {chatSearch || chatFilter !== "all" ? "Nenhuma conversa corresponde aos filtros" : "Nenhuma conversa encontrada"}
                   </div>
                 ) : (
-                  whatsappChats.map((chat) => (
-                    <button
-                      key={chat.id}
-                      onClick={() => openChat(chat)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <User size={18} className="text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{chat.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
-                      </div>
-                      {chat.unreadCount ? (
-                        <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
-                          {chat.unreadCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))
+                  filteredChats.map((chat) => {
+                    const isGroup = chat.remoteJid.endsWith("@g.us");
+                    return (
+                      <button
+                        key={chat.id}
+                        onClick={() => openChat(chat)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${chat.unreadCount ? "bg-primary/20 ring-2 ring-primary/30" : "bg-primary/10"}`}>
+                          {isGroup ? <Users size={18} className="text-primary" /> : <User size={18} className="text-primary" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{chat.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
+                        </div>
+                        {chat.unreadCount ? (
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
+                            {chat.unreadCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </>
