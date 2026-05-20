@@ -156,37 +156,53 @@ const Simulador = () => {
       {/* Loan Mode Selection */}
       <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">
         <label className="text-label mb-1 block">Modo do Empréstimo</label>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setLoanMode("installments")}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-              loanMode === "installments"
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-muted-foreground/30"
-            }`}
-          >
-            <Hash size={20} className={loanMode === "installments" ? "text-primary" : "text-muted-foreground"} />
-            <div className="text-left">
-              <p className={`text-sm font-semibold ${loanMode === "installments" ? "text-primary" : "text-foreground"}`}>Por Parcelas</p>
-              <p className="text-[10px] text-muted-foreground">Nº fixo de parcelas</p>
-            </div>
-          </button>
-          <button
-            onClick={() => setLoanMode("percentage")}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-              loanMode === "percentage"
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-muted-foreground/30"
-            }`}
-          >
-            <Percent size={20} className={loanMode === "percentage" ? "text-primary" : "text-muted-foreground"} />
-            <div className="text-left">
-              <p className={`text-sm font-semibold ${loanMode === "percentage" ? "text-primary" : "text-foreground"}`}>Por Porcentagem</p>
-              <p className="text-[10px] text-muted-foreground">Paga % até quitar</p>
-            </div>
-          </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {([
+            { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
+            { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
+            { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros mensais, capital no último", Icon: Coins },
+            { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
+            { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
+            { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
+          ]).map(m => (
+            <button
+              key={m.v}
+              onClick={() => {
+                setLoanMode(m.v);
+                if (m.v !== "installments") setValueMode("rate");
+              }}
+              className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${
+                loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
+              <div className="min-w-0">
+                <p className={`text-xs font-semibold ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{m.desc}</p>
+              </div>
+            </button>
+          ))}
         </div>
+
+        {loanMode === "grace" && (
+          <div className="pt-3 border-t border-border">
+            <label className="text-label mb-1.5 block">Períodos de Carência</label>
+            <input
+              type="number"
+              min={1}
+              max={24}
+              value={gracePeriods}
+              onChange={(e) => setGracePeriods(e.target.value)}
+              className={inputCls}
+              placeholder="2"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Durante a carência o cliente não paga, mas os juros simples acumulam sobre o capital.
+            </p>
+          </div>
+        )}
       </div>
+
 
       {/* Frequency Selection */}
       <div className="rounded-2xl border border-border bg-card p-4 space-y-4 card-shine">
