@@ -223,6 +223,7 @@ const NovoCliente = () => {
     const n = parseInt(numInstallments) || 0;
     const taxa = parseFloat(taxaJuros) || 0;
     const parcela = parseFloat(installmentValue) || 0;
+    const grace = parseInt(gracePeriods) || 0;
     const r = calculateLoan({
       capital: cap,
       rate: taxa,
@@ -231,17 +232,19 @@ const NovoCliente = () => {
       loanMode,
       valueMode,
       installmentValue: parcela,
+      gracePeriods: grace,
     });
     if (!r) return null;
-    // Mantém shape antigo usado no resto do componente.
     return {
       totalInterest: r.totalInterest,
       totalAmount: r.totalAmount,
       installmentAmount: r.installmentAmount,
       numParcelas: r.numInstallments,
+      schedule: r.schedule,
       ...(r.derivedRate !== undefined ? { derivedRate: r.derivedRate } : {}),
     };
-  }, [capital, taxaJuros, numInstallments, loanMode, frequency, valueMode, installmentValue]);
+  }, [capital, taxaJuros, numInstallments, loanMode, frequency, valueMode, installmentValue, gracePeriods]);
+
 
 
   const handleCapitalChange = (v: string) => {
