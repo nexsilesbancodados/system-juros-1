@@ -111,8 +111,8 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
         description: `Mais de 7 dias em atraso · R$ ${fmtBRL(total)}`,
         count: critOverdue.length,
         amount: total,
-        action: { label: "Cobrar agora", onClick: () => navigate("/cobrancas?filter=overdue") },
-      });
+        action: { label: "Cobrar agora", onClick: () => openCobrar(`Cobrar ${critOverdue.length} crítica${critOverdue.length !== 1 ? "s" : ""}`, critOverdue) },
+        secondaryAction: { label: "Ver lista", onClick: () => navigate("/cobrancas?filter=overdue") },
     }
 
     // 2) Warning: recent overdue (<7d)
