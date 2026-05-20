@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isSuperAdminEmail } from "@/lib/admin";
 
 const mobileIconColor: Record<string, string> = {
+  "/hoje": "text-amber-400",
   "/dashboard": "text-blue-400",
   "/clientes": "text-cyan-400",
   "/cobrancas": "text-blue-300",
@@ -39,10 +40,10 @@ const mobileIconColor: Record<string, string> = {
 };
 
 const mainTabs = [
-  { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Hoje", icon: Sparkles, path: "/hoje" },
   { label: "Clientes", icon: Users, path: "/clientes" },
   { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
-  { label: "Carteira", icon: Wallet, path: "/carteira" },
+  { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Mais", icon: MoreHorizontal, path: "__more__" },
 ];
 

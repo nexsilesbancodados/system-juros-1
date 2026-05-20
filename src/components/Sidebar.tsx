@@ -34,6 +34,7 @@ interface MenuSection {
 
 // Cores por rota - paleta refinada
 const iconColorMap: Record<string, string> = {
+  "/hoje": "text-amber-400",
   "/dashboard": "text-blue-400",
   "/analises": "text-indigo-400",
   "/relatorios": "text-sky-300",
@@ -69,6 +70,7 @@ const sections: MenuSection[] = [
     title: "Principal",
     sectionIcon: PieChart,
     items: [
+      { label: "Hoje", icon: Sparkles, path: "/hoje", highlight: true, shortcut: "h" },
       { label: "Painel", icon: LayoutDashboard, path: "/dashboard", shortcut: "1" },
       { label: "Análises", icon: BarChart3, path: "/analises", shortcut: "2" },
       { label: "Relatórios", icon: FileText, path: "/relatorios", shortcut: "3" },
