@@ -330,7 +330,7 @@ const ResetPassword = () => {
                 </button>
               </form>
             </>
-          ) : (
+          ) : mode === "done" ? (
             <div className="text-center">
               <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={28} className="text-emerald-300" />
