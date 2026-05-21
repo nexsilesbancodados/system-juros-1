@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
   Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
-  Coins, TrendingDown, Target, PauseCircle
+  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -529,11 +529,51 @@ const NovoCliente = () => {
       customTemplate: (settings as any)?.custom_contract_template || null,
     };
 
+    const phoneDigits = (whatsapp || telefone).replace(/\D/g, "");
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const shareMessage =
+      `Olá ${nome}, seu contrato foi gerado! 📄\n\n` +
+      `• Valor: R$ ${calc.totalAmount.toFixed(2)}\n` +
+      `• ${calc.numParcelas}x de R$ ${calc.installmentAmount.toFixed(2)} (${freqLabel})\n` +
+      `• Início: ${new Date(startDate).toLocaleDateString("pt-BR")}\n\n` +
+      `Acesse seu portal para ver parcelas e pagar via PIX:\n${portalUrl}\n\n` +
+      `Login: CPF + data de nascimento.`;
+
+    const sendWhatsApp = () => {
+      if (!phoneDigits) {
+        toast({ title: "Sem WhatsApp/telefone", description: "Cadastre um número para enviar.", variant: "destructive" });
+        return;
+      }
+      window.open(`https://wa.me/55${phoneDigits}?text=${encodeURIComponent(shareMessage)}`, "_blank");
+    };
+
+    const sendEmail = () => {
+      if (!email.trim()) {
+        toast({ title: "Sem e-mail", description: "Cadastre um e-mail para enviar.", variant: "destructive" });
+        return;
+      }
+      window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Contrato — ${settings?.company_name || "SYSTEM JUROS"}`)}&body=${encodeURIComponent(shareMessage)}`;
+    };
+
     return (
       <div className="max-w-4xl mx-auto space-y-4 pb-10">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-bold text-foreground">Contrato Gerado</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={sendWhatsApp}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+              title={phoneDigits ? `Enviar para ${phoneDigits}` : "Sem número cadastrado"}
+            >
+              <MessageCircle size={16} /> Enviar WhatsApp
+            </button>
+            <button
+              onClick={sendEmail}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-accent transition-colors"
+              title={email ? `Enviar para ${email}` : "Sem e-mail cadastrado"}
+            >
+              <Send size={16} /> E-mail
+            </button>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-accent transition-colors"
