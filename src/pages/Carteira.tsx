@@ -25,7 +25,7 @@ const Carteira = () => {
   // Realtime subscriptions
   useMultiTableRealtime(
     ["profits", "expenses", "contract_installments", "transactions"],
-    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""], ["carteira-capital", user?.id || ""]],
+    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""], ["carteira-capital", user?.id || ""], ["carteira-withdrawals", user?.id || ""]],
   );
 
   const { data: profits = [], isLoading: loadingProfits } = useQuery({
