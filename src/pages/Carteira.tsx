@@ -65,7 +65,17 @@ const Carteira = () => {
     enabled: !!user,
   });
 
-  const loading = loadingProfits || loadingExpenses || loadingInst || loadingCapital;
+  // Retiradas de capital
+  const { data: withdrawals = [], isLoading: loadingWithdraw } = useQuery({
+    queryKey: ["carteira-withdrawals", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_withdrawal").order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const loading = loadingProfits || loadingExpenses || loadingInst || loadingCapital || loadingWithdraw;
 
   const handleSave = async () => {
     if (!user || !amount || !description) return;
