@@ -171,20 +171,21 @@ const Carteira = () => {
             <Dialog open={dialogOpen && dialogType === "in"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("in"); }}>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-success/15 text-success hover:bg-success/25 font-semibold text-sm transition-colors border border-success/20">
-                  <Plus size={16} /> Entrada
+                  <Plus size={16} /> Aporte
                 </button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-success">
-                    <ArrowUpRight size={20} /> Adicionar Entrada
+                    <ArrowUpRight size={20} /> Adicionar Aporte de Capital
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-2">
-                  <div><Label>Descrição</Label><Input placeholder="Ex: Depósito, Recebimento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                  <p className="text-xs text-muted-foreground -mt-1">Dinheiro disponível para emprestar. Não conta como lucro.</p>
+                  <div><Label>Descrição</Label><Input placeholder="Ex: Depósito inicial, Aporte sócio..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
                   <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
                   <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-success text-success-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
-                    {saving ? "Salvando..." : "Confirmar Entrada"}
+                    {saving ? "Salvando..." : "Confirmar Aporte"}
                   </button>
                 </div>
               </DialogContent>
