@@ -349,6 +349,11 @@ const Carteira = () => {
                       <span className={`font-semibold text-sm ${t.type === "in" ? "text-success" : "text-destructive"}`}>
                         {t.type === "in" ? "+" : "−"}R$ {fmt(t.amount)}
                       </span>
+                      {t.removable && (
+                        <button onClick={() => handleDeleteCapital(t.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover">
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
