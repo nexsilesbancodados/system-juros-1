@@ -1034,7 +1034,13 @@ const ClienteDetalhe = () => {
                     {new Date(inst.due_date).toLocaleDateString("pt-BR")}
                     {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
                     {partial && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
+                    {inst.payment_method && ` · ${String(inst.payment_method).toUpperCase()}`}
                   </p>
+                  {inst.receipt_url && (
+                    <a href={inst.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
+                      <Receipt size={10} /> Ver comprovante
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {isPaid ? (
@@ -1042,8 +1048,8 @@ const ClienteDetalhe = () => {
                   ) : (
                     <>
                       <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Cobrar"><Send size={14} /></button>
-                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
-                      <button onClick={() => payFull(inst.id, Number(inst.amount))} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Quitar</button>
+                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); setPayMethod("pix"); setPayReceiptFile(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
+                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(String(inst.amount)); setPayMethod("pix"); setPayReceiptFile(null); }} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Pagar</button>
                     </>
                   )}
                 </div>
