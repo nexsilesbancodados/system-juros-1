@@ -321,13 +321,26 @@ const ClienteDetalhe = () => {
     return prev;
   };
 
-  const payFull = async (instId: string, amount: number) => {
+  const uploadReceipt = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `receipts/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
+    if (error) {
+      toast({ title: "Erro ao enviar comprovante", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const payFull = async (instId: string, amount: number, method: string = "pix", receiptUrl: string | null = null) => {
     if (!user) return;
-    const snapshot = patchInstallment(instId, {
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: amount,
-    });
+    const patch: any = { status: "paid", paid_at: new Date().toISOString(), paid_amount: amount, payment_method: method };
+    if (receiptUrl) patch.receipt_url = receiptUrl;
+    const snapshot = patchInstallment(instId, patch);
     toast({ title: "Parcela quitada!" });
-    const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
+    const { error } = await supabase.from("contract_installments").update(patch).eq("id", instId);
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
       toast({ title: "Erro ao quitar", description: error.message, variant: "destructive" });
@@ -342,7 +355,7 @@ const ClienteDetalhe = () => {
         const interest = amount * (rate / (1 + rate));
         if (interest > 0) await supabase.from("profits").insert({ user_id: user.id, amount: interest, description: `Juros parcela #${inst.installment_number} - ${client?.name}`, client_id: id });
       }
-      await supabase.from("transactions").insert({ user_id: user.id, amount, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name}`, client_id: id, contract_id: inst.contract_id });
+      await supabase.from("transactions").insert({ user_id: user.id, amount, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name} (${method})`, client_id: id, contract_id: inst.contract_id });
       const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
       if (otherUnpaid.length === 0) await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }
@@ -353,23 +366,34 @@ const ClienteDetalhe = () => {
     if (!partialPayModal || !user) return;
     const val = parseFloat(partialAmount);
     if (!val || val <= 0) { toast({ title: "Valor inválido", variant: "destructive" }); return; }
+    setPayUploading(true);
+    let receiptUrl: string | null = null;
+    if (payReceiptFile) {
+      receiptUrl = await uploadReceipt(payReceiptFile);
+      if (!receiptUrl) { setPayUploading(false); return; }
+    }
     const instAmount = Number(partialPayModal.amount);
     const alreadyPaid = Number(partialPayModal.paid_amount || 0);
     if (val + alreadyPaid >= instAmount) {
-      await payFull(partialPayModal.id, instAmount);
+      await payFull(partialPayModal.id, instAmount, payMethod, receiptUrl);
     } else {
-      const snapshot = patchInstallment(partialPayModal.id, { paid_amount: alreadyPaid + val });
+      const patch: any = { paid_amount: alreadyPaid + val, payment_method: payMethod };
+      if (receiptUrl) patch.receipt_url = receiptUrl;
+      const snapshot = patchInstallment(partialPayModal.id, patch);
       toast({ title: `R$ ${fmt(val)} registrado!` });
-      const { error } = await supabase.from("contract_installments").update({ paid_amount: alreadyPaid + val }).eq("id", partialPayModal.id);
+      const { error } = await supabase.from("contract_installments").update(patch).eq("id", partialPayModal.id);
       if (error) {
         qc.setQueryData(["client-installments", id], snapshot);
         toast({ title: "Erro", description: error.message, variant: "destructive" });
       } else {
-        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`, client_id: id, contract_id: partialPayModal.contract_id });
+        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name} (${payMethod})`, client_id: id, contract_id: partialPayModal.contract_id });
         invAll();
       }
     }
+    setPayUploading(false);
     setPartialPayModal(null);
+    setPayReceiptFile(null);
+    setPayMethod("pix");
   };
 
   const reversePayment = async (instId: string) => {
