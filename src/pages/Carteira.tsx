@@ -193,71 +193,77 @@ const Carteira = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Dialog open={dialogOpen && dialogType === "in"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("in"); }}>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-success/15 text-success hover:bg-success/25 font-semibold text-sm transition-colors border border-success/20">
-                  <Plus size={16} /> Aporte
-                </button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-success">
-                    <ArrowUpRight size={20} /> Adicionar Aporte de Capital
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <p className="text-xs text-muted-foreground -mt-1">Dinheiro disponível para emprestar. Não conta como lucro.</p>
-                  <div><Label>Descrição</Label><Input placeholder="Ex: Depósito inicial, Aporte sócio..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-success text-success-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
-                    {saving ? "Salvando..." : "Confirmar Aporte"}
-                  </button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <button
+              onClick={() => { setDialogType("in"); setAmount(""); setDescription(""); setDialogOpen(true); }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-success/15 text-success hover:bg-success/25 font-semibold text-sm transition-colors border border-success/20"
+            >
+              <Plus size={16} /> Aporte
+            </button>
+            <button
+              onClick={() => { setDialogType("withdraw"); setAmount(""); setDescription(""); setDialogOpen(true); }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-warning/15 text-warning hover:bg-warning/25 font-semibold text-sm transition-colors border border-warning/20"
+            >
+              <Minus size={16} /> Retirar Capital
+            </button>
+            <button
+              onClick={() => { setDialogType("out"); setAmount(""); setDescription(""); setDialogOpen(true); }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold text-sm transition-colors border border-destructive/20"
+            >
+              <Minus size={16} /> Saída
+            </button>
 
-            <Dialog open={dialogOpen && dialogType === "withdraw"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("withdraw"); }}>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-warning/15 text-warning hover:bg-warning/25 font-semibold text-sm transition-colors border border-warning/20">
-                  <Minus size={16} /> Retirar Capital
-                </button>
-              </DialogTrigger>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-warning">
-                    <ArrowDownRight size={20} /> Retirar Capital
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <p className="text-xs text-muted-foreground -mt-1">Reduz o capital disponível para emprestar. Não é gasto/despesa.</p>
-                  <div><Label>Descrição</Label><Input placeholder="Ex: Devolução sócio, Saque pessoal..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-warning text-warning-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
-                    {saving ? "Salvando..." : "Confirmar Retirada"}
-                  </button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={dialogOpen && dialogType === "out"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("out"); }}>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold text-sm transition-colors border border-destructive/20">
-                  <Minus size={16} /> Saída
-                </button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-destructive">
-                    <ArrowDownRight size={20} /> Registrar Saída
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div><Label>Descrição</Label><Input placeholder="Ex: Saque, Pagamento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
-                    {saving ? "Salvando..." : "Confirmar Saída"}
-                  </button>
-                </div>
+                {dialogType === "in" && (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-success">
+                        <ArrowUpRight size={20} /> Adicionar Aporte de Capital
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <p className="text-xs text-muted-foreground -mt-1">Dinheiro disponível para emprestar. Não conta como lucro.</p>
+                      <div><Label>Descrição</Label><Input placeholder="Ex: Depósito inicial, Aporte sócio..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                      <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                      <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-success text-success-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                        {saving ? "Salvando..." : "Confirmar Aporte"}
+                      </button>
+                    </div>
+                  </>
+                )}
+                {dialogType === "withdraw" && (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-warning">
+                        <ArrowDownRight size={20} /> Retirar Capital
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <p className="text-xs text-muted-foreground -mt-1">Reduz o capital disponível para emprestar. Não é gasto/despesa.</p>
+                      <div><Label>Descrição</Label><Input placeholder="Ex: Devolução sócio, Saque pessoal..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                      <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                      <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-warning text-warning-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                        {saving ? "Salvando..." : "Confirmar Retirada"}
+                      </button>
+                    </div>
+                  </>
+                )}
+                {dialogType === "out" && (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <ArrowDownRight size={20} /> Registrar Saída
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div><Label>Descrição</Label><Input placeholder="Ex: Saque, Pagamento..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                      <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                      <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                        {saving ? "Salvando..." : "Confirmar Saída"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </DialogContent>
             </Dialog>
           </div>
