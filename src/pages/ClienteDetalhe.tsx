@@ -871,16 +871,23 @@ const ClienteDetalhe = () => {
           {contracts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
           ) : contracts.map((c: any) => (
-            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-              <div className="flex items-center justify-between">
-                <div>
+            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
                   <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
                   <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
                   <p className="text-xs text-muted-foreground">{new Date(c.start_date).toLocaleDateString("pt-BR")}</p>
                   <p className="text-xs font-medium text-primary">Lucro: R$ {fmt(Number(c.total_interest))}</p>
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
+                  className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  title="Editar empréstimo"
+                >
+                  <Edit size={14} />
+                </button>
               </div>
             </div>
           ))}
