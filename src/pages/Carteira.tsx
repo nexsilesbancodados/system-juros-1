@@ -17,7 +17,7 @@ const Carteira = () => {
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [searchTimeline, setSearchTimeline] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"in" | "out">("in");
+  const [dialogType, setDialogType] = useState<"in" | "out" | "withdraw">("in");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
