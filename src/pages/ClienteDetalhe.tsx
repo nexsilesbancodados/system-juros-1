@@ -36,6 +36,9 @@ const ClienteDetalhe = () => {
   const [newLoanMode, setNewLoanMode] = useState(false);
   const [partialPayModal, setPartialPayModal] = useState<any>(null);
   const [partialAmount, setPartialAmount] = useState("");
+  const [payMethod, setPayMethod] = useState<string>("pix");
+  const [payReceiptFile, setPayReceiptFile] = useState<File | null>(null);
+  const [payUploading, setPayUploading] = useState(false);
   const [loanCapital, setLoanCapital] = useState("");
   const [loanInstallments, setLoanInstallments] = useState("");
   const [loanFreq, setLoanFreq] = useState("monthly");
