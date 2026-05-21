@@ -24,8 +24,8 @@ const Carteira = () => {
 
   // Realtime subscriptions
   useMultiTableRealtime(
-    ["profits", "expenses", "contract_installments"],
-    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""]],
+    ["profits", "expenses", "contract_installments", "transactions"],
+    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""], ["carteira-capital", user?.id || ""]],
   );
 
   const { data: profits = [], isLoading: loadingProfits } = useQuery({
@@ -55,7 +55,17 @@ const Carteira = () => {
     enabled: !!user,
   });
 
-  const loading = loadingProfits || loadingExpenses || loadingInst;
+  // Aportes de capital (dinheiro disponível para emprestar - NÃO é lucro)
+  const { data: capital = [], isLoading: loadingCapital } = useQuery({
+    queryKey: ["carteira-capital", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_injection").order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const loading = loadingProfits || loadingExpenses || loadingInst || loadingCapital;
 
   const handleSave = async () => {
     if (!user || !amount || !description) return;
@@ -69,26 +79,38 @@ const Carteira = () => {
     }
 
     if (dialogType === "in") {
-      const { error } = await supabase.from("profits").insert({ user_id: user.id, amount: val, description, date: now });
-      if (error) { toast({ title: "Erro ao adicionar entrada", variant: "destructive" }); setSaving(false); return; }
+      // Aporte de capital: dinheiro disponível para emprestar, NÃO é lucro
+      const { error } = await supabase.from("transactions").insert({
+        user_id: user.id,
+        amount: val,
+        description,
+        date: now,
+        type: "capital_injection",
+        category: "Aporte de capital",
+      });
+      if (error) { toast({ title: "Erro ao adicionar aporte", variant: "destructive" }); setSaving(false); return; }
     } else {
       const { error } = await supabase.from("expenses").insert({ user_id: user.id, amount: val, description, date: now, category: "Retirada manual" });
       if (error) { toast({ title: "Erro ao registrar saída", variant: "destructive" }); setSaving(false); return; }
     }
 
-    toast({ title: dialogType === "in" ? "✓ Entrada adicionada!" : "✓ Saída registrada!" });
+    toast({ title: dialogType === "in" ? "✓ Aporte adicionado!" : "✓ Saída registrada!" });
     setAmount(""); setDescription(""); setDialogOpen(false); setSaving(false);
-    qc.invalidateQueries({ queryKey: ["carteira-profits"] });
+    qc.invalidateQueries({ queryKey: ["carteira-capital"] });
     qc.invalidateQueries({ queryKey: ["carteira-expenses"] });
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
-  const totalEntradas = profits.reduce((a: number, p: any) => a + Number(p.amount), 0) + installments.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
+  const totalCapital = capital.reduce((a: number, c: any) => a + Number(c.amount), 0);
+  const totalLucros = profits.reduce((a: number, p: any) => a + Number(p.amount), 0);
+  const totalParcelas = installments.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
+  const totalEntradas = totalCapital + totalLucros + totalParcelas;
   const totalSaidas = expenses.reduce((a: number, e: any) => a + Number(e.amount), 0);
   const saldo = totalEntradas - totalSaidas;
 
   const timeline = useMemo(() => {
     const all = [
+      ...capital.map((c: any) => ({ type: "in" as const, desc: c.description, amount: Number(c.amount), date: c.date, source: "Aporte" })),
       ...profits.map((p: any) => ({ type: "in" as const, desc: p.description, amount: Number(p.amount), date: p.date, source: "Lucro" })),
       ...installments.map((i: any) => ({ type: "in" as const, desc: "Parcela recebida", amount: Number(i.amount), date: i.paid_at, source: "Parcela" })),
       ...expenses.map((e: any) => ({ type: "out" as const, desc: e.description, amount: Number(e.amount), date: e.date, source: e.category || "Gasto" })),
@@ -106,7 +128,7 @@ const Carteira = () => {
       if (searchTimeline && !t.desc.toLowerCase().includes(searchTimeline.toLowerCase()) && !t.source.toLowerCase().includes(searchTimeline.toLowerCase())) return false;
       return true;
     });
-  }, [profits, expenses, installments, timeFilter, searchTimeline]);
+  }, [profits, expenses, installments, capital, timeFilter, searchTimeline]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
