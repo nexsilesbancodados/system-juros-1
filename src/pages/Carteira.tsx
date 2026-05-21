@@ -216,6 +216,29 @@ const Carteira = () => {
               </DialogContent>
             </Dialog>
 
+            <Dialog open={dialogOpen && dialogType === "withdraw"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("withdraw"); }}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-warning/15 text-warning hover:bg-warning/25 font-semibold text-sm transition-colors border border-warning/20">
+                  <Minus size={16} /> Retirar Capital
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-warning">
+                    <ArrowDownRight size={20} /> Retirar Capital
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground -mt-1">Reduz o capital disponível para emprestar. Não é gasto/despesa.</p>
+                  <div><Label>Descrição</Label><Input placeholder="Ex: Devolução sócio, Saque pessoal..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-warning text-warning-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                    {saving ? "Salvando..." : "Confirmar Retirada"}
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={dialogOpen && dialogType === "out"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("out"); }}>
               <DialogTrigger asChild>
                 <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold text-sm transition-colors border border-destructive/20">
