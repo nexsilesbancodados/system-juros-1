@@ -36,6 +36,9 @@ const ClienteDetalhe = () => {
   const [newLoanMode, setNewLoanMode] = useState(false);
   const [partialPayModal, setPartialPayModal] = useState<any>(null);
   const [partialAmount, setPartialAmount] = useState("");
+  const [payMethod, setPayMethod] = useState<string>("pix");
+  const [payReceiptFile, setPayReceiptFile] = useState<File | null>(null);
+  const [payUploading, setPayUploading] = useState(false);
   const [loanCapital, setLoanCapital] = useState("");
   const [loanInstallments, setLoanInstallments] = useState("");
   const [loanFreq, setLoanFreq] = useState("monthly");
@@ -318,13 +321,26 @@ const ClienteDetalhe = () => {
     return prev;
   };
 
-  const payFull = async (instId: string, amount: number) => {
+  const uploadReceipt = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `receipts/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
+    if (error) {
+      toast({ title: "Erro ao enviar comprovante", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const payFull = async (instId: string, amount: number, method: string = "pix", receiptUrl: string | null = null) => {
     if (!user) return;
-    const snapshot = patchInstallment(instId, {
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: amount,
-    });
+    const patch: any = { status: "paid", paid_at: new Date().toISOString(), paid_amount: amount, payment_method: method };
+    if (receiptUrl) patch.receipt_url = receiptUrl;
+    const snapshot = patchInstallment(instId, patch);
     toast({ title: "Parcela quitada!" });
-    const { error } = await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount }).eq("id", instId);
+    const { error } = await supabase.from("contract_installments").update(patch).eq("id", instId);
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
       toast({ title: "Erro ao quitar", description: error.message, variant: "destructive" });
@@ -339,7 +355,7 @@ const ClienteDetalhe = () => {
         const interest = amount * (rate / (1 + rate));
         if (interest > 0) await supabase.from("profits").insert({ user_id: user.id, amount: interest, description: `Juros parcela #${inst.installment_number} - ${client?.name}`, client_id: id });
       }
-      await supabase.from("transactions").insert({ user_id: user.id, amount, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name}`, client_id: id, contract_id: inst.contract_id });
+      await supabase.from("transactions").insert({ user_id: user.id, amount, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name} (${method})`, client_id: id, contract_id: inst.contract_id });
       const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
       if (otherUnpaid.length === 0) await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }
@@ -350,23 +366,34 @@ const ClienteDetalhe = () => {
     if (!partialPayModal || !user) return;
     const val = parseFloat(partialAmount);
     if (!val || val <= 0) { toast({ title: "Valor inválido", variant: "destructive" }); return; }
+    setPayUploading(true);
+    let receiptUrl: string | null = null;
+    if (payReceiptFile) {
+      receiptUrl = await uploadReceipt(payReceiptFile);
+      if (!receiptUrl) { setPayUploading(false); return; }
+    }
     const instAmount = Number(partialPayModal.amount);
     const alreadyPaid = Number(partialPayModal.paid_amount || 0);
     if (val + alreadyPaid >= instAmount) {
-      await payFull(partialPayModal.id, instAmount);
+      await payFull(partialPayModal.id, instAmount, payMethod, receiptUrl);
     } else {
-      const snapshot = patchInstallment(partialPayModal.id, { paid_amount: alreadyPaid + val });
+      const patch: any = { paid_amount: alreadyPaid + val, payment_method: payMethod };
+      if (receiptUrl) patch.receipt_url = receiptUrl;
+      const snapshot = patchInstallment(partialPayModal.id, patch);
       toast({ title: `R$ ${fmt(val)} registrado!` });
-      const { error } = await supabase.from("contract_installments").update({ paid_amount: alreadyPaid + val }).eq("id", partialPayModal.id);
+      const { error } = await supabase.from("contract_installments").update(patch).eq("id", partialPayModal.id);
       if (error) {
         qc.setQueryData(["client-installments", id], snapshot);
         toast({ title: "Erro", description: error.message, variant: "destructive" });
       } else {
-        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name}`, client_id: id, contract_id: partialPayModal.contract_id });
+        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name} (${payMethod})`, client_id: id, contract_id: partialPayModal.contract_id });
         invAll();
       }
     }
+    setPayUploading(false);
     setPartialPayModal(null);
+    setPayReceiptFile(null);
+    setPayMethod("pix");
   };
 
   const reversePayment = async (instId: string) => {
@@ -799,11 +826,11 @@ const ClienteDetalhe = () => {
       )}
 
       {partialPayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPartialPayModal(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Pagamento</h2>
-              <button onClick={() => setPartialPayModal(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+              <button onClick={() => { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
             </div>
             <div className="bg-muted/30 rounded-lg p-3">
               <p className="text-xs text-muted-foreground">Parcela #{partialPayModal.installment_number}</p>
@@ -818,13 +845,36 @@ const ClienteDetalhe = () => {
               <button onClick={() => setPartialAmount(String(partialPayModal.amount))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Total</button>
               <button onClick={() => setPartialAmount(String(Number(partialPayModal.amount) / 2))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Metade</button>
             </div>
-            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Forma de pagamento</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { v: "pix", l: "PIX" },
+                  { v: "dinheiro", l: "Dinheiro" },
+                  { v: "transferencia", l: "Transf." },
+                  { v: "outro", l: "Outro" },
+                ].map(opt => (
+                  <button key={opt.v} type="button" onClick={() => setPayMethod(opt.v)}
+                    className={`px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${payMethod === opt.v ? "bg-primary/15 border-primary text-foreground" : "border-border text-muted-foreground hover:bg-accent"}`}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Comprovante (opcional)</label>
+              <input type="file" accept="image/*,application/pdf" onChange={e => setPayReceiptFile(e.target.files?.[0] || null)}
+                className="w-full text-xs text-muted-foreground file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-border file:bg-card file:text-xs file:font-medium file:text-foreground file:cursor-pointer" />
+              {payReceiptFile && <p className="text-[10px] text-muted-foreground mt-1 truncate">📎 {payReceiptFile.name}</p>}
+            </div>
+            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0 || payUploading}
               className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-              Confirmar
+              {payUploading ? "Enviando..." : "Confirmar"}
             </button>
           </div>
         </div>
       )}
+
 
       {/* ===== CONTENT ===== */}
 
@@ -984,7 +1034,13 @@ const ClienteDetalhe = () => {
                     {new Date(inst.due_date).toLocaleDateString("pt-BR")}
                     {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
                     {partial && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
+                    {inst.payment_method && ` · ${String(inst.payment_method).toUpperCase()}`}
                   </p>
+                  {inst.receipt_url && (
+                    <a href={inst.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
+                      <Receipt size={10} /> Ver comprovante
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {isPaid ? (
@@ -992,8 +1048,8 @@ const ClienteDetalhe = () => {
                   ) : (
                     <>
                       <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Cobrar"><Send size={14} /></button>
-                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
-                      <button onClick={() => payFull(inst.id, Number(inst.amount))} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Quitar</button>
+                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); setPayMethod("pix"); setPayReceiptFile(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
+                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(String(inst.amount)); setPayMethod("pix"); setPayReceiptFile(null); }} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Pagar</button>
                     </>
                   )}
                 </div>

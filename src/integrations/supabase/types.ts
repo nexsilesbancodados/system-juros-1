@@ -522,6 +522,8 @@ export type Database = {
           late_fee: number | null
           paid_amount: number | null
           paid_at: string | null
+          payment_method: string | null
+          receipt_url: string | null
           status: string
           user_id: string
         }
@@ -536,6 +538,8 @@ export type Database = {
           late_fee?: number | null
           paid_amount?: number | null
           paid_at?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
           status?: string
           user_id: string
         }
@@ -550,6 +554,8 @@ export type Database = {
           late_fee?: number | null
           paid_amount?: number | null
           paid_at?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
           status?: string
           user_id?: string
         }
