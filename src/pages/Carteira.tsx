@@ -17,7 +17,7 @@ const Carteira = () => {
   const [timeFilter, setTimeFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [searchTimeline, setSearchTimeline] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"in" | "out">("in");
+  const [dialogType, setDialogType] = useState<"in" | "out" | "withdraw">("in");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -25,7 +25,7 @@ const Carteira = () => {
   // Realtime subscriptions
   useMultiTableRealtime(
     ["profits", "expenses", "contract_installments", "transactions"],
-    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""], ["carteira-capital", user?.id || ""]],
+    [["carteira-profits", user?.id || ""], ["carteira-expenses", user?.id || ""], ["carteira-installments", user?.id || ""], ["carteira-capital", user?.id || ""], ["carteira-withdrawals", user?.id || ""]],
   );
 
   const { data: profits = [], isLoading: loadingProfits } = useQuery({
@@ -65,7 +65,17 @@ const Carteira = () => {
     enabled: !!user,
   });
 
-  const loading = loadingProfits || loadingExpenses || loadingInst || loadingCapital;
+  // Retiradas de capital
+  const { data: withdrawals = [], isLoading: loadingWithdraw } = useQuery({
+    queryKey: ["carteira-withdrawals", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_withdrawal").order("date", { ascending: false });
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const loading = loadingProfits || loadingExpenses || loadingInst || loadingCapital || loadingWithdraw;
 
   const handleSave = async () => {
     if (!user || !amount || !description) return;
@@ -81,39 +91,54 @@ const Carteira = () => {
     if (dialogType === "in") {
       // Aporte de capital: dinheiro disponível para emprestar, NÃO é lucro
       const { error } = await supabase.from("transactions").insert({
-        user_id: user.id,
-        amount: val,
-        description,
-        date: now,
-        type: "capital_injection",
-        category: "Aporte de capital",
+        user_id: user.id, amount: val, description, date: now,
+        type: "capital_injection", category: "Aporte de capital",
       });
       if (error) { toast({ title: "Erro ao adicionar aporte", variant: "destructive" }); setSaving(false); return; }
+    } else if (dialogType === "withdraw") {
+      // Retirada de capital: reduz o capital disponível, NÃO é gasto/despesa
+      const { error } = await supabase.from("transactions").insert({
+        user_id: user.id, amount: val, description, date: now,
+        type: "capital_withdrawal", category: "Retirada de capital",
+      });
+      if (error) { toast({ title: "Erro ao retirar capital", variant: "destructive" }); setSaving(false); return; }
     } else {
       const { error } = await supabase.from("expenses").insert({ user_id: user.id, amount: val, description, date: now, category: "Retirada manual" });
       if (error) { toast({ title: "Erro ao registrar saída", variant: "destructive" }); setSaving(false); return; }
     }
 
-    toast({ title: dialogType === "in" ? "✓ Aporte adicionado!" : "✓ Saída registrada!" });
+    toast({ title: dialogType === "in" ? "✓ Aporte adicionado!" : dialogType === "withdraw" ? "✓ Capital retirado!" : "✓ Saída registrada!" });
     setAmount(""); setDescription(""); setDialogOpen(false); setSaving(false);
     qc.invalidateQueries({ queryKey: ["carteira-capital"] });
+    qc.invalidateQueries({ queryKey: ["carteira-withdrawals"] });
     qc.invalidateQueries({ queryKey: ["carteira-expenses"] });
     qc.invalidateQueries({ queryKey: ["dashboard-data"] });
   };
 
+  const handleDeleteCapital = async (id: string) => {
+    if (!confirm("Remover este lançamento de capital?")) return;
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    if (error) { toast({ title: "Erro ao remover", variant: "destructive" }); return; }
+    toast({ title: "✓ Lançamento removido" });
+    qc.invalidateQueries({ queryKey: ["carteira-capital"] });
+    qc.invalidateQueries({ queryKey: ["carteira-withdrawals"] });
+  };
+
   const totalCapital = capital.reduce((a: number, c: any) => a + Number(c.amount), 0);
+  const totalWithdrawals = withdrawals.reduce((a: number, w: any) => a + Number(w.amount), 0);
   const totalLucros = profits.reduce((a: number, p: any) => a + Number(p.amount), 0);
   const totalParcelas = installments.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
   const totalEntradas = totalCapital + totalLucros + totalParcelas;
-  const totalSaidas = expenses.reduce((a: number, e: any) => a + Number(e.amount), 0);
+  const totalSaidas = expenses.reduce((a: number, e: any) => a + Number(e.amount), 0) + totalWithdrawals;
   const saldo = totalEntradas - totalSaidas;
 
   const timeline = useMemo(() => {
     const all = [
-      ...capital.map((c: any) => ({ type: "in" as const, desc: c.description, amount: Number(c.amount), date: c.date, source: "Aporte" })),
-      ...profits.map((p: any) => ({ type: "in" as const, desc: p.description, amount: Number(p.amount), date: p.date, source: "Lucro" })),
-      ...installments.map((i: any) => ({ type: "in" as const, desc: "Parcela recebida", amount: Number(i.amount), date: i.paid_at, source: "Parcela" })),
-      ...expenses.map((e: any) => ({ type: "out" as const, desc: e.description, amount: Number(e.amount), date: e.date, source: e.category || "Gasto" })),
+      ...capital.map((c: any) => ({ type: "in" as const, desc: c.description, amount: Number(c.amount), date: c.date, source: "Aporte", removable: true, id: c.id })),
+      ...withdrawals.map((w: any) => ({ type: "out" as const, desc: w.description, amount: Number(w.amount), date: w.date, source: "Retirada de capital", removable: true, id: w.id })),
+      ...profits.map((p: any) => ({ type: "in" as const, desc: p.description, amount: Number(p.amount), date: p.date, source: "Lucro", removable: false, id: p.id })),
+      ...installments.map((i: any) => ({ type: "in" as const, desc: "Parcela recebida", amount: Number(i.amount), date: i.paid_at, source: "Parcela", removable: false, id: i.id })),
+      ...expenses.map((e: any) => ({ type: "out" as const, desc: e.description, amount: Number(e.amount), date: e.date, source: e.category || "Gasto", removable: false, id: e.id })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const now = new Date();
@@ -128,7 +153,7 @@ const Carteira = () => {
       if (searchTimeline && !t.desc.toLowerCase().includes(searchTimeline.toLowerCase()) && !t.source.toLowerCase().includes(searchTimeline.toLowerCase())) return false;
       return true;
     });
-  }, [profits, expenses, installments, capital, timeFilter, searchTimeline]);
+  }, [profits, expenses, installments, capital, withdrawals, timeFilter, searchTimeline]);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -186,6 +211,29 @@ const Carteira = () => {
                   <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
                   <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-success text-success-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
                     {saving ? "Salvando..." : "Confirmar Aporte"}
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={dialogOpen && dialogType === "withdraw"} onOpenChange={(o) => { setDialogOpen(o); if (o) setDialogType("withdraw"); }}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-warning/15 text-warning hover:bg-warning/25 font-semibold text-sm transition-colors border border-warning/20">
+                  <Minus size={16} /> Retirar Capital
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-warning">
+                    <ArrowDownRight size={20} /> Retirar Capital
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground -mt-1">Reduz o capital disponível para emprestar. Não é gasto/despesa.</p>
+                  <div><Label>Descrição</Label><Input placeholder="Ex: Devolução sócio, Saque pessoal..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                  <div><Label>Valor (R$)</Label><Input type="number" min="0.01" step="0.01" placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                  <button disabled={saving || !amount || !description} onClick={handleSave} className="w-full py-2.5 rounded-xl bg-warning text-warning-foreground font-semibold hover:opacity-90 transition-colors disabled:opacity-50">
+                    {saving ? "Salvando..." : "Confirmar Retirada"}
                   </button>
                 </div>
               </DialogContent>
@@ -301,6 +349,11 @@ const Carteira = () => {
                       <span className={`font-semibold text-sm ${t.type === "in" ? "text-success" : "text-destructive"}`}>
                         {t.type === "in" ? "+" : "−"}R$ {fmt(t.amount)}
                       </span>
+                      {t.removable && (
+                        <button onClick={() => handleDeleteCapital(t.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Remover">
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
