@@ -45,6 +45,10 @@ const ClienteDetalhe = () => {
   const [loanLateFee, setLoanLateFee] = useState("2");
   const [loanLoading, setLoanLoading] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [editContract, setEditContract] = useState<any>(null);
+  const [editContractForm, setEditContractForm] = useState<any>({});
+  const [editContractRegen, setEditContractRegen] = useState(false);
+  const [editContractSaving, setEditContractSaving] = useState(false);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
@@ -219,6 +223,91 @@ const ClienteDetalhe = () => {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally { setLoanLoading(false); }
   };
+
+  const openEditContract = (c: any) => {
+    setEditContract(c);
+    setEditContractForm({
+      capital: String(c.capital ?? ""),
+      interest_rate: String(c.interest_rate ?? ""),
+      num_installments: String(c.num_installments ?? ""),
+      installment_amount: String(c.installment_amount ?? ""),
+      frequency: c.frequency || "monthly",
+      start_date: c.start_date ? new Date(c.start_date).toISOString().split("T")[0] : "",
+      late_fee_percent: String(c.late_fee_percent ?? "0"),
+      daily_interest_percent: String(c.daily_interest_percent ?? "0"),
+      notes: c.notes || "",
+    });
+    setEditContractRegen(false);
+  };
+
+  const handleSaveContract = async () => {
+    if (!editContract || !user) return;
+    setEditContractSaving(true);
+    try {
+      const f = editContractForm;
+      const n = parseInt(f.num_installments);
+      const cap = parseFloat(f.capital);
+      const rate = parseFloat(f.interest_rate);
+      const instAmt = parseFloat(f.installment_amount);
+      const totalAmount = instAmt * n;
+      const totalInterest = totalAmount - cap;
+
+      const { error } = await supabase.from("contracts").update({
+        capital: cap,
+        interest_rate: rate,
+        num_installments: n,
+        installment_amount: instAmt,
+        frequency: f.frequency,
+        start_date: new Date(f.start_date + "T12:00:00").toISOString(),
+        late_fee_percent: parseFloat(f.late_fee_percent),
+        daily_interest_percent: parseFloat(f.daily_interest_percent),
+        total_amount: totalAmount,
+        total_interest: totalInterest,
+        notes: f.notes || null,
+      }).eq("id", editContract.id);
+      if (error) throw error;
+
+      if (editContractRegen) {
+        // Apaga apenas parcelas não pagas e regera mantendo as pagas
+        const existing = installments.filter((i: any) => i.contract_id === editContract.id);
+        const paid = existing.filter((i: any) => i.status === "paid");
+        const paidCount = paid.length;
+        const remaining = Math.max(0, n - paidCount);
+
+        await supabase.from("contract_installments")
+          .delete()
+          .eq("contract_id", editContract.id)
+          .neq("status", "paid");
+
+        if (remaining > 0) {
+          const dueDates = generateDueDates(f.start_date, f.frequency, n).slice(paidCount);
+          const newInst = dueDates.map((dd, i) => ({
+            user_id: user.id,
+            contract_id: editContract.id,
+            client_id: id!,
+            installment_number: paidCount + i + 1,
+            amount: instAmt,
+            due_date: dd,
+            status: "pending",
+          }));
+          if (newInst.length) {
+            const { error: iErr } = await supabase.from("contract_installments").insert(newInst);
+            if (iErr) throw iErr;
+          }
+        }
+      }
+
+      toast({ title: "Contrato atualizado!", description: editContractRegen ? "Parcelas pendentes regeneradas." : undefined });
+      setEditContract(null);
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    } finally {
+      setEditContractSaving(false);
+    }
+  };
+
+
 
   const patchInstallment = (instId: string, patch: any) => {
     const key = ["client-installments", id];
@@ -639,6 +728,76 @@ const ClienteDetalhe = () => {
         </div>
       )}
 
+      {editContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditContract(null)}>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Editar Empréstimo</h2>
+              <button onClick={() => setEditContract(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
+                <input type="number" step="0.01" value={editContractForm.capital} onChange={e => setEditContractForm({ ...editContractForm, capital: e.target.value })} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa (%)</label>
+                <input type="number" step="0.1" value={editContractForm.interest_rate} onChange={e => setEditContractForm({ ...editContractForm, interest_rate: e.target.value })} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Parcelas</label>
+                <input type="number" value={editContractForm.num_installments} onChange={e => setEditContractForm({ ...editContractForm, num_installments: e.target.value })} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor parcela (R$)</label>
+                <input type="number" step="0.01" value={editContractForm.installment_amount} onChange={e => setEditContractForm({ ...editContractForm, installment_amount: e.target.value })} className={INPUT} />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Frequência</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {Object.entries(FREQ).map(([v, l]) => (
+                    <button key={v} type="button" onClick={() => setEditContractForm({ ...editContractForm, frequency: v })}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${editContractForm.frequency === v ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-accent"}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
+                <input type="date" value={editContractForm.start_date} onChange={e => setEditContractForm({ ...editContractForm, start_date: e.target.value })} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
+                <input type="number" step="0.01" value={editContractForm.daily_interest_percent} onChange={e => setEditContractForm({ ...editContractForm, daily_interest_percent: e.target.value })} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
+                <input type="number" step="0.1" value={editContractForm.late_fee_percent} onChange={e => setEditContractForm({ ...editContractForm, late_fee_percent: e.target.value })} className={INPUT} />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                <textarea value={editContractForm.notes} onChange={e => setEditContractForm({ ...editContractForm, notes: e.target.value })} className={INPUT + " min-h-[60px]"} />
+              </div>
+            </div>
+            <label className="flex items-start gap-2 p-3 rounded-xl border border-border bg-muted/20 cursor-pointer">
+              <input type="checkbox" checked={editContractRegen} onChange={e => setEditContractRegen(e.target.checked)} className="mt-0.5" />
+              <span className="text-xs text-foreground">
+                <strong>Regenerar parcelas pendentes</strong>
+                <span className="block text-muted-foreground mt-0.5">Mantém as parcelas já pagas e recria as restantes com os novos valores e datas.</span>
+              </span>
+            </label>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setEditContract(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={handleSaveContract} disabled={editContractSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+                {editContractSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {partialPayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPartialPayModal(null)}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
@@ -782,16 +941,23 @@ const ClienteDetalhe = () => {
           {contracts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
           ) : contracts.map((c: any) => (
-            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-              <div className="flex items-center justify-between">
-                <div>
+            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
                   <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
                   <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
                   <p className="text-xs text-muted-foreground">{new Date(c.start_date).toLocaleDateString("pt-BR")}</p>
                   <p className="text-xs font-medium text-primary">Lucro: R$ {fmt(Number(c.total_interest))}</p>
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
+                  className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  title="Editar empréstimo"
+                >
+                  <Edit size={14} />
+                </button>
               </div>
             </div>
           ))}
