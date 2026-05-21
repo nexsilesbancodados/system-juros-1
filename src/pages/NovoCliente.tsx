@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
   Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
-  Coins, TrendingDown, Target, PauseCircle
+  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
