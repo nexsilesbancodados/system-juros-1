@@ -45,6 +45,10 @@ const ClienteDetalhe = () => {
   const [loanLateFee, setLoanLateFee] = useState("2");
   const [loanLoading, setLoanLoading] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [editContract, setEditContract] = useState<any>(null);
+  const [editContractForm, setEditContractForm] = useState<any>({});
+  const [editContractRegen, setEditContractRegen] = useState(false);
+  const [editContractSaving, setEditContractSaving] = useState(false);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
