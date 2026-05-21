@@ -224,6 +224,91 @@ const ClienteDetalhe = () => {
     } finally { setLoanLoading(false); }
   };
 
+  const openEditContract = (c: any) => {
+    setEditContract(c);
+    setEditContractForm({
+      capital: String(c.capital ?? ""),
+      interest_rate: String(c.interest_rate ?? ""),
+      num_installments: String(c.num_installments ?? ""),
+      installment_amount: String(c.installment_amount ?? ""),
+      frequency: c.frequency || "monthly",
+      start_date: c.start_date ? new Date(c.start_date).toISOString().split("T")[0] : "",
+      late_fee_percent: String(c.late_fee_percent ?? "0"),
+      daily_interest_percent: String(c.daily_interest_percent ?? "0"),
+      notes: c.notes || "",
+    });
+    setEditContractRegen(false);
+  };
+
+  const handleSaveContract = async () => {
+    if (!editContract || !user) return;
+    setEditContractSaving(true);
+    try {
+      const f = editContractForm;
+      const n = parseInt(f.num_installments);
+      const cap = parseFloat(f.capital);
+      const rate = parseFloat(f.interest_rate);
+      const instAmt = parseFloat(f.installment_amount);
+      const totalAmount = instAmt * n;
+      const totalInterest = totalAmount - cap;
+
+      const { error } = await supabase.from("contracts").update({
+        capital: cap,
+        interest_rate: rate,
+        num_installments: n,
+        installment_amount: instAmt,
+        frequency: f.frequency,
+        start_date: new Date(f.start_date + "T12:00:00").toISOString(),
+        late_fee_percent: parseFloat(f.late_fee_percent),
+        daily_interest_percent: parseFloat(f.daily_interest_percent),
+        total_amount: totalAmount,
+        total_interest: totalInterest,
+        notes: f.notes || null,
+      }).eq("id", editContract.id);
+      if (error) throw error;
+
+      if (editContractRegen) {
+        // Apaga apenas parcelas não pagas e regera mantendo as pagas
+        const existing = installments.filter((i: any) => i.contract_id === editContract.id);
+        const paid = existing.filter((i: any) => i.status === "paid");
+        const paidCount = paid.length;
+        const remaining = Math.max(0, n - paidCount);
+
+        await supabase.from("contract_installments")
+          .delete()
+          .eq("contract_id", editContract.id)
+          .neq("status", "paid");
+
+        if (remaining > 0) {
+          const dueDates = generateDueDates(f.start_date, f.frequency, n).slice(paidCount);
+          const newInst = dueDates.map((dd, i) => ({
+            user_id: user.id,
+            contract_id: editContract.id,
+            client_id: id!,
+            installment_number: paidCount + i + 1,
+            amount: instAmt,
+            due_date: dd,
+            status: "pending",
+          }));
+          if (newInst.length) {
+            const { error: iErr } = await supabase.from("contract_installments").insert(newInst);
+            if (iErr) throw iErr;
+          }
+        }
+      }
+
+      toast({ title: "Contrato atualizado!", description: editContractRegen ? "Parcelas pendentes regeneradas." : undefined });
+      setEditContract(null);
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    } finally {
+      setEditContractSaving(false);
+    }
+  };
+
+
+
   const patchInstallment = (instId: string, patch: any) => {
     const key = ["client-installments", id];
     const prev = qc.getQueryData<any[]>(key);
