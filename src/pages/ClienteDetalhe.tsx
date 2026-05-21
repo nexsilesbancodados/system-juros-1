@@ -826,11 +826,11 @@ const ClienteDetalhe = () => {
       )}
 
       {partialPayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPartialPayModal(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Pagamento</h2>
-              <button onClick={() => setPartialPayModal(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+              <button onClick={() => { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
             </div>
             <div className="bg-muted/30 rounded-lg p-3">
               <p className="text-xs text-muted-foreground">Parcela #{partialPayModal.installment_number}</p>
@@ -845,13 +845,36 @@ const ClienteDetalhe = () => {
               <button onClick={() => setPartialAmount(String(partialPayModal.amount))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Total</button>
               <button onClick={() => setPartialAmount(String(Number(partialPayModal.amount) / 2))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Metade</button>
             </div>
-            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Forma de pagamento</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { v: "pix", l: "PIX" },
+                  { v: "dinheiro", l: "Dinheiro" },
+                  { v: "transferencia", l: "Transf." },
+                  { v: "outro", l: "Outro" },
+                ].map(opt => (
+                  <button key={opt.v} type="button" onClick={() => setPayMethod(opt.v)}
+                    className={`px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${payMethod === opt.v ? "bg-primary/15 border-primary text-foreground" : "border-border text-muted-foreground hover:bg-accent"}`}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Comprovante (opcional)</label>
+              <input type="file" accept="image/*,application/pdf" onChange={e => setPayReceiptFile(e.target.files?.[0] || null)}
+                className="w-full text-xs text-muted-foreground file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-border file:bg-card file:text-xs file:font-medium file:text-foreground file:cursor-pointer" />
+              {payReceiptFile && <p className="text-[10px] text-muted-foreground mt-1 truncate">📎 {payReceiptFile.name}</p>}
+            </div>
+            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0 || payUploading}
               className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-              Confirmar
+              {payUploading ? "Enviando..." : "Confirmar"}
             </button>
           </div>
         </div>
       )}
+
 
       {/* ===== CONTENT ===== */}
 
