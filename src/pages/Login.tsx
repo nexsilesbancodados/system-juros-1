@@ -11,11 +11,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
+  const [searchParams] = useSearchParams();
+  const planParam = searchParams.get("plan"); // "trial" | "paid" | null
+  const [isRegister, setIsRegister] = useState(!!planParam);
+  const [selectedPlan, setSelectedPlan] = useState<"trial" | "paid" | null>(
+    planParam === "paid" ? "paid" : planParam === "trial" ? "trial" : null
+  );
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   // Aceita apenas paths internos (começam com "/" mas não "//" ou "/\") para
   // evitar open-redirect via ?next=https://evil.com.
