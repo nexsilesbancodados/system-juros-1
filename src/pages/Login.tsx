@@ -72,6 +72,10 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedPlan) {
+      toast({ title: "Escolha um plano", description: "Selecione 'Testar grátis' ou 'Assinar agora' para continuar.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
@@ -84,26 +88,28 @@ const Login = () => {
     setLoading(false);
     if (error) {
       toast({ title: "Erro ao registar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ 
-        title: "Conta criada!", 
-        description: "Verifique seu e-mail para confirmar o cadastro e ativar sua conta." 
-      });
-      
+      return;
+    }
+
+    supabase.functions.invoke('send-welcome-email', { body: { email, name } })
+      .catch(err => console.error('Error sending welcome email:', err));
+
+    if (selectedPlan === "paid") {
       const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
       if (checkoutUrl) {
-        toast({ title: "Quase lá!", description: "Redirecionando para ativação da conta..." });
-        setTimeout(() => {
-          window.location.href = checkoutUrl as string;
-        }, 3000);
+        toast({ title: "Conta criada! 🎉", description: "Redirecionando para o pagamento..." });
+        setTimeout(() => { window.location.href = checkoutUrl as string; }, 1800);
+        return;
       }
-
-      supabase.functions.invoke('send-welcome-email', {
-        body: { email, name }
-      }).catch(err => console.error('Error sending welcome email:', err));
-
-      setIsRegister(false);
+      toast({ title: "Conta criada!", description: "Confirme seu e-mail para continuar." });
+    } else {
+      toast({
+        title: "Bem-vindo! 🎁",
+        description: "Seu teste grátis de 3 dias está ativo. Confirme seu e-mail e faça login.",
+      });
     }
+
+    setIsRegister(false);
   };
 
   const inputCls = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
