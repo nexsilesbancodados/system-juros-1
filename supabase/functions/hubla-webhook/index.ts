@@ -82,18 +82,47 @@ serve(async (req) => {
     if (subError) throw subError
 
     // Send email notification on subscription activation
-    if (subscriptionStatus === 'active' && userData) {
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userData.id)
-        .single()
-      
-      const emailTemplate = templates.subscriptionActive(profile?.full_name || email)
+    if (subscriptionStatus === 'active') {
+      // Generate a magic link so the customer can log in without a password
+      let actionLink: string | null = null
+      try {
+        const siteUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || ''
+        const { data: linkData, error: linkError } = await (supabaseClient as any).auth.admin.generateLink({
+          type: userData ? 'magiclink' : 'invite',
+          email,
+          options: { redirectTo: `${siteUrl}/dashboard` },
+        })
+        if (linkError) {
+          console.error('generateLink error:', linkError)
+        } else {
+          actionLink = linkData?.properties?.action_link || null
+        }
+      } catch (e) {
+        console.error('magic link generation failed:', e)
+      }
+
+      const displayName = (userData as any)?.name || email.split('@')[0]
+      const ctaUrl = actionLink || 'https://systemjuros.com.br'
+      const subject = userData ? 'Assinatura ativa! Acesse sua conta 🎉' : 'Bem-vindo! Crie sua conta no System Juros 🎉'
+      const intro = userData
+        ? 'Seu pagamento foi aprovado e sua assinatura está <strong>Ativa</strong>! Clique no botão abaixo para acessar o sistema sem precisar de senha.'
+        : 'Seu pagamento foi aprovado! Clique no botão abaixo para criar sua senha e acessar o System Juros.'
+
       await sendEmail({
-        to: [{ email: email, name: profile?.full_name }],
-        subject: emailTemplate.subject,
-        htmlContent: emailTemplate.html,
+        to: [{ email, name: displayName }],
+        subject,
+        htmlContent: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px;">
+            <h2 style="color: #111;">Olá, ${displayName}!</h2>
+            <p style="color: #444; line-height: 1.6;">${intro}</p>
+            <div style="margin: 32px 0; text-align: center;">
+              <a href="${ctaUrl}" style="background: #fbbf24; color: #000; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                ${userData ? 'Acessar Dashboard' : 'Ativar minha conta'}
+              </a>
+            </div>
+            <p style="font-size: 12px; color: #888;">Este link é único e expira em breve. Se precisar de ajuda, responda este e-mail.</p>
+          </div>
+        `,
       })
     }
 
