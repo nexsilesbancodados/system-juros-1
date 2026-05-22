@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,32 +44,42 @@ const Inadimplencia = () => {
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
 
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const today = new Date().toISOString();
+    const { data: insts } = await supabase
+      .from("contract_installments")
+      .select("id, client_id, contract_id, amount, due_date, status, late_fee")
+      .eq("user_id", user.id)
+      .neq("status", "paid")
+      .lt("due_date", today);
+
+    const ids = Array.from(new Set((insts || []).map(i => i.client_id)));
+    let cmap: Record<string, Client> = {};
+    if (ids.length) {
+      const { data: cs } = await supabase
+        .from("clients")
+        .select("id, name, whatsapp, phone, credit_score")
+        .in("id", ids);
+      cmap = Object.fromEntries((cs || []).map(c => [c.id, c]));
+    }
+    setInstallments(insts || []);
+    setClients(cmap);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { load(); }, [load]);
+
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      setLoading(true);
-      const today = new Date().toISOString();
-      const { data: insts } = await supabase
-        .from("contract_installments")
-        .select("id, client_id, contract_id, amount, due_date, status, late_fee")
-        .eq("user_id", user.id)
-        .neq("status", "paid")
-        .lt("due_date", today);
-
-      const ids = Array.from(new Set((insts || []).map(i => i.client_id)));
-      let cmap: Record<string, Client> = {};
-      if (ids.length) {
-        const { data: cs } = await supabase
-          .from("clients")
-          .select("id, name, whatsapp, phone, credit_score")
-          .in("id", ids);
-        cmap = Object.fromEntries((cs || []).map(c => [c.id, c]));
-      }
-      setInstallments(insts || []);
-      setClients(cmap);
-      setLoading(false);
-    })();
-  }, [user]);
+    const ch = supabase
+      .channel(`realtime-inadimplencia-${user.id}`)
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contract_installments" }, () => load())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, load]);
 
   const { kpis, byClient, byBucket } = useMemo(() => {
     const today = new Date();

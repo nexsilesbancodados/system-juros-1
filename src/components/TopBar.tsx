@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import NotificationsBell from "./NotificationsBell";
 
 interface TopBarProps {
@@ -49,6 +50,11 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     enabled: !!user,
     staleTime: 60_000,
   });
+
+  useMultiTableRealtime(
+    ["contracts", "profits", "contract_installments"],
+    [["topbar-financials", user?.id]],
+  );
 
   const handleSignOut = async () => {
     await signOut();

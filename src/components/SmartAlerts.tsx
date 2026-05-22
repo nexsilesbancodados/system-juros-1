@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { toast } from "sonner";
 import {
   AlertTriangle, Clock, Cake, Bell, CheckCheck, ChevronRight,
@@ -122,6 +123,12 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     enabled: !!user,
     staleTime: 60_000,
   });
+
+  useMultiTableRealtime(
+    ["clients", "contracts", "notifications", "contract_installments"],
+    [["hoje-birthdays", user?.id], ["hoje-pending-sigs", user?.id], ["hoje", user?.id]],
+  );
+
 
   const alerts = useMemo<Alert[]>(() => {
     const list: Alert[] = [];
