@@ -29,6 +29,12 @@ const Automacoes = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [results, setResults] = useState<Record<string, AutomationResult>>({});
+
+  useMultiTableRealtime(
+    ["audit_logs", "contract_installments", "settings"],
+    [["automation-logs", user?.id], ["automation-stats", user?.id], ["settings", user?.id]],
+  );
+
   const [runningAll, setRunningAll] = useState(false);
   const [runProgress, setRunProgress] = useState<{ current: number; total: number } | null>(null);
   const [search, setSearch] = useState("");
