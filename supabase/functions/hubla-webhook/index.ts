@@ -63,7 +63,7 @@ serve(async (req) => {
     // Update or Create Subscription
     const { data: userData } = await supabaseClient
       .from('profiles')
-      .select('id')
+      .select('id, name')
       .eq('email', email)
       .maybeSingle()
 
