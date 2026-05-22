@@ -26,7 +26,7 @@ const LandingNavbar = () => {
     { name: "Início", href: "#home" },
     { name: "Recursos", href: "#features" },
     { name: "Benefícios", href: "#benefits" },
-    { name: "Planos", href: "#pricing" },
+    { name: "Planos", href: "/planos", internal: true },
     { name: "Contato", href: "#contact" },
   ];
 
