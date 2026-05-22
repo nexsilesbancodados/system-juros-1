@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { toast } from "sonner";
 import {
   Sunrise, AlertCircle, CheckCircle2, Bell, ListTodo, Receipt,
