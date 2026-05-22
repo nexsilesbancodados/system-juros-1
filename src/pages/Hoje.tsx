@@ -28,6 +28,11 @@ const Hoje = () => {
     setGreeting(h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite");
   }, []);
 
+  useMultiTableRealtime(
+    ["contract_installments", "todos", "notifications", "profits"],
+    [["hoje", user?.id]],
+  );
+
   const { data, isLoading } = useQuery({
     queryKey: ["hoje", user?.id],
     queryFn: async () => {
