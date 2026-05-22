@@ -28,8 +28,12 @@ const LandingPricing = () => {
     if (settings?.hubla_checkout_url) {
       window.location.href = settings.hubla_checkout_url;
     } else {
-      navigate("/login");
+      navigate("/login?plan=paid");
     }
+  };
+
+  const handleTrial = () => {
+    navigate("/login?plan=trial");
   };
 
   const features = [
