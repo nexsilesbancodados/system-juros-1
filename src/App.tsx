@@ -91,6 +91,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/planos" element={<Planos />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/portal-cliente" element={<PortalCliente />} />
                 <Route path="/cobrador-externo" element={<CobradorExterno />} />
