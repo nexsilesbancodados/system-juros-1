@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Lock, Users, DollarSign, Phone, Mail, MapPin, Calendar,
   AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp,
-  LogOut, LogIn, User, FileText, TrendingUp, Shield
+  LogOut, LogIn, User, FileText, TrendingUp, Shield, Search, X, Upload, Loader2, Copy
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+const TOKEN_KEY = "cobrador-token";
+
+type PayMethod = "pix" | "dinheiro" | "transferencia";
 
 const CobradorExterno = () => {
   const { toast } = useToast();
@@ -20,6 +29,25 @@ const CobradorExterno = () => {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [tab, setTab] = useState<"pendentes" | "atrasadas" | "pagas">("pendentes");
+  const [search, setSearch] = useState("");
+
+  // Payment modal state
+  const [payOpen, setPayOpen] = useState(false);
+  const [payInstallment, setPayInstallment] = useState<any>(null);
+  const [payMethod, setPayMethod] = useState<PayMethod>("pix");
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [payFile, setPayFile] = useState<File | null>(null);
+  const [paySaving, setPaySaving] = useState(false);
+
+  // Auto-login from saved token
+  useEffect(() => {
+    const saved = localStorage.getItem(TOKEN_KEY);
+    if (saved) {
+      setToken(saved);
+      void loginWithToken(saved, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["ext-assignments", collectorId, userId],
@@ -35,7 +63,7 @@ const CobradorExterno = () => {
   });
 
   const { data: installments = [] } = useQuery({
-    queryKey: ["ext-installments", assignments.map((a: any) => a.client_id)],
+    queryKey: ["ext-installments", assignments.map((a: any) => a.client_id).join(",")],
     queryFn: async () => {
       const clientIds = assignments.map((a: any) => a.client_id);
       if (clientIds.length === 0) return [];
@@ -62,19 +90,41 @@ const CobradorExterno = () => {
     enabled: !!userId,
   });
 
-  const handleAccess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // Realtime: refetch installments on changes
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`cobrador-${userId}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "contract_installments", filter: `user_id=eq.${userId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["ext-installments"] });
+        },
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "collector_assignments", filter: `user_id=eq.${userId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["ext-assignments"] });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [userId, queryClient]);
 
+  const loginWithToken = async (tk: string, silent = false) => {
+    setLoading(true);
     const { data: tokenData } = await supabase
       .from("collector_tokens")
       .select("*, collectors(id, name, phone, email, city, state, created_at, is_active)")
-      .eq("token", token)
+      .eq("token", tk)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (!tokenData) {
-      toast({ title: "Acesso negado", description: "Token inválido ou desativado.", variant: "destructive" });
+      if (!silent) toast({ title: "Acesso negado", description: "Token inválido ou desativado.", variant: "destructive" });
+      localStorage.removeItem(TOKEN_KEY);
       setLoading(false);
       return;
     }
@@ -82,31 +132,97 @@ const CobradorExterno = () => {
     setCollectorData(tokenData.collectors);
     setCollectorId(tokenData.collector_id);
     setUserId(tokenData.user_id);
+    localStorage.setItem(TOKEN_KEY, tk);
     setLoading(false);
   };
 
-  const handleRegisterPayment = async (installmentId: string, amount: number) => {
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("contract_installments")
-      .update({ status: "paid", paid_amount: amount, paid_at: now })
-      .eq("id", installmentId);
+  const handleAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await loginWithToken(token);
+  };
 
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "✓ Pagamento registrado!" });
-      queryClient.invalidateQueries({ queryKey: ["ext-installments"] });
+  const handleLogout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setCollectorData(null);
+    setCollectorId(null);
+    setUserId(null);
+    setToken("");
+  };
+
+  const openPaymentModal = (inst: any) => {
+    setPayInstallment(inst);
+    setPayAmount(String(Number(inst.amount).toFixed(2)));
+    setPayMethod("pix");
+    setPayFile(null);
+    setPayOpen(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!payInstallment) return;
+    const amount = Number(payAmount.replace(",", "."));
+    if (!amount || amount <= 0) {
+      toast({ title: "Valor inválido", variant: "destructive" });
+      return;
     }
+    setPaySaving(true);
+    try {
+      let receipt_url: string | null = null;
+      if (payFile && userId) {
+        const ext = payFile.name.split(".").pop() || "bin";
+        const path = `${userId}/comprovantes/${payInstallment.id}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("uploads").upload(path, payFile, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
+        receipt_url = pub.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("contract_installments")
+        .update({
+          status: "paid",
+          paid_amount: amount,
+          paid_at: new Date().toISOString(),
+          payment_method: payMethod,
+          ...(receipt_url ? { receipt_url } : {}),
+        })
+        .eq("id", payInstallment.id);
+
+      if (error) throw error;
+      toast({ title: "✓ Pagamento registrado!", description: `${payMethod.toUpperCase()} • R$ ${amount.toFixed(2)}` });
+      setPayOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["ext-installments"] });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err?.message || "Falha ao registrar pagamento.", variant: "destructive" });
+    } finally {
+      setPaySaving(false);
+    }
+  };
+
+  const copyPix = () => {
+    if (!ownerProfile?.pix_key) return;
+    navigator.clipboard.writeText(ownerProfile.pix_key);
+    toast({ title: "Chave PIX copiada!" });
   };
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   const now = new Date();
   const inputCls = "w-full px-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all";
 
+  // Filter assignments by search
+  const filteredAssignments = useMemo(() => {
+    if (!search.trim()) return assignments;
+    const q = search.toLowerCase().trim();
+    return assignments.filter((a: any) => {
+      const name = (a.clients?.name || "").toLowerCase();
+      const phone = (a.clients?.phone || a.clients?.whatsapp || "").replace(/\D/g, "");
+      const cpf = (a.clients?.cpf_cnpj || "").replace(/\D/g, "");
+      return name.includes(q) || phone.includes(q.replace(/\D/g, "")) || cpf.includes(q.replace(/\D/g, ""));
+    });
+  }, [assignments, search]);
+
   if (!collectorData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-        {/* Mesh gradient backdrop */}
         <div className="pointer-events-none absolute inset-0 opacity-60">
           <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
           <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px]" />
@@ -121,11 +237,11 @@ const CobradorExterno = () => {
             <p className="text-sm text-muted-foreground mt-2">Acesse com seu token de acesso</p>
           </div>
           <div className="h-px bg-border" />
-          <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Insira seu token" required className={`${inputCls} text-center font-mono tracking-wider`} />
+          <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Insira seu token" required autoComplete="off" className={`${inputCls} text-center font-mono tracking-wider`} />
           <button type="submit" disabled={loading} className="btn-premium w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             {loading ? "Verificando..." : (<><LogIn size={16} /> Acessar Portal</>)}
           </button>
-          <p className="text-[10px] text-center text-muted-foreground">Acesso seguro · Token fornecido pelo gestor</p>
+          <p className="text-[10px] text-center text-muted-foreground">Acesso seguro · Token fornecido pelo gestor · Sessão lembrada neste dispositivo</p>
         </form>
       </div>
     );
@@ -157,7 +273,7 @@ const CobradorExterno = () => {
               className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
               <User size={18} />
             </button>
-            <button onClick={() => { setCollectorData(null); setCollectorId(null); setUserId(null); }}
+            <button onClick={handleLogout}
               className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
               <LogOut size={18} />
             </button>
@@ -206,11 +322,14 @@ const CobradorExterno = () => {
               </div>
             </div>
             {ownerProfile?.pix_key && (
-              <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-                <p className="text-[10px] text-muted-foreground uppercase mb-1">Chave PIX para Pagamentos</p>
-                <p className="text-sm font-medium text-primary">{ownerProfile.pix_key}</p>
-                <p className="text-[10px] text-muted-foreground">Tipo: {ownerProfile.pix_key_type || "—"}</p>
-              </div>
+              <button onClick={copyPix} className="w-full p-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors text-left flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Chave PIX do Credor</p>
+                  <p className="text-sm font-medium text-primary">{ownerProfile.pix_key}</p>
+                  <p className="text-[10px] text-muted-foreground">Tipo: {ownerProfile.pix_key_type || "—"}</p>
+                </div>
+                <Copy size={16} className="text-primary" />
+              </button>
             )}
           </div>
         )}
@@ -253,6 +372,22 @@ const CobradorExterno = () => {
           </div>
         </div>
 
+        {/* Search */}
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar cliente por nome, telefone ou CPF..."
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
         {/* Tab buttons */}
         <div className="flex items-center gap-2 border-b border-border pb-1">
           {[
@@ -273,15 +408,19 @@ const CobradorExterno = () => {
         </div>
 
         {/* Client list */}
-        {assignments.length === 0 ? (
+        {filteredAssignments.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-card/50">
             <Users size={32} className="mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-foreground font-semibold">Nenhum cliente atribuído</p>
-            <p className="text-sm text-muted-foreground mt-1">Aguarde o administrador atribuir clientes a você.</p>
+            <p className="text-foreground font-semibold">
+              {assignments.length === 0 ? "Nenhum cliente atribuído" : "Nenhum cliente encontrado"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {assignments.length === 0 ? "Aguarde o administrador atribuir clientes a você." : "Ajuste sua busca."}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {assignments.map((a: any) => {
+            {filteredAssignments.map((a: any) => {
               const clientAll = installments.filter((i: any) => i.client_id === a.client_id);
               let clientFiltered: any[] = [];
               if (tab === "pendentes") {
@@ -301,7 +440,6 @@ const CobradorExterno = () => {
 
               return (
                 <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden transition-all hover:shadow-md">
-                  {/* Client Header */}
                   <button
                     onClick={() => setExpandedClient(isExpanded ? null : a.client_id)}
                     className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-accent/20 transition-colors"
@@ -334,10 +472,8 @@ const CobradorExterno = () => {
                     {isExpanded ? <ChevronUp size={16} className="text-muted-foreground shrink-0" /> : <ChevronDown size={16} className="text-muted-foreground shrink-0" />}
                   </button>
 
-                  {/* Expanded: Client details + installments */}
                   {isExpanded && (
                     <div className="animate-fade-in">
-                      {/* Client contact info */}
                       <div className="px-5 py-3 border-t border-border/50 bg-accent/10 flex flex-wrap gap-4">
                         {a.clients?.phone && (
                           <a href={`tel:${a.clients.phone}`} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
@@ -345,7 +481,11 @@ const CobradorExterno = () => {
                           </a>
                         )}
                         {a.clients?.whatsapp && (
-                          <a href={`https://wa.me/55${a.clients.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
+                          <a
+                            href={`https://wa.me/55${a.clients.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+                              (ownerProfile?.billing_message || "").replace("[Nome do Cliente]", a.clients?.name || "")
+                            )}`}
+                            target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-xs text-success hover:underline">
                             <Phone size={12} /> WhatsApp
                           </a>
@@ -357,7 +497,6 @@ const CobradorExterno = () => {
                         )}
                       </div>
 
-                      {/* Installments */}
                       <div className="divide-y divide-border/30">
                         {clientFiltered.map((inst: any) => {
                           const isOverdue = inst.status === "pending" && new Date(inst.due_date) < now;
@@ -367,11 +506,7 @@ const CobradorExterno = () => {
                           return (
                             <div key={inst.id} className={`flex items-center gap-3 px-5 py-3 ${isOverdue ? "bg-destructive/5" : ""}`}>
                               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                isPaid
-                                  ? "bg-success/10 text-success"
-                                  : isOverdue
-                                    ? "bg-destructive/10 text-destructive"
-                                    : "bg-amber-500/10 text-amber-500"
+                                isPaid ? "bg-success/10 text-success" : isOverdue ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-500"
                               }`}>
                                 {inst.installment_number}
                               </div>
@@ -385,6 +520,11 @@ const CobradorExterno = () => {
                                       {inst.contracts.frequency === "monthly" ? "Mensal" :
                                        inst.contracts.frequency === "weekly" ? "Semanal" :
                                        inst.contracts.frequency === "biweekly" ? "Quinzenal" : inst.contracts.frequency}
+                                    </span>
+                                  )}
+                                  {isPaid && inst.payment_method && (
+                                    <span className="text-[10px] text-success bg-success/10 px-1.5 py-0.5 rounded uppercase">
+                                      {inst.payment_method}
                                     </span>
                                   )}
                                 </div>
@@ -403,16 +543,20 @@ const CobradorExterno = () => {
                                     Capital: R$ {fmt(Number(inst.contracts.capital))} · {inst.contracts.num_installments}x
                                   </p>
                                 )}
+                                {isPaid && inst.receipt_url && (
+                                  <a href={inst.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">
+                                    Ver comprovante →
+                                  </a>
+                                )}
                               </div>
-                              {!isPaid && (
+                              {!isPaid ? (
                                 <button
-                                  onClick={() => handleRegisterPayment(inst.id, Number(inst.amount))}
+                                  onClick={() => openPaymentModal(inst)}
                                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-success/10 text-success hover:bg-success/20 transition-all shrink-0"
                                 >
                                   <DollarSign size={12} /> Pagar
                                 </button>
-                              )}
-                              {isPaid && (
+                              ) : (
                                 <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20 shrink-0">
                                   <CheckCircle size={10} className="mr-1" /> Pago
                                 </Badge>
@@ -427,8 +571,7 @@ const CobradorExterno = () => {
               );
             })}
 
-            {/* No results for current tab */}
-            {assignments.every((a: any) => {
+            {filteredAssignments.every((a: any) => {
               const clientAll = installments.filter((i: any) => i.client_id === a.client_id);
               let filtered: any[];
               if (tab === "pendentes") filtered = clientAll.filter((i: any) => i.status === "pending");
@@ -445,6 +588,93 @@ const CobradorExterno = () => {
           </div>
         )}
       </div>
+
+      {/* Payment Modal */}
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar pagamento</DialogTitle>
+            <DialogDescription>
+              {payInstallment && `Parcela #${payInstallment.installment_number} • Vence ${new Date(payInstallment.due_date).toLocaleDateString("pt-BR")}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Método de pagamento</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { v: "pix" as const, label: "PIX" },
+                  { v: "dinheiro" as const, label: "Dinheiro" },
+                  { v: "transferencia" as const, label: "Transferência" },
+                ]).map(opt => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setPayMethod(opt.v)}
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
+                      payMethod === opt.v
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Valor recebido (R$)</label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+                className="text-lg font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Comprovante (opcional)</label>
+              <label className="flex items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border cursor-pointer hover:border-primary/50 hover:bg-accent/20 transition-colors">
+                <Upload size={16} className="text-muted-foreground" />
+                <span className="text-sm text-muted-foreground flex-1 truncate">
+                  {payFile ? payFile.name : "Anexar imagem ou PDF"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setPayFile(e.target.files?.[0] || null)}
+                />
+              </label>
+              {payFile && (
+                <button type="button" onClick={() => setPayFile(null)} className="text-[10px] text-destructive mt-1 hover:underline">
+                  Remover
+                </button>
+              )}
+            </div>
+
+            {payMethod === "pix" && ownerProfile?.pix_key && (
+              <button onClick={copyPix} className="w-full p-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 text-left flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase">Chave PIX do credor</p>
+                  <p className="text-sm font-medium text-primary truncate">{ownerProfile.pix_key}</p>
+                </div>
+                <Copy size={16} className="text-primary shrink-0" />
+              </button>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayOpen(false)} disabled={paySaving}>Cancelar</Button>
+            <Button onClick={handleConfirmPayment} disabled={paySaving}>
+              {paySaving ? <><Loader2 size={16} className="mr-2 animate-spin" />Salvando...</> : <><CheckCircle size={16} className="mr-2" />Confirmar pagamento</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
