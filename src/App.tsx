@@ -54,6 +54,7 @@ const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 const Hoje = lazy(() => import("./pages/Hoje"));
+const Planos = lazy(() => import("./pages/Planos"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
