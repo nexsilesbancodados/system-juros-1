@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 
 type PortalInstallment = {
   id: string;
@@ -13,6 +14,8 @@ type PortalInstallment = {
   paid_amount?: number | string | null;
   late_fee?: number | string | null;
   status: string;
+  payment_method?: string | null;
+  receipt_url?: string | null;
 };
 
 type PortalContract = {
@@ -42,6 +45,22 @@ type PortalData = {
     birth_date?: string | null;
   };
   contracts: PortalContract[];
+  owner?: {
+    name?: string | null;
+    pix_key?: string | null;
+    pix_key_type?: string | null;
+  };
+  branding?: {
+    portal_title?: string | null;
+    portal_subtitle?: string | null;
+    portal_welcome_message?: string | null;
+    portal_primary_color?: string | null;
+    portal_contact_phone?: string | null;
+    portal_contact_email?: string | null;
+    portal_logo_url?: string | null;
+    company_name?: string | null;
+    company_logo_url?: string | null;
+  };
 };
 
 const money = (value: number | string | null | undefined) =>
@@ -61,12 +80,62 @@ const statusLabel = (status: string) => {
   return "Pendente";
 };
 
+type Tab = "open" | "overdue" | "paid";
+
+const SESSION_KEY = "portal-cliente-session";
+
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
+  const [tab, setTab] = useState<Tab>("open");
+  const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+
+  // Auto re-login from saved CPF/birth on mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (!saved) return;
+    try {
+      const { cpf: c, birth_date: b } = JSON.parse(saved);
+      if (c && b) {
+        setCpf(c);
+        setBirthDate(b);
+        void doLogin(c, b, true);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Realtime: when any installment of this client changes, refetch
+  useEffect(() => {
+    if (!portalData?.client?.id) return;
+    const clientId = portalData.client.id;
+    const ch = supabase
+      .channel(`portal-client-${clientId}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "contract_installments", filter: `client_id=eq.${clientId}` },
+        () => {
+          const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
+          if (cleanCpf && portalData.client.birth_date) {
+            void doLogin(cleanCpf, portalData.client.birth_date, true);
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [portalData?.client?.id]);
+
+  // Apply dynamic primary color from branding
+  useEffect(() => {
+    const color = portalData?.branding?.portal_primary_color;
+    if (color) {
+      document.documentElement.style.setProperty("--portal-primary", color);
+    }
+  }, [portalData?.branding?.portal_primary_color]);
 
   const formatCpf = (value: string) => {
     const nums = value.replace(/\D/g, "").slice(0, 11);
@@ -87,47 +156,83 @@ const PortalCliente = () => {
       openAmount: open.reduce((sum, installment) => sum + Number(installment.amount || 0) + Number(installment.late_fee || 0), 0),
       paidAmount: paid.reduce((sum, installment) => sum + Number(installment.paid_amount || installment.amount || 0), 0),
       overdueCount: overdue.length,
+      openCount: open.length,
+      paidCount: paid.length,
     };
   }, [portalData]);
 
-  const handleAccess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCpf = cpf.replace(/\D/g, "");
-
-    if (cleanCpf.length !== 11 || !birthDate) {
-      toast({ title: "Informe CPF e data de nascimento válidos", variant: "destructive" });
-      return;
-    }
-
+  const doLogin = async (cleanCpf: string, birth: string, silent = false) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("portal_client_login" as never, {
         _cpf: cleanCpf,
-        _birth_date: birthDate,
+        _birth_date: birth,
       } as never);
 
       if (error) {
-        console.error("Erro no login do portal:", error);
-        toast({ title: "Erro ao acessar o portal", description: "Tente novamente em instantes.", variant: "destructive" });
+        if (!silent) toast({ title: "Erro ao acessar o portal", description: "Tente novamente em instantes.", variant: "destructive" });
+        sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       if (!data) {
-        toast({ title: "Acesso negado", description: "CPF ou data de nascimento não conferem.", variant: "destructive" });
+        if (!silent) toast({ title: "Acesso negado", description: "CPF ou data de nascimento não conferem.", variant: "destructive" });
+        sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      toast({ title: "Acesso autorizado!" });
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, birth_date: birth }));
+      if (!silent) toast({ title: "Acesso autorizado!" });
     } catch (err) {
-      console.error("Falha inesperada no portal do cliente:", err);
-      toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
+      if (!silent) toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCpf = cpf.replace(/\D/g, "");
+    if (cleanCpf.length !== 11 || !birthDate) {
+      toast({ title: "Informe CPF e data de nascimento válidos", variant: "destructive" });
+      return;
+    }
+    await doLogin(cleanCpf, birthDate);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    setPortalData(null);
+    setCpf("");
+    setBirthDate("");
+  };
+
+  const openPayment = (inst: PortalInstallment) => {
+    setSelectedInstallment(inst);
+    setPaymentOpen(true);
+  };
+
   const firstName = portalData?.client?.name?.split(" ")?.[0] || "Cliente";
+  const branding = portalData?.branding || {};
+  const portalTitle = branding.portal_title || "Portal VIP";
+  const portalSubtitle = branding.portal_subtitle || "Acesse seus dados financeiros com segurança";
+  const logoUrl = branding.portal_logo_url || branding.company_logo_url;
+
+  // Build filtered list of (contract + installment) tuples
+  const filtered = useMemo(() => {
+    const rows: Array<{ contract: PortalContract; installment: PortalInstallment; isOverdue: boolean }> = [];
+    for (const c of portalData?.contracts || []) {
+      for (const i of c.installments || []) {
+        const isOverdue = i.status !== "paid" && new Date(i.due_date) < new Date();
+        if (tab === "paid" && i.status !== "paid") continue;
+        if (tab === "open" && i.status === "paid") continue;
+        if (tab === "overdue" && !isOverdue) continue;
+        rows.push({ contract: c, installment: i, isOverdue });
+      }
+    }
+    return rows.sort((a, b) => +new Date(a.installment.due_date) - +new Date(b.installment.due_date));
+  }, [portalData, tab]);
 
   return (
     <main className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -137,12 +242,16 @@ const PortalCliente = () => {
             <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
 
             <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                <Shield size={40} className="text-primary" />
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="mx-auto h-20 w-20 rounded-2xl object-contain" />
+              ) : (
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                  <Shield size={40} className="text-primary" />
+                </div>
+              )}
               <div>
-                <h1 className="text-4xl font-bold tracking-normal">Portal <span className="text-primary">VIP</span></h1>
-                <p className="mt-3 text-sm text-muted-foreground">Acesse seus dados financeiros com segurança</p>
+                <h1 className="text-4xl font-bold tracking-normal">{portalTitle}</h1>
+                <p className="mt-3 text-sm text-muted-foreground">{portalSubtitle}</p>
               </div>
             </div>
 
@@ -155,6 +264,7 @@ const PortalCliente = () => {
                   placeholder="000.000.000-00"
                   required
                   inputMode="numeric"
+                  autoComplete="off"
                   className="w-full rounded-xl border border-border bg-input px-4 py-4 text-center font-mono text-xl text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -174,19 +284,22 @@ const PortalCliente = () => {
                 {loading ? <Clock className="mr-2 animate-spin" /> : <ArrowRight className="mr-2" />}
                 {loading ? "Verificando..." : "Entrar no Portal"}
               </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setCpf("100.200.300-10");
-                  setBirthDate("1990-01-01");
-                }}
-                className="w-full text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                Usar Credenciais de Teste
-              </Button>
             </form>
+
+            {(branding.portal_contact_phone || branding.portal_contact_email) && (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+                {branding.portal_contact_phone && (
+                  <a href={`tel:${branding.portal_contact_phone}`} className="flex items-center gap-1 hover:text-primary">
+                    <Phone size={12} /> {branding.portal_contact_phone}
+                  </a>
+                )}
+                {branding.portal_contact_email && (
+                  <a href={`mailto:${branding.portal_contact_email}`} className="flex items-center gap-1 hover:text-primary">
+                    <Mail size={12} /> {branding.portal_contact_email}
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="pt-6 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Criptografia de Ponta a Ponta</p>
@@ -196,15 +309,21 @@ const PortalCliente = () => {
           <section className="w-full space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-success/20 bg-success/10">
-                  <User className="text-success" size={28} />
-                </div>
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="h-14 w-14 shrink-0 rounded-2xl object-contain border border-border" />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-success/20 bg-success/10">
+                    <User className="text-success" size={28} />
+                  </div>
+                )}
                 <div>
                   <h1 className="text-3xl font-bold tracking-normal md:text-4xl">Olá, {firstName}</h1>
-                  <p className="text-sm text-muted-foreground">Contratos e parcelas vinculados ao seu CPF.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {branding.portal_welcome_message || "Contratos e parcelas vinculados ao seu CPF."}
+                  </p>
                 </div>
               </div>
-              <Button onClick={() => setPortalData(null)} variant="outline" className="border-border">
+              <Button onClick={handleLogout} variant="outline" className="border-border">
                 <Lock className="mr-2" size={16} />
                 Sair
               </Button>
@@ -229,83 +348,131 @@ const PortalCliente = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {portalData.contracts.length === 0 ? (
-                <div className="glass-card p-8 text-center text-muted-foreground">Nenhum contrato encontrado para este cliente.</div>
-              ) : portalData.contracts.map((contract) => (
-                <article key={contract.id} className="glass-card overflow-hidden">
-                  <div className="grid gap-4 border-b border-border/60 p-5 md:grid-cols-[1fr_auto] md:items-center">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <FileText className="text-primary" size={20} />
-                        <h2 className="text-xl font-bold tracking-normal">Contrato {contract.id.slice(0, 8).toUpperCase()}</h2>
-                        <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                          {statusLabel(contract.status)}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">Início em {date(contract.start_date)} • {contract.num_installments} parcelas</p>
-                    </div>
-                    <div className="text-left md:text-right">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Valor total</p>
-                      <p className="text-2xl font-bold">{money(contract.total_amount)}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 p-5 md:grid-cols-3">
-                    <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
-                      <CreditCard className="mb-2 text-primary" size={18} />
-                      <p className="text-xs text-muted-foreground">Capital</p>
-                      <p className="font-bold">{money(contract.capital)}</p>
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
-                      <CalendarDays className="mb-2 text-primary" size={18} />
-                      <p className="text-xs text-muted-foreground">Parcela</p>
-                      <p className="font-bold">{money(contract.installment_amount)}</p>
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
-                      <Shield className="mb-2 text-primary" size={18} />
-                      <p className="text-xs text-muted-foreground">Juros</p>
-                      <p className="font-bold">{Number(contract.interest_rate || 0)}%</p>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto px-5 pb-5">
-                    <table className="w-full min-w-[620px] text-left text-sm">
-                      <thead className="text-xs uppercase tracking-widest text-muted-foreground">
-                        <tr className="border-b border-border/60">
-                          <th className="py-3">Parcela</th>
-                          <th className="py-3">Vencimento</th>
-                          <th className="py-3">Valor</th>
-                          <th className="py-3">Multa</th>
-                          <th className="py-3 text-right">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(contract.installments || []).map((installment) => {
-                          const isOverdue = installment.status !== "paid" && new Date(installment.due_date) < new Date();
-                          return (
-                            <tr key={installment.id} className="border-b border-border/40 last:border-0">
-                              <td className="py-3 font-semibold">#{installment.installment_number}</td>
-                              <td className="py-3">{date(installment.due_date)}</td>
-                              <td className="py-3">{money(installment.amount)}</td>
-                              <td className="py-3">{money(installment.late_fee)}</td>
-                              <td className="py-3 text-right">
-                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${installment.status === "paid" ? "bg-success/10 text-success" : isOverdue ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                                  {installment.status === "paid" ? "Pago" : isOverdue ? "Vencido" : "Em aberto"}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
+            {/* Filter tabs */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-border pb-1">
+              {[
+                { key: "open" as Tab, label: "Em aberto", count: summary.openCount },
+                { key: "overdue" as Tab, label: "Atrasadas", count: summary.overdueCount },
+                { key: "paid" as Tab, label: "Pagas", count: summary.paidCount },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex items-center gap-2 rounded-t-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    tab === t.key
+                      ? "border border-b-0 border-border bg-card text-foreground -mb-[1px]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.label}
+                  <span className="text-xs font-bold">{t.count}</span>
+                </button>
               ))}
             </div>
+
+            {/* Installment list */}
+            <div className="space-y-3">
+              {filtered.length === 0 ? (
+                <div className="glass-card p-8 text-center text-muted-foreground">
+                  {tab === "paid" ? "Nenhum pagamento registrado ainda." : tab === "overdue" ? "Nenhuma parcela atrasada 🎉" : "Nenhuma parcela em aberto 🎉"}
+                </div>
+              ) : (
+                filtered.map(({ contract, installment, isOverdue }) => (
+                  <button
+                    key={installment.id}
+                    onClick={() => openPayment(installment)}
+                    className="glass-card flex w-full items-center gap-4 p-4 text-left transition-all hover:border-primary/40 hover:shadow-md"
+                  >
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                      installment.status === "paid" ? "bg-success/10 text-success" : isOverdue ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"
+                    }`}>
+                      #{installment.installment_number}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <FileText size={14} className="text-muted-foreground" />
+                        <p className="text-sm font-semibold truncate">Contrato {contract.id.slice(0, 8).toUpperCase()}</p>
+                        <span className="rounded-full border border-border/60 bg-background/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {contract.frequency === "monthly" ? "Mensal" : contract.frequency === "weekly" ? "Semanal" : contract.frequency === "daily" ? "Diário" : contract.frequency}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                        <CalendarDays size={12} />
+                        {installment.status === "paid" ? `Pago em ${date(installment.paid_at)}` : `Vence em ${date(installment.due_date)}`}
+                        {isOverdue && <span className="text-warning font-medium ml-1">· {Math.floor((Date.now() - +new Date(installment.due_date)) / 86400000)} dia(s)</span>}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-base font-bold">{money(Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0))}</p>
+                      <span className={`text-[10px] font-semibold uppercase tracking-wider ${installment.status === "paid" ? "text-success" : isOverdue ? "text-warning" : "text-primary"}`}>
+                        {installment.status === "paid" ? "Pago" : isOverdue ? "Vencido" : "Em aberto"}
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Contracts overview (compact) */}
+            <div className="space-y-3 pt-4">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Seus contratos</h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                {portalData.contracts.map((contract) => (
+                  <article key={contract.id} className="glass-card p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">{contract.id.slice(0, 8).toUpperCase()}</p>
+                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {statusLabel(contract.status)}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Capital</p>
+                        <p className="font-bold">{money(contract.capital)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Parcela</p>
+                        <p className="font-bold">{money(contract.installment_amount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Juros</p>
+                        <p className="font-bold">{Number(contract.interest_rate || 0)}%</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Início {date(contract.start_date)} • {contract.num_installments} parcelas
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            {(branding.portal_contact_phone || branding.portal_contact_email) && (
+              <div className="glass-card flex flex-wrap items-center justify-center gap-4 p-4 text-sm">
+                <span className="text-muted-foreground">Precisa de ajuda?</span>
+                {branding.portal_contact_phone && (
+                  <a href={`tel:${branding.portal_contact_phone}`} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
+                    <Phone size={14} /> {branding.portal_contact_phone}
+                  </a>
+                )}
+                {branding.portal_contact_email && (
+                  <a href={`mailto:${branding.portal_contact_email}`} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
+                    <Mail size={14} /> {branding.portal_contact_email}
+                  </a>
+                )}
+              </div>
+            )}
           </section>
         )}
       </div>
+
+      <PaymentModal
+        isOpen={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        installment={selectedInstallment}
+        ownerProfile={portalData?.owner || {}}
+        clientData={portalData?.client || {}}
+      />
     </main>
   );
 };
