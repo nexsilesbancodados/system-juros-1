@@ -13,18 +13,19 @@ export function useRealtimeSubscription(
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`realtime-${tableName}`)
-      .on(
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table: tableName },
-        () => {
-          queryKeys.forEach((key) => {
-            queryClient.invalidateQueries({ queryKey: key });
-          });
-        },
-      )
-      .subscribe();
+    const channel = supabase.channel(
+      `realtime-${tableName}-${Math.random().toString(36).slice(2)}`,
+    );
+    channel.on(
+      "postgres_changes" as any,
+      { event: "*", schema: "public", table: tableName },
+      () => {
+        queryKeys.forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
+      },
+    );
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -42,20 +43,22 @@ export function useMultiTableRealtime(
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channels = tables.map((table) =>
-      supabase
-        .channel(`realtime-multi-${table}`)
-        .on(
-          "postgres_changes" as any,
-          { event: "*", schema: "public", table },
-          () => {
-            queryKeys.forEach((key) => {
-              queryClient.invalidateQueries({ queryKey: key });
-            });
-          },
-        )
-        .subscribe(),
-    );
+    const channels = tables.map((table) => {
+      const ch = supabase.channel(
+        `realtime-multi-${table}-${Math.random().toString(36).slice(2)}`,
+      );
+      ch.on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table },
+        () => {
+          queryKeys.forEach((key) => {
+            queryClient.invalidateQueries({ queryKey: key });
+          });
+        },
+      );
+      ch.subscribe();
+      return ch;
+    });
 
     return () => {
       channels.forEach((ch) => supabase.removeChannel(ch));
