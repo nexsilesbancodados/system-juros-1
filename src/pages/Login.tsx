@@ -273,13 +273,51 @@ const Login = () => {
                     <input type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className={inputCls} />
                   </div>
 
+                  <div>
+                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-2 block">Escolha como começar</label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("trial")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          selectedPlan === "trial"
+                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
+                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">🎁 Grátis</div>
+                        <div className="text-sm font-bold text-white">Testar 3 dias</div>
+                        <div className="text-[10px] text-white/40 mt-0.5">Sem cartão</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("paid")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          selectedPlan === "paid"
+                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
+                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">💎 Pro</div>
+                        <div className="text-sm font-bold text-white">Assinar R$79</div>
+                        <div className="text-[10px] text-white/40 mt-0.5">Acesso total</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !selectedPlan}
                     className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-white/10"
                     style={{ background: "var(--gradient-button)", color: "white" }}
                   >
-                    {loading ? "Criando conta..." : "Criar Conta"}
+                    {loading
+                      ? "Criando conta..."
+                      : selectedPlan === "paid"
+                        ? "Criar conta e ir para o pagamento"
+                        : selectedPlan === "trial"
+                          ? "Começar teste grátis"
+                          : "Selecione um plano acima"}
                   </button>
                 </form>
               </div>
