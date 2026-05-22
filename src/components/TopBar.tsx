@@ -51,6 +51,11 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     staleTime: 60_000,
   });
 
+  useMultiTableRealtime(
+    ["contracts", "profits", "contract_installments"],
+    [["topbar-financials", user?.id]],
+  );
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
