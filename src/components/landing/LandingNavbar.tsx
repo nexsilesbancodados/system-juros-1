@@ -26,7 +26,7 @@ const LandingNavbar = () => {
     { name: "Início", href: "#home" },
     { name: "Recursos", href: "#features" },
     { name: "Benefícios", href: "#benefits" },
-    { name: "Planos", href: "#pricing" },
+    { name: "Planos", href: "/planos", internal: true },
     { name: "Contato", href: "#contact" },
   ];
 
@@ -52,13 +52,23 @@ const LandingNavbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="text-sm font-medium text-white/70 hover:text-white transition-colors"
-            >
-              {link.name}
-            </a>
+            link.internal ? (
+              <Link
+                key={link.name}
+                to={link.href}
+                className="text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                {link.name}
+              </Link>
+            ) : (
+              <a
+                key={link.name}
+                href={link.href}
+                className="text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                {link.name}
+              </a>
+            )
           ))}
         </div>
 
@@ -70,7 +80,7 @@ const LandingNavbar = () => {
             Entrar
           </Link>
           <Link
-            to="/login"
+            to="/login?plan=trial"
             className="px-6 py-2.5 rounded-full text-sm font-bold bg-white text-black hover:bg-white/90 transition-all shadow-lg shadow-white/10"
           >
             TESTE GRÁTIS
@@ -97,14 +107,25 @@ const LandingNavbar = () => {
           >
             <div className="flex flex-col p-6 gap-6">
               {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-lg font-medium text-white/70"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
+                link.internal ? (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-lg font-medium text-white/70"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-lg font-medium text-white/70"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                )
               ))}
               <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
                 <Link
@@ -115,7 +136,7 @@ const LandingNavbar = () => {
                   Entrar
                 </Link>
                 <Link
-                  to="/login"
+                  to="/login?plan=trial"
                   className="text-center py-3 rounded-xl bg-white text-black font-bold"
                   onClick={() => setMobileMenuOpen(false)}
                 >

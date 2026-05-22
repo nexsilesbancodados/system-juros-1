@@ -28,8 +28,12 @@ const LandingPricing = () => {
     if (settings?.hubla_checkout_url) {
       window.location.href = settings.hubla_checkout_url;
     } else {
-      navigate("/login");
+      navigate("/login?plan=paid");
     }
+  };
+
+  const handleTrial = () => {
+    navigate("/login?plan=trial");
   };
 
   const features = [
@@ -109,9 +113,16 @@ const LandingPricing = () => {
                 ASSINAR AGORA
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
-              
+
+              <button
+                onClick={handleTrial}
+                className="w-full mt-3 py-3.5 rounded-2xl border border-white/15 text-white/80 font-semibold text-sm tracking-wide hover:bg-white/5 hover:border-white/30 transition-all"
+              >
+                Testar 3 dias grátis
+              </button>
+
               <p className="text-[10px] text-white/20 mt-4 leading-relaxed">
-                Pagamento seguro via Hubla.<br />Cancele quando quiser.
+                Pagamento seguro via Hubla.<br />Sem cartão no teste · Cancele quando quiser.
               </p>
             </div>
           </motion.div>

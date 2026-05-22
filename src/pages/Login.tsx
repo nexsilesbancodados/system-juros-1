@@ -11,11 +11,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
+  const [searchParams] = useSearchParams();
+  const planParam = searchParams.get("plan"); // "trial" | "paid" | null
+  const [isRegister, setIsRegister] = useState(!!planParam);
+  const [selectedPlan, setSelectedPlan] = useState<"trial" | "paid" | null>(
+    planParam === "paid" ? "paid" : planParam === "trial" ? "trial" : null
+  );
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   // Aceita apenas paths internos (começam com "/" mas não "//" ou "/\") para
   // evitar open-redirect via ?next=https://evil.com.
@@ -68,6 +72,10 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedPlan) {
+      toast({ title: "Escolha um plano", description: "Selecione 'Testar grátis' ou 'Assinar agora' para continuar.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
@@ -80,26 +88,28 @@ const Login = () => {
     setLoading(false);
     if (error) {
       toast({ title: "Erro ao registar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ 
-        title: "Conta criada!", 
-        description: "Verifique seu e-mail para confirmar o cadastro e ativar sua conta." 
-      });
-      
+      return;
+    }
+
+    supabase.functions.invoke('send-welcome-email', { body: { email, name } })
+      .catch(err => console.error('Error sending welcome email:', err));
+
+    if (selectedPlan === "paid") {
       const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
       if (checkoutUrl) {
-        toast({ title: "Quase lá!", description: "Redirecionando para ativação da conta..." });
-        setTimeout(() => {
-          window.location.href = checkoutUrl as string;
-        }, 3000);
+        toast({ title: "Conta criada! 🎉", description: "Redirecionando para o pagamento..." });
+        setTimeout(() => { window.location.href = checkoutUrl as string; }, 1800);
+        return;
       }
-
-      supabase.functions.invoke('send-welcome-email', {
-        body: { email, name }
-      }).catch(err => console.error('Error sending welcome email:', err));
-
-      setIsRegister(false);
+      toast({ title: "Conta criada!", description: "Confirme seu e-mail para continuar." });
+    } else {
+      toast({
+        title: "Bem-vindo! 🎁",
+        description: "Seu teste grátis de 3 dias está ativo. Confirme seu e-mail e faça login.",
+      });
     }
+
+    setIsRegister(false);
   };
 
   const inputCls = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200";
@@ -263,13 +273,51 @@ const Login = () => {
                     <input type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className={inputCls} />
                   </div>
 
+                  <div>
+                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-2 block">Escolha como começar</label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("trial")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          selectedPlan === "trial"
+                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
+                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">🎁 Grátis</div>
+                        <div className="text-sm font-bold text-white">Testar 3 dias</div>
+                        <div className="text-[10px] text-white/40 mt-0.5">Sem cartão</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("paid")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          selectedPlan === "paid"
+                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
+                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">💎 Pro</div>
+                        <div className="text-sm font-bold text-white">Assinar R$79</div>
+                        <div className="text-[10px] text-white/40 mt-0.5">Acesso total</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !selectedPlan}
                     className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:shadow-white/10"
                     style={{ background: "var(--gradient-button)", color: "white" }}
                   >
-                    {loading ? "Criando conta..." : "Criar Conta"}
+                    {loading
+                      ? "Criando conta..."
+                      : selectedPlan === "paid"
+                        ? "Criar conta e ir para o pagamento"
+                        : selectedPlan === "trial"
+                          ? "Começar teste grátis"
+                          : "Selecione um plano acima"}
                   </button>
                 </form>
               </div>
