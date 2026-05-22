@@ -124,6 +124,12 @@ const SmartAlerts = ({ overdue, dueToday, notifications }: Props) => {
     staleTime: 60_000,
   });
 
+  useMultiTableRealtime(
+    ["clients", "contracts", "notifications", "contract_installments"],
+    [["hoje-birthdays", user?.id], ["hoje-pending-sigs", user?.id], ["hoje", user?.id]],
+  );
+
+
   const alerts = useMemo<Alert[]>(() => {
     const list: Alert[] = [];
 
