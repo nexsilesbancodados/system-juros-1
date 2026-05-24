@@ -193,6 +193,36 @@ const NovoCliente = () => {
 
   const markTouched = (f: string) => setTouched(prev => ({ ...prev, [f]: true }));
 
+  // ── Past contracts (for "Duplicar termos do anterior") ──
+  const { data: pastContracts = [] } = useQuery({
+    queryKey: ["novo-emprestimo-past", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contracts")
+        .select("id, capital, interest_rate, num_installments, frequency, loan_mode, late_fee_percent, daily_interest_percent, created_at, clients(name)")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const duplicateFrom = (c: any) => {
+    setCapital(String(c.capital || ""));
+    setCapitalDisplay(Number(c.capital || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 }));
+    setTaxaJuros(String(c.interest_rate || ""));
+    setNumInstallments(String(c.num_installments || ""));
+    if (c.frequency) setFrequency((c.frequency.startsWith("daily") ? "daily" : c.frequency) as Frequency);
+    if (c.loan_mode) setLoanMode(c.loan_mode);
+    setLateFeePercent(String(c.late_fee_percent ?? 2));
+    setDailyInterestPercent(String(c.daily_interest_percent ?? 0.33));
+    setValueMode("rate");
+    toast({ title: "✓ Termos copiados", description: `Baseado em ${(c.clients as any)?.name || "contrato anterior"}` });
+  };
+
+
 
   const errors: Record<string, string | null> = {
     nome: touched.nome && !nome.trim() ? "Nome é obrigatório" : null,
