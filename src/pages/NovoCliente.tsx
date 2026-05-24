@@ -191,6 +191,30 @@ const NovoCliente = () => {
     draftLoadedRef.current = true;
   }, [user, DRAFT_KEY]);
 
+  // Autosave draft (debounced)
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => {
+      try {
+        if (!nome && !capital && !cpfCnpj) return;
+        const draft = {
+          nome, email, telefone, whatsapp, cpfCnpj, cep, rua, numero, complemento, bairro, cidade, estado,
+          capital, capitalDisplay, loanMode, frequency, dailyMode, taxaJuros, numInstallments,
+          valueMode, installmentValue, installmentValueDisplay, startDate, firstDueDate, autoFirstDue,
+          lateFeePercent, dailyInterestPercent, notes, gracePeriods, graceDays, paymentMethod, step,
+          ts: Date.now(),
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setDraftSavedAt(Date.now());
+      } catch {}
+    }, 900);
+    return () => clearTimeout(t);
+  }, [user, DRAFT_KEY, nome, email, telefone, whatsapp, cpfCnpj, cep, rua, numero, complemento,
+      bairro, cidade, estado, capital, capitalDisplay, loanMode, frequency, dailyMode, taxaJuros,
+      numInstallments, valueMode, installmentValue, installmentValueDisplay, startDate, firstDueDate,
+      autoFirstDue, lateFeePercent, dailyInterestPercent, notes, gracePeriods, graceDays, paymentMethod, step]);
+
+
   const markTouched = (f: string) => setTouched(prev => ({ ...prev, [f]: true }));
 
   // ── Past contracts (for "Duplicar termos do anterior") ──
