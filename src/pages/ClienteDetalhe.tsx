@@ -16,6 +16,7 @@ import {
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
 
