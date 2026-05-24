@@ -10,13 +10,14 @@ import { WhiteLabelProvider } from "@/contexts/WhiteLabelContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import OfflineIndicator from "./components/OfflineIndicator";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Index from "./pages/Index";
 
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import PortalCliente from "./pages/PortalCliente";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const PortalCliente = lazy(() => import("./pages/PortalCliente"));
 // ... keep existing code
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
