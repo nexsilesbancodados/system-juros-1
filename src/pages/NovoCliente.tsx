@@ -977,24 +977,35 @@ const NovoCliente = () => {
 
           {/* Values */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-semibold text-foreground">Valores</h2>
-              <div className="inline-flex bg-muted/40 rounded-full p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setValueMode("rate")}
-                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  Por Taxa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setValueMode("installment")}
-                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  Por Valor da Parcela
-                </button>
-              </div>
+              {loanMode === "installments" && (
+                <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setValueMode("rate")}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Por Taxa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setValueMode("installment")}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Por Valor da Parcela
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* Quick guide per loan mode */}
+            <div className="text-[11px] text-muted-foreground bg-muted/20 border border-border/60 rounded-xl px-3 py-2">
+              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> (ou valor da parcela) e <strong>Nº de Parcelas</strong>. Parcelas iguais com juros simples.</>}
+              {loanMode === "percentage" && <>Informe <strong>Capital</strong> e <strong>Taxa por período</strong>. Nº de parcelas é opcional (auto se vazio).</>}
+              {loanMode === "interest_only" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. Cliente paga só juros; capital cai na última parcela.</>}
+              {loanMode === "price" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. PMT fixo com amortização (juros compostos).</>}
+              {loanMode === "bullet" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Períodos até o vencimento</strong>. Pagamento único ao fim.</>}
+              {loanMode === "grace" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong>, <strong>Períodos de Carência</strong> e <strong>Nº de Parcelas</strong>. Juros acumulam durante a carência.</>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
