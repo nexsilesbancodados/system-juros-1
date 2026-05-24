@@ -99,6 +99,7 @@ const App = () => (
       <AuthProvider>
         <WhiteLabelProvider>
           <ThemeProvider>
+          <ConfirmProvider>
           <BrowserRouter>
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
