@@ -245,7 +245,6 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
               return (
                 <div key={inst.id}>
                 <div
-                  key={inst.id}
                   ref={(el) => (itemRefs.current[idx] = el)}
                   id={`qpay-item-${inst.id}`}
                   role="option"
