@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import EmptyState from "@/components/EmptyState";
 
 interface NotificationItem {
   id: string;
@@ -284,17 +285,13 @@ const Notificacoes = () => {
             ))}
           </div>
         ) : paginated.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-              <Bell size={26} className="text-muted-foreground/40" />
-            </div>
-            <p className="text-base font-semibold text-foreground">Nenhuma notificação encontrada</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              {search || typeFilter !== "all" || statusFilter !== "all"
-                ? "Tente ajustar os filtros para ver mais resultados."
-                : "Quando algo acontecer, aparecerá aqui."}
-            </p>
-          </div>
+          <EmptyState
+            icon={Bell}
+            title="Nenhuma notificação encontrada"
+            description={search || typeFilter !== "all" || statusFilter !== "all"
+              ? "Tente ajustar os filtros para ver mais resultados."
+              : "Quando algo acontecer, aparecerá aqui."}
+          />
         ) : (
           <div className="divide-y divide-border/30">
             {paginated.map((n) => {

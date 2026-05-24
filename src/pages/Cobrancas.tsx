@@ -14,6 +14,7 @@ import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
 import { formatBR } from "@/lib/dateUtils";
+import EmptyState from "@/components/EmptyState";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -588,24 +589,18 @@ const Cobrancas = () => {
       {loading ? (
         <div className="space-y-3">{[1,2,3,4,5].map(i => <div key={i} className="h-16 rounded-xl skeleton-shimmer" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 rounded-3xl border border-dashed border-border/30 bg-card/10 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-            <Receipt size={28} className="text-muted-foreground/40" />
-          </div>
-          <p className="text-foreground font-semibold">
-            {installments.length === 0 ? "Nenhuma parcela gerada ainda." : "Nenhuma parcela com esses filtros."}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {installments.length === 0
-              ? "Crie um contrato para gerar parcelas automaticamente."
-              : "Tente ajustar a busca, status ou período."}
-          </p>
-          {(search || activeFilters > 0 || filter !== "all") && (
-            <button onClick={() => { setSearch(""); setFilter("all"); clearFilters(); }} className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-muted/40 hover:bg-muted text-foreground">
+        <EmptyState
+          icon={Receipt}
+          title={installments.length === 0 ? "Nenhuma parcela gerada ainda." : "Nenhuma parcela com esses filtros."}
+          description={installments.length === 0
+            ? "Crie um contrato para gerar parcelas automaticamente."
+            : "Tente ajustar a busca, status ou período."}
+          action={(search || activeFilters > 0 || filter !== "all") ? (
+            <button onClick={() => { setSearch(""); setFilter("all"); clearFilters(); }} className="px-4 py-2 rounded-xl text-xs font-semibold bg-muted/40 hover:bg-muted text-foreground">
               Limpar tudo
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <div className="space-y-2 stagger-fade-in">
           {filtered.map((inst: any) => {
