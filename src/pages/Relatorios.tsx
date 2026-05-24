@@ -107,7 +107,7 @@ const Relatorios = () => {
 
   const monthLabel = (() => {
     const [y, m] = month.split("-").map(Number);
-    return formatBR(y, m - 1, { month: "long", year: "numeric" });
+    return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   })();
 
   const handleExportCSV = () => {
