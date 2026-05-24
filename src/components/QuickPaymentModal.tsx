@@ -243,6 +243,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
               const isActive = idx === activeIdx;
               const status = isOverdue ? "atrasada" : isToday ? "vence hoje" : "pendente";
               return (
+                <div key={inst.id}>
                 <div
                   key={inst.id}
                   ref={(el) => (itemRefs.current[idx] = el)}
