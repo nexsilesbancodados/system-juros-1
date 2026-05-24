@@ -222,6 +222,40 @@ const NovoCliente = () => {
     toast({ title: "✓ Termos copiados", description: `Baseado em ${(c.clients as any)?.name || "contrato anterior"}` });
   };
 
+  // ── Draft restore/discard ──
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setNome(d.nome || ""); setEmail(d.email || ""); setTelefone(d.telefone || ""); setWhatsapp(d.whatsapp || "");
+      setCpfCnpj(d.cpfCnpj || ""); setCep(d.cep || ""); setRua(d.rua || ""); setNumero(d.numero || "");
+      setComplemento(d.complemento || ""); setBairro(d.bairro || ""); setCidade(d.cidade || ""); setEstado(d.estado || "");
+      setCapital(d.capital || ""); setCapitalDisplay(d.capitalDisplay || "");
+      if (d.loanMode) setLoanMode(d.loanMode);
+      if (d.frequency) setFrequency(d.frequency);
+      if (d.dailyMode) setDailyMode(d.dailyMode);
+      setTaxaJuros(d.taxaJuros || "10"); setNumInstallments(d.numInstallments || "");
+      if (d.valueMode) setValueMode(d.valueMode);
+      setInstallmentValue(d.installmentValue || ""); setInstallmentValueDisplay(d.installmentValueDisplay || "");
+      if (d.startDate) setStartDate(d.startDate);
+      setFirstDueDate(d.firstDueDate || ""); setAutoFirstDue(d.autoFirstDue !== false);
+      setLateFeePercent(d.lateFeePercent || "2"); setDailyInterestPercent(d.dailyInterestPercent || "0.33");
+      setNotes(d.notes || ""); setGracePeriods(d.gracePeriods || "2"); setGraceDays(d.graceDays || "0");
+      if (d.paymentMethod) setPaymentMethod(d.paymentMethod);
+      if (d.step) setStep(d.step);
+      setHasDraft(false);
+      toast({ title: "✓ Rascunho restaurado" });
+    } catch { toast({ title: "Erro ao restaurar rascunho", variant: "destructive" }); }
+  };
+  const discardDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setHasDraft(false);
+    setDraftSavedAt(null);
+  };
+
+
+
 
 
   const errors: Record<string, string | null> = {
