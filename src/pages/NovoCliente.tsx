@@ -895,7 +895,30 @@ const NovoCliente = () => {
 
       {/* ═══ STEP 2: LOAN CONFIG ═══ */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-24">
+          {/* Duplicate from previous */}
+          {pastContracts.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <History size={14} className="text-primary" />
+                <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Duplicar termos de um contrato anterior</h2>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {pastContracts.map((c: any) => (
+                  <button
+                    key={c.id}
+                    onClick={() => duplicateFrom(c)}
+                    className="shrink-0 text-left px-3 py-2 rounded-xl border border-border bg-muted/30 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                  >
+                    <p className="text-[11px] font-semibold text-foreground truncate max-w-[140px]">{(c.clients as any)?.name || "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">R$ {Number(c.capital).toLocaleString("pt-BR")} · {c.num_installments}x · {c.interest_rate}%</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+
           {/* Loan Mode */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
