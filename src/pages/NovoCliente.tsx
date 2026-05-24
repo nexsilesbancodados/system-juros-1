@@ -1067,14 +1067,18 @@ const NovoCliente = () => {
               )}
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                  {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
+                  {loanMode === "bullet"
+                    ? `Nº de Períodos até Vencimento *`
+                    : loanMode === "percentage" && valueMode === "rate"
+                      ? "Nº Períodos (opcional)"
+                      : "Nº de Parcelas *"}
                 </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
+                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "bullet" ? `Ex: 3 ${periodLabel}s` : loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
                 <div className="flex flex-wrap gap-1 mt-1.5">
-                  {[4, 6, 8, 10, 12, 24].map(v => (
+                  {(loanMode === "bullet" ? [1, 2, 3, 6, 12] : [4, 6, 8, 10, 12, 24]).map(v => (
                     <button key={v} type="button" onClick={() => setNumInstallments(String(v))}
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${numInstallments === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
-                      {v}x
+                      {loanMode === "bullet" ? `${v} ${periodLabel}` : `${v}x`}
                     </button>
                   ))}
                 </div>
