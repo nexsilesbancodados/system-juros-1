@@ -6,6 +6,7 @@ import { Clock, Search, Filter, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import EmptyState from "@/components/EmptyState";
 
 const actionLabels: Record<string, string> = {
   contract_created: "Contrato criado",
@@ -145,10 +146,7 @@ const Historico = () => {
           {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 animate-fade-in">
-          <Clock size={48} className="mx-auto text-muted-foreground/20 mb-4" />
-          <p className="text-muted-foreground">Nenhuma atividade registrada</p>
-        </div>
+        <EmptyState icon={Clock} title="Nenhuma atividade registrada" description="As ações do sistema aparecerão aqui." />
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([date, items]) => (

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ConfirmProvider";
+import EmptyState from "@/components/EmptyState";
 
 const Anotacoes = () => {
   const confirm = useConfirm();
@@ -129,13 +130,11 @@ const Anotacoes = () => {
           {[1,2,3].map(i => <div key={i} className="h-28 rounded-xl skeleton-shimmer" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-            <StickyNote size={28} className="text-muted-foreground/40" />
-          </div>
-          <p className="text-foreground font-medium">{search ? `Nenhum resultado para "${search}"` : "Nenhuma anotação"}</p>
-          <p className="text-sm text-muted-foreground mt-1">{search ? "Tente outro termo" : "Crie uma anotação para não esquecer"}</p>
-        </div>
+        <EmptyState
+          icon={StickyNote}
+          title={search ? `Nenhum resultado para "${search}"` : "Nenhuma anotação"}
+          description={search ? "Tente outro termo" : "Crie uma anotação para não esquecer"}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
           {filtered.map((n, i) => (

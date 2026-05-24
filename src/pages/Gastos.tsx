@@ -14,6 +14,7 @@ import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import EmptyState from "@/components/EmptyState";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -371,20 +372,18 @@ const Gastos = () => {
       {loading ? (
         <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 rounded-2xl border border-dashed border-border bg-card/50">
-          <div className="w-20 h-20 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-5">
-            <TrendingDown size={32} className="text-muted-foreground/40" />
-          </div>
-          <p className="text-foreground font-semibold text-lg">{search ? `Sem resultados para "${search}"` : "Nenhum gasto registrado"}</p>
-          <p className="text-sm text-muted-foreground mt-2">Registre seus gastos para controlar despesas</p>
-          {!search && (
+        <EmptyState
+          icon={TrendingDown}
+          title={search ? `Sem resultados para "${search}"` : "Nenhum gasto registrado"}
+          description={search ? "Tente outro termo de busca." : "Registre seus gastos para controlar despesas."}
+          action={!search ? (
             <button onClick={() => { resetForm(); setShowForm(true); }}
-              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground"
               style={{ background: "var(--gradient-button)" }}>
               <Plus size={14} /> Registrar Primeiro Gasto
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="max-h-[500px] overflow-y-auto">
