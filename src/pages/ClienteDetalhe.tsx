@@ -16,6 +16,7 @@ import {
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
 
@@ -1028,7 +1029,7 @@ const ClienteDetalhe = () => {
       {activeTab === "parcelas" && (
         <div className="space-y-2">
           {installments.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-12">Nenhuma parcela</p>
+            <EmptyState icon={Receipt} title="Nenhuma parcela" description="As parcelas aparecerão aqui quando o contrato for criado." compact />
           ) : installments.map((inst: any) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
