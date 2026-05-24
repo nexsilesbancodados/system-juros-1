@@ -28,7 +28,10 @@ const fmtMoney = (v: number) =>
 const fmtDate = (d: string) => {
   if (!d) return "";
   try {
-    return new Date(d.length <= 10 ? d + "T12:00:00" : d).toLocaleDateString("pt-BR");
+    // Bare YYYY-MM-DD → parse as local noon to avoid UTC shift
+    const iso = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const dt = iso ? new Date(+iso[1], +iso[2] - 1, +iso[3], 12, 0, 0, 0) : new Date(d);
+    return dt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   } catch {
     return d;
   }

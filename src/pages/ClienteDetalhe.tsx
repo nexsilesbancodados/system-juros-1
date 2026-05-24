@@ -180,13 +180,20 @@ const ClienteDetalhe = () => {
 
   const generateDueDates = (start: string, freq: string, count: number) => {
     const dates: string[] = [];
-    const d = new Date(start + "T12:00:00");
+    const [sy, sm, sd] = start.split("-").map(Number);
+    const base = new Date(sy, (sm || 1) - 1, sd || 1, 12, 0, 0, 0);
     for (let i = 0; i < count; i++) {
-      const nd = new Date(d);
-      if (freq === "daily") nd.setDate(d.getDate() + (i + 1));
-      else if (freq === "weekly") nd.setDate(d.getDate() + (i + 1) * 7);
-      else if (freq === "biweekly") nd.setDate(d.getDate() + (i + 1) * 14);
-      else nd.setMonth(d.getMonth() + (i + 1));
+      let nd: Date;
+      if (freq === "daily") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1)); }
+      else if (freq === "weekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 7); }
+      else if (freq === "biweekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 14); }
+      else {
+        const tm = base.getMonth() + (i + 1);
+        const y = base.getFullYear() + Math.floor(tm / 12);
+        const m = ((tm % 12) + 12) % 12;
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        nd = new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
+      }
       dates.push(nd.toISOString());
     }
     return dates;
