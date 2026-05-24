@@ -498,7 +498,7 @@ const NovoCliente = () => {
         num_installments: n,
         installment_amount: calc.installmentAmount,
         frequency: freqValue,
-        start_date: new Date(startDate + "T12:00:00").toISOString(),
+        start_date: localNoonISO(startDate),
         late_fee_percent: parseFloat(lateFeePercent),
         daily_interest_percent: parseFloat(dailyInterestPercent),
         total_amount: calc.totalAmount,
