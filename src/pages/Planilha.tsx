@@ -139,10 +139,11 @@ const Planilha = () => {
       {loading ? (
         <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-14 rounded-xl skeleton-shimmer" />)}</div>
       ) : sorted.length === 0 ? (
-        <div className="text-center py-16">
-          <Table size={48} className="mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">Nenhum cliente encontrado.</p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Nenhum cliente encontrado"
+          description="Ajuste a busca ou os filtros, ou cadastre seu primeiro cliente."
+        />
       ) : (
         <div className="rounded-2xl border border-border overflow-x-auto bg-card">
           <table className="w-full text-sm min-w-[900px]">
