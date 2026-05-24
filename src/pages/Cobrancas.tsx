@@ -73,7 +73,7 @@ const Cobrancas = () => {
 
       const { data } = await supabase
         .from("contract_installments")
-        .select("*, contracts(capital, frequency, interest_rate)")
+        .select("*, contracts(capital, frequency, interest_rate, num_installments)")
         .eq("user_id", user!.id)
         .order("due_date", { ascending: true });
 
