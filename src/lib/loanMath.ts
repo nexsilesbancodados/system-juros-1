@@ -1,5 +1,6 @@
 // Núcleo unificado de cálculo de empréstimos.
 // Suporta 6 modos: installments, percentage, interest_only, price, bullet, grace.
+import { parseLocalDate, addMonthsClamped, addDays, addBusinessDays } from "./dateUtils";
 
 export type LoanMode =
   | "percentage"
@@ -251,25 +252,19 @@ export function generateInstallmentSchedule(params: {
   const dailyMode: DailyMode = params.dailyMode ?? "mon-fri";
   const customDates = params.customDates ?? [];
 
+  const start = parseLocalDate(startDate);
+  if (!start) return [];
+
+  const addPeriod = (base: Date, n: number): Date => {
+    if (frequency === "daily") return addBusinessDays(base, n, dailyMode);
+    if (frequency === "weekly") return addDays(base, 7 * n);
+    if (frequency === "biweekly") return addDays(base, 15 * n);
+    return addMonthsClamped(base, n);
+  };
+
   // Caso bullet: 1 data, N períodos no futuro
   if (periodsAhead && periodsAhead > 0 && count === 1) {
-    const s = new Date(startDate + "T12:00:00");
-    if (frequency === "daily") {
-      let added = 0;
-      const cur = new Date(s);
-      while (added < periodsAhead) {
-        cur.setDate(cur.getDate() + 1);
-        const dow = cur.getDay();
-        if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
-        if (dailyMode === "mon-sat" && dow === 0) continue;
-        added++;
-      }
-      return [cur.toISOString()];
-    }
-    if (frequency === "weekly") { s.setDate(s.getDate() + 7 * periodsAhead); return [s.toISOString()]; }
-    if (frequency === "biweekly") { s.setDate(s.getDate() + 15 * periodsAhead); return [s.toISOString()]; }
-    s.setMonth(s.getMonth() + periodsAhead);
-    return [s.toISOString()];
+    return [addPeriod(start, periodsAhead).toISOString()];
   }
 
   const dates: string[] = [];
@@ -277,56 +272,24 @@ export function generateInstallmentSchedule(params: {
   if (frequency === "custom") {
     for (let i = 0; i < count; i++) {
       const d = customDates[i];
-      if (d) {
-        dates.push(new Date(d + "T12:00:00").toISOString());
-      } else {
-        const s = new Date(startDate + "T12:00:00");
-        s.setMonth(s.getMonth() + i + 1);
-        dates.push(s.toISOString());
-      }
+      const parsed = d ? parseLocalDate(d) : null;
+      dates.push((parsed ?? addMonthsClamped(start, i + 1)).toISOString());
     }
     return dates;
   }
 
-  const s = new Date(startDate + "T12:00:00");
-  const firstDueDateObj = firstDueDate ? new Date(firstDueDate + "T12:00:00") : null;
+  const firstDueDateObj = parseLocalDate(firstDueDate);
 
   for (let i = 0; i < count; i++) {
     if (firstDueDateObj && i === 0) {
       dates.push(firstDueDateObj.toISOString());
       continue;
     }
-    const baseDate = firstDueDateObj || s;
-
-    if (frequency === "daily") {
-      let added = 0;
-      const cur = new Date(firstDueDateObj || s);
-      const target = firstDueDateObj ? i : i + 1;
-      while (added < target) {
-        cur.setDate(cur.getDate() + 1);
-        const dow = cur.getDay();
-        if (dailyMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
-        if (dailyMode === "mon-sat" && dow === 0) continue;
-        added++;
-      }
-      dates.push(cur.toISOString());
-    } else if (frequency === "weekly") {
-      const d = new Date(baseDate);
-      const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
-      d.setDate(baseDate.getDate() + offset);
-      dates.push(d.toISOString());
-    } else if (frequency === "biweekly") {
-      const d = new Date(baseDate);
-      const offset = firstDueDateObj ? i * 15 : (i + 1) * 15;
-      d.setDate(baseDate.getDate() + offset);
-      dates.push(d.toISOString());
-    } else {
-      const d = new Date(baseDate);
-      const offset = firstDueDateObj ? i : i + 1;
-      d.setMonth(baseDate.getMonth() + offset);
-      dates.push(d.toISOString());
-    }
+    const base = firstDueDateObj ?? start;
+    const step = firstDueDateObj ? i : i + 1;
+    dates.push(addPeriod(base, step).toISOString());
   }
 
   return dates;
 }
+
