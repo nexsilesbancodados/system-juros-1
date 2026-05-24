@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-import { formatBR } from "@/lib/dateUtils";
   AlertCircle, Calendar, Landmark, TrendingUp, Users, ArrowRight,
   DollarSign, Percent, FileSignature, Clock, CheckCircle, Sparkles,
   ArrowUpRight, Activity, Wallet, Target, ChevronRight, Zap,
@@ -16,6 +15,7 @@ import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
 import PeriodComparison from "@/components/dashboard/PeriodComparison";
+import { formatBR } from "@/lib/dateUtils";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();

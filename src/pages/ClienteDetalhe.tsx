@@ -11,12 +11,12 @@ import AICreditScore from "@/components/clients/AICreditScore";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
-import { formatBR } from "@/lib/dateUtils";
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
+import { formatBR } from "@/lib/dateUtils";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 const FREQ: Record<string, string> = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };

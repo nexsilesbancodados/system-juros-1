@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-import { formatBR } from "@/lib/dateUtils";
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
   DollarSign, Send, CalendarDays, Mail, CheckSquare, Square, List, LayoutGrid,
   Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, TrendingUp, Zap
@@ -14,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
+import { formatBR } from "@/lib/dateUtils";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 

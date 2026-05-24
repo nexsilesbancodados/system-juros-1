@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
-import { formatBR } from "@/lib/dateUtils";
   Plus, UserCheck, UserX, Key, Trash2, Users, X, Phone, Mail, MapPin,
   Copy, Search, Shield, Edit2, Check, MoreVertical, ChevronDown, Eye, EyeOff,
   Star, TrendingUp, Clock, AlertTriangle, FileText, DollarSign, Calendar,
@@ -18,6 +17,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
+import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 

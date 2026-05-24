@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import {
-import { formatBR } from "@/lib/dateUtils";
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, Legend,
 } from "recharts";
+import { formatBR } from "@/lib/dateUtils";
 import { TrendingUp, PieChart as PieIcon, BarChart3 } from "lucide-react";
 
 type Props = {

@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
-import { formatBR } from "@/lib/dateUtils";
   Send, Bot, User, BarChart3, FileText, Wifi, WifiOff,
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
   Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
   ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
   Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
 } from "lucide-react";
+import { formatBR } from "@/lib/dateUtils";
 
 interface Message {
   role: "user" | "assistant";

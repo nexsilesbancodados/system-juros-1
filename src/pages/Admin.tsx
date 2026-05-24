@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-import { formatBR } from "@/lib/dateUtils";
   Users, Ban, CheckCircle, Search, Shield, Crown, MessageCircle,
   TrendingUp, UserCheck, UserX, Calendar, Filter, MoreVertical,
   Mail, Trash2, Eye, AlertTriangle, Sparkles, Download, LifeBuoy,
@@ -24,6 +23,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { formatBR } from "@/lib/dateUtils";
 
 type UserRow = {
   id: string;

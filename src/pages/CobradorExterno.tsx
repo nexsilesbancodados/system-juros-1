@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-import { formatBR } from "@/lib/dateUtils";
   Lock, Users, DollarSign, Phone, Mail, MapPin, Calendar,
   AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp,
   LogOut, LogIn, User, FileText, TrendingUp, Shield, Search, X, Upload, Loader2, Copy
@@ -12,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
