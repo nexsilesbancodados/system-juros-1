@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
+import { formatBR } from "@/lib/dateUtils";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -183,7 +184,7 @@ const Cobrancas = () => {
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
-      .replace(/\{data\}|\[Data\]/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
+      .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
       .replace(/\{portal\}|\[Portal\]/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
   };
@@ -661,7 +662,7 @@ const Cobrancas = () => {
                     <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
                     <span className="flex items-center gap-1"><CalendarDays size={10} /> {dueDate.toLocaleDateString("pt-BR")}</span>
                     {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
-                    {isPaid && inst.paid_at && <span className="text-success">Pago: {new Date(inst.paid_at).toLocaleDateString("pt-BR")}</span>}
+                    {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
                   </div>
                 </div>
 

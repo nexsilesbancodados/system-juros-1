@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatBR } from "@/lib/dateUtils";
 
 export const generatePortalReceiptPdf = (client: any, installment: any, company: any) => {
   const doc = new jsPDF();
@@ -43,8 +44,8 @@ export const generatePortalReceiptPdf = (client: any, installment: any, company:
   const amount = Number(installment.paid_amount || installment.amount);
   const data = [
     ["Descrição", "Parcela #" + installment.installment_number],
-    ["Vencimento Original", new Date(installment.due_date).toLocaleDateString("pt-BR")],
-    ["Data do Pagamento", installment.paid_at ? new Date(installment.paid_at).toLocaleDateString("pt-BR") : "Confirmado via Portal"],
+    ["Vencimento Original", formatBR(installment.due_date)],
+    ["Data do Pagamento", installment.paid_at ? formatBR(installment.paid_at) : "Confirmado via Portal"],
     ["Valor Pago", `R$ ${amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`],
     ["Status", "LIQUIDADO / PAGO"]
   ];

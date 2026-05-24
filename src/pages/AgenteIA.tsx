@@ -10,6 +10,7 @@ import {
   ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
   Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
 } from "lucide-react";
+import { formatBR } from "@/lib/dateUtils";
 
 interface Message {
   role: "user" | "assistant";
@@ -538,7 +539,7 @@ const AgenteIA = () => {
       totalProfit: contracts.reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0).toFixed(2),
       dueTodayCount: dueToday.length,
       clientsList: clients.slice(0, 20).map((c: any) => `- ${c.name} (Score: ${c.credit_score}, Status: ${c.status})`).join("\n"),
-      overdueDetails: overdueInstallments.slice(0, 15).map((i: any) => `- Parcela ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} venc. ${new Date(i.due_date).toLocaleDateString("pt-BR")}`).join("\n"),
+      overdueDetails: overdueInstallments.slice(0, 15).map((i: any) => `- Parcela ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} venc. ${formatBR(i.due_date)}`).join("\n"),
     };
   };
 

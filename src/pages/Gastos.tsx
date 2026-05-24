@@ -10,6 +10,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
@@ -105,7 +106,7 @@ const Gastos = () => {
   const handleExportCSV = () => {
     const header = "Data,Descrição,Categoria,Valor\n";
     const rows = filtered.map((e: any) =>
-      `${new Date(e.date).toLocaleDateString("pt-BR")},"${e.description}","${e.category || ""}",${Number(e.amount).toFixed(2)}`
+      `${formatBR(e.date)},"${e.description}","${e.category || ""}",${Number(e.amount).toFixed(2)}`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -170,7 +171,7 @@ const Gastos = () => {
   }).reduce((s: number, e: any) => s + Number(e.amount), 0);
 
   const grouped = filtered.reduce((acc: Record<string, any[]>, e: any) => {
-    const key = new Date(e.date).toLocaleDateString("pt-BR");
+    const key = formatBR(e.date);
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
     return acc;
@@ -405,7 +406,7 @@ const Gastos = () => {
                         <p className="text-sm font-medium text-foreground truncate">{e.description}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] text-muted-foreground">
-                            {new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                            {formatBR(e.date, { day: "2-digit", month: "long", year: "numeric" })}
                           </p>
                           {e.category && (
                             <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${getCategoryStyle(e.category)}`}>

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -531,7 +532,7 @@ const CobradorExterno = () => {
                                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                                   <Calendar size={10} />
                                   {isPaid ? "Pago em " : "Vence: "}
-                                  {new Date(isPaid ? inst.paid_at : inst.due_date).toLocaleDateString("pt-BR")}
+                                  {formatBR(isPaid ? inst.paid_at : inst.due_date)}
                                   {isOverdue && (
                                     <span className="text-destructive font-medium ml-1">
                                       · {daysLate} dia(s) de atraso
@@ -595,7 +596,7 @@ const CobradorExterno = () => {
           <DialogHeader>
             <DialogTitle>Registrar pagamento</DialogTitle>
             <DialogDescription>
-              {payInstallment && `Parcela #${payInstallment.installment_number} • Vence ${new Date(payInstallment.due_date).toLocaleDateString("pt-BR")}`}
+              {payInstallment && `Parcela #${payInstallment.installment_number} • Vence ${formatBR(payInstallment.due_date)}`}
             </DialogDescription>
           </DialogHeader>
 

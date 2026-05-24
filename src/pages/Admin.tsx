@@ -23,6 +23,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { formatBR } from "@/lib/dateUtils";
 
 type UserRow = {
   id: string;
@@ -228,10 +229,10 @@ const Admin = () => {
       u.name,
       u.email || "",
       u.subscription_type || "",
-      u.subscription_expires_at ? new Date(u.subscription_expires_at).toLocaleDateString("pt-BR") : "",
+      u.subscription_expires_at ? formatBR(u.subscription_expires_at) : "",
       u.is_blocked ? "Bloqueado" : isExpired(u) ? "Expirado" : "Ativo",
       u.is_admin ? "Sim" : "Não",
-      new Date(u.created_at).toLocaleDateString("pt-BR"),
+      formatBR(u.created_at),
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -515,7 +516,7 @@ const Admin = () => {
                           <div className="flex items-center gap-1.5">
                             <Calendar size={12} className={expired ? "text-destructive" : "text-muted-foreground"} />
                             <span className={`text-xs ${expired ? "text-destructive font-medium" : "text-muted-foreground"}`}>
-                              {new Date(u.subscription_expires_at).toLocaleDateString("pt-BR")}
+                              {formatBR(u.subscription_expires_at)}
                             </span>
                           </div>
                         ) : (
@@ -532,7 +533,7 @@ const Admin = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                        {formatBR(u.created_at)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">

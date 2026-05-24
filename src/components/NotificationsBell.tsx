@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { formatBR } from "@/lib/dateUtils";
 
 interface NotificationItem {
   id: string;
@@ -37,7 +38,7 @@ const timeAgo = (dateStr: string) => {
   if (diff < 3600) return `${Math.floor(diff / 60)}min`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   if (diff < 2592000) return `${Math.floor(diff / 86400)}d`;
-  return new Date(dateStr).toLocaleDateString("pt-BR");
+  return formatBR(dateStr);
 };
 
 const groupByDate = (items: NotificationItem[]) => {

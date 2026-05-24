@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatBR } from "@/lib/dateUtils";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth();
@@ -62,7 +63,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
               <>
                 Sua assinatura/período de teste expirou em{" "}
                 <span className="font-semibold text-foreground">
-                  {new Date(expiredDate).toLocaleDateString("pt-BR")}
+                  {formatBR(expiredDate)}
                 </span>
                 . Renove para continuar usando o sistema.
               </>

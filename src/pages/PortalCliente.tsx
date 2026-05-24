@@ -68,7 +68,7 @@ const money = (value: number | string | null | undefined) =>
 
 const date = (value: string | null | undefined) => {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  return formatBR(value);
 };
 
 const statusLabel = (status: string) => {

@@ -3,6 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, Legend,
 } from "recharts";
+import { formatBR } from "@/lib/dateUtils";
 import { TrendingUp, PieChart as PieIcon, BarChart3 } from "lucide-react";
 
 type Props = {
@@ -96,8 +97,8 @@ export default function DashboardCharts({ contracts, installments, profits }: Pr
       const b = buckets.get(k)!;
       const label =
         cfg.bucket === "day"
-          ? new Date(k + "T00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-          : new Date(k + "-01").toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+          ? formatBR(k + "T00:00", { day: "2-digit", month: "2-digit" })
+          : formatBR(k + "-01", { month: "short" }).replace(".", "");
       return { label, Recebido: Math.round(b.received), Lucro: Math.round(b.profit), Atraso: Math.round(b.overdue) };
     });
   }, [installments, contracts, cfg]);

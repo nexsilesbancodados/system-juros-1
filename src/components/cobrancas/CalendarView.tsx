@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, MessageSquare, Check } from "lucide-react";
+import { formatBR } from "@/lib/dateUtils";
 
 interface Props {
   installments: any[];
@@ -130,7 +131,7 @@ const CalendarView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment
         <div className="bg-card border border-border rounded-2xl p-4 animate-fade-in">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-semibold text-foreground">
-              Parcelas — {new Date(selectedItems[0].due_date).toLocaleDateString("pt-BR")}
+              Parcelas — {formatBR(selectedItems[0].due_date)}
             </h4>
             <span className="text-xs text-muted-foreground">Total: <strong className="text-foreground">R$ {fmt(selectedTotal)}</strong></span>
           </div>

@@ -10,6 +10,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
@@ -153,7 +154,7 @@ const Lucros = () => {
   const handleExportCSV = () => {
     const header = "Data,Descrição,Valor,Origem\n";
     const rows = filtered.map((p: any) =>
-      `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description.replace(/"/g, '""')}",${Number(p.amount).toFixed(2)},${p.client_id ? "Operacional" : "Manual"}`
+      `${formatBR(p.date)},"${p.description.replace(/"/g, '""')}",${Number(p.amount).toFixed(2)},${p.client_id ? "Operacional" : "Manual"}`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -216,7 +217,7 @@ const Lucros = () => {
   const manualTotal = total - opTotal;
 
   const grouped = useMemo(() => filtered.reduce((acc: Record<string, any[]>, p: any) => {
-    const key = new Date(p.date).toLocaleDateString("pt-BR");
+    const key = formatBR(p.date);
     if (!acc[key]) acc[key] = [];
     acc[key].push(p);
     return acc;
@@ -532,7 +533,7 @@ const Lucros = () => {
                             )}
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {new Date(p.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                            {formatBR(p.date, { day: "2-digit", month: "long", year: "numeric" })}
                           </p>
                         </div>
                         <span className="text-sm font-bold text-success shrink-0">+R$ {fmt(Number(p.amount))}</span>

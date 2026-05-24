@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast as sonnerToast } from "sonner";
+import { formatBR } from "@/lib/dateUtils";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -106,7 +107,7 @@ const Relatorios = () => {
 
   const monthLabel = (() => {
     const [y, m] = month.split("-").map(Number);
-    return new Date(y, m - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return formatBR(y, m - 1, { month: "long", year: "numeric" });
   })();
 
   const handleExportCSV = () => {
@@ -121,11 +122,11 @@ const Relatorios = () => {
 
     csv += "LUCROS\nData,Descrição,Valor\n";
     data.profitData.forEach((p: any) => {
-      csv += `${new Date(p.date).toLocaleDateString("pt-BR")},"${p.description}",R$ ${Number(p.amount).toFixed(2)}\n`;
+      csv += `${formatBR(p.date)},"${p.description}",R$ ${Number(p.amount).toFixed(2)}\n`;
     });
     csv += "\nGASTOS\nData,Descrição,Categoria,Valor\n";
     data.expenseData.forEach((e: any) => {
-      csv += `${new Date(e.date).toLocaleDateString("pt-BR")},"${e.description}","${e.category || "-"}",R$ ${Number(e.amount).toFixed(2)}\n`;
+      csv += `${formatBR(e.date)},"${e.description}","${e.category || "-"}",R$ ${Number(e.amount).toFixed(2)}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -205,7 +206,7 @@ const Relatorios = () => {
           startY: y,
           head: [["Data", "Descrição", "Valor"]],
           body: data.profitData.map((p: any) => [
-            new Date(p.date).toLocaleDateString("pt-BR"),
+            formatBR(p.date),
             p.description,
             `R$ ${fmt(Number(p.amount))}`,
           ]),
@@ -227,7 +228,7 @@ const Relatorios = () => {
           startY: y,
           head: [["Data", "Descrição", "Categoria", "Valor"]],
           body: data.expenseData.map((e: any) => [
-            new Date(e.date).toLocaleDateString("pt-BR"),
+            formatBR(e.date),
             e.description,
             e.category || "—",
             `R$ ${fmt(Number(e.amount))}`,
@@ -482,7 +483,7 @@ const Relatorios = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{p.description}</p>
-                      <p className="text-[10px] text-muted-foreground">{new Date(p.date).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatBR(p.date)}</p>
                     </div>
                     <span className="text-sm font-semibold text-success">+R$ {fmt(Number(p.amount))}</span>
                   </div>
@@ -511,7 +512,7 @@ const Relatorios = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{e.description}</p>
-                      <p className="text-[10px] text-muted-foreground">{e.category || "Sem categoria"} · {new Date(e.date).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-[10px] text-muted-foreground">{e.category || "Sem categoria"} · {formatBR(e.date)}</p>
                     </div>
                     <span className="text-sm font-semibold text-destructive">−R$ {fmt(Number(e.amount))}</span>
                   </div>
