@@ -83,6 +83,41 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     qc.invalidateQueries({ queryKey: ["hoje"] });
   };
 
+  const handlePartial = async (inst: any) => {
+    const paidNow = Number(String(partialValue).replace(",", "."));
+    const remaining = Number(inst.amount);
+    if (!paidNow || paidNow <= 0) { toast.error("Informe um valor válido"); return; }
+    if (paidNow >= remaining) {
+      await handlePay(inst.id, remaining);
+      setPartialFor(null); setPartialValue("");
+      return;
+    }
+    setSaving(inst.id);
+    const newRemaining = +(remaining - paidNow).toFixed(2);
+    const accumulated = +(Number(inst.paid_amount || 0) + paidNow).toFixed(2);
+    const { error } = await supabase.from("contract_installments")
+      .update({ amount: newRemaining, paid_amount: accumulated })
+      .eq("id", inst.id);
+    setSaving(null);
+    if (error) { toast.error("Erro ao registrar pagamento parcial"); return; }
+    toast.success(`Parcial: R$ ${fmtBRL(paidNow)} · Resta R$ ${fmtBRL(newRemaining)}`, {
+      action: {
+        label: "Desfazer",
+        onClick: async () => {
+          await supabase.from("contract_installments")
+            .update({ amount: remaining, paid_amount: Number(inst.paid_amount || 0) || null })
+            .eq("id", inst.id);
+          qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+          qc.invalidateQueries({ queryKey: ["hoje"] });
+          toast.success("Desfeito");
+        }
+      }
+    });
+    setPartialFor(null); setPartialValue("");
+    qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+    qc.invalidateQueries({ queryKey: ["hoje"] });
+  };
+
   // Keyboard navigation: Esc closes, ArrowUp/Down navigate, Enter pays active
   useEffect(() => {
     if (!open) return;
