@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
   Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
-  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle
+  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle, Sparkles, History, Save, RotateCcw, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
+import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 
 
