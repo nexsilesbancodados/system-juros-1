@@ -176,7 +176,23 @@ const NovoCliente = () => {
     }
   });
 
+  // ── Draft autosave (localStorage) ──
+  const DRAFT_KEY = `novo_cliente_draft_${user?.id || "anon"}`;
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const draftLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!user || draftLoadedRef.current) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setHasDraft(true);
+    } catch {}
+    draftLoadedRef.current = true;
+  }, [user, DRAFT_KEY]);
+
   const markTouched = (f: string) => setTouched(prev => ({ ...prev, [f]: true }));
+
 
   const errors: Record<string, string | null> = {
     nome: touched.nome && !nome.trim() ? "Nome é obrigatório" : null,
