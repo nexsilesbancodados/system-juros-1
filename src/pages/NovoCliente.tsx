@@ -364,66 +364,16 @@ const NovoCliente = () => {
   };
 
   const generateDueDates = (start: string, freq: Frequency, count: number, dMode: DailyMode, firstDue?: string) => {
-    const dates: string[] = [];
-    if (freq === "custom") {
-      for (let i = 0; i < count; i++) {
-        const d = customDates[i];
-        if (d) dates.push(new Date(d + "T12:00:00").toISOString());
-        else {
-          // fallback: monthly cadence
-          const s = new Date(start + "T12:00:00");
-          s.setMonth(s.getMonth() + i + 1);
-          dates.push(s.toISOString());
-        }
-      }
-      return dates;
-    }
-    const s = new Date(start + "T12:00:00");
-    let firstDueDateObj: Date | null = null;
-    if (firstDue) {
-      firstDueDateObj = new Date(firstDue + "T12:00:00");
-    }
-    for (let i = 0; i < count; i++) {
-      if (firstDueDateObj && i === 0) {
-        dates.push(firstDueDateObj.toISOString());
-        continue;
-      }
-      const baseDate = firstDueDateObj || s;
-      if (freq === "daily") {
-        let added = 0;
-        const cur = new Date(firstDueDateObj || s);
-        const target = firstDueDateObj ? i : i + 1;
-        while (added < target) {
-          cur.setDate(cur.getDate() + 1);
-          const dow = cur.getDay();
-          if (dMode === "mon-fri" && (dow === 0 || dow === 6)) continue;
-          if (dMode === "mon-sat" && dow === 0) continue;
-          added++;
-        }
-        dates.push(cur.toISOString());
-      } else if (freq === "weekly") {
-        const d = new Date(baseDate);
-        const offset = firstDueDateObj ? i * 7 : (i + 1) * 7;
-        d.setDate(baseDate.getDate() + offset);
-        dates.push(d.toISOString());
-      } else if (freq === "biweekly") {
-        const d = new Date(baseDate);
-        const offset = firstDueDateObj ? i * 15 : (i + 1) * 15;
-        d.setDate(baseDate.getDate() + offset);
-        dates.push(d.toISOString());
-      } else {
-        const offset = firstDueDateObj ? i : i + 1;
-        const targetMonth = baseDate.getMonth() + offset;
-        const y = baseDate.getFullYear() + Math.floor(targetMonth / 12);
-        const m = ((targetMonth % 12) + 12) % 12;
-        const lastDay = new Date(y, m + 1, 0).getDate();
-        const day = Math.min(baseDate.getDate(), lastDay);
-        const d = new Date(y, m, day, 12, 0, 0, 0);
-        dates.push(d.toISOString());
-      }
-    }
-    return dates;
+    return generateInstallmentSchedule({
+      startDate: start,
+      firstDueDate: firstDue,
+      count,
+      frequency: freq,
+      dailyMode: dMode,
+      customDates: freq === "custom" ? customDates : undefined,
+    });
   };
+
 
   const periodLabel = frequency === "daily" ? "dia" : frequency === "weekly" ? "semana" : frequency === "biweekly" ? "quinzena" : frequency === "custom" ? "parcela" : "mês";
   const freqLabel = frequency === "daily" ? "Diário" : frequency === "weekly" ? "Semanal" : frequency === "biweekly" ? "Quinzenal" : frequency === "custom" ? "Programado" : "Mensal";
