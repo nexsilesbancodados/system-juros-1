@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
   Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
-  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle
+  Coins, TrendingDown, Target, PauseCircle, Send, MessageCircle, Sparkles, History, Save, RotateCcw, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
+import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 
 
@@ -175,7 +176,111 @@ const NovoCliente = () => {
     }
   });
 
+  // ── Draft autosave (localStorage) ──
+  const DRAFT_KEY = `novo_cliente_draft_${user?.id || "anon"}`;
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const draftLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!user || draftLoadedRef.current) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setHasDraft(true);
+    } catch {}
+    draftLoadedRef.current = true;
+  }, [user, DRAFT_KEY]);
+
+  // Autosave draft (debounced)
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => {
+      try {
+        if (!nome && !capital && !cpfCnpj) return;
+        const draft = {
+          nome, email, telefone, whatsapp, cpfCnpj, cep, rua, numero, complemento, bairro, cidade, estado,
+          capital, capitalDisplay, loanMode, frequency, dailyMode, taxaJuros, numInstallments,
+          valueMode, installmentValue, installmentValueDisplay, startDate, firstDueDate, autoFirstDue,
+          lateFeePercent, dailyInterestPercent, notes, gracePeriods, graceDays, paymentMethod, step,
+          ts: Date.now(),
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setDraftSavedAt(Date.now());
+      } catch {}
+    }, 900);
+    return () => clearTimeout(t);
+  }, [user, DRAFT_KEY, nome, email, telefone, whatsapp, cpfCnpj, cep, rua, numero, complemento,
+      bairro, cidade, estado, capital, capitalDisplay, loanMode, frequency, dailyMode, taxaJuros,
+      numInstallments, valueMode, installmentValue, installmentValueDisplay, startDate, firstDueDate,
+      autoFirstDue, lateFeePercent, dailyInterestPercent, notes, gracePeriods, graceDays, paymentMethod, step]);
+
+
   const markTouched = (f: string) => setTouched(prev => ({ ...prev, [f]: true }));
+
+  // ── Past contracts (for "Duplicar termos do anterior") ──
+  const { data: pastContracts = [] } = useQuery({
+    queryKey: ["novo-emprestimo-past", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contracts")
+        .select("id, capital, interest_rate, num_installments, frequency, loan_mode, late_fee_percent, daily_interest_percent, created_at, clients(name)")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const duplicateFrom = (c: any) => {
+    setCapital(String(c.capital || ""));
+    setCapitalDisplay(Number(c.capital || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 }));
+    setTaxaJuros(String(c.interest_rate || ""));
+    setNumInstallments(String(c.num_installments || ""));
+    if (c.frequency) setFrequency((c.frequency.startsWith("daily") ? "daily" : c.frequency) as Frequency);
+    if (c.loan_mode) setLoanMode(c.loan_mode);
+    setLateFeePercent(String(c.late_fee_percent ?? 2));
+    setDailyInterestPercent(String(c.daily_interest_percent ?? 0.33));
+    setValueMode("rate");
+    toast({ title: "✓ Termos copiados", description: `Baseado em ${(c.clients as any)?.name || "contrato anterior"}` });
+  };
+
+  // ── Draft restore/discard ──
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setNome(d.nome || ""); setEmail(d.email || ""); setTelefone(d.telefone || ""); setWhatsapp(d.whatsapp || "");
+      setCpfCnpj(d.cpfCnpj || ""); setCep(d.cep || ""); setRua(d.rua || ""); setNumero(d.numero || "");
+      setComplemento(d.complemento || ""); setBairro(d.bairro || ""); setCidade(d.cidade || ""); setEstado(d.estado || "");
+      setCapital(d.capital || ""); setCapitalDisplay(d.capitalDisplay || "");
+      if (d.loanMode) setLoanMode(d.loanMode);
+      if (d.frequency) setFrequency(d.frequency);
+      if (d.dailyMode) setDailyMode(d.dailyMode);
+      setTaxaJuros(d.taxaJuros || "10"); setNumInstallments(d.numInstallments || "");
+      if (d.valueMode) setValueMode(d.valueMode);
+      setInstallmentValue(d.installmentValue || ""); setInstallmentValueDisplay(d.installmentValueDisplay || "");
+      if (d.startDate) setStartDate(d.startDate);
+      setFirstDueDate(d.firstDueDate || ""); setAutoFirstDue(d.autoFirstDue !== false);
+      setLateFeePercent(d.lateFeePercent || "2"); setDailyInterestPercent(d.dailyInterestPercent || "0.33");
+      setNotes(d.notes || ""); setGracePeriods(d.gracePeriods || "2"); setGraceDays(d.graceDays || "0");
+      if (d.paymentMethod) setPaymentMethod(d.paymentMethod);
+      if (d.step) setStep(d.step);
+      setHasDraft(false);
+      toast({ title: "✓ Rascunho restaurado" });
+    } catch { toast({ title: "Erro ao restaurar rascunho", variant: "destructive" }); }
+  };
+  const discardDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setHasDraft(false);
+    setDraftSavedAt(null);
+  };
+
+
+
+
 
   const errors: Record<string, string | null> = {
     nome: touched.nome && !nome.trim() ? "Nome é obrigatório" : null,
@@ -496,6 +601,8 @@ const NovoCliente = () => {
       if (instErr) throw instErr;
 
       setCreatedContractId(contract.id);
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      setHasDraft(false);
       toast({ title: "✓ Cliente e contrato criados!", description: `${n} parcelas geradas com sucesso.` });
       setShowContract(true);
     } catch (err: any) {
@@ -632,7 +739,24 @@ const NovoCliente = () => {
         ))}
       </div>
 
-      {/* ═══ STEP 1: CLIENT DATA ═══ */}
+      {/* Draft restore banner */}
+      {hasDraft && (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-primary/30 bg-primary/5 animate-fade-in">
+          <div className="flex items-center gap-2 text-sm">
+            <Save size={16} className="text-primary" />
+            <span className="text-foreground"><strong>Rascunho encontrado</strong> da última vez que você esteve aqui.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={discardDraft} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1">
+              Descartar
+            </button>
+            <button onClick={restoreDraft} className="flex items-center gap-1.5 text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg hover:opacity-90">
+              <RotateCcw size={12} /> Restaurar
+            </button>
+          </div>
+        </div>
+      )}
+
       {step === 1 && (
         <div className="space-y-6">
           {/* Identificação */}
@@ -771,7 +895,30 @@ const NovoCliente = () => {
 
       {/* ═══ STEP 2: LOAN CONFIG ═══ */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-24">
+          {/* Duplicate from previous */}
+          {pastContracts.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <History size={14} className="text-primary" />
+                <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Duplicar termos de um contrato anterior</h2>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {pastContracts.map((c: any) => (
+                  <button
+                    key={c.id}
+                    onClick={() => duplicateFrom(c)}
+                    className="shrink-0 text-left px-3 py-2 rounded-xl border border-border bg-muted/30 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                  >
+                    <p className="text-[11px] font-semibold text-foreground truncate max-w-[140px]">{(c.clients as any)?.name || "—"}</p>
+                    <p className="text-[10px] text-muted-foreground">R$ {Number(c.capital).toLocaleString("pt-BR")} · {c.num_installments}x · {c.interest_rate}%</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+
           {/* Loan Mode */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
@@ -1303,8 +1450,60 @@ const NovoCliente = () => {
             </div>
           </details>
           )}
+
+          {/* AI Insights */}
+          {calc && calc.numParcelas > 0 && parseFloat(capital) > 0 && (
+            <AISimulatorInsights
+              payload={{
+                valor: parseFloat(capital),
+                taxa: parseFloat(taxaJuros) || (calc as any).derivedRate || 0,
+                parcelas: calc.numParcelas,
+                loanMode,
+                frequency,
+                dailyMode,
+                totalReceber: calc.totalAmount,
+                jurosTotal: calc.totalInterest,
+                valorParcela: calc.installmentAmount,
+                numParcelas: calc.numParcelas,
+              }}
+              onApplyScenario={(s) => {
+                setTaxaJuros(String(s.taxa));
+                setNumInstallments(String(s.parcelas));
+                setValueMode("rate");
+                toast({ title: "✓ Cenário aplicado", description: s.name });
+              }}
+            />
+          )}
         </div>
       )}
+
+      {/* Sticky live summary on step 2 */}
+      {step === 2 && calc && parseFloat(capital) > 0 && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-20 z-20 hidden md:block">
+          <div className="flex items-center gap-4 px-5 py-3 rounded-2xl bg-card/95 backdrop-blur border border-border shadow-lg shadow-primary/10">
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Parcela</p>
+              <p className="text-sm font-bold text-foreground">R$ {fmt(calc.installmentAmount)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Total</p>
+              <p className="text-sm font-bold text-foreground">R$ {fmt(calc.totalAmount)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lucro</p>
+              <p className="text-sm font-bold text-success">R$ {fmt(calc.totalInterest)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Parcelas</p>
+              <p className="text-sm font-bold text-primary">{calc.numParcelas}x</p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ═══ STEP 3: REVIEW ═══ */}
       {step === 3 && calc && (
