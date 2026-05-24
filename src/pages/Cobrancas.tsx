@@ -197,7 +197,8 @@ const Cobrancas = () => {
 
   const handleEmail = (inst: any) => {
     if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
-    const subject = `Cobrança - Parcela ${inst.installment_number}`;
+    const totalSub = inst.contracts?.num_installments;
+    const subject = `Cobrança - Parcela ${inst.installment_number}${totalSub ? ` de ${totalSub}` : ""}`;
     const body = buildMessage(inst);
     window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
   };
