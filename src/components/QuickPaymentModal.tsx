@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock } from "lucide-react";
+import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock, SplitSquareHorizontal } from "lucide-react";
 
 interface Props { open: boolean; onClose: () => void; }
 
