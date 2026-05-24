@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Table, Download, Search, X, ArrowUpDown, Filter, Users, DollarSign } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
