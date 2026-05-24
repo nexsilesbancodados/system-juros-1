@@ -131,7 +131,7 @@ const NovoCliente = () => {
   const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
   const [installmentValue, setInstallmentValue] = useState("");
   const [installmentValueDisplay, setInstallmentValueDisplay] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(todayLocalISO());
   const [firstDueDate, setFirstDueDate] = useState("");
   const [autoFirstDue, setAutoFirstDue] = useState(true);
   const [lateFeePercent, setLateFeePercent] = useState("2");
