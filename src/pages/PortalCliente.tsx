@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatBR } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User, Phone, Mail } from "lucide-react";

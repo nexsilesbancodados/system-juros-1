@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock } from "lucide-react";
+import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock, SplitSquareHorizontal } from "lucide-react";
 
 interface Props { open: boolean; onClose: () => void; }
 
@@ -15,6 +15,8 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [partialFor, setPartialFor] = useState<string | null>(null);
+  const [partialValue, setPartialValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -32,7 +34,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     queryFn: async () => {
       if (!user) return [];
       const { data } = await supabase.from("contract_installments")
-        .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, cpf_cnpj)")
+        .select("id, amount, paid_amount, due_date, installment_number, client_id, clients:client_id(name, cpf_cnpj)")
         .eq("user_id", user.id).eq("status", "pending")
         .order("due_date", { ascending: true })
         .limit(200);
@@ -77,6 +79,41 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
         }
       }
     });
+    qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+    qc.invalidateQueries({ queryKey: ["hoje"] });
+  };
+
+  const handlePartial = async (inst: any) => {
+    const paidNow = Number(String(partialValue).replace(",", "."));
+    const remaining = Number(inst.amount);
+    if (!paidNow || paidNow <= 0) { toast.error("Informe um valor válido"); return; }
+    if (paidNow >= remaining) {
+      await handlePay(inst.id, remaining);
+      setPartialFor(null); setPartialValue("");
+      return;
+    }
+    setSaving(inst.id);
+    const newRemaining = +(remaining - paidNow).toFixed(2);
+    const accumulated = +(Number(inst.paid_amount || 0) + paidNow).toFixed(2);
+    const { error } = await supabase.from("contract_installments")
+      .update({ amount: newRemaining, paid_amount: accumulated })
+      .eq("id", inst.id);
+    setSaving(null);
+    if (error) { toast.error("Erro ao registrar pagamento parcial"); return; }
+    toast.success(`Parcial: R$ ${fmtBRL(paidNow)} · Resta R$ ${fmtBRL(newRemaining)}`, {
+      action: {
+        label: "Desfazer",
+        onClick: async () => {
+          await supabase.from("contract_installments")
+            .update({ amount: remaining, paid_amount: Number(inst.paid_amount || 0) || null })
+            .eq("id", inst.id);
+          qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+          qc.invalidateQueries({ queryKey: ["hoje"] });
+          toast.success("Desfeito");
+        }
+      }
+    });
+    setPartialFor(null); setPartialValue("");
     qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
     qc.invalidateQueries({ queryKey: ["hoje"] });
   };
@@ -206,8 +243,8 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
               const isActive = idx === activeIdx;
               const status = isOverdue ? "atrasada" : isToday ? "vence hoje" : "pendente";
               return (
+                <div key={inst.id}>
                 <div
-                  key={inst.id}
                   ref={(el) => (itemRefs.current[idx] = el)}
                   id={`qpay-item-${inst.id}`}
                   role="option"
@@ -230,11 +267,23 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                       Parcela {inst.installment_number} · {due.toLocaleDateString("pt-BR")}
                       {isOverdue && <span className="text-destructive font-bold ml-1">· ATRASADO</span>}
                       {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
+                      {Number(inst.paid_amount || 0) > 0 && (
+                        <span className="text-warning font-bold ml-1">· PARCIAL pago R$ {fmtBRL(Number(inst.paid_amount))}</span>
+                      )}
                     </p>
                   </div>
                   <p className="text-sm font-bold text-foreground shrink-0" aria-label={`Valor R$ ${fmtBRL(Number(inst.amount))}`}>
                     R$ {fmtBRL(Number(inst.amount))}
                   </p>
+                  <button
+                    onClick={() => { setPartialFor(partialFor === inst.id ? null : inst.id); setPartialValue(""); }}
+                    aria-label="Pagamento parcial"
+                    title="Pagamento parcial"
+                    className="px-2 py-1.5 rounded-lg bg-muted text-foreground text-[11px] font-bold hover:bg-accent transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <SplitSquareHorizontal size={11} aria-hidden="true" />
+                    Parcial
+                  </button>
                   <button
                     onClick={() => handlePay(inst.id, Number(inst.amount))}
                     disabled={saving === inst.id}
@@ -244,6 +293,42 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                     {saving === inst.id ? <Loader2 size={11} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={11} aria-hidden="true" />}
                     Pagar
                   </button>
+                </div>
+                {partialFor === inst.id && (
+                  <div className="px-4 py-2 bg-muted/30 border-b border-border/20 flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">Valor pago agora:</span>
+                    <div className="relative flex-1 max-w-[160px]">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={Number(inst.amount)}
+                        autoFocus
+                        value={partialValue}
+                        onChange={(e) => setPartialValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePartial(inst); } }}
+                        placeholder="0,00"
+                        className="w-full h-8 pl-8 pr-2 rounded-md bg-background border border-border text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">de R$ {fmtBRL(Number(inst.amount))}</span>
+                    <button
+                      onClick={() => handlePartial(inst)}
+                      disabled={saving === inst.id}
+                      className="ml-auto px-3 py-1.5 rounded-md bg-success text-success-foreground text-[11px] font-bold hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {saving === inst.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                      Confirmar
+                    </button>
+                    <button
+                      onClick={() => { setPartialFor(null); setPartialValue(""); }}
+                      className="px-2 py-1.5 rounded-md hover:bg-accent text-muted-foreground text-[11px]"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
                 </div>
               );
             })}
