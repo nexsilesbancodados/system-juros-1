@@ -1450,8 +1450,60 @@ const NovoCliente = () => {
             </div>
           </details>
           )}
+
+          {/* AI Insights */}
+          {calc && calc.numParcelas > 0 && parseFloat(capital) > 0 && (
+            <AISimulatorInsights
+              payload={{
+                valor: parseFloat(capital),
+                taxa: parseFloat(taxaJuros) || (calc as any).derivedRate || 0,
+                parcelas: calc.numParcelas,
+                loanMode,
+                frequency,
+                dailyMode,
+                totalReceber: calc.totalAmount,
+                jurosTotal: calc.totalInterest,
+                valorParcela: calc.installmentAmount,
+                numParcelas: calc.numParcelas,
+              }}
+              onApplyScenario={(s) => {
+                setTaxaJuros(String(s.taxa));
+                setNumInstallments(String(s.parcelas));
+                setValueMode("rate");
+                toast({ title: "✓ Cenário aplicado", description: s.name });
+              }}
+            />
+          )}
         </div>
       )}
+
+      {/* Sticky live summary on step 2 */}
+      {step === 2 && calc && parseFloat(capital) > 0 && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-20 z-20 hidden md:block">
+          <div className="flex items-center gap-4 px-5 py-3 rounded-2xl bg-card/95 backdrop-blur border border-border shadow-lg shadow-primary/10">
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Parcela</p>
+              <p className="text-sm font-bold text-foreground">R$ {fmt(calc.installmentAmount)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Total</p>
+              <p className="text-sm font-bold text-foreground">R$ {fmt(calc.totalAmount)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lucro</p>
+              <p className="text-sm font-bold text-success">R$ {fmt(calc.totalInterest)}</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Parcelas</p>
+              <p className="text-sm font-bold text-primary">{calc.numParcelas}x</p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ═══ STEP 3: REVIEW ═══ */}
       {step === 3 && calc && (
