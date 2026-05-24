@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CheckSquare, Plus, Trash2, CheckCircle, Circle, Calendar, GripVertical, Star, StarOff, Filter } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -133,17 +134,11 @@ const Tarefas = () => {
           {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl skeleton-shimmer" />)}
         </div>
       ) : displayed.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-            <CheckSquare size={28} className="text-muted-foreground/40" />
-          </div>
-          <p className="text-foreground font-medium">
-            {filter === "done" ? "Nenhuma tarefa concluída" : filter === "pending" ? "Nenhuma tarefa pendente" : "Nenhuma tarefa"}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filter === "all" ? "Adicione uma tarefa acima para começar" : "Mude o filtro para ver outras tarefas"}
-          </p>
-        </div>
+        <EmptyState
+          icon={CheckSquare}
+          title={filter === "done" ? "Nenhuma tarefa concluída" : filter === "pending" ? "Nenhuma tarefa pendente" : "Nenhuma tarefa"}
+          description={filter === "all" ? "Adicione uma tarefa acima pra começar a se organizar." : "Mude o filtro pra ver outras tarefas."}
+        />
       ) : (
         <div className="space-y-1.5">
           {displayed.map((t, i) => {

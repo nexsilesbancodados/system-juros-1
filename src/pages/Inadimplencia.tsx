@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phone } from "lucide-react";
+import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phone, Sparkles } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { differenceInDays } from "date-fns";
 
 interface Installment {
@@ -210,9 +211,12 @@ const Inadimplencia = () => {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
           </div>
         ) : byClient.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground">
-            <p>🎉 Nenhum cliente em atraso. Carteira saudável!</p>
-          </div>
+          <EmptyState
+            icon={Sparkles}
+            title="Carteira saudável"
+            description="Nenhum cliente em atraso no momento. Continue acompanhando os vencimentos."
+            compact
+          />
         ) : (
           <div className="space-y-2">
             {byClient.slice(0, 20).map((row) => (
