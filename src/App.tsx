@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import OfflineIndicator from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ConfirmProvider } from "./components/ConfirmProvider";
 
 import Index from "./pages/Index";
 
@@ -98,6 +99,7 @@ const App = () => (
       <AuthProvider>
         <WhiteLabelProvider>
           <ThemeProvider>
+          <ConfirmProvider>
           <BrowserRouter>
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
@@ -150,6 +152,7 @@ const App = () => (
               </Suspense>
             </ErrorBoundary>
           </BrowserRouter>
+          </ConfirmProvider>
           </ThemeProvider>
         </WhiteLabelProvider>
       </AuthProvider>

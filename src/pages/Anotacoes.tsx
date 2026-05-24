@@ -3,8 +3,10 @@ import { StickyNote, Plus, Trash2, Calendar, Search, X, Edit, Check } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Anotacoes = () => {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const { toast } = useToast();
   const [notes, setNotes] = useState<any[]>([]);
@@ -39,7 +41,7 @@ const Anotacoes = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta anotação?")) return;
+    if (!(await confirm("Excluir esta anotação?"))) return;
     await supabase.from("notes").delete().eq("id", id);
     toast({ title: "Anotação excluída" });
     fetchNotes();

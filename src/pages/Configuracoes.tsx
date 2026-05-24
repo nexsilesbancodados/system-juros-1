@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt, Info, Copy, ExternalLink, FileText, RotateCcw, Sparkles } from "lucide-react";
 import { CONTRACT_PLACEHOLDERS, DEFAULT_CONTRACT_TEMPLATE } from "@/utils/contractTemplate";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const COLOR_PRESETS = [
   { label: "Azul Steel", primary: "#4a86c8", accent: "#6ba3d6", emoji: "🔷" },
@@ -23,6 +24,7 @@ const COLOR_PRESETS = [
 ];
 
 const Configuracoes = () => {
+  const confirm = useConfirm();
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -281,7 +283,7 @@ const Configuracoes = () => {
     }
   };
   const handleDeleteTemplate = async (id: string) => {
-    if (!confirm("Excluir este template?")) return;
+    if (!(await confirm("Excluir este template?"))) return;
     await supabase.from("message_templates").delete().eq("id", id);
     queryClient.invalidateQueries({ queryKey: ["message-templates"] });
   };

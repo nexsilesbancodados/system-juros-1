@@ -3,8 +3,10 @@ import { Target, Plus, X, TrendingUp, Trophy, Minus, DollarSign, Calendar, Edit 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Metas = () => {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const { toast } = useToast();
   const [goals, setGoals] = useState<any[]>([]);
@@ -58,7 +60,7 @@ const Metas = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta meta?")) return;
+    if (!(await confirm("Excluir esta meta?"))) return;
     await supabase.from("goals").delete().eq("id", id);
     toast({ title: "Meta removida" });
     fetchGoals();

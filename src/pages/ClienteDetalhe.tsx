@@ -17,12 +17,14 @@ import {
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
 } from "lucide-react";
 import { formatBR } from "@/lib/dateUtils";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 const FREQ: Record<string, string> = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };
 const INPUT = "w-full px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
 
 const ClienteDetalhe = () => {
+  const confirm = useConfirm();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -405,7 +407,7 @@ const ClienteDetalhe = () => {
   };
 
   const reversePayment = async (instId: string) => {
-    if (!confirm("Estornar pagamento?")) return;
+    if (!(await confirm("Estornar pagamento?"))) return;
     const snapshot = patchInstallment(instId, { status: "pending", paid_at: null, paid_amount: null });
     toast({ title: "Estornado!" });
     const { error } = await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
@@ -446,7 +448,7 @@ const ClienteDetalhe = () => {
   const payAllPending = async () => {
     const unpaid = installments.filter((i: any) => i.status !== "paid");
     if (!unpaid.length) { toast({ title: "Todas pagas!" }); return; }
-    if (!confirm(`Quitar ${unpaid.length} parcela(s)?`)) return;
+    if (!(await confirm(`Quitar ${unpaid.length} parcela(s)?`))) return;
     for (const inst of unpaid) await payFull(inst.id, Number(inst.amount));
     toast({ title: `${unpaid.length} parcelas quitadas!` });
   };
@@ -542,7 +544,7 @@ const ClienteDetalhe = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Excluir este cliente e todos os dados?")) return;
+    if (!(await confirm("Excluir este cliente e todos os dados?"))) return;
     await supabase.from("contract_installments").delete().eq("client_id", id!);
     await supabase.from("contracts").delete().eq("client_id", id!);
     await supabase.from("installments").delete().eq("client_id", id!);
