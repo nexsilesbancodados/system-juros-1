@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { formatBR } from "@/lib/dateUtils";
 
 const Carteira = () => {
   const { user } = useAuth();
@@ -173,7 +174,7 @@ const Carteira = () => {
   const entradasPct = Math.round((totalEntradas / total) * 100);
 
   const grouped = timeline.reduce((acc, t) => {
-    const key = new Date(t.date).toLocaleDateString("pt-BR");
+    const key = formatBR(t.date);
     if (!acc[key]) acc[key] = [];
     acc[key].push(t);
     return acc;

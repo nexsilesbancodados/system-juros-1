@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+import { formatBR } from "@/lib/dateUtils";
   AlertCircle, Calendar, Landmark, TrendingUp, Users, ArrowRight,
   DollarSign, Percent, FileSignature, Clock, CheckCircle, Sparkles,
   ArrowUpRight, Activity, Wallet, Target, ChevronRight, Zap,
@@ -539,7 +540,7 @@ const Dashboard = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{contract?.clients?.name || "—"}</p>
                         <p className="text-xs text-muted-foreground">
-                          Parcela {item.installment_number} · {item.paid_at ? new Date(item.paid_at).toLocaleDateString("pt-BR") : "—"}
+                          Parcela {item.installment_number} · {item.paid_at ? formatBR(item.paid_at) : "—"}
                         </p>
                       </div>
                       <span className="text-sm font-bold text-success whitespace-nowrap">

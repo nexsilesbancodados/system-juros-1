@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { MessageSquare, Check, AlertTriangle, Clock, CheckCircle, CalendarDays } from "lucide-react";
+import { formatBR } from "@/lib/dateUtils";
 
 interface Props {
   installments: any[];
@@ -70,7 +71,7 @@ const KanbanView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment }
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-foreground">R$ {fmt(Number(i.amount))}</span>
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(i.due_date).toLocaleDateString("pt-BR")}
+                        {formatBR(i.due_date)}
                       </span>
                     </div>
                     {col.key !== "paid" && (

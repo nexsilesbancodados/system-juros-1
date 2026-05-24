@@ -11,6 +11,7 @@ import AICreditScore from "@/components/clients/AICreditScore";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
+import { formatBR } from "@/lib/dateUtils";
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
@@ -421,7 +422,7 @@ const ClienteDetalhe = () => {
   const sendBilling = (inst: any) => {
     const phone = getPhone();
     if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    const msg = encodeURIComponent(`Olá ${client?.name}, sua parcela #${inst.installment_number} de R$ ${fmt(Number(inst.amount))} venceu em ${new Date(inst.due_date).toLocaleDateString("pt-BR")}. Regularize o pagamento.`);
+    const msg = encodeURIComponent(`Olá ${client?.name}, sua parcela #${inst.installment_number} de R$ ${fmt(Number(inst.amount))} venceu em ${formatBR(inst.due_date)}. Regularize o pagamento.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
 
@@ -502,7 +503,7 @@ const ClienteDetalhe = () => {
       autoTable(doc, {
         startY: y,
         head: [["Nº", "Valor", "Vencimento", "Status"]],
-        body: installments.map((i: any) => [String(i.installment_number), `R$ ${fmt(Number(i.amount))}`, new Date(i.due_date).toLocaleDateString("pt-BR"), i.status === "paid" ? "Pago" : i.status === "overdue" ? "Atrasada" : "Pendente"]),
+        body: installments.map((i: any) => [String(i.installment_number), `R$ ${fmt(Number(i.amount))}`, formatBR(i.due_date), i.status === "paid" ? "Pago" : i.status === "overdue" ? "Atrasada" : "Pendente"]),
         theme: "grid", headStyles: { fillColor: [20, 20, 25], fontSize: 8 }, bodyStyles: { fontSize: 7.5 }, margin: { left: 14, right: 14 },
         didParseCell: (data: any) => { if (data.section === "body" && data.column.index === 3) { if (data.cell.raw === "Atrasada") data.cell.styles.textColor = [220, 50, 50]; else if (data.cell.raw === "Pago") data.cell.styles.textColor = [34, 139, 34]; } },
       });
@@ -1005,7 +1006,7 @@ const ClienteDetalhe = () => {
                   <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
                 </div>
                 <div className="text-right cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-                  <p className="text-xs text-muted-foreground">{new Date(c.start_date).toLocaleDateString("pt-BR")}</p>
+                  <p className="text-xs text-muted-foreground">{formatBR(c.start_date)}</p>
                   <p className="text-xs font-medium text-primary">Lucro: R$ {fmt(Number(c.total_interest))}</p>
                 </div>
                 <button
@@ -1038,8 +1039,8 @@ const ClienteDetalhe = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {new Date(inst.due_date).toLocaleDateString("pt-BR")}
-                    {inst.paid_at && ` · Pago: ${new Date(inst.paid_at).toLocaleDateString("pt-BR")}`}
+                    {formatBR(inst.due_date)}
+                    {inst.paid_at && ` · Pago: ${formatBR(inst.paid_at)}`}
                     {partial && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
                     {inst.payment_method && ` · ${String(inst.payment_method).toUpperCase()}`}
                   </p>
@@ -1111,7 +1112,7 @@ const ClienteDetalhe = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {new Date(ev.date).toLocaleDateString("pt-BR")} · {new Date(ev.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      {formatBR(ev.date)} · {new Date(ev.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                   <p className={`text-sm font-bold ${ev.color} shrink-0`}>{ev.subtitle}</p>

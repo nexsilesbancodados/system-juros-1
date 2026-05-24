@@ -3,6 +3,7 @@ import { CheckSquare, Plus, Trash2, CheckCircle, Circle, Calendar, GripVertical,
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatBR } from "@/lib/dateUtils";
 
 const Tarefas = () => {
   const { user } = useAuth();
@@ -63,7 +64,7 @@ const Tarefas = () => {
   const done = todos.filter((t) => t.is_complete);
   const displayed = filter === "pending" ? pending : filter === "done" ? done : all;
 
-  const today = new Date().toLocaleDateString("pt-BR");
+  const today = formatBR(new Date());
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-fade-in">
@@ -157,7 +158,7 @@ const Tarefas = () => {
                   {t.task || "Sem título"}
                 </span>
                 <span className="text-[10px] text-muted-foreground/50 hidden sm:block">
-                  {new Date(t.created_at).toLocaleDateString("pt-BR")}
+                  {formatBR(t.created_at)}
                 </span>
                 <button onClick={() => handleDelete(t.id)}
                   className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-destructive/10">

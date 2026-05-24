@@ -1,4 +1,5 @@
 import { renderContractTemplate } from "@/utils/contractTemplate";
+import { formatBR } from "@/lib/dateUtils";
 
 interface Installment {
   installment_number: number;
@@ -34,8 +35,8 @@ interface ContractData {
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ContractTemplate = ({ data }: { data: ContractData }) => {
-  const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const startFormatted = new Date(data.startDate + "T12:00:00").toLocaleDateString("pt-BR");
+  const today = formatBR(new Date(), { day: "2-digit", month: "long", year: "numeric" });
+  const startFormatted = formatBR(data.startDate + "T12:00:00");
 
   // Template customizado do usuário: substitui o layout padrão preenchendo placeholders.
   if (data.customTemplate && data.customTemplate.trim()) {
@@ -190,7 +191,7 @@ const ContractTemplate = ({ data }: { data: ContractData }) => {
                     {String(inst.installment_number).padStart(2, "0")}
                   </td>
                   <td className="px-3 py-1.5 border border-border print:border-gray-300 text-foreground print:text-black">
-                    {new Date(inst.due_date).toLocaleDateString("pt-BR")}
+                    {formatBR(inst.due_date)}
                   </td>
                   <td className="px-3 py-1.5 border border-border print:border-gray-300 text-foreground print:text-black text-right font-mono">
                     R$ {fmt(Number(inst.amount))}

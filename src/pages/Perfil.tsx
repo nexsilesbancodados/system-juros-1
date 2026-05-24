@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { formatBR } from "@/lib/dateUtils";
 
 const Perfil = () => {
   const { user, profile, signOut } = useAuth();
@@ -145,9 +146,9 @@ const Perfil = () => {
               <Clock size={14} className="text-primary" />
               <p className="text-sm font-bold text-foreground">
                 {profile?.subscription_expires_at 
-                  ? new Date(profile.subscription_expires_at).toLocaleDateString("pt-BR")
+                  ? formatBR(profile.subscription_expires_at)
                   : profile?.trial_ends_at
-                    ? new Date(profile.trial_ends_at).toLocaleDateString("pt-BR")
+                    ? formatBR(profile.trial_ends_at)
                     : "Pendente"}
               </p>
             </div>

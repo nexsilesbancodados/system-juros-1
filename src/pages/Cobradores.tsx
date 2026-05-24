@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
+import { formatBR } from "@/lib/dateUtils";
   Plus, UserCheck, UserX, Key, Trash2, Users, X, Phone, Mail, MapPin,
   Copy, Search, Shield, Edit2, Check, MoreVertical, ChevronDown, Eye, EyeOff,
   Star, TrendingUp, Clock, AlertTriangle, FileText, DollarSign, Calendar,
@@ -594,7 +595,7 @@ const Cobradores = () => {
                     <Calendar size={14} className="text-primary shrink-0" />
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase">Cadastro</p>
-                      <p className="text-sm font-medium text-foreground">{new Date(fichaData.created_at).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-sm font-medium text-foreground">{formatBR(fichaData.created_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -710,7 +711,7 @@ const Cobradores = () => {
                                       <div className="flex-1">
                                         <p className="text-xs font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
                                         <p className="text-[10px] text-muted-foreground">
-                                          {new Date(inst.due_date).toLocaleDateString("pt-BR")}
+                                          {formatBR(inst.due_date)}
                                           {isOverdue && (
                                             <span className="text-destructive ml-1">
                                               ({Math.floor((now.getTime() - new Date(inst.due_date).getTime()) / 86400000)}d atrás)
