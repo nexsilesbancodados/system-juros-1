@@ -1106,7 +1106,7 @@ const NovoCliente = () => {
                       ? (() => {
                           if (!startDate) return "";
                           const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
-                          return preview[0] ? preview[0].split("T")[0] : "";
+                          return preview[0] ? toDateInputValue(preview[0]) : "";
                         })()
                       : firstDueDate
                   }
