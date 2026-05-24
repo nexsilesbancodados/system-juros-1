@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
+import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
 
 
 
@@ -130,7 +131,7 @@ const NovoCliente = () => {
   const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
   const [installmentValue, setInstallmentValue] = useState("");
   const [installmentValueDisplay, setInstallmentValueDisplay] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(todayLocalISO());
   const [firstDueDate, setFirstDueDate] = useState("");
   const [autoFirstDue, setAutoFirstDue] = useState(true);
   const [lateFeePercent, setLateFeePercent] = useState("2");
@@ -497,7 +498,7 @@ const NovoCliente = () => {
         num_installments: n,
         installment_amount: calc.installmentAmount,
         frequency: freqValue,
-        start_date: new Date(startDate + "T12:00:00").toISOString(),
+        start_date: localNoonISO(startDate),
         late_fee_percent: parseFloat(lateFeePercent),
         daily_interest_percent: parseFloat(dailyInterestPercent),
         total_amount: calc.totalAmount,
@@ -976,24 +977,35 @@ const NovoCliente = () => {
 
           {/* Values */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-semibold text-foreground">Valores</h2>
-              <div className="inline-flex bg-muted/40 rounded-full p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setValueMode("rate")}
-                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  Por Taxa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setValueMode("installment")}
-                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  Por Valor da Parcela
-                </button>
-              </div>
+              {loanMode === "installments" && (
+                <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setValueMode("rate")}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Por Taxa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setValueMode("installment")}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Por Valor da Parcela
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* Quick guide per loan mode */}
+            <div className="text-[11px] text-muted-foreground bg-muted/20 border border-border/60 rounded-xl px-3 py-2">
+              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> (ou valor da parcela) e <strong>Nº de Parcelas</strong>. Parcelas iguais com juros simples.</>}
+              {loanMode === "percentage" && <>Informe <strong>Capital</strong> e <strong>Taxa por período</strong>. Nº de parcelas é opcional (auto se vazio).</>}
+              {loanMode === "interest_only" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. Cliente paga só juros; capital cai na última parcela.</>}
+              {loanMode === "price" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. PMT fixo com amortização (juros compostos).</>}
+              {loanMode === "bullet" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Períodos até o vencimento</strong>. Pagamento único ao fim.</>}
+              {loanMode === "grace" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong>, <strong>Períodos de Carência</strong> e <strong>Nº de Parcelas</strong>. Juros acumulam durante a carência.</>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1055,14 +1067,18 @@ const NovoCliente = () => {
               )}
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                  {loanMode === "percentage" && valueMode === "rate" ? "Nº Períodos (opcional)" : "Nº de Parcelas *"}
+                  {loanMode === "bullet"
+                    ? `Nº de Períodos até Vencimento *`
+                    : loanMode === "percentage" && valueMode === "rate"
+                      ? "Nº Períodos (opcional)"
+                      : "Nº de Parcelas *"}
                 </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
+                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "bullet" ? `Ex: 3 ${periodLabel}s` : loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
                 <div className="flex flex-wrap gap-1 mt-1.5">
-                  {[4, 6, 8, 10, 12, 24].map(v => (
+                  {(loanMode === "bullet" ? [1, 2, 3, 6, 12] : [4, 6, 8, 10, 12, 24]).map(v => (
                     <button key={v} type="button" onClick={() => setNumInstallments(String(v))}
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${numInstallments === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
-                      {v}x
+                      {loanMode === "bullet" ? `${v} ${periodLabel}` : `${v}x`}
                     </button>
                   ))}
                 </div>
@@ -1105,7 +1121,7 @@ const NovoCliente = () => {
                       ? (() => {
                           if (!startDate) return "";
                           const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
-                          return preview[0] ? preview[0].split("T")[0] : "";
+                          return preview[0] ? toDateInputValue(preview[0]) : "";
                         })()
                       : firstDueDate
                   }
@@ -1475,23 +1491,48 @@ const NovoCliente = () => {
               </div>
             </div>
 
-            {/* Contract details */}
+            {/* Contract details — adapt per loan mode */}
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Capital", value: `R$ ${fmt(parseFloat(capital))}` },
-                { label: "Modo", value: loanMode === "percentage" ? "Porcentagem" : "Parcelas" },
-                { label: "Frequência", value: `${freqLabel}${frequency === "daily" ? ` (${dailyMode === "mon-fri" ? "Seg-Sex" : dailyMode === "mon-sat" ? "Seg-Sáb" : "Seg-Dom"})` : ""}` },
-                { label: "Taxa", value: valueMode === "installment" && (calc as any).derivedRate !== undefined ? `${(calc as any).derivedRate.toFixed(2)}% por ${periodLabel} (derivada)` : `${taxaJuros}% por ${periodLabel}` },
-                { label: "Pagamentos", value: `${calc.numParcelas}x R$ ${fmt(calc.installmentAmount)}` },
-                { label: "1º Vencimento", value: new Date(startDate + "T12:00:00").toLocaleDateString("pt-BR") },
-                { label: "Total a Receber", value: `R$ ${fmt(calc.totalAmount)}` },
-                { label: "Multa Diária", value: `${dailyInterestPercent}%` },
-              ].map(i => (
-                <div key={i.label} className="bg-muted/30 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.label}</p>
-                  <p className="font-semibold text-sm text-foreground mt-0.5">{i.value}</p>
-                </div>
-              ))}
+              {(() => {
+                const effectiveFirstDue = (() => {
+                  if (!autoFirstDue && firstDueDate) return formatBR(firstDueDate);
+                  const dd = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
+                  return dd[0] ? formatBR(dd[0]) : "—";
+                })();
+                const modeLabel: Record<LoanMode, string> = {
+                  installments: "Por Parcelas",
+                  percentage: "Por Porcentagem",
+                  interest_only: "Só Juros + Capital no Fim",
+                  price: "Juros Compostos (Price)",
+                  bullet: "Pagamento Único",
+                  grace: "Com Carência",
+                };
+                const items: { label: string; value: string }[] = [
+                  { label: "Capital", value: `R$ ${fmt(parseFloat(capital))}` },
+                  { label: "Modo", value: modeLabel[loanMode] },
+                  { label: "Frequência", value: `${freqLabel}${frequency === "daily" ? ` (${dailyMode === "mon-fri" ? "Seg-Sex" : dailyMode === "mon-sat" ? "Seg-Sáb" : "Seg-Dom"})` : ""}` },
+                  { label: "Taxa", value: valueMode === "installment" && (calc as any).derivedRate !== undefined ? `${(calc as any).derivedRate.toFixed(2)}% por ${periodLabel} (derivada)` : `${taxaJuros}% por ${periodLabel}` },
+                ];
+                if (loanMode === "bullet") {
+                  items.push({ label: "Períodos até vencimento", value: `${numInstallments || 1} ${periodLabel}(s)` });
+                  items.push({ label: "Pagamento Único", value: `R$ ${fmt(calc.totalAmount)}` });
+                } else {
+                  items.push({ label: "Pagamentos", value: `${calc.numParcelas}x R$ ${fmt(calc.installmentAmount)}` });
+                }
+                if (loanMode === "grace") {
+                  items.push({ label: "Carência", value: `${gracePeriods} ${periodLabel}(s) sem pagar` });
+                }
+                items.push({ label: "Data de Início", value: formatBR(startDate) });
+                items.push({ label: "1º Vencimento", value: effectiveFirstDue });
+                items.push({ label: "Total a Receber", value: `R$ ${fmt(calc.totalAmount)}` });
+                items.push({ label: "Multa Diária", value: `${dailyInterestPercent}%` });
+                return items.map(i => (
+                  <div key={i.label} className="bg-muted/30 rounded-xl p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.label}</p>
+                    <p className="font-semibold text-sm text-foreground mt-0.5">{i.value}</p>
+                  </div>
+                ));
+              })()}
             </div>
 
             <div className="bg-success/5 border border-success/20 rounded-xl p-4 text-center">
