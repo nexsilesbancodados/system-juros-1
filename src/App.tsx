@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import OfflineIndicator from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ConfirmProvider } from "./components/ConfirmProvider";
 
 import Index from "./pages/Index";
 
