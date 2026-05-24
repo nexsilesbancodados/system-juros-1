@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
 type ScoreBand = "all" | "high" | "mid" | "low";
@@ -35,6 +36,7 @@ const useDebounced = <T,>(value: T, ms = 200) => {
 const PAGE_SIZE = 30;
 
 const Clientes = () => {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -188,7 +190,7 @@ const Clientes = () => {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Excluir este cliente e todos os seus dados?")) return;
+    if (!(await confirm("Excluir este cliente e todos os seus dados?"))) return;
     await supabase.from("contract_installments").delete().eq("client_id", id);
     await supabase.from("contracts").delete().eq("client_id", id);
     await supabase.from("installments").delete().eq("client_id", id);
@@ -201,7 +203,7 @@ const Clientes = () => {
   const handleBulkDelete = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    if (!confirm(`Excluir ${ids.length} cliente(s) e todos os dados associados?`)) return;
+    if (!(await confirm(`Excluir ${ids.length} cliente(s) e todos os dados associados?`))) return;
     await supabase.from("contract_installments").delete().in("client_id", ids);
     await supabase.from("contracts").delete().in("client_id", ids);
     await supabase.from("installments").delete().in("client_id", ids);

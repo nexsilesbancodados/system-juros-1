@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatBR } from "@/lib/dateUtils";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Tarefas = () => {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const { toast } = useToast();
   const [todos, setTodos] = useState<any[]>([]);
@@ -52,7 +54,7 @@ const Tarefas = () => {
   };
 
   const handleClearDone = async () => {
-    if (!confirm("Limpar todas as tarefas concluídas?")) return;
+    if (!(await confirm("Limpar todas as tarefas concluídas?"))) return;
     const doneIds = todos.filter(t => t.is_complete).map(t => t.id);
     for (const id of doneIds) await supabase.from("todos").delete().eq("id", id);
     fetchTodos();

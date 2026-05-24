@@ -10,8 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { formatBR } from "@/lib/dateUtils";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Carteira = () => {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -117,7 +119,7 @@ const Carteira = () => {
   };
 
   const handleDeleteCapital = async (id: string) => {
-    if (!confirm("Remover este lançamento de capital?")) return;
+    if (!(await confirm("Remover este lançamento de capital?"))) return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (error) { toast({ title: "Erro ao remover", variant: "destructive" }); return; }
     toast({ title: "✓ Lançamento removido" });

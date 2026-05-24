@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
@@ -31,6 +32,7 @@ const URL_RE = /(https?:\/\/[^\s]+)/i;
 
 const fmtTime = (s: string) => new Date(s).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 const fmtDay = (s: string) => {
+  const confirm = useConfirm();
   const d = new Date(s); const today = new Date(); const y = new Date(); y.setDate(y.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return "Hoje";
   if (d.toDateString() === y.toDateString()) return "Ontem";
@@ -480,7 +482,7 @@ const Chat = () => {
 
   const clearAllMessages = async () => {
     if (!isAdmin || !scope) return;
-    if (!confirm("Apagar TODO o histórico desta conversa? Esta ação é irreversível.")) return;
+    if (!(await confirm("Apagar TODO o histórico desta conversa? Esta ação é irreversível."))) return;
     const filterCol = scope.kind === "channel" ? "channel_id" : "dm_thread_id";
     await supabase.from("chat_messages").delete().eq(filterCol, scope.id);
     toast.success("Histórico limpo");
@@ -500,7 +502,7 @@ const Chat = () => {
 
   const deleteChannel = async (channelId: string) => {
     if (!isAdmin) return;
-    if (!confirm("Excluir este canal e todas as mensagens?")) return;
+    if (!(await confirm("Excluir este canal e todas as mensagens?"))) return;
     await supabase.from("chat_channels").delete().eq("id", channelId);
     toast.success("Canal excluído");
     if (scope?.kind === "channel" && scope.id === channelId) setScope(null);
