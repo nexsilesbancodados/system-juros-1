@@ -73,7 +73,7 @@ const Cobrancas = () => {
 
       const { data } = await supabase
         .from("contract_installments")
-        .select("*, contracts(capital, frequency, interest_rate)")
+        .select("*, contracts(capital, frequency, interest_rate, num_installments)")
         .eq("user_id", user!.id)
         .order("due_date", { ascending: true });
 
@@ -176,12 +176,14 @@ const Cobrancas = () => {
 
   const buildMessage = (inst: any) => {
     const portalUrl = `${window.location.origin}/portal-cliente`;
+    const total = inst.contracts?.num_installments || inst.total_installments || "";
+    const parcelaInfo = total ? `${inst.installment_number} de ${total}` : `${inst.installment_number}`;
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
     return billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
-      .replace(/\{parcela\}/g, `${inst.installment_number}`)
+      .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
-      .replace(/\{data\}/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
+      .replace(/\{data\}|\[Data\]/g, new Date(inst.due_date).toLocaleDateString("pt-BR"))
       .replace(/\{portal\}|\[Portal\]/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
   };
@@ -195,7 +197,8 @@ const Cobrancas = () => {
 
   const handleEmail = (inst: any) => {
     if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
-    const subject = `Cobrança - Parcela ${inst.installment_number}`;
+    const totalSub = inst.contracts?.num_installments;
+    const subject = `Cobrança - Parcela ${inst.installment_number}${totalSub ? ` de ${totalSub}` : ""}`;
     const body = buildMessage(inst);
     window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
   };
