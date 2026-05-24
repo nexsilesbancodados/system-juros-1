@@ -679,7 +679,24 @@ const NovoCliente = () => {
         ))}
       </div>
 
-      {/* ═══ STEP 1: CLIENT DATA ═══ */}
+      {/* Draft restore banner */}
+      {hasDraft && (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-primary/30 bg-primary/5 animate-fade-in">
+          <div className="flex items-center gap-2 text-sm">
+            <Save size={16} className="text-primary" />
+            <span className="text-foreground"><strong>Rascunho encontrado</strong> da última vez que você esteve aqui.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={discardDraft} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1">
+              Descartar
+            </button>
+            <button onClick={restoreDraft} className="flex items-center gap-1.5 text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg hover:opacity-90">
+              <RotateCcw size={12} /> Restaurar
+            </button>
+          </div>
+        </div>
+      )}
+
       {step === 1 && (
         <div className="space-y-6">
           {/* Identificação */}
