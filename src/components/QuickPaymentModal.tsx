@@ -34,7 +34,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     queryFn: async () => {
       if (!user) return [];
       const { data } = await supabase.from("contract_installments")
-        .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, cpf_cnpj)")
+        .select("id, amount, paid_amount, due_date, installment_number, client_id, clients:client_id(name, cpf_cnpj)")
         .eq("user_id", user.id).eq("status", "pending")
         .order("due_date", { ascending: true })
         .limit(200);
