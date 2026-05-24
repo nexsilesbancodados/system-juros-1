@@ -1,0 +1,69 @@
+import { Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+
+interface Props {
+  children: ReactNode;
+  fallback?: (error: Error, reset: () => void) => ReactNode;
+}
+
+interface State {
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  state: State = { error: null };
+
+  static getDerivedStateFromError(error: Error): State {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // eslint-disable-next-line no-console
+    console.error("[ErrorBoundary]", error, info.componentStack);
+  }
+
+  reset = () => this.setState({ error: null });
+
+  render() {
+    const { error } = this.state;
+    if (!error) return this.props.children;
+    if (this.props.fallback) return this.props.fallback(error, this.reset);
+
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-2xl border border-destructive/30 bg-card/60 backdrop-blur p-6 text-center space-y-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Algo deu errado</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Esta tela travou. Tente recarregar ou voltar pro início.
+            </p>
+            {error.message && (
+              <p className="mt-3 text-[11px] font-mono text-muted-foreground/80 bg-muted/30 rounded-md p-2 break-words text-left max-h-32 overflow-auto">
+                {error.message}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={this.reset}
+              className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5 hover:opacity-90"
+            >
+              <RotateCcw size={12} /> Tentar de novo
+            </button>
+            <a
+              href="/dashboard"
+              className="px-3 py-2 rounded-lg bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 hover:bg-accent"
+            >
+              <Home size={12} /> Início
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default ErrorBoundary;
