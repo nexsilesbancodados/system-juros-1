@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phone } from "lucide-react";
+import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phone, Sparkles } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { differenceInDays } from "date-fns";
 
 interface Installment {
