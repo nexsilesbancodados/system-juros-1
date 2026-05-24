@@ -15,6 +15,8 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [partialFor, setPartialFor] = useState<string | null>(null);
+  const [partialValue, setPartialValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
