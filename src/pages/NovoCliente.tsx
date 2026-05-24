@@ -1476,23 +1476,48 @@ const NovoCliente = () => {
               </div>
             </div>
 
-            {/* Contract details */}
+            {/* Contract details — adapt per loan mode */}
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Capital", value: `R$ ${fmt(parseFloat(capital))}` },
-                { label: "Modo", value: loanMode === "percentage" ? "Porcentagem" : "Parcelas" },
-                { label: "Frequência", value: `${freqLabel}${frequency === "daily" ? ` (${dailyMode === "mon-fri" ? "Seg-Sex" : dailyMode === "mon-sat" ? "Seg-Sáb" : "Seg-Dom"})` : ""}` },
-                { label: "Taxa", value: valueMode === "installment" && (calc as any).derivedRate !== undefined ? `${(calc as any).derivedRate.toFixed(2)}% por ${periodLabel} (derivada)` : `${taxaJuros}% por ${periodLabel}` },
-                { label: "Pagamentos", value: `${calc.numParcelas}x R$ ${fmt(calc.installmentAmount)}` },
-                { label: "1º Vencimento", value: new Date(startDate + "T12:00:00").toLocaleDateString("pt-BR") },
-                { label: "Total a Receber", value: `R$ ${fmt(calc.totalAmount)}` },
-                { label: "Multa Diária", value: `${dailyInterestPercent}%` },
-              ].map(i => (
-                <div key={i.label} className="bg-muted/30 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.label}</p>
-                  <p className="font-semibold text-sm text-foreground mt-0.5">{i.value}</p>
-                </div>
-              ))}
+              {(() => {
+                const effectiveFirstDue = (() => {
+                  if (!autoFirstDue && firstDueDate) return formatBR(firstDueDate);
+                  const dd = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
+                  return dd[0] ? formatBR(dd[0]) : "—";
+                })();
+                const modeLabel: Record<LoanMode, string> = {
+                  installments: "Por Parcelas",
+                  percentage: "Por Porcentagem",
+                  interest_only: "Só Juros + Capital no Fim",
+                  price: "Juros Compostos (Price)",
+                  bullet: "Pagamento Único",
+                  grace: "Com Carência",
+                };
+                const items: { label: string; value: string }[] = [
+                  { label: "Capital", value: `R$ ${fmt(parseFloat(capital))}` },
+                  { label: "Modo", value: modeLabel[loanMode] },
+                  { label: "Frequência", value: `${freqLabel}${frequency === "daily" ? ` (${dailyMode === "mon-fri" ? "Seg-Sex" : dailyMode === "mon-sat" ? "Seg-Sáb" : "Seg-Dom"})` : ""}` },
+                  { label: "Taxa", value: valueMode === "installment" && (calc as any).derivedRate !== undefined ? `${(calc as any).derivedRate.toFixed(2)}% por ${periodLabel} (derivada)` : `${taxaJuros}% por ${periodLabel}` },
+                ];
+                if (loanMode === "bullet") {
+                  items.push({ label: "Períodos até vencimento", value: `${numInstallments || 1} ${periodLabel}(s)` });
+                  items.push({ label: "Pagamento Único", value: `R$ ${fmt(calc.totalAmount)}` });
+                } else {
+                  items.push({ label: "Pagamentos", value: `${calc.numParcelas}x R$ ${fmt(calc.installmentAmount)}` });
+                }
+                if (loanMode === "grace") {
+                  items.push({ label: "Carência", value: `${gracePeriods} ${periodLabel}(s) sem pagar` });
+                }
+                items.push({ label: "Data de Início", value: formatBR(startDate) });
+                items.push({ label: "1º Vencimento", value: effectiveFirstDue });
+                items.push({ label: "Total a Receber", value: `R$ ${fmt(calc.totalAmount)}` });
+                items.push({ label: "Multa Diária", value: `${dailyInterestPercent}%` });
+                return items.map(i => (
+                  <div key={i.label} className="bg-muted/30 rounded-xl p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.label}</p>
+                    <p className="font-semibold text-sm text-foreground mt-0.5">{i.value}</p>
+                  </div>
+                ));
+              })()}
             </div>
 
             <div className="bg-success/5 border border-success/20 rounded-xl p-4 text-center">
