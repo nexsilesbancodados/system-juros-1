@@ -307,9 +307,13 @@ const NovoCliente = () => {
         d.setDate(baseDate.getDate() + offset);
         dates.push(d.toISOString());
       } else {
-        const d = new Date(baseDate);
         const offset = firstDueDateObj ? i : i + 1;
-        d.setMonth(baseDate.getMonth() + offset);
+        const targetMonth = baseDate.getMonth() + offset;
+        const y = baseDate.getFullYear() + Math.floor(targetMonth / 12);
+        const m = ((targetMonth % 12) + 12) % 12;
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        const day = Math.min(baseDate.getDate(), lastDay);
+        const d = new Date(y, m, day, 12, 0, 0, 0);
         dates.push(d.toISOString());
       }
     }
