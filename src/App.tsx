@@ -152,6 +152,7 @@ const App = () => (
               </Suspense>
             </ErrorBoundary>
           </BrowserRouter>
+          </ConfirmProvider>
           </ThemeProvider>
         </WhiteLabelProvider>
       </AuthProvider>
