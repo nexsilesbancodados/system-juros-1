@@ -1,5 +1,6 @@
 // Núcleo unificado de cálculo de empréstimos.
 // Suporta 6 modos: installments, percentage, interest_only, price, bullet, grace.
+import { parseLocalDate, addMonthsClamped, addDays, addBusinessDays } from "./dateUtils";
 
 export type LoanMode =
   | "percentage"
