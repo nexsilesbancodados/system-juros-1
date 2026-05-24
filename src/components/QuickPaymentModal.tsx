@@ -329,6 +329,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                     </button>
                   </div>
                 )}
+                </div>
               );
             })}
           </div>
