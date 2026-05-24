@@ -1028,7 +1028,7 @@ const ClienteDetalhe = () => {
       {activeTab === "parcelas" && (
         <div className="space-y-2">
           {installments.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-12">Nenhuma parcela</p>
+            <EmptyState icon={Receipt} title="Nenhuma parcela" description="As parcelas aparecerão aqui quando o contrato for criado." compact />)
           ) : installments.map((inst: any) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
