@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CheckSquare, Plus, Trash2, CheckCircle, Circle, Calendar, GripVertical, Star, StarOff, Filter } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
