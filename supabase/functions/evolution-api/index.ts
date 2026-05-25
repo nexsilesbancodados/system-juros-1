@@ -139,7 +139,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             where: data?.remoteJid ? { key: { remoteJid: data.remoteJid } } : {},
-            limit: data?.count || 50
+            limit: data?.count || data?.limit || 50,
+            page: data?.page || 1
           })
         });
         break;
