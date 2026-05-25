@@ -363,7 +363,7 @@ const AgenteIA = () => {
 
     if (!silent) setLoadingChats(true);
     try {
-      const data = await callEvolutionApi("find_chats", { instanceName });
+      const data = await callEvolutionApi("find_chats", { instanceName, count: 500 });
       const rawChats: EvolutionChatRecord[] = Array.isArray(data)
         ? (data as EvolutionChatRecord[])
         : Array.isArray(data?.chats)
