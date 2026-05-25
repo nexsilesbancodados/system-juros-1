@@ -129,7 +129,7 @@ const NovoCliente = () => {
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const [taxaJuros, setTaxaJuros] = useState("10");
   const [numInstallments, setNumInstallments] = useState("");
-  const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
+  const [valueMode, setValueMode] = useState<"rate" | "installment">("installment");
   const [installmentValue, setInstallmentValue] = useState("");
   const [installmentValueDisplay, setInstallmentValueDisplay] = useState("");
   const [startDate, setStartDate] = useState(todayLocalISO());
@@ -876,7 +876,7 @@ const NovoCliente = () => {
             <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {([
-                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
+                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Valor fixo por parcela (ex: 10x de R$ 200)", Icon: Hash },
                 { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
                 { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros por período, capital no último", Icon: Coins },
                 { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
@@ -885,7 +885,8 @@ const NovoCliente = () => {
               ]).map(m => (
                 <button key={m.v} onClick={() => {
                   setLoanMode(m.v);
-                  if (m.v !== "installments") setValueMode("rate");
+                  // "Por Parcelas" abre direto no modo "valor da parcela"; demais usam taxa %.
+                  setValueMode(m.v === "installments" ? "installment" : "rate");
                 }}
                   className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                   <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
@@ -1001,7 +1002,7 @@ const NovoCliente = () => {
             </div>
             {/* Quick guide per loan mode */}
             <div className="text-[11px] text-muted-foreground bg-muted/20 border border-border/60 rounded-xl px-3 py-2">
-              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> (ou valor da parcela) e <strong>Nº de Parcelas</strong>. Parcelas iguais com juros simples.</>}
+              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Valor da Parcela</strong> e <strong>Nº de Parcelas</strong>. Ex: R$ 1.000 em 10x de R$ 200. A taxa equivalente é calculada automaticamente.</>}
               {loanMode === "percentage" && <>Informe <strong>Capital</strong> e <strong>Taxa por período</strong>. Nº de parcelas é opcional (auto se vazio).</>}
               {loanMode === "interest_only" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. Cliente paga só juros; capital cai na última parcela.</>}
               {loanMode === "price" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. PMT fixo com amortização (juros compostos).</>}
