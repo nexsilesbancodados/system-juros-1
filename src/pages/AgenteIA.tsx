@@ -148,6 +148,34 @@ const getChatDisplayName = (chat: EvolutionChatRecord) =>
   getJidLabel(chat.remoteJid) ||
   "Conversa sem nome";
 
+const getEvolutionInstancePayload = (payload: unknown): UnknownRecord | null => {
+  if (Array.isArray(payload)) {
+    return (payload.find(isRecord) as UnknownRecord | undefined) ?? null;
+  }
+
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  if (isRecord(payload.instance)) {
+    return payload.instance;
+  }
+
+  const indexedInstance = Object.entries(payload).find(
+    ([key, value]) => /^\d+$/.test(key) && isRecord(value)
+  );
+
+  return indexedInstance ? (indexedInstance[1] as UnknownRecord) : payload;
+};
+
+const isEvolutionInstanceConnected = (payload: unknown) => {
+  const instance = getEvolutionInstancePayload(payload);
+  const rootStatus = isRecord(payload) ? payload.status : undefined;
+  const statuses = [instance?.status, instance?.connectionStatus, instance?.state, rootStatus];
+
+  return statuses.some((status) => status === "open" || status === "connected");
+};
+
 const AgenteIA = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -268,9 +296,8 @@ const AgenteIA = () => {
       const instance = settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}`;
       const data = await callEvolutionApi("check_status", { instanceName: instance });
       setInstanceName(instance);
-      
-      const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-      if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open") {
+
+      if (isEvolutionInstanceConnected(data)) {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
@@ -285,27 +312,32 @@ const AgenteIA = () => {
   const createInstance = async () => {
     setWhatsappStatus("connecting");
     try {
-      const data = await callEvolutionApi("createInstance", { instanceName: settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}` });
-      setInstanceName(data.instance?.instanceName || data.instanceName || "");
-      const instState = data.instance?.status || data.instance?.state;
-      if (instState === "open") {
+      const nextInstanceName = settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}`;
+      const data = await callEvolutionApi("createInstance", { instanceName: nextInstanceName });
+      setInstanceName(nextInstanceName);
+
+      if (isEvolutionInstanceConnected(data)) {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
         return;
       }
-      await fetchQr();
+      await fetchQr(nextInstanceName);
     } catch (err: any) {
       setWhatsappStatus("error");
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
 
-  const fetchQr = async () => {
+  const fetchQr = async (targetInstanceName = instanceName) => {
     try {
-      const data = await callEvolutionApi("get_qr", { instanceName });
+      if (!targetInstanceName) {
+        setWhatsappStatus("disconnected");
+        return;
+      }
+
+      const data = await callEvolutionApi("get_qr", { instanceName: targetInstanceName });
       const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
-      const instState = data?.instance?.status || data?.instance?.state || data?.status || data?.state;
-      if (instState === "open") {
+      if (isEvolutionInstanceConnected(data)) {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
@@ -315,23 +347,22 @@ const AgenteIA = () => {
         const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
         setQrCode(src);
         setWhatsappStatus("qr_ready");
-        startPolling();
+        startPolling(targetInstanceName);
       } else {
-        setTimeout(fetchQr, 3000);
+        setTimeout(() => fetchQr(targetInstanceName), 3000);
       }
     } catch {
       setWhatsappStatus("error");
     }
   };
 
-  const startPolling = () => {
+  const startPolling = (targetInstanceName = instanceName) => {
     if (qrIntervalRef.current) return;
     setPollingQr(true);
     qrIntervalRef.current = setInterval(async () => {
       try {
-        const data = await callEvolutionApi("check_status", { instanceName });
-        const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-        if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open" || data.status === "connected") {
+        const data = await callEvolutionApi("check_status", { instanceName: targetInstanceName });
+        if (isEvolutionInstanceConnected(data)) {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
@@ -1080,7 +1111,7 @@ const AgenteIA = () => {
                 <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-64 h-64 object-contain" />
               </div>
               {pollingQr && <p className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Loader2 size={12} className="animate-spin" /> Aguardando...</p>}
-              <button onClick={fetchQr} className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"><RefreshCw size={14} /> Novo QR</button>
+              <button onClick={() => fetchQr()} className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"><RefreshCw size={14} /> Novo QR</button>
             </div>
           ) : (
             <div className="text-center py-10 space-y-4">
