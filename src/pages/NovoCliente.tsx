@@ -1002,7 +1002,7 @@ const NovoCliente = () => {
             </div>
             {/* Quick guide per loan mode */}
             <div className="text-[11px] text-muted-foreground bg-muted/20 border border-border/60 rounded-xl px-3 py-2">
-              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> (ou valor da parcela) e <strong>Nº de Parcelas</strong>. Parcelas iguais com juros simples.</>}
+              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Valor da Parcela</strong> e <strong>Nº de Parcelas</strong>. Ex: R$ 1.000 em 10x de R$ 200. A taxa equivalente é calculada automaticamente.</>}
               {loanMode === "percentage" && <>Informe <strong>Capital</strong> e <strong>Taxa por período</strong>. Nº de parcelas é opcional (auto se vazio).</>}
               {loanMode === "interest_only" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. Cliente paga só juros; capital cai na última parcela.</>}
               {loanMode === "price" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. PMT fixo com amortização (juros compostos).</>}
