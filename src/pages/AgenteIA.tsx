@@ -746,7 +746,77 @@ const AgenteIA = () => {
   }, [tab]);
 
   const getMessageText = (msg: WhatsAppMsg) =>
-    extractWhatsAppText(msg.message) || "[mídia]";
+    extractWhatsAppText(msg.message) || "";
+
+  type MediaKind = "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "text";
+  const detectMediaKind = (msg: WhatsAppMsg): MediaKind => {
+    const m = msg.message as any;
+    if (!m) return "text";
+    if (m.imageMessage) return "image";
+    if (m.audioMessage || m.pttMessage) return "audio";
+    if (m.videoMessage) return "video";
+    if (m.documentMessage || m.documentWithCaptionMessage) return "document";
+    if (m.stickerMessage) return "sticker";
+    if (m.locationMessage || m.liveLocationMessage) return "location";
+    if (m.contactMessage || m.contactsArrayMessage) return "contact";
+    return "text";
+  };
+
+  const getQuotedInfo = (msg: WhatsAppMsg) => {
+    const ctx = (msg.message as any)?.extendedTextMessage?.contextInfo
+      || (msg as any)?.contextInfo;
+    const quoted = ctx?.quotedMessage;
+    if (!quoted) return null;
+    const text = extractWhatsAppText(quoted) || "[mídia]";
+    const author = ctx?.participant ? getJidLabel(ctx.participant) : null;
+    return { text: text.length > 120 ? text.slice(0, 120) + "…" : text, author };
+  };
+
+  const getMediaUrl = (msg: WhatsAppMsg): string | null => {
+    const m = msg.message as any;
+    const direct = m?.imageMessage?.url || m?.stickerMessage?.url;
+    if (typeof direct === "string" && direct.startsWith("http")) return direct;
+    // Evolution sometimes injects base64 in mediaBase64
+    const b64 = m?.imageMessage?.mediaBase64 || m?.stickerMessage?.mediaBase64;
+    if (typeof b64 === "string" && b64.length > 100) {
+      return b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`;
+    }
+    return null;
+  };
+
+  const getAudioSeconds = (msg: WhatsAppMsg): number | null => {
+    const s = (msg.message as any)?.audioMessage?.seconds;
+    return typeof s === "number" ? s : null;
+  };
+
+  const getDocumentInfo = (msg: WhatsAppMsg) => {
+    const d = (msg.message as any)?.documentMessage
+      || (msg.message as any)?.documentWithCaptionMessage?.message?.documentMessage;
+    if (!d) return null;
+    return {
+      name: d.fileName || d.title || "documento",
+      mime: d.mimetype || "",
+    };
+  };
+
+  const formatDateLabel = (ts: number) => {
+    const d = new Date(ts * 1000);
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+    if (same(d, today)) return "Hoje";
+    if (same(d, yesterday)) return "Ontem";
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  };
+
+  const getStatusIcon = (msg: WhatsAppMsg) => {
+    if (!msg.key?.fromMe) return null;
+    const status = (msg as any).status;
+    // Evolution status numbers: 0 pending, 1 sent, 2 delivered, 3 read, 4 played
+    if (status === 3 || status === 4 || status === "READ") return <CheckCheck size={12} className="text-sky-400" />;
+    if (status === 2 || status === "DELIVERY_ACK") return <CheckCheck size={12} className="text-primary-foreground/60" />;
+    return <Check size={12} className="text-primary-foreground/60" />;
+  };
 
   const ToggleSwitch = ({ enabled, onToggle, label, description }: { enabled: boolean; onToggle: () => void; label: string; description: string }) => (
     <div className="flex items-center justify-between py-3">
