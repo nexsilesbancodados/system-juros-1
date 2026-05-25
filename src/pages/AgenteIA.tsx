@@ -938,6 +938,7 @@ const AgenteIA = () => {
                   {([
                     { id: "all", label: "Todas", count: whatsappChats.length },
                     { id: "unread", label: "Não lidas", count: whatsappChats.filter(c => c.unreadCount).length },
+                    { id: "users", label: "Usuários", count: whatsappChats.filter(c => !c.remoteJid.endsWith("@g.us")).length },
                     { id: "groups", label: "Grupos", count: whatsappChats.filter(c => c.remoteJid.endsWith("@g.us")).length },
                   ] as const).map((f) => (
                     <button
