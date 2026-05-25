@@ -62,8 +62,7 @@ const moreGroups = [
   {
     title: "Inteligência",
     items: [
-      { label: "Agente IA", icon: Bot, path: "/agente-ia" },
-      { label: "Automações", icon: Zap, path: "/automacoes" },
+      { label: "Comunicação & IA", icon: Bot, path: "/comunicacao" },
       { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
       { label: "Metas", icon: Target, path: "/ferramentas/metas" },
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
