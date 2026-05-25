@@ -363,23 +363,27 @@ const AgenteIA = () => {
 
     if (!silent) setLoadingChats(true);
     try {
-      const data = await callEvolutionApi("fetch_messages", { instanceName, remoteJid: "", count: 50 });
-      const rawChats = Array.isArray(data.chats) ? (data.chats as EvolutionChatRecord[]) : [];
+      const data = await callEvolutionApi("find_chats", { instanceName });
+      const rawChats: EvolutionChatRecord[] = Array.isArray(data)
+        ? (data as EvolutionChatRecord[])
+        : Array.isArray(data?.chats)
+          ? (data.chats as EvolutionChatRecord[])
+          : [];
       const uniqueChats = new Map<string, WhatsAppChat>();
 
-      rawChats.forEach((chat) => {
-        const remoteJid = chat.remoteJid?.trim();
-        if (!remoteJid || remoteJid === "status@broadcast") return;
+      rawChats.forEach((chat: any) => {
+        const remoteJid = (chat.remoteJid || chat.id || chat.key?.remoteJid)?.trim();
+        if (!remoteJid || remoteJid === "status@broadcast" || remoteJid.endsWith("@g.us")) return;
         if (uniqueChats.has(remoteJid)) return;
 
         uniqueChats.set(remoteJid, {
           id: remoteJid,
-          name: getChatDisplayName(chat),
+          name: getChatDisplayName(chat) || chat.pushName || chat.name || remoteJid.split("@")[0],
           remoteJid,
-          phone: getChatPhone(chat),
-          lastMessage: extractWhatsAppText(chat.lastMessage?.message) || "[mídia]",
-          updatedAt: chat.updatedAt || "",
-          unreadCount: chat.unreadCount ?? 0,
+          phone: getChatPhone(chat) || remoteJid.split("@")[0],
+          lastMessage: extractWhatsAppText(chat.lastMessage?.message) || chat.lastMessage?.text || "",
+          updatedAt: chat.updatedAt || chat.updated_at || chat.lastMessage?.messageTimestamp || "",
+          unreadCount: chat.unreadCount ?? chat.unread_count ?? 0,
         });
       });
 
