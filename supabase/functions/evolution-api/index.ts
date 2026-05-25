@@ -29,7 +29,10 @@ serve(async (req) => {
       });
     }
 
-    const { action, instanceName, data } = await req.json();
+    const body = await req.json();
+    const { action, instanceName } = body;
+    // Accept payload either nested under `data` or flat at the top level
+    const data = (body?.data && typeof body.data === "object") ? { ...body, ...body.data } : body;
 
     const { data: settings, error: settingsError } = await supabaseClient
       .from("settings")
@@ -136,7 +139,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             where: data?.remoteJid ? { key: { remoteJid: data.remoteJid } } : {},
-            limit: data?.count || 50
+            limit: data?.count || data?.limit || 50,
+            page: data?.page || 1
           })
         });
         break;
