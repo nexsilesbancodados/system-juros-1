@@ -129,7 +129,7 @@ const NovoCliente = () => {
   const [dailyMode, setDailyMode] = useState<DailyMode>("mon-fri");
   const [taxaJuros, setTaxaJuros] = useState("10");
   const [numInstallments, setNumInstallments] = useState("");
-  const [valueMode, setValueMode] = useState<"rate" | "installment">("rate");
+  const [valueMode, setValueMode] = useState<"rate" | "installment">("installment");
   const [installmentValue, setInstallmentValue] = useState("");
   const [installmentValueDisplay, setInstallmentValueDisplay] = useState("");
   const [startDate, setStartDate] = useState(todayLocalISO());
