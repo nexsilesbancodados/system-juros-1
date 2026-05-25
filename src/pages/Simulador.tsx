@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat, Coins, TrendingDown, Target, PauseCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
-import { calculateLoan, type LoanMode } from "@/lib/loanMath";
+import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
+import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 
 
 type Frequency = "monthly" | "weekly" | "daily";
