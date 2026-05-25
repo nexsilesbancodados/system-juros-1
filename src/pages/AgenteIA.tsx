@@ -382,6 +382,7 @@ const AgenteIA = () => {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
+          configureWebhook(targetInstanceName);
           toast({ title: "✅ WhatsApp Conectado!" });
         }
       } catch {}
