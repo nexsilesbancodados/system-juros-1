@@ -284,6 +284,19 @@ const AgenteIA = () => {
     return data;
   }, []);
 
+  const webhookConfiguredRef = useRef<string | null>(null);
+  const configureWebhook = useCallback(async (targetInstanceName: string) => {
+    if (!targetInstanceName || webhookConfiguredRef.current === targetInstanceName) return;
+    webhookConfiguredRef.current = targetInstanceName;
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+      await callEvolutionApi("setWebhook", { instanceName: targetInstanceName, data: { url } });
+    } catch (err) {
+      console.error("[AgenteIA] Falha ao configurar webhook:", err);
+      webhookConfiguredRef.current = null;
+    }
+  }, [callEvolutionApi]);
+
   // Check WhatsApp status
   useEffect(() => {
     if (settings === undefined) return;
