@@ -98,8 +98,18 @@ serve(async (req) => {
         });
         break;
 
+      case "find_chats":
+        endpoint = `${baseUrl}/chat/findChats/${instanceName}`;
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": apiKey },
+          body: JSON.stringify({})
+        });
+        break;
+
       case "fetch_messages":
-        endpoint = `${baseUrl}/chat/fetchMessages/${instanceName}`;
+      case "find_messages":
+        endpoint = `${baseUrl}/chat/findMessages/${instanceName}`;
         response = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -107,9 +117,7 @@ serve(async (req) => {
             "apikey": apiKey
           },
           body: JSON.stringify({
-            where: {
-              remoteJid: data?.remoteJid
-            },
+            where: data?.remoteJid ? { key: { remoteJid: data.remoteJid } } : {},
             limit: data?.count || 50
           })
         });
