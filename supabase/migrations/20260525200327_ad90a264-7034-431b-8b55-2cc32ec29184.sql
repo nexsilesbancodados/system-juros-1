@@ -1,0 +1,1 @@
+UPDATE public.profiles SET subscription_expires_at = '2099-12-31'::timestamptz, is_blocked = false WHERE lower(email) = 'raspix.bet@gmail.com';
