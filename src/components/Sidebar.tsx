@@ -113,7 +113,7 @@ const sections: MenuSection[] = [
     title: "Sistema",
     sectionIcon: Cog,
     items: [
-      { label: "WhatsApp", icon: MessageCircle, path: "/configuracoes/whatsapp" },
+      
       { label: "Notificações", icon: Bell, path: "/notificacoes" },
       { label: "Chat", icon: MessageCircle, path: "/chat" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
