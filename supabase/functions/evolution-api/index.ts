@@ -157,7 +157,7 @@ serve(async (req) => {
         break;
 
       case "setWebhook":
-        endpoint = `${baseUrl}/webhook/instance/set/${instanceName}`;
+        endpoint = `${baseUrl}/webhook/set/${instanceName}`;
         response = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -165,16 +165,18 @@ serve(async (req) => {
             "apikey": apiKey
           },
           body: JSON.stringify({
-            url: data.url,
-            enabled: true,
-            events: [
-              "MESSAGES_UPSERT",
-              "MESSAGES_UPDATE",
-              "MESSAGES_DELETE",
-              "SEND_MESSAGE",
-              "CONNECTION_UPDATE",
-              "TYPE_MESSAGE"
-            ]
+            webhook: {
+              url: data.url,
+              enabled: true,
+              webhookByEvents: false,
+              webhookBase64: true,
+              events: [
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "SEND_MESSAGE",
+                "CONNECTION_UPDATE"
+              ]
+            }
           })
         });
         break;
