@@ -363,7 +363,7 @@ const AgenteIA = () => {
 
     if (!silent) setLoadingChats(true);
     try {
-      const data = await callEvolutionApi("find_chats", { instanceName });
+      const data = await callEvolutionApi("find_chats", { instanceName, count: 500 });
       const rawChats: EvolutionChatRecord[] = Array.isArray(data)
         ? (data as EvolutionChatRecord[])
         : Array.isArray(data?.chats)
@@ -373,7 +373,7 @@ const AgenteIA = () => {
 
       rawChats.forEach((chat: any) => {
         const remoteJid = (chat.remoteJid || chat.id || chat.key?.remoteJid)?.trim();
-        if (!remoteJid || remoteJid === "status@broadcast" || remoteJid.endsWith("@g.us")) return;
+        if (!remoteJid || remoteJid === "status@broadcast") return;
         if (uniqueChats.has(remoteJid)) return;
 
         uniqueChats.set(remoteJid, {
@@ -433,7 +433,7 @@ const AgenteIA = () => {
   const refreshChatMessages = async (remoteJid: string, silent = false) => {
     if (!silent) setLoadingMsgs(true);
     try {
-      const data = await callEvolutionApi("find_messages", { instanceName, remoteJid, count: 50 });
+      const data = await callEvolutionApi("find_messages", { instanceName, remoteJid, count: 200 });
       const rawMsgs: any[] = Array.isArray(data)
         ? data
         : Array.isArray(data?.messages?.records)
@@ -768,9 +768,26 @@ const AgenteIA = () => {
                       </span>
                     )}
                   </h2>
-                  <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await callEvolutionApi("update_settings", { instanceName });
+                          toast({ title: "Sincronizando histórico", description: "Pode levar alguns minutos. Atualizando..." });
+                          setTimeout(() => loadChats(), 5000);
+                        } catch (e: any) {
+                          toast({ title: "Erro", description: e.message, variant: "destructive" });
+                        }
+                      }}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors font-medium"
+                      title="Sincronizar todo o histórico do WhatsApp"
+                    >
+                      Sincronizar histórico
+                    </button>
+                    <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                      <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
