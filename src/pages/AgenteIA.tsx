@@ -333,6 +333,7 @@ const AgenteIA = () => {
       if (isEvolutionInstanceConnected(data)) {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
+        configureWebhook(nextInstanceName);
         return;
       }
       await fetchQr(nextInstanceName);
