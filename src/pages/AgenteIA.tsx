@@ -1111,7 +1111,7 @@ const AgenteIA = () => {
                 <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-64 h-64 object-contain" />
               </div>
               {pollingQr && <p className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Loader2 size={12} className="animate-spin" /> Aguardando...</p>}
-              <button onClick={fetchQr} className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"><RefreshCw size={14} /> Novo QR</button>
+              <button onClick={() => fetchQr()} className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg bg-muted/50 border border-border text-sm text-foreground hover:bg-muted transition-colors"><RefreshCw size={14} /> Novo QR</button>
             </div>
           ) : (
             <div className="text-center py-10 space-y-4">
