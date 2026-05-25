@@ -139,14 +139,15 @@ const App = () => (
                     <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
-                    <Route path="/agente-ia" element={<ErrorBoundary><AgenteIA /></ErrorBoundary>} />
+                    <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
+                    <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
+                    <Route path="/automacoes" element={<Navigate to="/comunicacao?tab=automacoes" replace />} />
+                    <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
                     <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
-                    <Route path="/automacoes" element={<ErrorBoundary><Automacoes /></ErrorBoundary>} />
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
                     <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
                     <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
                     <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
-                    <Route path="/configuracoes/whatsapp" element={<ErrorBoundary><WhatsAppConfig /></ErrorBoundary>} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
