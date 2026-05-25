@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import ContractTemplate from "@/components/ContractTemplate";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
+import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
 
