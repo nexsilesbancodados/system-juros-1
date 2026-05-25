@@ -270,7 +270,7 @@ const AgenteIA = () => {
       setInstanceName(instance);
       
       const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-      if (inst?.status === "open" || inst?.connectionStatus === "open") {
+      if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open") {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
