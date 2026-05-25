@@ -161,8 +161,21 @@ const Perfil = () => {
                 const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
                 if (checkoutUrl) {
                   window.location.href = checkoutUrl as string;
+                } else if (profile?.is_admin) {
+                  toast({
+                    title: "Checkout não configurado",
+                    description: "Configure o link de pagamento na página de Admin.",
+                    action: (
+                      <button
+                        onClick={() => navigate("/admin")}
+                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold"
+                      >
+                        Ir para Admin
+                      </button>
+                    ) as any,
+                  });
                 } else {
-                  toast({ title: "Checkout não configurado", description: "O link de pagamento ainda não foi definido pelo administrador.", variant: "destructive" });
+                  toast({ title: "Checkout não configurado", description: "O link de pagamento ainda não foi definido pelo administrador. Entre em contato com o suporte.", variant: "destructive" });
                 }
               }}
               className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
