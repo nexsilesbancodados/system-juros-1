@@ -32,13 +32,37 @@ if (isInIframe || isPreviewHost) {
 }
 
 // Auto-recover de chunks antigos após novo deploy
+const CHUNK_ERROR_PATTERNS = [
+  "Failed to fetch dynamically imported module",
+  "Importing a module script failed",
+  "error loading dynamically imported module",
+  "Failed to load module script",
+  "ChunkLoadError",
+];
+
 const recoverFromStaleChunk = (msg: string) => {
-  if (msg.includes("Failed to fetch dynamically imported module") || msg.includes("Importing a module script failed")) {
-    if (!sessionStorage.getItem("__chunk_reloaded")) {
-      sessionStorage.setItem("__chunk_reloaded", "1");
-      caches?.keys?.().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => location.reload());
-    }
-  }
+  if (!msg) return;
+  if (!CHUNK_ERROR_PATTERNS.some((p) => msg.includes(p))) return;
+
+  const last = Number(sessionStorage.getItem("__chunk_reloaded_at") || 0);
+  // Janela de 30s para evitar loop infinito, mas permite nova recuperação depois
+  if (Date.now() - last < 30_000) return;
+  sessionStorage.setItem("__chunk_reloaded_at", String(Date.now()));
+
+  // Limpa caches + service workers e recarrega forçadamente
+  Promise.all([
+    caches?.keys?.().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))) ?? Promise.resolve(),
+    navigator.serviceWorker?.getRegistrations().then((regs) => Promise.all(regs.map((r) => r.unregister()))) ?? Promise.resolve(),
+  ]).finally(() => {
+    // bypass cache
+    location.reload();
+  });
 };
-window.addEventListener("error", (e) => recoverFromStaleChunk(String(e?.message || "")));
-window.addEventListener("unhandledrejection", (e: any) => recoverFromStaleChunk(String(e?.reason?.message || "")));
+
+window.addEventListener("error", (e) => {
+  recoverFromStaleChunk(String(e?.message || ""));
+  recoverFromStaleChunk(String((e as any)?.error?.message || ""));
+});
+window.addEventListener("unhandledrejection", (e: any) => {
+  recoverFromStaleChunk(String(e?.reason?.message || e?.reason || ""));
+});
