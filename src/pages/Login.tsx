@@ -369,15 +369,44 @@ const Login = () => {
                     <div id="login-pwd-err"><FieldError msg={touched.password ? errors.password : undefined} /></div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(nextPath ? `/reset-password?next=${encodeURIComponent(nextPath)}` : "/reset-password")
-                    }
-                    className="block ml-auto text-xs text-white/40 hover:text-white/80 transition-colors"
-                  >
-                    Esqueceu a senha?
-                  </button>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none group">
+                      <span className="relative inline-flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMeState(e.target.checked)}
+                          className="peer sr-only"
+                        />
+                        <span className="w-4 h-4 rounded-[5px] border border-white/20 bg-white/[0.04] peer-checked:bg-white/90 peer-checked:border-white/90 transition-all duration-200" />
+                        <svg
+                          viewBox="0 0 16 16"
+                          className="absolute w-3 h-3 text-black opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 8.5l3.5 3.5L13 5" />
+                        </svg>
+                      </span>
+                      <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
+                        Lembrar-me
+                      </span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(nextPath ? `/reset-password?next=${encodeURIComponent(nextPath)}` : "/reset-password")
+                      }
+                      className="text-xs text-white/40 hover:text-white/80 transition-colors"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  </div>
+
 
                   <button
                     type="submit"
