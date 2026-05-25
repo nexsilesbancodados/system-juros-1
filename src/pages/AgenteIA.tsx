@@ -270,7 +270,7 @@ const AgenteIA = () => {
       setInstanceName(instance);
       
       const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-      if (inst?.status === "open" || inst?.connectionStatus === "open") {
+      if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open") {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
@@ -287,7 +287,8 @@ const AgenteIA = () => {
     try {
       const data = await callEvolutionApi("createInstance", { instanceName: settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}` });
       setInstanceName(data.instance?.instanceName || data.instanceName || "");
-      if (data.instance?.status === "open") {
+      const instState = data.instance?.status || data.instance?.state;
+      if (instState === "open") {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
         return;
@@ -303,14 +304,18 @@ const AgenteIA = () => {
     try {
       const data = await callEvolutionApi("get_qr", { instanceName });
       const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode?.code || data?.code;
+      const instState = data?.instance?.status || data?.instance?.state || data?.status || data?.state;
+      if (instState === "open") {
+        setWhatsappStatus("connected");
+        setQrCode(null);
+        stopPolling();
+        return;
+      }
       if (qr) {
         const src = qr.startsWith("data:") ? qr : `data:image/png;base64,${qr.replace(/^data:image\/[a-z]+;base64,/, "")}`;
         setQrCode(src);
         setWhatsappStatus("qr_ready");
         startPolling();
-      } else if (data.instance?.status === "open" || data.status === "open") {
-        setWhatsappStatus("connected");
-        stopPolling();
       } else {
         setTimeout(fetchQr, 3000);
       }
@@ -326,7 +331,7 @@ const AgenteIA = () => {
       try {
         const data = await callEvolutionApi("check_status", { instanceName });
         const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-        if (inst?.status === "open" || inst?.connectionStatus === "open" || data.status === "connected") {
+        if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open" || data.status === "connected") {
           setWhatsappStatus("connected");
           setQrCode(null);
           stopPolling();
