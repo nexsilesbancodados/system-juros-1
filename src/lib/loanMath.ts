@@ -293,3 +293,178 @@ export function generateInstallmentSchedule(params: {
   return dates;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Amortização (juros / amortização / saldo por parcela)
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface AmortizationRow {
+  n: number;
+  payment: number;
+  interest: number;
+  principal: number;
+  balance: number;
+}
+
+/**
+ * Decompõe cada parcela em (juros, amortização, saldo devedor).
+ * Funciona para todos os 6 modos. Bullet retorna 1 linha; grace inclui
+ * linhas zeradas durante a carência (juros acumulando, sem pagamento).
+ */
+export function buildAmortization(
+  result: CalculateLoanResult,
+  input: CalculateLoanInput,
+): AmortizationRow[] {
+  const i = (input.rate ?? result.derivedRate ?? 0) / 100;
+  const grace = Math.max(0, Math.floor(input.gracePeriods ?? 0));
+  let balance = input.capital;
+  const rows: AmortizationRow[] = [];
+
+  if (input.loanMode === "bullet") {
+    rows.push({
+      n: 1,
+      payment: result.schedule[0],
+      interest: result.totalInterest,
+      principal: input.capital,
+      balance: 0,
+    });
+    return rows;
+  }
+
+  if (input.loanMode === "grace") {
+    // Carência: juros simples acumulam, sem pagamento
+    for (let k = 0; k < grace; k++) {
+      const interest = input.capital * i;
+      balance += interest;
+      rows.push({ n: k + 1, payment: 0, interest, principal: 0, balance });
+    }
+    // Pós-carência: parcelas iguais (sistema simples)
+    const remaining = result.schedule.length - grace;
+    const pmt = result.schedule[grace] ?? 0;
+    for (let k = 0; k < remaining; k++) {
+      const interest = balance * i / Math.max(1, remaining - k);
+      const principal = pmt - interest;
+      balance = Math.max(0, balance - principal);
+      rows.push({ n: grace + k + 1, payment: pmt, interest, principal, balance });
+    }
+    return rows;
+  }
+
+  // Modos padrão (uniforme ou interest_only)
+  result.schedule.forEach((payment, idx) => {
+    let interest = 0;
+    let principal = 0;
+
+    if (input.loanMode === "price") {
+      interest = balance * i;
+      principal = payment - interest;
+    } else if (input.loanMode === "interest_only") {
+      interest = balance * i;
+      principal = idx === result.schedule.length - 1 ? balance : 0;
+    } else {
+      // installments / percentage — juros simples diluídos linearmente
+      interest = result.totalInterest / result.schedule.length;
+      principal = payment - interest;
+    }
+    balance = Math.max(0, balance - principal);
+    rows.push({ n: idx + 1, payment, interest, principal, balance });
+  });
+  return rows;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Avisos inteligentes
+// ──────────────────────────────────────────────────────────────────────────
+
+export type LoanWarningLevel = "info" | "warn" | "danger";
+export interface LoanWarning {
+  level: LoanWarningLevel;
+  title: string;
+  message: string;
+}
+
+/**
+ * Heurísticas de risco/sanidade para o operador.
+ * Não bloqueia — apenas alerta.
+ */
+export function evaluateLoanWarnings(
+  input: CalculateLoanInput,
+  result: CalculateLoanResult | null,
+): LoanWarning[] {
+  const out: LoanWarning[] = [];
+  if (!result) return out;
+
+  const rate = input.rate ?? result.derivedRate ?? 0;
+  const f = input.frequency;
+  // Taxa equivalente mensal aproximada (juros simples) p/ comparar
+  const monthlyEq =
+    f === "daily" ? rate * 22 :
+    f === "weekly" ? rate * 4.33 :
+    f === "biweekly" ? rate * 2 :
+    rate;
+
+  if (monthlyEq >= 30) {
+    out.push({
+      level: "danger",
+      title: "Taxa muito alta",
+      message: `Equivalente a ~${monthlyEq.toFixed(1)}% ao mês. Risco de inadimplência alto e questionável legalmente.`,
+    });
+  } else if (monthlyEq >= 20) {
+    out.push({
+      level: "warn",
+      title: "Taxa acima do mercado",
+      message: `~${monthlyEq.toFixed(1)}% ao mês. Avalie capacidade de pagamento do cliente.`,
+    });
+  }
+
+  if (result.totalInterest > input.capital * 2) {
+    out.push({
+      level: "warn",
+      title: "Juros maiores que 2× o capital",
+      message: `Cliente vai pagar R$ ${result.totalInterest.toFixed(2)} de juros sobre R$ ${input.capital.toFixed(2)}.`,
+    });
+  }
+
+  if (result.numInstallments > 24 && input.loanMode !== "bullet") {
+    out.push({
+      level: "info",
+      title: "Prazo longo",
+      message: `${result.numInstallments} pagamentos — monitore renegociação ao longo do contrato.`,
+    });
+  }
+
+  if (input.loanMode === "interest_only") {
+    out.push({
+      level: "info",
+      title: "Atenção: parcela final pesada",
+      message: `Última parcela inclui o capital — R$ ${result.schedule[result.schedule.length - 1].toFixed(2)}.`,
+    });
+  }
+
+  if (input.loanMode === "bullet") {
+    out.push({
+      level: "warn",
+      title: "Pagamento único concentrado",
+      message: "Todo o valor cai numa data só. Confirme que o cliente terá liquidez.",
+    });
+  }
+
+  if (input.loanMode === "grace" && (input.gracePeriods ?? 0) > 0) {
+    const totalGraceInterest = input.capital * (rate / 100) * (input.gracePeriods ?? 0);
+    out.push({
+      level: "info",
+      title: "Juros acumulam na carência",
+      message: `Durante a carência o cliente não paga, mas R$ ${totalGraceInterest.toFixed(2)} de juros entram no capital.`,
+    });
+  }
+
+  if (input.capital >= 10000) {
+    out.push({
+      level: "info",
+      title: "Valor alto — exija garantia",
+      message: "Para empréstimos acima de R$ 10k considere avalista, contrato assinado e comprovante de renda.",
+    });
+  }
+
+  return out;
+}
+
