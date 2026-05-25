@@ -57,6 +57,7 @@ const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 const Hoje = lazy(() => import("./pages/Hoje"));
 const Planos = lazy(() => import("./pages/Planos"));
+const Comunicacao = lazy(() => import("./pages/Comunicacao"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
