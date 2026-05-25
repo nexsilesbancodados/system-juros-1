@@ -287,7 +287,8 @@ const AgenteIA = () => {
     try {
       const data = await callEvolutionApi("createInstance", { instanceName: settings?.whatsapp_instance || `instancia-${user?.id.split("-")[0]}` });
       setInstanceName(data.instance?.instanceName || data.instanceName || "");
-      if (data.instance?.status === "open") {
+      const instState = data.instance?.status || data.instance?.state;
+      if (instState === "open") {
         setWhatsappStatus("connected");
         toast({ title: "WhatsApp conectado!" });
         return;
