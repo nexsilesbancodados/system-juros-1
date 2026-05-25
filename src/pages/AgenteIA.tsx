@@ -768,9 +768,26 @@ const AgenteIA = () => {
                       </span>
                     )}
                   </h2>
-                  <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await callEvolutionApi("update_settings", { instanceName });
+                          toast({ title: "Sincronizando histórico", description: "Pode levar alguns minutos. Atualizando..." });
+                          setTimeout(() => loadChats(), 5000);
+                        } catch (e: any) {
+                          toast({ title: "Erro", description: e.message, variant: "destructive" });
+                        }
+                      }}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors font-medium"
+                      title="Sincronizar todo o histórico do WhatsApp"
+                    >
+                      Sincronizar histórico
+                    </button>
+                    <button onClick={() => loadChats()} disabled={loadingChats} className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                      <RefreshCw size={16} className={`text-muted-foreground ${loadingChats ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
