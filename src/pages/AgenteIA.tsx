@@ -403,9 +403,14 @@ const AgenteIA = () => {
   };
 
   // Auto-load chats on tab switch
+  // Auto-load chats on tab switch (and re-check status in case user connected elsewhere)
   useEffect(() => {
-    if (tab === "mensagens" && whatsappStatus === "connected") {
-      loadChats();
+    if (tab === "mensagens") {
+      if (whatsappStatus !== "connected") {
+        checkStatus();
+      } else {
+        loadChats();
+      }
     }
   }, [tab, whatsappStatus]);
 
