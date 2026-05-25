@@ -113,80 +113,48 @@ const Perfil = () => {
         </div>
       </div>
 
-      {/* Subscription Card */}
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-6 card-shine relative overflow-hidden group">
+      {/* Lifetime Access Card */}
+      <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.08] via-card to-yellow-500/[0.05] p-6 space-y-4 card-shine relative overflow-hidden group">
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center">
-              <CreditCard size={16} className="text-primary" />
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center ring-1 ring-amber-500/30">
+              <InfinityIcon size={18} className="text-amber-400" />
             </div>
-            <h2 className="text-sm font-semibold text-foreground">Minha Assinatura</h2>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Acesso Vitalício</h2>
+              <p className="text-[11px] text-muted-foreground">Sem renovação, sem assinatura</p>
+            </div>
           </div>
-          {profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date() && (
-            <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]">
-              Período de Teste
-            </Badge>
-          )}
+          <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+            <Sparkles size={10} className="mr-1" /> Ativo
+          </Badge>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10 pt-2">
           <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Status do Plano</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Status</p>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-sm font-bold text-foreground capitalize">
-                {profile?.subscription_type === "yearly" ? "Elite Anual" : "Pro Mensal"}
-              </p>
+              <p className="text-sm font-bold text-foreground">Liberado para sempre</p>
             </div>
           </div>
 
           <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Vencimento / Expiração</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Validade</p>
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-primary" />
-              <p className="text-sm font-bold text-foreground">
-                {profile?.subscription_expires_at 
-                  ? formatBR(profile.subscription_expires_at)
-                  : profile?.trial_ends_at
-                    ? formatBR(profile.trial_ends_at)
-                    : "Pendente"}
-              </p>
+              <InfinityIcon size={14} className="text-amber-400" />
+              <p className="text-sm font-bold text-foreground">Sem expiração</p>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-border/50 relative z-10">
-            <button 
-              onClick={async () => {
-                const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
-                if (checkoutUrl) {
-                  window.location.href = checkoutUrl as string;
-                } else if (profile?.is_admin) {
-                  toast({
-                    title: "Checkout não configurado",
-                    description: "Configure o link de pagamento na página de Admin.",
-                    action: (
-                      <button
-                        onClick={() => navigate("/admin")}
-                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold"
-                      >
-                        Ir para Admin
-                      </button>
-                    ) as any,
-                  });
-                } else {
-                  toast({ title: "Checkout não configurado", description: "O link de pagamento ainda não foi definido pelo administrador. Entre em contato com o suporte.", variant: "destructive" });
-                }
-              }}
-              className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
-            >
-              RENOVAR OU UPGRADE
-              <ExternalLink size={14} />
-            </button>
+        <div className="pt-4 border-t border-amber-500/15 relative z-10">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            ✨ Você tem <span className="font-semibold text-foreground">acesso ilimitado e vitalício</span> a todas as funcionalidades do sistema. Nenhum pagamento, renovação ou assinatura é necessário.
+          </p>
         </div>
 
-        {/* Decorative Background Icon */}
-        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 text-primary/[0.03] -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+        <InfinityIcon className="absolute -right-6 -bottom-6 w-36 h-36 text-amber-500/[0.04] -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
       </div>
 
       {/* Info */}
