@@ -29,10 +29,10 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { action, instanceName } = body;
+    const reqBody = await req.json();
+    const { action, instanceName } = reqBody;
     // Accept payload either nested under `data` or flat at the top level
-    const data = (body?.data && typeof body.data === "object") ? { ...body, ...body.data } : body;
+    const data = (reqBody?.data && typeof reqBody.data === "object") ? { ...reqBody, ...reqBody.data } : reqBody;
 
     const { data: settings, error: settingsError } = await supabaseClient
       .from("settings")
