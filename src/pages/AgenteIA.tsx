@@ -373,7 +373,7 @@ const AgenteIA = () => {
 
       rawChats.forEach((chat: any) => {
         const remoteJid = (chat.remoteJid || chat.id || chat.key?.remoteJid)?.trim();
-        if (!remoteJid || remoteJid === "status@broadcast" || remoteJid.endsWith("@g.us")) return;
+        if (!remoteJid || remoteJid === "status@broadcast") return;
         if (uniqueChats.has(remoteJid)) return;
 
         uniqueChats.set(remoteJid, {
