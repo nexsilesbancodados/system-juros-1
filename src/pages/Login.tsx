@@ -74,6 +74,7 @@ const Login = () => {
   );
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMeState] = useState<boolean>(() => getRememberMe());
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; plan?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
@@ -149,6 +150,7 @@ const Login = () => {
     setFormError(null);
     if (!validateAll("login")) return;
     setLoading(true);
+    setRememberMe(rememberMe);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
       setLoading(false);
