@@ -146,3 +146,64 @@ export function localNoonISO(dateStr: string | Date | null | undefined): string 
   const d = parseLocalDate(dateStr);
   return (d ?? new Date()).toISOString();
 }
+
+/** True se a data cai em sábado ou domingo. */
+export function isWeekend(input: string | Date | null | undefined): boolean {
+  const d = parseLocalDate(input);
+  if (!d) return false;
+  const dow = d.getDay();
+  return dow === 0 || dow === 6;
+}
+
+/** Páscoa (algoritmo de Meeus/Jones/Butcher) — usada p/ feriados móveis. */
+function easterDate(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+}
+
+function brHolidayKeys(year: number): Set<string> {
+  const fixed = ["01-01","04-21","05-01","09-07","10-12","11-02","11-15","11-20","12-25"];
+  const set = new Set(fixed);
+  const easter = easterDate(year);
+  for (const delta of [-48, -47, -2, 60]) {
+    const d = new Date(easter);
+    d.setDate(d.getDate() + delta);
+    set.add(`${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+  }
+  return set;
+}
+
+const HOLIDAY_CACHE = new Map<number, Set<string>>();
+/** True se a data é feriado nacional brasileiro (fixos + Carnaval, Sexta Santa, Corpus Christi). */
+export function isBrazilianHoliday(input: string | Date | null | undefined): boolean {
+  const d = parseLocalDate(input);
+  if (!d) return false;
+  const y = d.getFullYear();
+  let s = HOLIDAY_CACHE.get(y);
+  if (!s) { s = brHolidayKeys(y); HOLIDAY_CACHE.set(y, s); }
+  return s.has(`${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+}
+
+/** Próximo dia útil (não fds nem feriado nacional BR). */
+export function nextBusinessDay(input: string | Date): Date {
+  const base = parseLocalDate(input) ?? new Date();
+  const out = new Date(base);
+  out.setHours(12, 0, 0, 0);
+  while (isWeekend(out) || isBrazilianHoliday(out)) {
+    out.setDate(out.getDate() + 1);
+  }
+  return out;
+}

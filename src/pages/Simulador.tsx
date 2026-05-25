@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Calculator, DollarSign, TrendingUp, Percent, Hash, FileSignature, ArrowRight, Zap, Calendar, Clock, Repeat, Coins, TrendingDown, Target, PauseCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
-import { calculateLoan, type LoanMode } from "@/lib/loanMath";
+import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
+import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 
 
 type Frequency = "monthly" | "weekly" | "daily";
@@ -449,23 +450,37 @@ const Simulador = () => {
         </button>
       )}
 
-      {/* Installment breakdown */}
-      {hasValue && breakdown.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
-          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-            <h2 className="font-semibold text-foreground text-sm">Detalhamento dos Pagamentos</h2>
-            <span className="text-xs text-muted-foreground">{breakdown.length} pagamentos</span>
-          </div>
-          <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
-            {breakdown.map((item) => (
-              <div key={item.num} className="data-row">
-                <div className="num-badge bg-primary/8 text-primary">{item.num}</div>
-                <span className="text-sm text-muted-foreground flex-1">{item.date}</span>
-                <span className="text-sm font-semibold text-foreground">R$ {fmt(item.value)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Painel de pré-visualização (cronograma + avisos) */}
+      {hasValue && calc && (
+        <LoanPreviewPanel
+          input={{
+            capital: valorNum,
+            rate: taxaNum,
+            periods: parcelasNum,
+            frequency: frequency === "daily" ? "daily" : frequency === "weekly" ? "weekly" : "monthly",
+            loanMode,
+            valueMode,
+            installmentValue: installmentNum,
+            gracePeriods: graceNum,
+          }}
+          result={{
+            installmentAmount: calc.valorParcela,
+            totalAmount: calc.totalReceber,
+            totalInterest: calc.jurosTotal,
+            numInstallments: calc.numParcelas,
+            schedule: calc.schedule,
+            perPeriodLabel: calc.perPeriodLabel,
+            derivedRate: (calc as any).derivedRate,
+          }}
+          dueDates={generateInstallmentSchedule({
+            startDate: new Date().toISOString().slice(0, 10),
+            count: calc.numParcelas,
+            frequency: frequency === "daily" ? "daily" : frequency === "weekly" ? "weekly" : "monthly",
+            dailyMode,
+            periodsAhead: loanMode === "bullet" ? parcelasNum : undefined,
+          })}
+          compact
+        />
       )}
     </div>
   );
