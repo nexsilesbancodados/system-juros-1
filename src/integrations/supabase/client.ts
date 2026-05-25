@@ -8,9 +8,71 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// ---- Remember me support ----
+// When the user opts in to "Lembrar-me" (default), the auth session is stored
+// in localStorage and persists across browser restarts. When opted out, the
+// session is kept only in sessionStorage and is dropped when the tab closes.
+const REMEMBER_KEY = "sj_remember_me";
+
+export const setRememberMe = (remember: boolean) => {
+  try {
+    localStorage.setItem(REMEMBER_KEY, remember ? "true" : "false");
+  } catch {
+    /* noop */
+  }
+};
+
+export const getRememberMe = (): boolean => {
+  try {
+    return localStorage.getItem(REMEMBER_KEY) !== "false";
+  } catch {
+    return true;
+  }
+};
+
+const pickStorage = (): Storage => {
+  try {
+    return getRememberMe() ? localStorage : sessionStorage;
+  } catch {
+    return localStorage;
+  }
+};
+
+// Hybrid storage adapter: writes to the chosen storage and cleans the other,
+// but reads from both so a session created before the toggle still resolves.
+const hybridStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      const primary = pickStorage().getItem(key);
+      if (primary != null) return primary;
+      return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      const store = pickStorage();
+      store.setItem(key, value);
+      const other = store === localStorage ? sessionStorage : localStorage;
+      other.removeItem(key);
+    } catch {
+      /* noop */
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      /* noop */
+    }
+  },
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: hybridStorage,
     persistSession: true,
     autoRefreshToken: true,
   }
