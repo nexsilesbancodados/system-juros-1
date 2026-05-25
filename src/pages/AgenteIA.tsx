@@ -213,7 +213,7 @@ const AgenteIA = () => {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const [chatSearch, setChatSearch] = useState("");
-  const [chatFilter, setChatFilter] = useState<"all" | "unread" | "groups">("all");
+  const [chatFilter, setChatFilter] = useState<"all" | "unread" | "users" | "groups">("all");
 
   // Agent config state
   const [agentConfig, setAgentConfig] = useState({
@@ -706,6 +706,7 @@ const AgenteIA = () => {
   const filteredChats = whatsappChats.filter((c) => {
     if (chatFilter === "unread" && !c.unreadCount) return false;
     if (chatFilter === "groups" && !c.remoteJid.endsWith("@g.us")) return false;
+    if (chatFilter === "users" && c.remoteJid.endsWith("@g.us")) return false;
     if (chatSearch.trim()) {
       const q = chatSearch.toLowerCase();
       return (
@@ -937,6 +938,7 @@ const AgenteIA = () => {
                   {([
                     { id: "all", label: "Todas", count: whatsappChats.length },
                     { id: "unread", label: "Não lidas", count: whatsappChats.filter(c => c.unreadCount).length },
+                    { id: "users", label: "Usuários", count: whatsappChats.filter(c => !c.remoteJid.endsWith("@g.us")).length },
                     { id: "groups", label: "Grupos", count: whatsappChats.filter(c => c.remoteJid.endsWith("@g.us")).length },
                   ] as const).map((f) => (
                     <button
