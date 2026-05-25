@@ -876,7 +876,7 @@ const NovoCliente = () => {
             <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {([
-                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
+                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Valor fixo por parcela (ex: 10x de R$ 200)", Icon: Hash },
                 { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
                 { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros por período, capital no último", Icon: Coins },
                 { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
@@ -885,7 +885,8 @@ const NovoCliente = () => {
               ]).map(m => (
                 <button key={m.v} onClick={() => {
                   setLoanMode(m.v);
-                  if (m.v !== "installments") setValueMode("rate");
+                  // "Por Parcelas" abre direto no modo "valor da parcela"; demais usam taxa %.
+                  setValueMode(m.v === "installments" ? "installment" : "rate");
                 }}
                   className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                   <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
