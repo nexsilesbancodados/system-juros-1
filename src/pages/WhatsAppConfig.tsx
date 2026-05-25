@@ -31,6 +31,55 @@ const WhatsAppConfig = () => {
     }
   }, [user]);
 
+  // Poll status while QR code is visible / connecting
+  useEffect(() => {
+    if (status === "connected") return;
+    if (!settings?.whatsapp_instance) return;
+    if (!qrCode && status !== "connecting") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await supabase.functions.invoke("evolution-api", {
+          body: { action: "getInstance", instanceName: settings.whatsapp_instance }
+        });
+        const inst = Array.isArray(data) ? data[0] : data?.instance ?? data;
+        const connStatus = inst?.connectionStatus || inst?.status;
+        if (connStatus === "open") {
+          setStatus("connected");
+          setQrCode(null);
+          toast({ title: "WhatsApp Conectado!", description: "Conexão estabelecida com sucesso." });
+          // auto-configure webhook
+          try {
+            const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+            await supabase.functions.invoke("evolution-api", {
+              body: {
+                action: "setWebhook",
+                instanceName: settings.whatsapp_instance,
+                data: { url: `${supabaseUrl}/functions/v1/whatsapp-webhook` }
+              }
+            });
+          } catch (e) {
+            console.warn("Auto webhook setup failed", e);
+          }
+        }
+      } catch (e) {
+        console.warn("Status polling error", e);
+      }
+    }, 3000);
+
+    // Auto-refresh QR every 40s (Evolution QR expires ~60s)
+    const qrRefresh = setInterval(() => {
+      if (status !== "connected" && qrCode) {
+        handleConnect(settings.whatsapp_instance);
+      }
+    }, 40000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(qrRefresh);
+    };
+  }, [qrCode, status, settings?.whatsapp_instance]);
+
   const fetchSettings = async () => {
     let { data } = await supabase
       .from("settings")
