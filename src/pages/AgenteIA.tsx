@@ -428,8 +428,15 @@ const AgenteIA = () => {
   const refreshChatMessages = async (remoteJid: string, silent = false) => {
     if (!silent) setLoadingMsgs(true);
     try {
-      const data = await callEvolutionApi("fetch_messages", { instanceName, remoteJid, count: 50 });
-      const nextMessages = (Array.isArray(data.messages) ? (data.messages as WhatsAppMsg[]) : []).sort(
+      const data = await callEvolutionApi("find_messages", { instanceName, remoteJid, count: 50 });
+      const rawMsgs: any[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.messages?.records)
+          ? data.messages.records
+          : Array.isArray(data?.messages)
+            ? data.messages
+            : [];
+      const nextMessages = (rawMsgs as WhatsAppMsg[]).sort(
         (a, b) => getTimestampValue(a.messageTimestamp) - getTimestampValue(b.messageTimestamp)
       );
       setChatMessages(nextMessages);
