@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Camera, Save, Key, Mail, Shield, Check, MessageSquare, LogOut, CreditCard, Clock, ExternalLink } from "lucide-react";
+import { User, Camera, Save, Key, Mail, Shield, Check, MessageSquare, LogOut, CreditCard, Clock, ExternalLink, Infinity as InfinityIcon, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
