@@ -314,6 +314,7 @@ const AgenteIA = () => {
         setWhatsappStatus("connected");
         setQrCode(null);
         stopPolling();
+        configureWebhook(instance);
       } else {
         setWhatsappStatus("disconnected");
       }
