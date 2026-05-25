@@ -69,7 +69,7 @@ const WhatsAppConfig = () => {
 
     // Auto-refresh QR every 40s (Evolution QR expires ~60s)
     const qrRefresh = setInterval(() => {
-      if (status !== "connected" && qrCode) {
+      if (qrCode) {
         handleConnect(settings.whatsapp_instance);
       }
     }, 40000);
