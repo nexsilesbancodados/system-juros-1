@@ -1098,13 +1098,9 @@ const AgenteIA = () => {
               </div>
               <p className="text-lg font-semibold text-foreground">WhatsApp Conectado!</p>
               <p className="text-sm text-muted-foreground">Instância: <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{instanceName}</span></p>
-              <div className="bg-muted/30 border border-border rounded-xl p-4 text-left max-w-sm mx-auto space-y-2">
-                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Shield size={12} className="text-primary" /> Webhook de IA</p>
-                <p className="text-[10px] text-muted-foreground">Copie esta URL e cole nas configurações de Webhook da sua instância no Evolution API para ativar a negociação automática:</p>
-                <div className="flex gap-2">
-                  <input readOnly value={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`} className="flex-1 bg-card border border-border rounded px-2 py-1 text-[10px] font-mono" />
-                  <button onClick={() => { navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`); toast({ title: "Copiado!" }); }} className="p-1 hover:bg-muted rounded"><RefreshCw size={12} /></button>
-                </div>
+              <div className="bg-muted/30 border border-border rounded-xl p-3 text-left max-w-sm mx-auto">
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Shield size={12} className="text-primary" /> Webhook de IA configurado automaticamente</p>
+                <p className="text-[10px] text-muted-foreground mt-1">A negociação automática já está ativa nesta instância.</p>
               </div>
               <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mt-4">
                 <div className="rounded-xl bg-muted/30 border border-border p-3 text-center">
