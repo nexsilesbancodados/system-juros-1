@@ -11,14 +11,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Carregando...</div>
+        <div className="flex items-center gap-3 text-muted-foreground text-sm">
+          <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
+          Carregando...
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    // Preserva o destino original para retornar após o login.
+    // Evita loop redirecionando para si mesmo ou para rotas públicas de auth.
+    const path = location.pathname + location.search + location.hash;
+    const lower = location.pathname.toLowerCase();
+    const isAuthRoute =
+      lower === "/" ||
+      lower.startsWith("/login") ||
+      lower.startsWith("/reset-password") ||
+      lower.startsWith("/portal-cliente") ||
+      lower.startsWith("/cobrador-externo");
+    const next = !isAuthRoute && path.startsWith("/") ? `?next=${encodeURIComponent(path)}` : "";
+    return <Navigate to={`/login${next}`} replace />;
   }
+
 
   // Block access for users explicitly marked as blocked
   if (profile?.is_blocked) {
