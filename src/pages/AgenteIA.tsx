@@ -162,6 +162,12 @@ const getEvolutionInstancePayload = (payload: unknown): UnknownRecord | null => 
     return payload.instance;
   }
 
+  // Edge function wraps array responses as { data: [...], chats: [...], messages: [...] }
+  if (Array.isArray(payload.data)) {
+    const fromData = (payload.data as unknown[]).find(isRecord) as UnknownRecord | undefined;
+    if (fromData) return fromData;
+  }
+
   const indexedInstance = Object.entries(payload).find(
     ([key, value]) => /^\d+$/.test(key) && isRecord(value)
   );
