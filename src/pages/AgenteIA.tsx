@@ -706,6 +706,7 @@ const AgenteIA = () => {
   const filteredChats = whatsappChats.filter((c) => {
     if (chatFilter === "unread" && !c.unreadCount) return false;
     if (chatFilter === "groups" && !c.remoteJid.endsWith("@g.us")) return false;
+    if (chatFilter === "users" && c.remoteJid.endsWith("@g.us")) return false;
     if (chatSearch.trim()) {
       const q = chatSearch.toLowerCase();
       return (
