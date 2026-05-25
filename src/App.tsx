@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -57,6 +57,7 @@ const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 const Hoje = lazy(() => import("./pages/Hoje"));
 const Planos = lazy(() => import("./pages/Planos"));
+const Comunicacao = lazy(() => import("./pages/Comunicacao"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -138,14 +139,15 @@ const App = () => (
                     <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
-                    <Route path="/agente-ia" element={<ErrorBoundary><AgenteIA /></ErrorBoundary>} />
+                    <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
+                    <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
+                    <Route path="/automacoes" element={<Navigate to="/comunicacao?tab=automacoes" replace />} />
+                    <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
                     <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
-                    <Route path="/automacoes" element={<ErrorBoundary><Automacoes /></ErrorBoundary>} />
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
                     <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
                     <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
                     <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
-                    <Route path="/configuracoes/whatsapp" element={<ErrorBoundary><WhatsAppConfig /></ErrorBoundary>} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
