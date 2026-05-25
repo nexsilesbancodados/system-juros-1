@@ -99,8 +99,7 @@ const sections: MenuSection[] = [
     title: "Inteligência",
     sectionIcon: Sparkles,
     items: [
-      { label: "Agente IA", icon: Bot, path: "/agente-ia", highlight: true },
-      { label: "Automações", icon: Zap, path: "/automacoes", highlight: true },
+      { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
       { label: "Metas", icon: Target, path: "/ferramentas/metas" },
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
