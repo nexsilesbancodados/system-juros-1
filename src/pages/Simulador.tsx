@@ -159,7 +159,7 @@ const Simulador = () => {
         <label className="text-label mb-1 block">Modo do Empréstimo</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {([
-            { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Nº fixo de parcelas iguais", Icon: Hash },
+            { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Valor fixo por parcela (ex: 10x de R$ 200)", Icon: Hash },
             { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
             { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros mensais, capital no último", Icon: Coins },
             { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
@@ -170,7 +170,8 @@ const Simulador = () => {
               key={m.v}
               onClick={() => {
                 setLoanMode(m.v);
-                if (m.v !== "installments") setValueMode("rate");
+                // "Por Parcelas" já abre no modo "valor da parcela" (fixo). Outros usam taxa %.
+                setValueMode(m.v === "installments" ? "installment" : "rate");
               }}
               className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${
                 loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
