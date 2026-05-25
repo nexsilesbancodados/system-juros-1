@@ -192,8 +192,13 @@ serve(async (req) => {
     const result = await response.json().catch(() => ({}));
     console.log(`[Evolution API] Result:`, JSON.stringify(result));
     
-    // Always return 200 to avoid runtime error overlays; embed upstream status in body
-    return new Response(JSON.stringify({ ...result, upstream_status: response.status }), {
+    // Always return 200 to avoid runtime error overlays; embed upstream status in body.
+    // Preserve array responses (e.g. find_chats / find_messages return raw arrays) by
+    // wrapping them — `{...array}` would lose the array shape and become {0:..,1:..}.
+    const body = Array.isArray(result)
+      ? { data: result, chats: result, messages: result, upstream_status: response.status }
+      : { ...result, upstream_status: response.status };
+    return new Response(JSON.stringify(body), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
