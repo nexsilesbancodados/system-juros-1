@@ -8,7 +8,8 @@ import {
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
   Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
   ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
-  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
+  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X,
+  Image as ImageIcon, Mic, Video, File as FileIcon, MapPin, Sticker, Check, CheckCheck
 } from "lucide-react";
 import { formatBR } from "@/lib/dateUtils";
 
