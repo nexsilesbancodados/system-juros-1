@@ -8,7 +8,8 @@ import {
   QrCode, RefreshCw, LogOut, MessageSquare, Phone, CheckCircle2,
   Loader2, AlertTriangle, Settings, Inbox, Reply, ChevronLeft,
   ToggleLeft, ToggleRight, Shield, Zap, Clock, Volume2, BellOff,
-  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X
+  Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X,
+  Image as ImageIcon, Mic, Video, File as FileIcon, MapPin, Sticker, Check, CheckCheck
 } from "lucide-react";
 import { formatBR } from "@/lib/dateUtils";
 
@@ -745,7 +746,77 @@ const AgenteIA = () => {
   }, [tab]);
 
   const getMessageText = (msg: WhatsAppMsg) =>
-    extractWhatsAppText(msg.message) || "[mídia]";
+    extractWhatsAppText(msg.message) || "";
+
+  type MediaKind = "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "text";
+  const detectMediaKind = (msg: WhatsAppMsg): MediaKind => {
+    const m = msg.message as any;
+    if (!m) return "text";
+    if (m.imageMessage) return "image";
+    if (m.audioMessage || m.pttMessage) return "audio";
+    if (m.videoMessage) return "video";
+    if (m.documentMessage || m.documentWithCaptionMessage) return "document";
+    if (m.stickerMessage) return "sticker";
+    if (m.locationMessage || m.liveLocationMessage) return "location";
+    if (m.contactMessage || m.contactsArrayMessage) return "contact";
+    return "text";
+  };
+
+  const getQuotedInfo = (msg: WhatsAppMsg) => {
+    const ctx = (msg.message as any)?.extendedTextMessage?.contextInfo
+      || (msg as any)?.contextInfo;
+    const quoted = ctx?.quotedMessage;
+    if (!quoted) return null;
+    const text = extractWhatsAppText(quoted) || "[mídia]";
+    const author = ctx?.participant ? getJidLabel(ctx.participant) : null;
+    return { text: text.length > 120 ? text.slice(0, 120) + "…" : text, author };
+  };
+
+  const getMediaUrl = (msg: WhatsAppMsg): string | null => {
+    const m = msg.message as any;
+    const direct = m?.imageMessage?.url || m?.stickerMessage?.url;
+    if (typeof direct === "string" && direct.startsWith("http")) return direct;
+    // Evolution sometimes injects base64 in mediaBase64
+    const b64 = m?.imageMessage?.mediaBase64 || m?.stickerMessage?.mediaBase64;
+    if (typeof b64 === "string" && b64.length > 100) {
+      return b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`;
+    }
+    return null;
+  };
+
+  const getAudioSeconds = (msg: WhatsAppMsg): number | null => {
+    const s = (msg.message as any)?.audioMessage?.seconds;
+    return typeof s === "number" ? s : null;
+  };
+
+  const getDocumentInfo = (msg: WhatsAppMsg) => {
+    const d = (msg.message as any)?.documentMessage
+      || (msg.message as any)?.documentWithCaptionMessage?.message?.documentMessage;
+    if (!d) return null;
+    return {
+      name: d.fileName || d.title || "documento",
+      mime: d.mimetype || "",
+    };
+  };
+
+  const formatDateLabel = (ts: number) => {
+    const d = new Date(ts * 1000);
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+    if (same(d, today)) return "Hoje";
+    if (same(d, yesterday)) return "Ontem";
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  };
+
+  const getStatusIcon = (msg: WhatsAppMsg) => {
+    if (!msg.key?.fromMe) return null;
+    const status = (msg as any).status;
+    // Evolution status numbers: 0 pending, 1 sent, 2 delivered, 3 read, 4 played
+    if (status === 3 || status === 4 || status === "READ") return <CheckCheck size={12} className="text-sky-400" />;
+    if (status === 2 || status === "DELIVERY_ACK") return <CheckCheck size={12} className="text-primary-foreground/60" />;
+    return <Check size={12} className="text-primary-foreground/60" />;
+  };
 
   const ToggleSwitch = ({ enabled, onToggle, label, description }: { enabled: boolean; onToggle: () => void; label: string; description: string }) => (
     <div className="flex items-center justify-between py-3">
@@ -921,23 +992,96 @@ const AgenteIA = () => {
                 </div>
                 <p className="font-medium text-sm text-foreground">{selectedChat.name}</p>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10">
                 {loadingMsgs ? (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 size={24} className="animate-spin text-muted-foreground" />
                   </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-sm text-muted-foreground gap-2">
+                    <MessageSquare size={32} className="opacity-30" />
+                    <p>Nenhuma mensagem ainda</p>
+                  </div>
                 ) : (
                   chatMessages.map((msg, i) => {
                     const fromMe = msg.key?.fromMe;
+                    const ts = Number(msg.messageTimestamp) || 0;
+                    const prevTs = i > 0 ? Number(chatMessages[i - 1].messageTimestamp) || 0 : 0;
+                    const showDate = i === 0 || new Date(ts * 1000).toDateString() !== new Date(prevTs * 1000).toDateString();
+                    const prevMsg = i > 0 ? chatMessages[i - 1] : null;
+                    const sameSender = !!prevMsg && prevMsg.key?.fromMe === fromMe && (prevMsg.key as any)?.participant === (msg.key as any)?.participant && !showDate;
+                    const isGroup = selectedChat?.remoteJid.endsWith("@g.us");
+                    const senderName = isGroup && !fromMe && !sameSender
+                      ? (msg.pushName || getJidLabel((msg.key as any)?.participantAlt) || getJidLabel((msg.key as any)?.participant))
+                      : null;
+                    const kind = detectMediaKind(msg);
                     const text = getMessageText(msg);
-                    const time = msg.messageTimestamp
-                      ? new Date(Number(msg.messageTimestamp) * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                      : "";
+                    const quoted = getQuotedInfo(msg);
+                    const time = ts ? new Date(ts * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+                    const mediaUrl = (kind === "image" || kind === "sticker") ? getMediaUrl(msg) : null;
+                    const audioSecs = kind === "audio" ? getAudioSeconds(msg) : null;
+                    const docInfo = kind === "document" ? getDocumentInfo(msg) : null;
+
                     return (
-                      <div key={i} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted/50 text-foreground"}`}>
-                          <p className="whitespace-pre-wrap">{text}</p>
-                          <p className={`text-[10px] mt-0.5 ${fromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{time}</p>
+                      <div key={msg.id || i}>
+                        {showDate && (
+                          <div className="flex justify-center my-3">
+                            <span className="text-[10px] font-medium uppercase tracking-wide px-3 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/50">
+                              {formatDateLabel(ts)}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`flex ${fromMe ? "justify-end" : "justify-start"} ${sameSender ? "mt-0.5" : "mt-2"}`}>
+                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground border border-border/50 rounded-bl-sm"}`}>
+                            {senderName && (
+                              <p className="text-[11px] font-semibold text-primary mb-1">{senderName}</p>
+                            )}
+                            {quoted && (
+                              <div className={`mb-1.5 px-2 py-1.5 rounded-md border-l-2 text-[11px] ${fromMe ? "bg-primary-foreground/10 border-primary-foreground/40" : "bg-muted/60 border-primary/60"}`}>
+                                {quoted.author && <p className="font-semibold opacity-80">{quoted.author}</p>}
+                                <p className="opacity-70 line-clamp-2">{quoted.text}</p>
+                              </div>
+                            )}
+                            {kind === "image" && (mediaUrl ? (
+                              <img src={mediaUrl} alt="" className="rounded-lg max-w-full max-h-64 object-cover mb-1" loading="lazy" />
+                            ) : (
+                              <div className="flex items-center gap-2 py-1 opacity-80"><ImageIcon size={14} /><span className="text-xs italic">Imagem</span></div>
+                            ))}
+                            {kind === "sticker" && (mediaUrl
+                              ? <img src={mediaUrl} alt="" className="w-24 h-24 object-contain" />
+                              : <span className="text-xs italic opacity-80">Figurinha</span>)}
+                            {kind === "audio" && (
+                              <div className="flex items-center gap-2 py-0.5">
+                                <Mic size={14} className="opacity-80" />
+                                <span className="text-xs">Áudio{audioSecs ? ` · ${Math.floor(audioSecs / 60)}:${String(audioSecs % 60).padStart(2, "0")}` : ""}</span>
+                              </div>
+                            )}
+                            {kind === "video" && (
+                              <div className="flex items-center gap-2 py-0.5"><Video size={14} className="opacity-80" /><span className="text-xs">Vídeo</span></div>
+                            )}
+                            {kind === "document" && docInfo && (
+                              <div className="flex items-center gap-2 py-1 px-2 rounded bg-black/10">
+                                <FileIcon size={16} className="opacity-80 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium truncate">{docInfo.name}</p>
+                                  {docInfo.mime && <p className="text-[10px] opacity-60 truncate">{docInfo.mime}</p>}
+                                </div>
+                              </div>
+                            )}
+                            {kind === "location" && (
+                              <div className="flex items-center gap-2 py-0.5"><MapPin size={14} className="opacity-80" /><span className="text-xs">Localização</span></div>
+                            )}
+                            {kind === "contact" && (
+                              <div className="flex items-center gap-2 py-0.5"><User size={14} className="opacity-80" /><span className="text-xs">Contato</span></div>
+                            )}
+                            {text && (
+                              <p className="whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+                            )}
+                            <div className={`flex items-center justify-end gap-1 mt-0.5 ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                              <span className="text-[10px]">{time}</span>
+                              {getStatusIcon(msg)}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
