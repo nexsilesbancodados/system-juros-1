@@ -433,7 +433,7 @@ const AgenteIA = () => {
   const refreshChatMessages = async (remoteJid: string, silent = false) => {
     if (!silent) setLoadingMsgs(true);
     try {
-      const data = await callEvolutionApi("find_messages", { instanceName, remoteJid, count: 50 });
+      const data = await callEvolutionApi("find_messages", { instanceName, remoteJid, count: 200 });
       const rawMsgs: any[] = Array.isArray(data)
         ? data
         : Array.isArray(data?.messages?.records)
