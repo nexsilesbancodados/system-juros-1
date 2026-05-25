@@ -66,7 +66,25 @@ serve(async (req) => {
             instanceName: instanceName,
             token: user.id.split("-")[0],
             qrcode: true,
-            integration: "WHATSAPP-BAILEYS"
+            integration: "WHATSAPP-BAILEYS",
+            syncFullHistory: true,
+            alwaysOnline: true
+          })
+        });
+        break;
+
+      case "update_settings":
+        endpoint = `${baseUrl}/settings/set/${instanceName}`;
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": apiKey },
+          body: JSON.stringify({
+            rejectCall: false,
+            groupsIgnore: false,
+            alwaysOnline: true,
+            readMessages: false,
+            readStatus: false,
+            syncFullHistory: true
           })
         });
         break;
