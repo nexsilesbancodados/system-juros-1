@@ -52,61 +52,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Subscription and Trial check (skip for admin and on exempt pages)
-  const expiresAt = profile?.subscription_expires_at;
-  const trialEndsAt = profile?.trial_ends_at;
-  
-  const exemptPaths = ["/perfil", "/sobre", "/configuracoes"];
-  const isExempt = exemptPaths.some((p) => location.pathname.startsWith(p));
+  // Acesso vitalício liberado para todos os usuários — sem checagem de assinatura/trial.
 
-  // Determine if account is active
-  const isSubscriptionActive = expiresAt && new Date(expiresAt).getTime() > Date.now();
-  const isTrialActive = trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
-  const isAccountActive = isSubscriptionActive || isTrialActive;
-
-  if (!profile?.is_admin && !isExempt && !isAccountActive) {
-    const expiredDate = expiresAt || trialEndsAt;
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="max-w-md w-full glass-card p-8 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-warning/10 flex items-center justify-center mx-auto">
-            <AlertCircle className="text-warning" size={28} />
-          </div>
-          <h1 className="text-xl font-bold text-foreground">Acesso Restrito</h1>
-          <p className="text-sm text-muted-foreground">
-            {expiredDate ? (
-              <>
-                Sua assinatura/período de teste expirou em{" "}
-                <span className="font-semibold text-foreground">
-                  {formatBR(expiredDate)}
-                </span>
-                . Renove para continuar usando o sistema.
-              </>
-            ) : (
-              "Você precisa de uma assinatura ativa para acessar esta área."
-            )}
-          </p>
-          <div className="flex flex-col gap-3">
-            <a
-              href="/perfil"
-              className="inline-block px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              Ir para Perfil
-            </a>
-            <button
-              onClick={async () => {
-                const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
-                if (checkoutUrl) window.location.href = checkoutUrl as string;
-              }}
-              className="inline-block px-6 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all"
-            >
-              Assinar Agora
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return <>{children}</>;
 };
