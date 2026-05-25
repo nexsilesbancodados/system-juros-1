@@ -426,24 +426,7 @@ const Login = () => {
                   </button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-white/[0.06]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail("teste@gmail.com");
-                      setPassword("123456");
-                      setErrors({});
-                      setFormError(null);
-                      toast({
-                        title: "Credenciais de Teste",
-                        description: "As credenciais foram preenchidas. Clique em 'Entrar no Sistema'.",
-                      });
-                    }}
-                    className="w-full py-2.5 rounded-xl text-xs font-medium text-white/50 hover:text-white/80 border border-white/10 hover:bg-white/[0.02] transition-all duration-300"
-                  >
-                    Usar Conta de Teste
-                  </button>
-                </div>
+
               </div>
 
               {/* Painel direito */}
