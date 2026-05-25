@@ -100,8 +100,8 @@ const Perfil = () => {
             <p className="font-bold text-foreground text-lg">{profile?.name || "Usuário"}</p>
             <p className="text-sm text-muted-foreground">{profile?.email}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
-                {profile?.subscription_type === "yearly" ? "Elite Anual" : "Pro Mensal"}
+              <Badge variant="outline" className="bg-gradient-to-r from-amber-500/15 to-yellow-500/15 text-amber-400 border-amber-500/30 text-[10px] font-bold">
+                <InfinityIcon size={10} className="mr-1" /> Acesso Vitalício
               </Badge>
               {profile?.is_admin && (
                 <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">
