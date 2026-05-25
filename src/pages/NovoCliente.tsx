@@ -1234,26 +1234,48 @@ const NovoCliente = () => {
               </div>
             )}
 
-            {/* Preview das datas de vencimento */}
-            {calc && calc.numParcelas > 0 && frequency !== "custom" && (
-              <details className="bg-muted/20 border border-border rounded-xl group">
-                <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-foreground flex items-center gap-2">
-                    <Calendar size={14} className="text-primary" /> Ver datas de vencimento ({calc.numParcelas})
-                  </p>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-open:hidden">Abrir</span>
-                  <span className="text-[10px] uppercase tracking-wider text-primary hidden group-open:inline">Fechar</span>
-                </summary>
-                <div className="border-t border-border max-h-72 overflow-auto divide-y divide-border/40">
-                  {generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, autoFirstDue ? undefined : firstDueDate || undefined).map((iso, i) => (
-                    <div key={i} className="grid grid-cols-3 items-center px-4 py-2 text-xs gap-2">
-                      <span className="text-muted-foreground">Parcela #{String(i + 1).padStart(2, "0")}</span>
-                      <span className="text-foreground font-medium text-center">{new Date(iso).toLocaleDateString("pt-BR")}</span>
-                      <span className="text-foreground font-semibold text-right">R$ {fmt(calc.installmentAmount)}</span>
-                    </div>
-                  ))}
-                </div>
-              </details>
+            {/* Painel completo: amortização + avisos + datas editáveis */}
+            {calc && calc.numParcelas > 0 && (
+              <LoanPreviewPanel
+                input={{
+                  capital: parseFloat(capital) || 0,
+                  rate: parseFloat(taxaJuros) || 0,
+                  periods: parseInt(numInstallments) || 0,
+                  frequency,
+                  loanMode,
+                  valueMode,
+                  installmentValue: parseFloat(installmentValue) || 0,
+                  gracePeriods: parseInt(gracePeriods) || 0,
+                }}
+                result={{
+                  installmentAmount: calc.installmentAmount,
+                  totalAmount: calc.totalAmount,
+                  totalInterest: calc.totalInterest,
+                  numInstallments: calc.numParcelas,
+                  schedule: calc.schedule,
+                  perPeriodLabel: periodLabel,
+                  derivedRate: (calc as any).derivedRate,
+                }}
+                dueDates={(() => {
+                  if (frequency === "custom") {
+                    // Datas do usuário (vazias viram mensais auto)
+                    return Array.from({ length: calc.numParcelas }).map((_, i) =>
+                      customDates[i]
+                        ? parseLocalDate(customDates[i])?.toISOString() ?? ""
+                        : generateDueDates(startDate, "monthly", i + 1, dailyMode)[i] ?? ""
+                    );
+                  }
+                  return generateDueDates(
+                    startDate, frequency, calc.numParcelas, dailyMode,
+                    autoFirstDue ? undefined : firstDueDate || undefined,
+                  );
+                })()}
+                onDueDatesChange={(next) => {
+                  // Edição inline marca freq como "custom" e atualiza datas
+                  if (frequency !== "custom") setFrequency("custom");
+                  setCustomDates(next.map(iso => iso ? toDateInputValue(iso) : ""));
+                }}
+              />
             )}
 
             {!calc && capital && taxaJuros && loanMode === "installments" && !numInstallments && (
