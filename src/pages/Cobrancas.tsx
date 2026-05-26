@@ -15,6 +15,7 @@ import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
 import { formatBR } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
+import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
@@ -356,8 +357,12 @@ const Cobrancas = () => {
         </div>
       </div>
 
+      {/* Métricas de cobranças automáticas */}
+      <CollectionMetrics />
+
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
+
         {[
           { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const },
           { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const },
