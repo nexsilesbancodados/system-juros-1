@@ -798,20 +798,40 @@ const AgenteIA = () => {
     return { text: text.length > 120 ? text.slice(0, 120) + "…" : text, author };
   };
 
-  const getMediaUrl = (msg: WhatsAppMsg): string | null => {
+  // Returns best-effort URL for any media (image, sticker, audio, video, document).
+  // Handles direct https URLs as well as base64 payloads injected by Evolution.
+  const getMediaUrl = (msg: WhatsAppMsg, kind: MediaKind): string | null => {
     const m = msg.message as any;
-    const direct = m?.imageMessage?.url || m?.stickerMessage?.url;
+    if (!m) return null;
+    const node =
+      kind === "image" ? m.imageMessage :
+      kind === "sticker" ? m.stickerMessage :
+      kind === "audio" ? (m.audioMessage || m.pttMessage) :
+      kind === "video" ? m.videoMessage :
+      kind === "document" ? (m.documentMessage || m.documentWithCaptionMessage?.message?.documentMessage) :
+      null;
+    if (!node) return null;
+
+    const direct = node.url || node.directPath;
     if (typeof direct === "string" && direct.startsWith("http")) return direct;
-    // Evolution sometimes injects base64 in mediaBase64
-    const b64 = m?.imageMessage?.mediaBase64 || m?.stickerMessage?.mediaBase64;
+
+    const b64 = node.mediaBase64 || node.base64 || m.base64;
     if (typeof b64 === "string" && b64.length > 100) {
-      return b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`;
+      if (b64.startsWith("data:")) return b64;
+      const mime = node.mimetype ||
+        (kind === "image" ? "image/jpeg" :
+         kind === "sticker" ? "image/webp" :
+         kind === "audio" ? "audio/ogg" :
+         kind === "video" ? "video/mp4" :
+         "application/octet-stream");
+      return `data:${mime};base64,${b64}`;
     }
     return null;
   };
 
   const getAudioSeconds = (msg: WhatsAppMsg): number | null => {
-    const s = (msg.message as any)?.audioMessage?.seconds;
+    const m = msg.message as any;
+    const s = m?.audioMessage?.seconds ?? m?.pttMessage?.seconds;
     return typeof s === "number" ? s : null;
   };
 
@@ -819,9 +839,30 @@ const AgenteIA = () => {
     const d = (msg.message as any)?.documentMessage
       || (msg.message as any)?.documentWithCaptionMessage?.message?.documentMessage;
     if (!d) return null;
+    const sizeBytes = Number(d.fileLength || 0);
+    const sizeLabel = sizeBytes > 0
+      ? sizeBytes >= 1024 * 1024
+        ? `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(sizeBytes / 1024))} KB`
+      : "";
     return {
       name: d.fileName || d.title || "documento",
       mime: d.mimetype || "",
+      sizeLabel,
+      pageCount: d.pageCount ? Number(d.pageCount) : 0,
+    };
+  };
+
+  const getLocationInfo = (msg: WhatsAppMsg) => {
+    const m = msg.message as any;
+    const loc = m?.locationMessage || m?.liveLocationMessage;
+    if (!loc) return null;
+    const lat = loc.degreesLatitude ?? loc.latitude;
+    const lng = loc.degreesLongitude ?? loc.longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return { name: loc.name || "Localização", url: null as string | null };
+    return {
+      name: loc.name || loc.address || "Localização",
+      url: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
     };
   };
 
