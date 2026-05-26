@@ -7,6 +7,54 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory dedupe (per isolate) — evita responder a mesma msg 2x
+const processedMessages = new Map<string, number>();
+const DEDUPE_TTL_MS = 5 * 60 * 1000;
+
+function rememberMessage(id: string) {
+  const now = Date.now();
+  processedMessages.set(id, now);
+  // Cleanup velhas
+  for (const [k, t] of processedMessages) {
+    if (now - t > DEDUPE_TTL_MS) processedMessages.delete(k);
+  }
+}
+
+async function evolutionFetch(apiUrl: string, apiKey: string, path: string, body: any) {
+  try {
+    return await fetch(`${apiUrl.replace(/\/$/, "")}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("evolution fetch failed", path, e);
+    return null;
+  }
+}
+
+async function sendPresence(apiUrl: string, apiKey: string, instance: string, jid: string, presence: "composing" | "paused" | "available") {
+  await evolutionFetch(apiUrl, apiKey, `/chat/sendPresence/${instance}`, { number: jid, presence, delay: 1200 });
+}
+
+async function markAsRead(apiUrl: string, apiKey: string, instance: string, key: any) {
+  await evolutionFetch(apiUrl, apiKey, `/chat/markMessageAsRead/${instance}`, { readMessages: [key] });
+}
+
+async function sendText(apiUrl: string, apiKey: string, instance: string, jid: string, text: string) {
+  // Quebra textos longos em parágrafos (mais natural)
+  const chunks = text.split(/\n\n+/).map(s => s.trim()).filter(Boolean);
+  const list = chunks.length > 0 ? chunks : [text];
+  for (let i = 0; i < list.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 800));
+    await evolutionFetch(apiUrl, apiKey, `/message/sendText/${instance}`, {
+      number: jid,
+      text: list[i],
+      delay: Math.min(1500, 400 + list[i].length * 25),
+    });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,33 +67,37 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
 
     const payload = await req.json();
-    console.log("Webhook payload received:", JSON.stringify(payload));
+    console.log("Webhook event:", payload?.event, "instance:", payload?.instance);
 
     if (payload.event !== "messages.upsert" && payload.event !== "MESSAGES_UPSERT") {
       return new Response(JSON.stringify({ status: "ignored_event" }), { headers: corsHeaders });
     }
 
     const data = payload.data;
-    // Evolution v2 payload: data.key + data.message at the same level.
-    // Legacy: data.message.key + data.message.message
     const key = data?.key ?? data?.message?.key;
     const msgContent = data?.message?.message ?? data?.message;
     if (!key || key.fromMe) {
       return new Response(JSON.stringify({ status: "ignored_self_or_empty" }), { headers: corsHeaders });
     }
 
+    // Dedupe
+    const msgId = key.id;
+    if (msgId && processedMessages.has(msgId)) {
+      return new Response(JSON.stringify({ status: "duplicate" }), { headers: corsHeaders });
+    }
+    if (msgId) rememberMessage(msgId);
+
     const senderJid = key.remoteJid;
     if (!senderJid) {
       return new Response(JSON.stringify({ status: "no_jid" }), { headers: corsHeaders });
     }
-    // Ignore groups, broadcasts, status, newsletters
     if (senderJid.includes("@g.us") || senderJid.includes("@broadcast") || senderJid.includes("status@") || senderJid.includes("@newsletter")) {
       return new Response(JSON.stringify({ status: "ignored_group_or_broadcast" }), { headers: corsHeaders });
     }
     const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
     const instanceName = payload.instance;
 
-    // Detect message type and content
+    // Tipo de mensagem
     let messageType = "text";
     let incomingText = msgContent?.conversation || msgContent?.extendedTextMessage?.text || "";
     let mediaData: string | null = null;
@@ -58,12 +110,14 @@ serve(async (req) => {
     } else if (msgContent?.audioMessage) {
       messageType = "audio";
       mimeType = msgContent.audioMessage.mimetype;
+    } else if (msgContent?.documentMessage) {
+      messageType = "document";
+      mimeType = msgContent.documentMessage.mimetype;
+      incomingText = msgContent.documentMessage.caption || msgContent.documentMessage.fileName || "";
     }
 
-    // Rebuild a "message" object for media download API compatibility
     const message = { key, message: msgContent };
 
-    // Find settings
     const { data: settings } = await supabase
       .from("settings")
       .select("*")
@@ -74,7 +128,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "bot_disabled" }), { headers: corsHeaders });
     }
 
-    // Check if we should process this type
+    const apiUrl = (settings.whatsapp_api_url || "").replace(/\/$/, "");
+    const apiKey = settings.whatsapp_api_key;
+
+    // Marcar como lido imediatamente
+    if (apiUrl && apiKey) {
+      markAsRead(apiUrl, apiKey, instanceName, key).catch(() => {});
+    }
+
     if (messageType === "audio" && !settings.bot_process_audio) {
       return new Response(JSON.stringify({ status: "audio_processing_disabled" }), { headers: corsHeaders });
     }
@@ -84,117 +145,210 @@ serve(async (req) => {
 
     const userId = settings.user_id;
 
-    // Find client
+    // Busca cliente
     const { data: clients } = await supabase
       .from("clients")
-      .select("id, name, phone, whatsapp")
+      .select("id, name, phone, whatsapp, cpf_cnpj, status")
       .eq("user_id", userId);
 
     const client = clients?.find(c => {
       const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
-      return cPhone.endsWith(senderPhone.slice(-8));
+      if (!cPhone) return false;
+      return cPhone.endsWith(senderPhone.slice(-8)) || senderPhone.endsWith(cPhone.slice(-8));
     });
 
-    if (!client) {
-      return new Response(JSON.stringify({ status: "client_not_found" }), { headers: corsHeaders });
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, pix_key, pix_key_type")
+      .eq("id", userId)
+      .single();
+
+    // Presence "digitando"
+    if (apiUrl && apiKey) {
+      sendPresence(apiUrl, apiKey, instanceName, senderJid, "composing").catch(() => {});
     }
 
-    // If it's media, we need to download it from Evolution API
-    if (messageType !== "text" && settings.whatsapp_api_url && settings.whatsapp_api_key) {
+    // === CLIENTE NÃO ENCONTRADO: tratar como lead ===
+    if (!client) {
+      // Cooldown: evitar spammar lead a cada msg
+      const { data: recentLead } = await supabase
+        .from("audit_logs")
+        .select("created_at")
+        .eq("user_id", userId)
+        .eq("entity_type", "whatsapp_lead")
+        .eq("action", "lead_message")
+        .ilike("details->>phone", senderPhone)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const recentLeadTime = recentLead ? new Date(recentLead.created_at).getTime() : 0;
+      const shouldReply = Date.now() - recentLeadTime > 60 * 60 * 1000; // 1h cooldown
+
+      if (shouldReply && apiUrl && apiKey) {
+        const greeting = `Olá! 👋 Aqui é o atendimento da ${settings.company_name || profile?.name || "nossa empresa"}.\n\nNão localizei seu cadastro pelo seu número. Pode me informar seu *nome completo* e *CPF*? Assim consigo te ajudar melhor. 😊`;
+        await sendText(apiUrl, apiKey, instanceName, senderJid, greeting);
+
+        // Notifica o dono
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: "Novo contato no WhatsApp",
+          message: `Número ${senderPhone} entrou em contato e não está cadastrado. Mensagem: "${incomingText?.slice(0, 100) || `[${messageType}]`}"`,
+          type: "info",
+        });
+      }
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        entity_type: "whatsapp_lead",
+        action: "lead_message",
+        details: { phone: senderPhone, message: incomingText, message_type: messageType, replied: shouldReply },
+      });
+
+      return new Response(JSON.stringify({ status: "lead_handled" }), { headers: corsHeaders });
+    }
+
+    // Cliente pausado individualmente?
+    const { data: pauseFlag } = await supabase
+      .from("audit_logs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("entity_type", "whatsapp_bot")
+      .eq("entity_id", client.id)
+      .eq("action", "paused")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pauseFlag) {
+      // Bot está pausado para esse cliente — apenas registra
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        entity_type: "whatsapp_bot",
+        action: "message_while_paused",
+        entity_id: client.id,
+        details: { client_message: incomingText || `[${messageType}]` },
+      });
+      return new Response(JSON.stringify({ status: "client_paused" }), { headers: corsHeaders });
+    }
+
+    // Download de mídia
+    if (messageType !== "text" && apiUrl && apiKey) {
       try {
-        const apiUrl = settings.whatsapp_api_url.replace(/\/$/, "");
-        const response = await fetch(`${apiUrl}/message/getBase64FromMediaMessage/${instanceName}`, {
+        const response = await fetch(`${apiUrl}/chat/getBase64FromMediaMessage/${instanceName}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", apikey: settings.whatsapp_api_key },
-          body: JSON.stringify({ message: message }),
+          headers: { "Content-Type": "application/json", apikey: apiKey },
+          body: JSON.stringify({ message: message, convertToMp4: false }),
         });
         if (response.ok) {
           const mediaResponse = await response.json();
           mediaData = mediaResponse.base64;
+        } else {
+          // Fallback rota antiga
+          const fallback = await fetch(`${apiUrl}/message/getBase64FromMediaMessage/${instanceName}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: apiKey },
+            body: JSON.stringify({ message }),
+          });
+          if (fallback.ok) {
+            const j = await fallback.json();
+            mediaData = j.base64;
+          }
         }
       } catch (e) {
         console.error("Error downloading media:", e);
       }
     }
 
-    // Get context
+    // Contexto financeiro completo
     const { data: installments } = await supabase
       .from("contract_installments")
-      .select("id, amount, due_date, status, late_fee, installment_number")
+      .select("id, amount, due_date, status, late_fee, installment_number, contract_id")
       .eq("client_id", client.id)
-      .eq("status", "pending")
+      .in("status", ["pending", "overdue"])
       .order("due_date", { ascending: true });
 
-    const totalOverdue = installments?.filter(i => new Date(i.due_date) < new Date()).reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0) || 0;
-    const { data: profile } = await supabase.from("profiles").select("name, pix_key").eq("id", userId).single();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const overdueList = (installments || []).filter(i => new Date(i.due_date) < today);
+    const dueTodayList = (installments || []).filter(i => {
+      const d = new Date(i.due_date);
+      return d.toDateString() === today.toDateString();
+    });
+    const upcomingList = (installments || []).filter(i => new Date(i.due_date) > today);
+
+    const totalOverdue = overdueList.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
+    const totalPending = (installments || []).reduce((s, i) => s + Number(i.amount), 0);
 
     if (!lovableApiKey) {
       return new Response(JSON.stringify({ error: "Missing API Key" }), { status: 500, headers: corsHeaders });
     }
 
-    // Conversation memory: last 10 interactions with this client
+    // Histórico conversacional
     const { data: history } = await supabase
       .from("audit_logs")
       .select("details, created_at")
       .eq("user_id", userId)
       .eq("entity_type", "whatsapp_bot")
       .eq("entity_id", client.id)
+      .in("action", ["replied", "receipt_detected"])
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(12);
 
     const conversationHistory: any[] = [];
     (history || []).reverse().forEach((h: any) => {
       const d = h.details || {};
-      if (d.client_message) {
-        conversationHistory.push({ role: "user", content: String(d.client_message).slice(0, 500) });
-      }
-      if (d.ai_reply) {
-        conversationHistory.push({ role: "assistant", content: String(d.ai_reply).slice(0, 800) });
-      }
+      if (d.client_message) conversationHistory.push({ role: "user", content: String(d.client_message).slice(0, 600) });
+      if (d.ai_reply) conversationHistory.push({ role: "assistant", content: String(d.ai_reply).slice(0, 800) });
     });
 
-    const installmentsList = (installments || []).slice(0, 5).map(i => {
-      const overdue = new Date(i.due_date) < new Date() ? " [ATRASADA]" : "";
-      return `  - Parcela ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} - Venc: ${new Date(i.due_date).toLocaleDateString('pt-BR')}${overdue}`;
-    }).join("\n");
+    const fmtList = (arr: any[], max = 5) => arr.slice(0, max).map(i =>
+      `  • Parc. ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} - Venc: ${new Date(i.due_date).toLocaleDateString('pt-BR')}${Number(i.late_fee) > 0 ? ` (+ multa R$ ${Number(i.late_fee).toFixed(2)})` : ""}`
+    ).join("\n");
 
-    const today = new Date().toLocaleDateString('pt-BR');
+    const firstName = (client.name || "").split(" ")[0];
 
     const systemPrompt = `Você é o atendente virtual oficial da empresa "${settings.company_name || profile?.name || 'nossa empresa'}".
-Tom de voz: ${settings.bot_tone || 'profissional, empático e cordial'}.
-Data de hoje: ${today}.
+Tom: ${settings.bot_tone || 'profissional, empático, próximo e cordial — como um bom atendente humano'}.
+Data de hoje: ${today.toLocaleDateString('pt-BR')}.
 
 ═══ DADOS DO CLIENTE ═══
-Nome: ${client.name}
-Total em atraso: R$ ${totalOverdue.toFixed(2)}
-Parcelas pendentes: ${installments?.length || 0}
-${installmentsList ? `Próximas parcelas:\n${installmentsList}` : 'Nenhuma parcela pendente.'}
-Chave PIX para pagamento: ${profile?.pix_key || "Solicitar ao atendimento humano"}
+Nome: ${client.name} (use "${firstName}" no tratamento)
+Status: ${client.status || 'ativo'}
+Total em ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdueList.length} parcela(s))
+Total pendente: R$ ${totalPending.toFixed(2)} (${installments?.length || 0} parcela(s))
+Vence HOJE: ${dueTodayList.length} parcela(s)
 
-═══ SUAS HABILIDADES ═══
-1. ATENDIMENTO INTELIGENTE: Converse naturalmente, responda dúvidas sobre o contrato, parcelas, valores, datas e formas de pagamento. Use o histórico para manter contexto.
-2. COBRANÇA EMPÁTICA: Lembre o cliente de parcelas pendentes SEM ser agressivo. Mostre que está ali para ajudar.
-3. NEGOCIAÇÃO: Pode oferecer condições especiais para pagamento HOJE (ex: isenção parcial de multa/juros). Use bom senso.
-4. COMPROVANTE (imagem): Se for comprovante PIX/transferência, confirme com entusiasmo, identifique o valor e marque is_receipt=true.
-5. ÁUDIO: Escute o áudio, entenda o que o cliente disse e responda naturalmente.
-6. ESCALAÇÃO: Se o cliente pedir falar com humano, reclamar de algo sério, ou perguntar algo fora do seu escopo, marque "needs_human": true.
+${overdueList.length ? `🔴 PARCELAS ATRASADAS:\n${fmtList(overdueList)}\n` : ''}${dueTodayList.length ? `🟡 VENCE HOJE:\n${fmtList(dueTodayList)}\n` : ''}${upcomingList.length ? `🟢 PRÓXIMAS:\n${fmtList(upcomingList, 3)}\n` : ''}
+Chave PIX (${profile?.pix_key_type || 'PIX'}): ${profile?.pix_key || "(solicitar à equipe)"}
+
+═══ HABILIDADES ═══
+1. Atende dúvidas sobre parcelas, valores, vencimentos, formas de pagamento.
+2. Cobrança empática (sem agressividade): lembra de pendências, oferece o PIX.
+3. Pode negociar: descontos parciais de multa/juros para pagamento HOJE; quitação à vista; reagendamento de 1 parcela. Decisões maiores → marcar needs_human=true.
+4. Comprovantes (imagem/PDF): analise, identifique valor e marque is_receipt=true se for válido.
+5. Áudio: escute e responda naturalmente.
+6. Saudações simples → responda curto e pergunte como pode ajudar.
+7. Se cliente já está em dia: agradeça e seja cordial; não invente cobrança.
 
 ═══ REGRAS DE OURO ═══
-- SEMPRE em português brasileiro, humano e natural (NÃO pareça robô).
-- Use o primeiro nome do cliente quando apropriado.
-- Mensagens curtas (máx 4-5 linhas). Use quebras de linha.
-- Emojis com moderação (😊 👍 ✅) quando o tom permitir.
-- NUNCA invente valores, datas ou informações que não estão acima.
-- Se não tiver certeza, diga que vai consultar e marque needs_human=true.
-- Não repita a mesma resposta. Olhe o histórico antes de responder.
+- Português brasileiro, NATURAL, jamais robótico. Evite frases como "Estou aqui para ajudar com sua demanda".
+- Mensagens curtas (3-5 linhas). Pode usar 2 parágrafos separados por linha em branco — eles serão enviados como mensagens separadas.
+- Emojis com moderação (😊 👍 ✅ 🙏). Nunca exagere.
+- NUNCA invente valores, datas, descontos ou políticas que não estejam acima.
+- Se cliente pedir 2ª via, boleto físico, mudança contratual, ou reclamar de erro: needs_human=true.
+- Se cliente ficar agressivo ou ofensivo: responda com calma 1x e marque needs_human=true.
+- Use o histórico para NÃO se repetir. Se já cumprimentou, não cumprimente de novo.
+- Se não houver dívida em atraso, NÃO cobre — apenas responda o que foi perguntado.
 
-FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
+FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
 {
-  "reply": "sua resposta natural ao cliente",
+  "reply": "texto natural para o cliente (use \\n\\n para dividir em msgs)",
   "is_receipt": boolean,
   "receipt_value": number | null,
   "needs_human": boolean,
-  "summary": "resumo curto do que foi dito/decidido"
+  "intent": "saudacao|duvida|pagamento|comprovante|negociacao|reclamacao|outro",
+  "summary": "1 linha resumindo a interação"
 }`;
 
     const messages: any[] = [
@@ -203,94 +357,115 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
     ];
 
     if (messageType === "text") {
-      messages.push({ role: "user", content: incomingText });
+      messages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
     } else if (mediaData && mimeType) {
+      const label = messageType === "audio"
+        ? "[O cliente enviou um áudio — escute e responda]"
+        : messageType === "image"
+        ? "[Imagem enviada — verifique se é comprovante de pagamento]"
+        : "[Documento enviado — analise o conteúdo]";
       messages.push({
         role: "user",
         content: [
-          { type: "text", text: incomingText || (messageType === "audio" ? "[O cliente enviou um áudio - escute e responda]" : "[O cliente enviou uma imagem - analise se é comprovante]") },
-          {
-            type: "image_url",
-            image_url: { url: `data:${mimeType};base64,${mediaData}` }
-          }
-        ]
+          { type: "text", text: incomingText || label },
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
+        ],
       });
     } else {
-      messages.push({ role: "user", content: `[Cliente enviou um ${messageType} mas o conteúdo não pôde ser baixado]` });
+      messages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
     }
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${lovableApiKey}`,
-      },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableApiKey}` },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages,
         response_format: { type: "json_object" },
-        temperature: 0.6,
+        temperature: 0.7,
       }),
     });
 
     if (!aiResponse.ok) {
-      throw new Error("AI Gateway error");
+      const errTxt = await aiResponse.text();
+      console.error("AI Gateway error:", aiResponse.status, errTxt);
+      if (apiUrl && apiKey) {
+        await sendText(apiUrl, apiKey, instanceName, senderJid, "Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
+      }
+      throw new Error("AI Gateway error: " + aiResponse.status);
     }
 
     const aiData = await aiResponse.json();
-    const result = JSON.parse(aiData.choices[0].message.content);
-
-    // 1. Send reply to WhatsApp
-    if (result.reply) {
-      const apiUrl = (settings.whatsapp_api_url || "").replace(/\/$/, "");
-      const apiKey = settings.whatsapp_api_key;
-      await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: apiKey },
-        body: JSON.stringify({ number: senderJid, text: result.reply }),
-      });
+    let result: any;
+    try {
+      result = JSON.parse(aiData.choices[0].message.content);
+    } catch {
+      result = { reply: aiData.choices[0].message.content, is_receipt: false, needs_human: false, intent: "outro", summary: "" };
     }
 
-    // 2. Handle Receipt Logic
+    // Envia resposta
+    if (result.reply && apiUrl && apiKey) {
+      await sendText(apiUrl, apiKey, instanceName, senderJid, result.reply);
+      sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
+    }
+
+    // Comprovante: tenta casar com a parcela de valor mais próximo
     if (result.is_receipt && settings.bot_auto_confirm_payment && installments && installments.length > 0) {
-      // Find the best installment to match
-      const matchedInst = installments[0]; // Simple logic: match the oldest pending
-      
+      const value = Number(result.receipt_value) || 0;
+      let matched = installments[0];
+      if (value > 0) {
+        let bestDiff = Infinity;
+        for (const inst of installments) {
+          const total = Number(inst.amount) + (Number(inst.late_fee) || 0);
+          const diff = Math.abs(total - value);
+          if (diff < bestDiff) { bestDiff = diff; matched = inst; }
+        }
+      }
+
       await supabase.from("contract_installments").update({
         status: "paid",
         paid_at: new Date().toISOString(),
-        paid_amount: result.receipt_value || matchedInst.amount,
+        paid_amount: value || matched.amount,
         payment_method: "pix",
-        notes: `Confirmado automaticamente via Bot IA (Comprovante detectado)`
-      }).eq("id", matchedInst.id);
+        notes: `Confirmado automaticamente via Bot IA (comprovante WhatsApp).`,
+      }).eq("id", matched.id);
 
-      // Notify owner if enabled
       if (settings.bot_notify_owner) {
-        // Here you could send a WhatsApp to the owner or a system notification
         await supabase.from("notifications").insert({
           user_id: userId,
-          title: "Pagamento Confirmado via IA",
-          message: `O bot identificou um comprovante de R$ ${result.receipt_value || matchedInst.amount} para o cliente ${client.name}.`,
+          title: "✅ Pagamento confirmado via IA",
+          message: `Bot identificou comprovante de R$ ${(value || matched.amount).toFixed(2)} de ${client.name} (parc. ${matched.installment_number}).`,
           type: "payment",
         });
       }
     }
 
-    // 3. Log interaction
+    // Escalação para humano
+    if (result.needs_human) {
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "🆘 Atendimento humano solicitado",
+        message: `${client.name} precisa de atendimento humano. Resumo: ${result.summary || incomingText?.slice(0, 100)}`,
+        type: "warning",
+      });
+    }
+
+    // Log
     await supabase.from("audit_logs").insert({
       user_id: userId,
       entity_type: "whatsapp_bot",
-      action: messageType === "image" && result.is_receipt ? "receipt_detected" : "replied",
+      action: result.is_receipt ? "receipt_detected" : "replied",
       entity_id: client.id,
       details: {
         message_type: messageType,
         client_message: incomingText || `[${messageType}]`,
+        intent: result.intent,
         summary: result.summary,
-        is_receipt: result.is_receipt,
+        is_receipt: !!result.is_receipt,
         receipt_value: result.receipt_value,
-        needs_human: result.needs_human || false,
-        ai_reply: result.reply
-      }
+        needs_human: !!result.needs_human,
+        ai_reply: result.reply,
+      },
     });
 
     return new Response(JSON.stringify({ status: "success", result }), { headers: corsHeaders });
