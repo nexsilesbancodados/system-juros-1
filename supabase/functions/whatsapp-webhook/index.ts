@@ -26,29 +26,38 @@ serve(async (req) => {
     }
 
     const data = payload.data;
-    const message = data?.message;
-    if (!message || message.key?.fromMe) {
+    // Evolution v2 payload: data.key + data.message at the same level.
+    // Legacy: data.message.key + data.message.message
+    const key = data?.key ?? data?.message?.key;
+    const msgContent = data?.message?.message ?? data?.message;
+    if (!key || key.fromMe) {
       return new Response(JSON.stringify({ status: "ignored_self_or_empty" }), { headers: corsHeaders });
     }
 
-    const senderJid = message.key.remoteJid;
+    const senderJid = key.remoteJid;
+    if (!senderJid) {
+      return new Response(JSON.stringify({ status: "no_jid" }), { headers: corsHeaders });
+    }
     const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
     const instanceName = payload.instance;
 
     // Detect message type and content
     let messageType = "text";
-    let incomingText = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
+    let incomingText = msgContent?.conversation || msgContent?.extendedTextMessage?.text || "";
     let mediaData: string | null = null;
     let mimeType: string | null = null;
 
-    if (message.message?.imageMessage) {
+    if (msgContent?.imageMessage) {
       messageType = "image";
-      mimeType = message.message.imageMessage.mimetype;
-      incomingText = message.message.imageMessage.caption || "";
-    } else if (message.message?.audioMessage) {
+      mimeType = msgContent.imageMessage.mimetype;
+      incomingText = msgContent.imageMessage.caption || "";
+    } else if (msgContent?.audioMessage) {
       messageType = "audio";
-      mimeType = message.message.audioMessage.mimetype;
+      mimeType = msgContent.audioMessage.mimetype;
     }
+
+    // Rebuild a "message" object for media download API compatibility
+    const message = { key, message: msgContent };
 
     // Find settings
     const { data: settings } = await supabase
