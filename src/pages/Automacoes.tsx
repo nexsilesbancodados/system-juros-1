@@ -515,20 +515,6 @@ const Automacoes = () => {
                   </>
                 )}
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => runAutomation(auto.name, auto.fn)}
-                  disabled={isRunning || runningAll}
-                  className="w-full rounded-xl gap-2"
-                >
-                  {isRunning ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Play size={14} />
-                  )}
-                  {isRunning ? "Executando..." : "Executar Agora"}
-                </Button>
               </div>
             </div>
           );
