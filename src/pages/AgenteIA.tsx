@@ -1113,22 +1113,32 @@ const AgenteIA = () => {
                 ) : (
                   filteredChats.map((chat) => {
                     const isGroup = chat.remoteJid.endsWith("@g.us");
+                    const time = formatChatListTime(chat.updatedAt);
                     return (
                       <button
                         key={chat.id}
                         onClick={() => openChat(chat)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border/40 text-left group"
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${chat.unreadCount ? "bg-primary/20 ring-2 ring-primary/30" : "bg-primary/10"}`}>
-                          {isGroup ? <Users size={18} className="text-primary" /> : <User size={18} className="text-primary" />}
-                        </div>
+                        <ChatAvatar chat={chat} size={44} isGroup={isGroup} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{chat.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
+                              {chat.name}
+                            </p>
+                            {time && (
+                              <span className={`text-[10px] shrink-0 ${chat.unreadCount ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                                {time}
+                              </span>
+                            )}
+                          </div>
+                          <div className={`text-xs truncate mt-0.5 ${chat.unreadCount ? "text-foreground/80" : "text-muted-foreground"}`}>
+                            {renderLastMessagePreview(chat)}
+                          </div>
                         </div>
                         {chat.unreadCount ? (
-                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
-                            {chat.unreadCount}
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold shadow-sm">
+                            {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                           </span>
                         ) : null}
                       </button>
@@ -1139,14 +1149,19 @@ const AgenteIA = () => {
             </>
           ) : (
             <>
-              <div className="p-3 border-b border-border flex items-center gap-3">
+              <div className="p-3 border-b border-border flex items-center gap-3 bg-card/50 backdrop-blur">
                 <button onClick={() => { setSelectedChat(null); setChatMessages([]); }} className="p-1.5 rounded-lg hover:bg-muted/50">
                   <ChevronLeft size={18} className="text-foreground" />
                 </button>
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User size={14} className="text-primary" />
+                <ChatAvatar chat={selectedChat} size={38} isGroup={selectedChat.remoteJid.endsWith("@g.us")} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">{selectedChat.name}</p>
+                  {selectedChat.phone && (
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {selectedChat.remoteJid.endsWith("@g.us") ? "Grupo" : selectedChat.phone}
+                    </p>
+                  )}
                 </div>
-                <p className="font-medium text-sm text-foreground">{selectedChat.name}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10">
                 {loadingMsgs ? (
