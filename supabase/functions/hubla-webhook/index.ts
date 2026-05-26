@@ -18,11 +18,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get Hubla Token from settings to verify
+    // Get Hubla Token from settings to verify (any tenant with token configured)
     const { data: settings } = await supabaseClient
       .from('settings')
       .select('hubla_webhook_token')
-      .single()
+      .not('hubla_webhook_token', 'is', null)
+      .limit(1)
+      .maybeSingle()
+
 
     const hublaToken = req.headers.get('x-hubla-token')
     
@@ -86,7 +89,7 @@ serve(async (req) => {
       // Generate a magic link so the customer can log in without a password
       let actionLink: string | null = null
       try {
-        const siteUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || ''
+        const siteUrl = Deno.env.get('SITE_URL') || 'https://systemjuros.com.br'
         const { data: linkData, error: linkError } = await (supabaseClient as any).auth.admin.generateLink({
           type: userData ? 'magiclink' : 'invite',
           email,
