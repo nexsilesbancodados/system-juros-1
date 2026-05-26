@@ -100,6 +100,7 @@ const sections: MenuSection[] = [
     sectionIcon: Sparkles,
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
+      { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
       { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
       { label: "Metas", icon: Target, path: "/ferramentas/metas" },
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
