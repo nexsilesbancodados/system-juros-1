@@ -5,12 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   MessageCircle, QrCode, RefreshCcw, Power, CheckCircle2, 
   AlertCircle, Settings2, ShieldCheck, Loader2, Bot,
-  MessageSquare, FileCheck, Headphones, Zap
+  MessageSquare, FileCheck, Headphones, Zap, Clock, Plus, Trash2, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { BusinessHoursCard } from "@/components/whatsapp/BusinessHoursCard";
+import { WhatsAppInstancesCard } from "@/components/whatsapp/WhatsAppInstancesCard";
 
 const WhatsAppConfig = () => {
   const { user } = useAuth();
