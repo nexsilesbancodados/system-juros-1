@@ -281,12 +281,19 @@ serve(async (req) => {
       });
     }
 
-    // Conversation-level pause (set manually pelo operador)
+    // Conversation-level pause/block (set manually pelo operador)
     let conversationPaused = false;
+    let conversationBlocked = false;
     if (convoId) {
       const { data: convoRow } = await supabase
-        .from("whatsapp_conversations").select("bot_paused").eq("id", convoId).single();
+        .from("whatsapp_conversations").select("bot_paused, blocked").eq("id", convoId).single();
       conversationPaused = !!convoRow?.bot_paused;
+      conversationBlocked = !!convoRow?.blocked;
+    }
+
+    // BLACKLIST — não responde nada, mas mantém log da msg recebida
+    if (conversationBlocked) {
+      return new Response(JSON.stringify({ status: "conversation_blocked" }), { headers: corsHeaders });
     }
 
     // Helper para o bot responder + persistir
@@ -302,6 +309,7 @@ serve(async (req) => {
           last_message_at: new Date().toISOString(),
           last_message_preview: text.slice(0, 200),
           last_message_from: "bot",
+          followup_sent_at: null,
           updated_at: new Date().toISOString(),
         }).eq("id", convoId);
       }
@@ -529,23 +537,29 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing API Key" }), { status: 500, headers: corsHeaders });
     }
 
-    // Histórico conversacional
-    const { data: history } = await supabase
-      .from("audit_logs")
-      .select("details, created_at")
-      .eq("user_id", userId)
-      .eq("entity_type", "whatsapp_bot")
-      .eq("entity_id", client.id)
-      .in("action", ["replied", "receipt_detected"])
-      .order("created_at", { ascending: false })
-      .limit(12);
-
+    // Histórico conversacional persistente (lê do banco — sobrevive a restart)
     const conversationHistory: any[] = [];
-    (history || []).reverse().forEach((h: any) => {
-      const d = h.details || {};
-      if (d.client_message) conversationHistory.push({ role: "user", content: String(d.client_message).slice(0, 600) });
-      if (d.ai_reply) conversationHistory.push({ role: "assistant", content: String(d.ai_reply).slice(0, 800) });
-    });
+    if (convoId) {
+      const { data: msgHistory } = await supabase
+        .from("whatsapp_messages")
+        .select("direction, content, message_type, metadata, created_at")
+        .eq("conversation_id", convoId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      (msgHistory || []).reverse().forEach((h: any) => {
+        const txt = h.content || h.metadata?.transcript || "";
+        if (!txt) return;
+        if (h.direction === "in") {
+          conversationHistory.push({ role: "user", content: String(txt).slice(0, 600) });
+        } else {
+          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 800) });
+        }
+      });
+      // remove a última msg "user" porque é a atual (será adicionada abaixo)
+      if (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
+        conversationHistory.pop();
+      }
+    }
 
     const fmtList = (arr: any[], max = 5) => arr.slice(0, max).map(i =>
       `  • Parc. ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} - Venc: ${new Date(i.due_date).toLocaleDateString('pt-BR')}${Number(i.late_fee) > 0 ? ` (+ multa R$ ${Number(i.late_fee).toFixed(2)})` : ""}`
@@ -593,7 +607,8 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
   "receipt_value": number | null,
   "needs_human": boolean,
   "intent": "saudacao|duvida|pagamento|comprovante|negociacao|reclamacao|outro",
-  "summary": "1 linha resumindo a interação"
+  "summary": "1 linha resumindo a interação",
+  "transcript": "se cliente mandou áudio, transcreva aqui o que ele disse (texto puro); caso contrário deixe vazio"
 }`;
 
     const messages: any[] = [
