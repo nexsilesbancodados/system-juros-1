@@ -1230,9 +1230,46 @@ const AgenteIA = () => {
                     const text = getMessageText(msg);
                     const quoted = getQuotedInfo(msg);
                     const time = ts ? new Date(ts * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-                    const mediaUrl = (kind === "image" || kind === "sticker") ? getMediaUrl(msg) : null;
+                    const imageUrl = kind === "image" ? getMediaUrl(msg, "image") : null;
+                    const stickerUrl = kind === "sticker" ? getMediaUrl(msg, "sticker") : null;
+                    const audioUrl = kind === "audio" ? getMediaUrl(msg, "audio") : null;
+                    const videoUrl = kind === "video" ? getMediaUrl(msg, "video") : null;
+                    const docUrl = kind === "document" ? getMediaUrl(msg, "document") : null;
                     const audioSecs = kind === "audio" ? getAudioSeconds(msg) : null;
                     const docInfo = kind === "document" ? getDocumentInfo(msg) : null;
+                    const locInfo = kind === "location" ? getLocationInfo(msg) : null;
+
+                    // Sticker = bubble-less, just the sticker image
+                    if (kind === "sticker") {
+                      return (
+                        <div key={msg.id || i}>
+                          {showDate && (
+                            <div className="flex justify-center my-3">
+                              <span className="text-[10px] font-medium uppercase tracking-wide px-3 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/50">
+                                {formatDateLabel(ts)}
+                              </span>
+                            </div>
+                          )}
+                          <div className={`flex ${fromMe ? "justify-end" : "justify-start"} ${sameSender ? "mt-0.5" : "mt-2"}`}>
+                            <div className="flex flex-col items-end gap-0.5">
+                              {stickerUrl ? (
+                                <img src={stickerUrl} alt="figurinha" className="w-32 h-32 object-contain" loading="lazy" />
+                              ) : (
+                                <div className="w-24 h-24 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground">
+                                  <Sticker size={28} />
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <span className="text-[10px]">{time}</span>
+                                {getStatusIcon(msg)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const isMediaOnly = !text && (kind === "image" || kind === "video");
 
                     return (
                       <div key={msg.id || i}>
@@ -1244,52 +1281,99 @@ const AgenteIA = () => {
                           </div>
                         )}
                         <div className={`flex ${fromMe ? "justify-end" : "justify-start"} ${sameSender ? "mt-0.5" : "mt-2"}`}>
-                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground border border-border/50 rounded-bl-sm"}`}>
+                          <div className={`max-w-[78%] rounded-2xl text-sm shadow-sm overflow-hidden ${isMediaOnly ? "p-1" : "px-3 py-2"} ${fromMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground border border-border/50 rounded-bl-sm"}`}>
                             {senderName && (
-                              <p className="text-[11px] font-semibold text-primary mb-1">{senderName}</p>
+                              <p className={`text-[11px] font-semibold mb-1 ${fromMe ? "text-primary-foreground/90" : "text-primary"} ${isMediaOnly ? "px-2 pt-1" : ""}`}>{senderName}</p>
                             )}
                             {quoted && (
-                              <div className={`mb-1.5 px-2 py-1.5 rounded-md border-l-2 text-[11px] ${fromMe ? "bg-primary-foreground/10 border-primary-foreground/40" : "bg-muted/60 border-primary/60"}`}>
+                              <div className={`mb-1.5 px-2 py-1.5 rounded-md border-l-2 text-[11px] ${isMediaOnly ? "mx-1" : ""} ${fromMe ? "bg-primary-foreground/10 border-primary-foreground/40" : "bg-muted/60 border-primary/60"}`}>
                                 {quoted.author && <p className="font-semibold opacity-80">{quoted.author}</p>}
                                 <p className="opacity-70 line-clamp-2">{quoted.text}</p>
                               </div>
                             )}
-                            {kind === "image" && (mediaUrl ? (
-                              <img src={mediaUrl} alt="" className="rounded-lg max-w-full max-h-64 object-cover mb-1" loading="lazy" />
+
+                            {kind === "image" && (imageUrl ? (
+                              <a href={imageUrl} target="_blank" rel="noreferrer noopener" className="block">
+                                <img src={imageUrl} alt="" className="rounded-xl max-w-full max-h-72 object-cover" loading="lazy" />
+                              </a>
                             ) : (
                               <div className="flex items-center gap-2 py-1 opacity-80"><ImageIcon size={14} /><span className="text-xs italic">Imagem</span></div>
                             ))}
-                            {kind === "sticker" && (mediaUrl
-                              ? <img src={mediaUrl} alt="" className="w-24 h-24 object-contain" />
-                              : <span className="text-xs italic opacity-80">Figurinha</span>)}
+
+                            {kind === "video" && (videoUrl ? (
+                              <video src={videoUrl} controls className="rounded-xl max-w-full max-h-72" preload="metadata" />
+                            ) : (
+                              <div className="flex items-center gap-2 py-1 opacity-80"><Video size={14} /><span className="text-xs italic">Vídeo</span></div>
+                            ))}
+
                             {kind === "audio" && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <Mic size={14} className="opacity-80" />
-                                <span className="text-xs">Áudio{audioSecs ? ` · ${Math.floor(audioSecs / 60)}:${String(audioSecs % 60).padStart(2, "0")}` : ""}</span>
-                              </div>
-                            )}
-                            {kind === "video" && (
-                              <div className="flex items-center gap-2 py-0.5"><Video size={14} className="opacity-80" /><span className="text-xs">Vídeo</span></div>
-                            )}
-                            {kind === "document" && docInfo && (
-                              <div className="flex items-center gap-2 py-1 px-2 rounded bg-black/10">
-                                <FileIcon size={16} className="opacity-80 shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-medium truncate">{docInfo.name}</p>
-                                  {docInfo.mime && <p className="text-[10px] opacity-60 truncate">{docInfo.mime}</p>}
+                              audioUrl ? (
+                                <audio
+                                  src={audioUrl}
+                                  controls
+                                  preload="metadata"
+                                  className="h-9 max-w-[260px] w-full"
+                                />
+                              ) : (
+                                <div className={`flex items-center gap-2.5 py-1 px-1 min-w-[160px] ${fromMe ? "text-primary-foreground" : "text-foreground"}`}>
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fromMe ? "bg-primary-foreground/15" : "bg-primary/10"}`}>
+                                    <Mic size={14} />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className={`h-1 rounded-full ${fromMe ? "bg-primary-foreground/30" : "bg-primary/30"}`} />
+                                    <p className="text-[10px] opacity-70 mt-1">
+                                      {audioSecs ? `${Math.floor(audioSecs / 60)}:${String(audioSecs % 60).padStart(2, "0")}` : "Mensagem de voz"}
+                                    </p>
+                                  </div>
                                 </div>
+                              )
+                            )}
+
+                            {kind === "document" && docInfo && (
+                              <a
+                                href={docUrl || undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className={`flex items-center gap-2.5 py-2 px-2.5 rounded-lg min-w-[220px] transition-colors ${fromMe ? "bg-primary-foreground/10 hover:bg-primary-foreground/15" : "bg-muted/50 hover:bg-muted/70"} ${!docUrl ? "pointer-events-none" : ""}`}
+                              >
+                                <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${fromMe ? "bg-primary-foreground/20" : "bg-primary/15 text-primary"}`}>
+                                  <FileIcon size={18} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium truncate">{docInfo.name}</p>
+                                  <p className="text-[10px] opacity-70 truncate">
+                                    {[docInfo.pageCount ? `${docInfo.pageCount} pág` : "", docInfo.sizeLabel, docInfo.mime?.split("/")[1]?.toUpperCase()].filter(Boolean).join(" · ")}
+                                  </p>
+                                </div>
+                              </a>
+                            )}
+
+                            {kind === "location" && locInfo && (
+                              <a
+                                href={locInfo.url || undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className={`flex items-center gap-2 py-1.5 px-2 rounded-md ${fromMe ? "bg-primary-foreground/10" : "bg-muted/50"} ${!locInfo.url ? "pointer-events-none" : "hover:opacity-90"}`}
+                              >
+                                <MapPin size={14} className="opacity-80" />
+                                <span className="text-xs font-medium">{locInfo.name}</span>
+                              </a>
+                            )}
+
+                            {kind === "contact" && (
+                              <div className={`flex items-center gap-2 py-1.5 px-2 rounded-md ${fromMe ? "bg-primary-foreground/10" : "bg-muted/50"}`}>
+                                <User size={14} className="opacity-80" />
+                                <span className="text-xs font-medium">Contato compartilhado</span>
                               </div>
                             )}
-                            {kind === "location" && (
-                              <div className="flex items-center gap-2 py-0.5"><MapPin size={14} className="opacity-80" /><span className="text-xs">Localização</span></div>
-                            )}
-                            {kind === "contact" && (
-                              <div className="flex items-center gap-2 py-0.5"><User size={14} className="opacity-80" /><span className="text-xs">Contato</span></div>
-                            )}
+
                             {text && (
-                              <p className="whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+                              <p className={`whitespace-pre-wrap break-words leading-relaxed ${isMediaOnly ? "px-2 pt-2" : (kind !== "text" ? "mt-1.5" : "")}`}>
+                                {renderTextWithLinks(text, !!fromMe)}
+                              </p>
                             )}
-                            <div className={`flex items-center justify-end gap-1 mt-0.5 ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+
+                            <div className={`flex items-center justify-end gap-1 ${isMediaOnly ? "px-2 pb-1 pt-0.5" : "mt-0.5"} ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                               <span className="text-[10px]">{time}</span>
                               {getStatusIcon(msg)}
                             </div>
