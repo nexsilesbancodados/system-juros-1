@@ -42,7 +42,8 @@ const WhatsAppConfig = () => {
         const { data } = await supabase.functions.invoke("evolution-api", {
           body: { action: "getInstance", instanceName: settings.whatsapp_instance }
         });
-        const inst = Array.isArray(data) ? data[0] : data?.instance ?? data;
+        const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : null;
+        const inst = arr ? arr[0] : (data?.instance ?? data);
         const connStatus = inst?.connectionStatus || inst?.status;
         if (connStatus === "open") {
           setStatus("connected");
