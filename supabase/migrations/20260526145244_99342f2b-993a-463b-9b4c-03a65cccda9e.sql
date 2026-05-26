@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.portal_client_login(text, date) TO anon, authenticated;
