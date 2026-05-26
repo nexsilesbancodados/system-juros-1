@@ -264,10 +264,58 @@ serve(async (req) => {
       .eq("id", userId)
       .single();
 
+    // === INBOX: upsert conversation + log incoming ===
+    const pushName = data?.pushName || data?.message?.pushName || null;
+    const incomingPreview = incomingText || `[${messageType}]`;
+    const convoId = await upsertConversation(supabase, {
+      userId, phone: senderPhone, jid: senderJid, instance: instanceName,
+      clientId: client?.id ?? null,
+      contactName: client?.name || pushName,
+      preview: incomingPreview, from: "client", incrementUnread: true,
+    });
+    if (convoId) {
+      await logMessage(supabase, {
+        conversationId: convoId, userId, direction: "in", sender: "client",
+        messageType, content: incomingText || "", waMessageId: msgId,
+        metadata: { jid: senderJid, mime: mimeType },
+      });
+    }
+
+    // Conversation-level pause (set manually pelo operador)
+    let conversationPaused = false;
+    if (convoId) {
+      const { data: convoRow } = await supabase
+        .from("whatsapp_conversations").select("bot_paused").eq("id", convoId).single();
+      conversationPaused = !!convoRow?.bot_paused;
+    }
+
+    // Helper para o bot responder + persistir
+    const botSay = async (text: string) => {
+      if (!text || !apiUrl || !apiKey) return;
+      await sendText(apiUrl, apiKey, instanceName, senderJid, text);
+      if (convoId) {
+        await logMessage(supabase, {
+          conversationId: convoId, userId, direction: "out", sender: "bot",
+          messageType: "text", content: text,
+        });
+        await supabase.from("whatsapp_conversations").update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: text.slice(0, 200),
+          last_message_from: "bot",
+          updated_at: new Date().toISOString(),
+        }).eq("id", convoId);
+      }
+    };
+
+    if (conversationPaused) {
+      return new Response(JSON.stringify({ status: "conversation_paused" }), { headers: corsHeaders });
+    }
+
     // Presence "digitando"
     if (apiUrl && apiKey) {
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "composing").catch(() => {});
     }
+
 
     // === CLIENTE NÃO ENCONTRADO: tratar como lead ===
     if (!client) {
