@@ -1585,48 +1585,60 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          blocked: boolean
           bot_paused: boolean
           client_id: string | null
           contact_name: string | null
           created_at: string
+          followup_sent_at: string | null
           id: string
           instance: string | null
           jid: string
+          last_human_handoff_at: string | null
           last_message_at: string
           last_message_from: string | null
           last_message_preview: string | null
+          needs_human: boolean
           phone: string
           unread_count: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          blocked?: boolean
           bot_paused?: boolean
           client_id?: string | null
           contact_name?: string | null
           created_at?: string
+          followup_sent_at?: string | null
           id?: string
           instance?: string | null
           jid: string
+          last_human_handoff_at?: string | null
           last_message_at?: string
           last_message_from?: string | null
           last_message_preview?: string | null
+          needs_human?: boolean
           phone: string
           unread_count?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          blocked?: boolean
           bot_paused?: boolean
           client_id?: string | null
           contact_name?: string | null
           created_at?: string
+          followup_sent_at?: string | null
           id?: string
           instance?: string | null
           jid?: string
+          last_human_handoff_at?: string | null
           last_message_at?: string
           last_message_from?: string | null
           last_message_preview?: string | null
+          needs_human?: boolean
           phone?: string
           unread_count?: number
           updated_at?: string
