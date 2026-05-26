@@ -1,5 +1,4 @@
-// Envio manual a partir do inbox.
-// Suporta texto livre + quick actions: send_pix, mark_paid, mark_resolved, send_receipt_request, send_template
+// Envio manual do inbox + agendamento + mídia + quick actions.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -17,9 +16,8 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "no_auth" }), { status: 401, headers: corsHeaders });
-    }
+    if (!authHeader) return new Response(JSON.stringify({ error: "no_auth" }), { status: 401, headers: corsHeaders });
+
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -28,9 +26,16 @@ serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: corsHeaders });
 
     const body = await req.json();
-    const { conversation_id, text, action } = body as {
+    const {
+      conversation_id, text, action,
+      schedule_for,                 // ISO string => agenda
+      media_url, media_type, caption, // imagem/doc/audio
+    } = body as {
       conversation_id: string; text?: string; action?: string;
+      schedule_for?: string;
+      media_url?: string; media_type?: "image" | "document" | "audio"; caption?: string;
     };
+
     if (!conversation_id) {
       return new Response(JSON.stringify({ error: "missing_conversation" }), { status: 400, headers: corsHeaders });
     }
@@ -52,18 +57,9 @@ serve(async (req) => {
     const apiUrl = (settings?.whatsapp_api_url || "").replace(/\/$/, "");
     const apiKey = settings?.whatsapp_api_key;
     const instance = convo.instance || settings?.whatsapp_instance;
-    if (!apiUrl || !apiKey || !instance) {
-      return new Response(JSON.stringify({ error: "whatsapp_not_configured" }), { status: 400, headers: corsHeaders });
-    }
 
-    // Resolve texto a partir da action
-    let finalText = (text || "").trim();
-    if (action === "send_pix" && profile?.pix_key) {
-      finalText = `Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui. ✅`;
-    } else if (action === "send_receipt_request") {
-      finalText = `Você pode me enviar o comprovante do pagamento? 📄`;
-    } else if (action === "mark_resolved") {
-      // Apenas marca como resolvida, sem enviar msg
+    // --- Quick action: mark_resolved (sem envio) ---
+    if (action === "mark_resolved") {
       await supabase.from("whatsapp_conversations").update({
         needs_human: false, unread_count: 0, updated_at: new Date().toISOString(),
       }).eq("id", conversation_id);
@@ -72,34 +68,96 @@ serve(async (req) => {
       });
     }
 
-    if (!finalText) {
-      return new Response(JSON.stringify({ error: "missing_text" }), { status: 400, headers: corsHeaders });
+    // --- Resolver texto a partir da action ---
+    let finalText = (text || "").trim();
+    if (action === "send_pix" && profile?.pix_key) {
+      finalText = `Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui. ✅`;
+    } else if (action === "send_receipt_request") {
+      finalText = `Você pode me enviar o comprovante do pagamento? 📄`;
     }
 
-    const sendRes = await fetch(`${apiUrl}/message/sendText/${instance}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: apiKey },
-      body: JSON.stringify({ number: convo.jid, text: finalText, delay: 600 }),
-    });
+    const hasMedia = !!media_url && !!media_type;
 
-    if (!sendRes.ok) {
-      const errTxt = await sendRes.text();
-      console.error("Evolution send error", sendRes.status, errTxt);
-      return new Response(JSON.stringify({ error: "send_failed", detail: errTxt }), { status: 502, headers: corsHeaders });
+    if (!finalText && !hasMedia) {
+      return new Response(JSON.stringify({ error: "missing_content" }), { status: 400, headers: corsHeaders });
+    }
+
+    // --- AGENDAMENTO ---
+    if (schedule_for) {
+      const when = new Date(schedule_for);
+      if (isNaN(when.getTime()) || when.getTime() < Date.now() - 60_000) {
+        return new Response(JSON.stringify({ error: "invalid_schedule" }), { status: 400, headers: corsHeaders });
+      }
+      await supabase.from("whatsapp_scheduled_messages").insert({
+        conversation_id, user_id: user.id,
+        text: finalText || caption || "[mídia agendada]",
+        scheduled_for: when.toISOString(),
+        status: "pending",
+      });
+      return new Response(JSON.stringify({ ok: true, scheduled: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!apiUrl || !apiKey || !instance) {
+      return new Response(JSON.stringify({ error: "whatsapp_not_configured" }), { status: 400, headers: corsHeaders });
+    }
+
+    // --- ENVIO ---
+    let messageType = "text";
+    let storedContent = finalText;
+
+    if (hasMedia) {
+      // Evolution sendMedia
+      messageType = media_type!;
+      const path = media_type === "audio" ? "sendWhatsAppAudio" : "sendMedia";
+      const payload: any = media_type === "audio"
+        ? { number: convo.jid, audio: media_url, delay: 600 }
+        : {
+            number: convo.jid,
+            mediatype: media_type,
+            mimetype: media_type === "image" ? "image/jpeg" : "application/pdf",
+            media: media_url,
+            caption: caption || finalText || "",
+            fileName: media_type === "document" ? "documento.pdf" : undefined,
+            delay: 600,
+          };
+      const sendRes = await fetch(`${apiUrl}/message/${path}/${instance}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify(payload),
+      });
+      if (!sendRes.ok) {
+        const t = await sendRes.text();
+        return new Response(JSON.stringify({ error: "media_send_failed", detail: t }), { status: 502, headers: corsHeaders });
+      }
+      storedContent = caption || finalText || `[${media_type}]`;
+    } else {
+      const sendRes = await fetch(`${apiUrl}/message/sendText/${instance}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({ number: convo.jid, text: finalText, delay: 600 }),
+      });
+      if (!sendRes.ok) {
+        const t = await sendRes.text();
+        return new Response(JSON.stringify({ error: "send_failed", detail: t }), { status: 502, headers: corsHeaders });
+      }
     }
 
     await supabase.from("whatsapp_messages").insert({
       conversation_id, user_id: user.id,
       direction: "out", sender: "human",
-      message_type: "text", content: finalText,
-      metadata: action ? { action } : {},
+      message_type: messageType,
+      content: storedContent,
+      media_url: hasMedia ? media_url : null,
+      metadata: action ? { action } : (hasMedia ? { media_type } : {}),
     });
     await supabase.from("whatsapp_conversations").update({
       last_message_at: new Date().toISOString(),
-      last_message_preview: finalText.slice(0, 200),
+      last_message_preview: (storedContent || "[mídia]").slice(0, 200),
       last_message_from: "human",
-      needs_human: false, // humano respondeu → resolvido
-      bot_paused: true,   // bot fica pausado quando humano assume
+      needs_human: false,
+      bot_paused: true,
       updated_at: new Date().toISOString(),
     }).eq("id", conversation_id);
 
