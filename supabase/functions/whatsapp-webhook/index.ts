@@ -508,15 +508,23 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     // Comprovante: tenta casar com a parcela de valor mais próximo
     if (result.is_receipt && settings.bot_auto_confirm_payment && installments && installments.length > 0) {
       const value = Number(result.receipt_value) || 0;
-      let matched = installments[0];
+      // Prioridade: atrasadas → vence hoje → próximas
+      const ordered = [
+        ...overdueList,
+        ...dueTodayList,
+        ...upcomingList,
+      ];
+      let matched = ordered[0] || installments[0];
       if (value > 0) {
         let bestDiff = Infinity;
-        for (const inst of installments) {
+        for (const inst of ordered) {
           const total = Number(inst.amount) + (Number(inst.late_fee) || 0);
           const diff = Math.abs(total - value);
-          if (diff < bestDiff) { bestDiff = diff; matched = inst; }
+          // tolerância de R$ 1 para preferir parcela mais antiga
+          if (diff < bestDiff - 1) { bestDiff = diff; matched = inst; }
         }
       }
+
 
       await supabase.from("contract_installments").update({
         status: "paid",
