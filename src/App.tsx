@@ -58,6 +58,7 @@ const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 const Hoje = lazy(() => import("./pages/Hoje"));
 const Planos = lazy(() => import("./pages/Planos"));
 const Comunicacao = lazy(() => import("./pages/Comunicacao"));
+const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -140,6 +141,7 @@ const App = () => (
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
                     <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
+                    <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
                     <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
                     <Route path="/automacoes" element={<Navigate to="/comunicacao?tab=automacoes" replace />} />
                     <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
