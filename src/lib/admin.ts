@@ -4,7 +4,6 @@
  */
 export const SUPER_ADMIN_EMAILS = [
   "lopesgustavo4377@gmail.com",
-  "inovalabinovalab@gmail.com"
 ];
 
 export const isSuperAdminEmail = (email?: string | null): boolean =>
