@@ -1,10 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
-import { sendEmail, templates } from "../_shared/brevo.ts"
+import { sendEmail } from "../_shared/brevo.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-hubla-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-hubla-token, x-hubla-sandbox, x-hubla-idempotency',
+}
+
+// Maps Hubla v2 event types -> our internal subscription status
+function statusFromV2Type(type: string, invoiceStatus?: string): string | null {
+  if (!type) return null
+  // Invoice events
+  if (type === 'invoice.payment_succeeded' || type === 'invoice.paid_out') return 'active'
+  if (type === 'invoice.refunded') return 'refunded'
+  if (type === 'invoice.payment_failed' || type === 'invoice.expired') return 'inactive'
+  if (type === 'invoice.status_updated') {
+    if (invoiceStatus === 'paid') return 'active'
+    if (invoiceStatus === 'refunded') return 'refunded'
+    if (invoiceStatus === 'chargeback' || invoiceStatus === 'disputed') return 'canceled'
+    if (invoiceStatus === 'expired' || invoiceStatus === 'unpaid') return 'inactive'
+  }
+  // Subscription events
+  if (type === 'subscription.activated') return 'active'
+  if (type === 'subscription.created') return 'inactive' // criada mas não paga
+  if (type === 'subscription.expired' || type === 'subscription.deactivated') return 'canceled'
+  return null
 }
 
 serve(async (req) => {
@@ -26,10 +46,11 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle()
 
-
     const hublaToken = req.headers.get('x-hubla-token')
-    
-    // Security check: Verify token if one is configured
+    const isSandbox = req.headers.get('x-hubla-sandbox') === 'true'
+    const idempotencyKey = req.headers.get('x-hubla-idempotency')
+
+    // Security: require token match if one is configured
     if (settings?.hubla_webhook_token && hublaToken !== settings.hubla_webhook_token) {
       console.error('Invalid Hubla token')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -39,31 +60,65 @@ serve(async (req) => {
     }
 
     const payload = await req.json()
-    console.log('Hubla Webhook Payload:', JSON.stringify(payload, null, 2))
+    console.log('Hubla Webhook (sandbox=' + isSandbox + ', idem=' + idempotencyKey + '):', JSON.stringify(payload))
 
-    // Hubla event types: purchase_approved, purchase_canceled, subscription_canceled, etc.
-    const event = payload.event
-    const buyer = payload.data?.buyer || payload.data?.customer
-    const email = buyer?.email
-    const status = payload.data?.status
+    // Detect version: v2 has top-level `type` and `event`
+    const isV2 = typeof payload?.type === 'string' && payload?.event && (payload?.version === '2.0.0' || payload?.event?.invoice || payload?.event?.subscription)
+
+    let email: string | undefined
+    let subscriptionStatus = 'inactive'
+    let orderId: string | undefined
+    let planName: string | undefined
+    let amountPaid: number | undefined
+
+    if (isV2) {
+      const ev = payload.event
+      const invoice = ev?.invoice
+      const subscription = ev?.subscription
+      const user = ev?.user || invoice?.payer || subscription?.payer
+
+      email = user?.email || invoice?.payer?.email || subscription?.payer?.email
+      orderId = invoice?.id || subscription?.id
+      planName = ev?.product?.name
+      // Hubla v2 amount is in cents
+      if (invoice?.amount?.totalCents != null) {
+        amountPaid = Number(invoice.amount.totalCents) / 100
+      }
+      const mapped = statusFromV2Type(payload.type, invoice?.status)
+      if (mapped) subscriptionStatus = mapped
+    } else {
+      // v1 fallback
+      const event = payload.event
+      const buyer = payload.data?.buyer || payload.data?.customer
+      email = buyer?.email
+      const status = payload.data?.status
+      orderId = payload.data?.id?.toString()
+      planName = payload.data?.product?.name
+      amountPaid = payload.data?.amount
+
+      if (event === 'purchase_approved' || status === 'approved' || status === 'active') subscriptionStatus = 'active'
+      else if (event === 'purchase_canceled' || event === 'subscription_canceled' || status === 'canceled') subscriptionStatus = 'canceled'
+      else if (status === 'refunded') subscriptionStatus = 'refunded'
+    }
 
     if (!email) {
-      return new Response(JSON.stringify({ error: 'No email found in payload' }), {
-        status: 400,
+      console.warn('No email in payload, ignoring')
+      return new Response(JSON.stringify({ message: 'No email found, ignored' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    let subscriptionStatus = 'inactive'
-    if (event === 'purchase_approved' || status === 'approved' || status === 'active') {
-      subscriptionStatus = 'active'
-    } else if (event === 'purchase_canceled' || event === 'subscription_canceled' || status === 'canceled') {
-      subscriptionStatus = 'canceled'
-    } else if (status === 'refunded') {
-      subscriptionStatus = 'refunded'
+    // Ignore sandbox events from persisting real subscription state (just ack)
+    if (isSandbox) {
+      console.log('Sandbox event acknowledged (no DB write):', payload.type || payload.event)
+      return new Response(JSON.stringify({ message: 'Sandbox event acknowledged' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Update or Create Subscription
+    // Find existing profile
     const { data: userData } = await supabaseClient
       .from('profiles')
       .select('id, name')
@@ -73,20 +128,19 @@ serve(async (req) => {
     const { error: subError } = await supabaseClient
       .from('subscriptions')
       .upsert({
-        email: email,
+        email,
         user_id: userData?.id || null,
         status: subscriptionStatus,
-        hubla_order_id: payload.data?.id?.toString(),
-        plan_name: payload.data?.product?.name,
-        amount_paid: payload.data?.amount,
+        hubla_order_id: orderId,
+        plan_name: planName,
+        amount_paid: amountPaid,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'email' })
 
     if (subError) throw subError
 
-    // Send email notification on subscription activation
+    // Send activation email on active status
     if (subscriptionStatus === 'active') {
-      // Generate a magic link so the customer can log in without a password
       let actionLink: string | null = null
       try {
         const siteUrl = Deno.env.get('SITE_URL') || 'https://systemjuros.com.br'
@@ -95,11 +149,8 @@ serve(async (req) => {
           email,
           options: { redirectTo: `${siteUrl}/dashboard` },
         })
-        if (linkError) {
-          console.error('generateLink error:', linkError)
-        } else {
-          actionLink = linkData?.properties?.action_link || null
-        }
+        if (linkError) console.error('generateLink error:', linkError)
+        else actionLink = linkData?.properties?.action_link || null
       } catch (e) {
         console.error('magic link generation failed:', e)
       }
@@ -129,13 +180,13 @@ serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ message: 'Webhook processed successfully' }), {
+    return new Response(JSON.stringify({ message: 'Webhook processed successfully', status: subscriptionStatus }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-  } catch (error) {
-    console.error('Error processing webhook:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: any) {
+    console.error('Error processing webhook:', error?.message || error)
+    return new Response(JSON.stringify({ error: error?.message || 'unknown' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
