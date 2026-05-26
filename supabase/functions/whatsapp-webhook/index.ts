@@ -562,6 +562,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     // Envia resposta
     if (result.reply && apiUrl && apiKey) {
       await sendText(apiUrl, apiKey, instanceName, senderJid, result.reply);
+      lastBotReply.set(senderJid, { text: result.reply, ts: Date.now() });
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
     }
 
