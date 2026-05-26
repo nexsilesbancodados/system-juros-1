@@ -25,8 +25,11 @@ interface WhatsAppChat {
   remoteJid: string;
   phone?: string;
   lastMessage?: string;
+  lastMessageKind?: "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "text";
+  lastMessageFromMe?: boolean;
   updatedAt?: string;
   unreadCount?: number;
+  profilePicUrl?: string;
 }
 
 interface WhatsAppMessageKey {
@@ -436,14 +439,30 @@ const AgenteIA = () => {
         if (!remoteJid || remoteJid === "status@broadcast") return;
         if (uniqueChats.has(remoteJid)) return;
 
+        const lastMsg = chat.lastMessage?.message as Record<string, unknown> | undefined;
+        let lastKind: WhatsAppChat["lastMessageKind"] = "text";
+        if (lastMsg) {
+          const m = lastMsg as any;
+          if (m.imageMessage) lastKind = "image";
+          else if (m.audioMessage || m.pttMessage) lastKind = "audio";
+          else if (m.videoMessage) lastKind = "video";
+          else if (m.documentMessage || m.documentWithCaptionMessage) lastKind = "document";
+          else if (m.stickerMessage) lastKind = "sticker";
+          else if (m.locationMessage || m.liveLocationMessage) lastKind = "location";
+          else if (m.contactMessage || m.contactsArrayMessage) lastKind = "contact";
+        }
+
         uniqueChats.set(remoteJid, {
           id: remoteJid,
           name: getChatDisplayName(chat) || chat.pushName || chat.name || remoteJid.split("@")[0],
           remoteJid,
           phone: getChatPhone(chat) || remoteJid.split("@")[0],
           lastMessage: extractWhatsAppText(chat.lastMessage?.message) || chat.lastMessage?.text || "",
+          lastMessageKind: lastKind,
+          lastMessageFromMe: !!chat.lastMessage?.key?.fromMe,
           updatedAt: chat.updatedAt || chat.updated_at || chat.lastMessage?.messageTimestamp || "",
           unreadCount: chat.unreadCount ?? chat.unread_count ?? 0,
+          profilePicUrl: chat.profilePicUrl || chat.profilePictureUrl || chat.profilePicture || undefined,
         });
       });
 
@@ -779,20 +798,40 @@ const AgenteIA = () => {
     return { text: text.length > 120 ? text.slice(0, 120) + "…" : text, author };
   };
 
-  const getMediaUrl = (msg: WhatsAppMsg): string | null => {
+  // Returns best-effort URL for any media (image, sticker, audio, video, document).
+  // Handles direct https URLs as well as base64 payloads injected by Evolution.
+  const getMediaUrl = (msg: WhatsAppMsg, kind: MediaKind): string | null => {
     const m = msg.message as any;
-    const direct = m?.imageMessage?.url || m?.stickerMessage?.url;
+    if (!m) return null;
+    const node =
+      kind === "image" ? m.imageMessage :
+      kind === "sticker" ? m.stickerMessage :
+      kind === "audio" ? (m.audioMessage || m.pttMessage) :
+      kind === "video" ? m.videoMessage :
+      kind === "document" ? (m.documentMessage || m.documentWithCaptionMessage?.message?.documentMessage) :
+      null;
+    if (!node) return null;
+
+    const direct = node.url || node.directPath;
     if (typeof direct === "string" && direct.startsWith("http")) return direct;
-    // Evolution sometimes injects base64 in mediaBase64
-    const b64 = m?.imageMessage?.mediaBase64 || m?.stickerMessage?.mediaBase64;
+
+    const b64 = node.mediaBase64 || node.base64 || m.base64;
     if (typeof b64 === "string" && b64.length > 100) {
-      return b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`;
+      if (b64.startsWith("data:")) return b64;
+      const mime = node.mimetype ||
+        (kind === "image" ? "image/jpeg" :
+         kind === "sticker" ? "image/webp" :
+         kind === "audio" ? "audio/ogg" :
+         kind === "video" ? "video/mp4" :
+         "application/octet-stream");
+      return `data:${mime};base64,${b64}`;
     }
     return null;
   };
 
   const getAudioSeconds = (msg: WhatsAppMsg): number | null => {
-    const s = (msg.message as any)?.audioMessage?.seconds;
+    const m = msg.message as any;
+    const s = m?.audioMessage?.seconds ?? m?.pttMessage?.seconds;
     return typeof s === "number" ? s : null;
   };
 
@@ -800,9 +839,30 @@ const AgenteIA = () => {
     const d = (msg.message as any)?.documentMessage
       || (msg.message as any)?.documentWithCaptionMessage?.message?.documentMessage;
     if (!d) return null;
+    const sizeBytes = Number(d.fileLength || 0);
+    const sizeLabel = sizeBytes > 0
+      ? sizeBytes >= 1024 * 1024
+        ? `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(sizeBytes / 1024))} KB`
+      : "";
     return {
       name: d.fileName || d.title || "documento",
       mime: d.mimetype || "",
+      sizeLabel,
+      pageCount: d.pageCount ? Number(d.pageCount) : 0,
+    };
+  };
+
+  const getLocationInfo = (msg: WhatsAppMsg) => {
+    const m = msg.message as any;
+    const loc = m?.locationMessage || m?.liveLocationMessage;
+    if (!loc) return null;
+    const lat = loc.degreesLatitude ?? loc.latitude;
+    const lng = loc.degreesLongitude ?? loc.longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return { name: loc.name || "Localização", url: null as string | null };
+    return {
+      name: loc.name || loc.address || "Localização",
+      url: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
     };
   };
 
@@ -814,6 +874,135 @@ const AgenteIA = () => {
     if (same(d, today)) return "Hoje";
     if (same(d, yesterday)) return "Ontem";
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  };
+
+  // Compact list timestamp: "14:32" today, "Ontem", weekday this week, else DD/MM/YY
+  const formatChatListTime = (raw: string | undefined): string => {
+    if (!raw) return "";
+    const n = Number(raw);
+    const d = !Number.isNaN(n) && n > 0
+      ? new Date(n < 1e12 ? n * 1000 : n)
+      : new Date(raw);
+    if (Number.isNaN(d.getTime())) return "";
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const y = new Date(); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Ontem";
+    const diff = (now.getTime() - d.getTime()) / 86400000;
+    if (diff < 7) return d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  };
+
+  // Deterministic vibrant gradient for avatar fallback based on JID
+  const avatarGradient = (seed: string): string => {
+    const palette = [
+      "from-sky-500 to-indigo-500",
+      "from-emerald-500 to-teal-500",
+      "from-fuchsia-500 to-pink-500",
+      "from-amber-500 to-orange-500",
+      "from-violet-500 to-purple-500",
+      "from-rose-500 to-red-500",
+      "from-cyan-500 to-blue-500",
+      "from-lime-500 to-emerald-500",
+    ];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    return palette[Math.abs(hash) % palette.length];
+  };
+
+  const initialsOf = (name?: string): string => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    const a = parts[0][0] || "";
+    const b = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (a + b).toUpperCase().slice(0, 2);
+  };
+
+  // Avatar component (image + colored gradient fallback with initials)
+  const ChatAvatar = ({ chat, size = 40, isGroup }: { chat: { name?: string; remoteJid: string; profilePicUrl?: string }; size?: number; isGroup?: boolean }) => {
+    const [errored, setErrored] = useState(false);
+    const showImg = chat.profilePicUrl && !errored;
+    const dim = { width: size, height: size };
+    if (showImg) {
+      return (
+        <img
+          src={chat.profilePicUrl}
+          alt={chat.name || ""}
+          onError={() => setErrored(true)}
+          className="rounded-full object-cover shrink-0 ring-1 ring-border/50"
+          style={dim}
+          loading="lazy"
+        />
+      );
+    }
+    return (
+      <div
+        className={`rounded-full shrink-0 flex items-center justify-center text-white font-semibold bg-gradient-to-br ${avatarGradient(chat.remoteJid)} ring-1 ring-border/30`}
+        style={{ ...dim, fontSize: Math.round(size * 0.38) }}
+      >
+        {isGroup ? <Users size={Math.round(size * 0.45)} /> : initialsOf(chat.name)}
+      </div>
+    );
+  };
+
+  // Build a preview line for the chat list with media icon prefix and "Você:" tag
+  const renderLastMessagePreview = (chat: WhatsAppChat) => {
+    const kind = chat.lastMessageKind || "text";
+    const labels: Record<string, { icon: React.ReactNode; text: string }> = {
+      image: { icon: <ImageIcon size={12} />, text: "Foto" },
+      audio: { icon: <Mic size={12} />, text: "Mensagem de voz" },
+      video: { icon: <Video size={12} />, text: "Vídeo" },
+      document: { icon: <FileIcon size={12} />, text: "Documento" },
+      sticker: { icon: <Sticker size={12} />, text: "Figurinha" },
+      location: { icon: <MapPin size={12} />, text: "Localização" },
+      contact: { icon: <User size={12} />, text: "Contato" },
+      text: { icon: null, text: "" },
+    };
+    const meta = labels[kind];
+    const text = chat.lastMessage?.trim();
+    return (
+      <span className="flex items-center gap-1 min-w-0">
+        {chat.lastMessageFromMe && (
+          <CheckCheck size={12} className="text-muted-foreground shrink-0" />
+        )}
+        {meta.icon && <span className="opacity-70 shrink-0">{meta.icon}</span>}
+        <span className="truncate">
+          {kind === "text" ? (text || "...") : (text ? `${meta.text}: ${text}` : meta.text)}
+        </span>
+      </span>
+    );
+  };
+
+  // Linkify plain text — splits into spans + clickable anchors
+  const renderTextWithLinks = (raw: string, fromMe: boolean) => {
+    const re = /(https?:\/\/[^\s]+)/g;
+    const parts: Array<{ t: "text" | "url"; v: string }> = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(raw)) !== null) {
+      if (m.index > last) parts.push({ t: "text", v: raw.slice(last, m.index) });
+      parts.push({ t: "url", v: m[0] });
+      last = m.index + m[0].length;
+    }
+    if (last < raw.length) parts.push({ t: "text", v: raw.slice(last) });
+    if (!parts.length) return raw;
+    return parts.map((p, i) =>
+      p.t === "url" ? (
+        <a
+          key={i}
+          href={p.v}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={`underline underline-offset-2 break-all ${fromMe ? "text-primary-foreground" : "text-primary"}`}
+        >
+          {p.v}
+        </a>
+      ) : (
+        <span key={i}>{p.v}</span>
+      )
+    );
   };
 
   const getStatusIcon = (msg: WhatsAppMsg) => {
@@ -965,22 +1154,32 @@ const AgenteIA = () => {
                 ) : (
                   filteredChats.map((chat) => {
                     const isGroup = chat.remoteJid.endsWith("@g.us");
+                    const time = formatChatListTime(chat.updatedAt);
                     return (
                       <button
                         key={chat.id}
                         onClick={() => openChat(chat)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors border-b border-border/50 text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border/40 text-left group"
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${chat.unreadCount ? "bg-primary/20 ring-2 ring-primary/30" : "bg-primary/10"}`}>
-                          {isGroup ? <Users size={18} className="text-primary" /> : <User size={18} className="text-primary" />}
-                        </div>
+                        <ChatAvatar chat={chat} size={44} isGroup={isGroup} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{chat.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage || "..."}</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={`text-sm truncate ${chat.unreadCount ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
+                              {chat.name}
+                            </p>
+                            {time && (
+                              <span className={`text-[10px] shrink-0 ${chat.unreadCount ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                                {time}
+                              </span>
+                            )}
+                          </div>
+                          <div className={`text-xs truncate mt-0.5 ${chat.unreadCount ? "text-foreground/80" : "text-muted-foreground"}`}>
+                            {renderLastMessagePreview(chat)}
+                          </div>
                         </div>
                         {chat.unreadCount ? (
-                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
-                            {chat.unreadCount}
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold shadow-sm">
+                            {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                           </span>
                         ) : null}
                       </button>
@@ -991,14 +1190,19 @@ const AgenteIA = () => {
             </>
           ) : (
             <>
-              <div className="p-3 border-b border-border flex items-center gap-3">
+              <div className="p-3 border-b border-border flex items-center gap-3 bg-card/50 backdrop-blur">
                 <button onClick={() => { setSelectedChat(null); setChatMessages([]); }} className="p-1.5 rounded-lg hover:bg-muted/50">
                   <ChevronLeft size={18} className="text-foreground" />
                 </button>
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User size={14} className="text-primary" />
+                <ChatAvatar chat={selectedChat} size={38} isGroup={selectedChat.remoteJid.endsWith("@g.us")} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">{selectedChat.name}</p>
+                  {selectedChat.phone && (
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {selectedChat.remoteJid.endsWith("@g.us") ? "Grupo" : selectedChat.phone}
+                    </p>
+                  )}
                 </div>
-                <p className="font-medium text-sm text-foreground">{selectedChat.name}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10">
                 {loadingMsgs ? (
@@ -1026,9 +1230,46 @@ const AgenteIA = () => {
                     const text = getMessageText(msg);
                     const quoted = getQuotedInfo(msg);
                     const time = ts ? new Date(ts * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-                    const mediaUrl = (kind === "image" || kind === "sticker") ? getMediaUrl(msg) : null;
+                    const imageUrl = kind === "image" ? getMediaUrl(msg, "image") : null;
+                    const stickerUrl = kind === "sticker" ? getMediaUrl(msg, "sticker") : null;
+                    const audioUrl = kind === "audio" ? getMediaUrl(msg, "audio") : null;
+                    const videoUrl = kind === "video" ? getMediaUrl(msg, "video") : null;
+                    const docUrl = kind === "document" ? getMediaUrl(msg, "document") : null;
                     const audioSecs = kind === "audio" ? getAudioSeconds(msg) : null;
                     const docInfo = kind === "document" ? getDocumentInfo(msg) : null;
+                    const locInfo = kind === "location" ? getLocationInfo(msg) : null;
+
+                    // Sticker = bubble-less, just the sticker image
+                    if (kind === "sticker") {
+                      return (
+                        <div key={msg.id || i}>
+                          {showDate && (
+                            <div className="flex justify-center my-3">
+                              <span className="text-[10px] font-medium uppercase tracking-wide px-3 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/50">
+                                {formatDateLabel(ts)}
+                              </span>
+                            </div>
+                          )}
+                          <div className={`flex ${fromMe ? "justify-end" : "justify-start"} ${sameSender ? "mt-0.5" : "mt-2"}`}>
+                            <div className="flex flex-col items-end gap-0.5">
+                              {stickerUrl ? (
+                                <img src={stickerUrl} alt="figurinha" className="w-32 h-32 object-contain" loading="lazy" />
+                              ) : (
+                                <div className="w-24 h-24 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground">
+                                  <Sticker size={28} />
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <span className="text-[10px]">{time}</span>
+                                {getStatusIcon(msg)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const isMediaOnly = !text && (kind === "image" || kind === "video");
 
                     return (
                       <div key={msg.id || i}>
@@ -1040,52 +1281,99 @@ const AgenteIA = () => {
                           </div>
                         )}
                         <div className={`flex ${fromMe ? "justify-end" : "justify-start"} ${sameSender ? "mt-0.5" : "mt-2"}`}>
-                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground border border-border/50 rounded-bl-sm"}`}>
+                          <div className={`max-w-[78%] rounded-2xl text-sm shadow-sm overflow-hidden ${isMediaOnly ? "p-1" : "px-3 py-2"} ${fromMe ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground border border-border/50 rounded-bl-sm"}`}>
                             {senderName && (
-                              <p className="text-[11px] font-semibold text-primary mb-1">{senderName}</p>
+                              <p className={`text-[11px] font-semibold mb-1 ${fromMe ? "text-primary-foreground/90" : "text-primary"} ${isMediaOnly ? "px-2 pt-1" : ""}`}>{senderName}</p>
                             )}
                             {quoted && (
-                              <div className={`mb-1.5 px-2 py-1.5 rounded-md border-l-2 text-[11px] ${fromMe ? "bg-primary-foreground/10 border-primary-foreground/40" : "bg-muted/60 border-primary/60"}`}>
+                              <div className={`mb-1.5 px-2 py-1.5 rounded-md border-l-2 text-[11px] ${isMediaOnly ? "mx-1" : ""} ${fromMe ? "bg-primary-foreground/10 border-primary-foreground/40" : "bg-muted/60 border-primary/60"}`}>
                                 {quoted.author && <p className="font-semibold opacity-80">{quoted.author}</p>}
                                 <p className="opacity-70 line-clamp-2">{quoted.text}</p>
                               </div>
                             )}
-                            {kind === "image" && (mediaUrl ? (
-                              <img src={mediaUrl} alt="" className="rounded-lg max-w-full max-h-64 object-cover mb-1" loading="lazy" />
+
+                            {kind === "image" && (imageUrl ? (
+                              <a href={imageUrl} target="_blank" rel="noreferrer noopener" className="block">
+                                <img src={imageUrl} alt="" className="rounded-xl max-w-full max-h-72 object-cover" loading="lazy" />
+                              </a>
                             ) : (
                               <div className="flex items-center gap-2 py-1 opacity-80"><ImageIcon size={14} /><span className="text-xs italic">Imagem</span></div>
                             ))}
-                            {kind === "sticker" && (mediaUrl
-                              ? <img src={mediaUrl} alt="" className="w-24 h-24 object-contain" />
-                              : <span className="text-xs italic opacity-80">Figurinha</span>)}
+
+                            {kind === "video" && (videoUrl ? (
+                              <video src={videoUrl} controls className="rounded-xl max-w-full max-h-72" preload="metadata" />
+                            ) : (
+                              <div className="flex items-center gap-2 py-1 opacity-80"><Video size={14} /><span className="text-xs italic">Vídeo</span></div>
+                            ))}
+
                             {kind === "audio" && (
-                              <div className="flex items-center gap-2 py-0.5">
-                                <Mic size={14} className="opacity-80" />
-                                <span className="text-xs">Áudio{audioSecs ? ` · ${Math.floor(audioSecs / 60)}:${String(audioSecs % 60).padStart(2, "0")}` : ""}</span>
-                              </div>
-                            )}
-                            {kind === "video" && (
-                              <div className="flex items-center gap-2 py-0.5"><Video size={14} className="opacity-80" /><span className="text-xs">Vídeo</span></div>
-                            )}
-                            {kind === "document" && docInfo && (
-                              <div className="flex items-center gap-2 py-1 px-2 rounded bg-black/10">
-                                <FileIcon size={16} className="opacity-80 shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-medium truncate">{docInfo.name}</p>
-                                  {docInfo.mime && <p className="text-[10px] opacity-60 truncate">{docInfo.mime}</p>}
+                              audioUrl ? (
+                                <audio
+                                  src={audioUrl}
+                                  controls
+                                  preload="metadata"
+                                  className="h-9 max-w-[260px] w-full"
+                                />
+                              ) : (
+                                <div className={`flex items-center gap-2.5 py-1 px-1 min-w-[160px] ${fromMe ? "text-primary-foreground" : "text-foreground"}`}>
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fromMe ? "bg-primary-foreground/15" : "bg-primary/10"}`}>
+                                    <Mic size={14} />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className={`h-1 rounded-full ${fromMe ? "bg-primary-foreground/30" : "bg-primary/30"}`} />
+                                    <p className="text-[10px] opacity-70 mt-1">
+                                      {audioSecs ? `${Math.floor(audioSecs / 60)}:${String(audioSecs % 60).padStart(2, "0")}` : "Mensagem de voz"}
+                                    </p>
+                                  </div>
                                 </div>
+                              )
+                            )}
+
+                            {kind === "document" && docInfo && (
+                              <a
+                                href={docUrl || undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className={`flex items-center gap-2.5 py-2 px-2.5 rounded-lg min-w-[220px] transition-colors ${fromMe ? "bg-primary-foreground/10 hover:bg-primary-foreground/15" : "bg-muted/50 hover:bg-muted/70"} ${!docUrl ? "pointer-events-none" : ""}`}
+                              >
+                                <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${fromMe ? "bg-primary-foreground/20" : "bg-primary/15 text-primary"}`}>
+                                  <FileIcon size={18} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium truncate">{docInfo.name}</p>
+                                  <p className="text-[10px] opacity-70 truncate">
+                                    {[docInfo.pageCount ? `${docInfo.pageCount} pág` : "", docInfo.sizeLabel, docInfo.mime?.split("/")[1]?.toUpperCase()].filter(Boolean).join(" · ")}
+                                  </p>
+                                </div>
+                              </a>
+                            )}
+
+                            {kind === "location" && locInfo && (
+                              <a
+                                href={locInfo.url || undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className={`flex items-center gap-2 py-1.5 px-2 rounded-md ${fromMe ? "bg-primary-foreground/10" : "bg-muted/50"} ${!locInfo.url ? "pointer-events-none" : "hover:opacity-90"}`}
+                              >
+                                <MapPin size={14} className="opacity-80" />
+                                <span className="text-xs font-medium">{locInfo.name}</span>
+                              </a>
+                            )}
+
+                            {kind === "contact" && (
+                              <div className={`flex items-center gap-2 py-1.5 px-2 rounded-md ${fromMe ? "bg-primary-foreground/10" : "bg-muted/50"}`}>
+                                <User size={14} className="opacity-80" />
+                                <span className="text-xs font-medium">Contato compartilhado</span>
                               </div>
                             )}
-                            {kind === "location" && (
-                              <div className="flex items-center gap-2 py-0.5"><MapPin size={14} className="opacity-80" /><span className="text-xs">Localização</span></div>
-                            )}
-                            {kind === "contact" && (
-                              <div className="flex items-center gap-2 py-0.5"><User size={14} className="opacity-80" /><span className="text-xs">Contato</span></div>
-                            )}
+
                             {text && (
-                              <p className="whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+                              <p className={`whitespace-pre-wrap break-words leading-relaxed ${isMediaOnly ? "px-2 pt-2" : (kind !== "text" ? "mt-1.5" : "")}`}>
+                                {renderTextWithLinks(text, !!fromMe)}
+                              </p>
                             )}
-                            <div className={`flex items-center justify-end gap-1 mt-0.5 ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+
+                            <div className={`flex items-center justify-end gap-1 ${isMediaOnly ? "px-2 pb-1 pt-0.5" : "mt-0.5"} ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                               <span className="text-[10px]">{time}</span>
                               {getStatusIcon(msg)}
                             </div>
