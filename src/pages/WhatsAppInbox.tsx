@@ -360,6 +360,5 @@ export default function WhatsAppInbox() {
           )}
         </Card>
       </div>
-    </DashboardLayout>
   );
 }
