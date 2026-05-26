@@ -1609,7 +1609,7 @@ const AgenteIA = () => {
                 <Trash2 size={12} /> Limpar
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 notranslate" translate="no">
               {messages.map((msg, i) => (
                 <div key={i} className={`group flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "assistant" ? "bg-primary/10" : "bg-accent"}`}>
@@ -1617,7 +1617,8 @@ const AgenteIA = () => {
                   </div>
                   <div className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm relative ${msg.role === "assistant" ? "bg-muted/50 text-foreground" : "bg-primary text-primary-foreground"}`}>
                     <div
-                      className="whitespace-pre-wrap leading-relaxed prose-sm"
+                      translate="no"
+                      className="notranslate whitespace-pre-wrap leading-relaxed prose-sm"
                       dangerouslySetInnerHTML={{
                         __html: msg.content
                           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
