@@ -505,18 +505,28 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     if (messageType === "text") {
       messages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
     } else if (mediaData && mimeType) {
-      const label = messageType === "audio"
-        ? "[O cliente enviou um áudio — escute e responda]"
-        : messageType === "image"
-        ? "[Imagem enviada — verifique se é comprovante de pagamento]"
-        : "[Documento enviado — analise o conteúdo]";
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: incomingText || label },
-          { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
-        ],
-      });
+      if (messageType === "audio") {
+        // Gemini aceita áudio via input_audio (formato OpenAI-compat)
+        const format = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp3") || mimeType.includes("mpeg") ? "mp3" : mimeType.includes("wav") ? "wav" : "ogg";
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: "[O cliente enviou um áudio. Escute, entenda o que ele quer e responda naturalmente em texto.]" },
+            { type: "input_audio", input_audio: { data: mediaData, format } },
+          ],
+        });
+      } else {
+        const label = messageType === "image"
+          ? "[Imagem enviada — verifique se é comprovante de pagamento. Se for, extraia o valor.]"
+          : "[Documento enviado — analise o conteúdo. Se for comprovante, extraia o valor.]";
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: incomingText || label },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
+          ],
+        });
+      }
     } else {
       messages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
     }
