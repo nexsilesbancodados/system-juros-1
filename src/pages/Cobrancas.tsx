@@ -15,6 +15,7 @@ import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
 import { formatBR } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
+import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
