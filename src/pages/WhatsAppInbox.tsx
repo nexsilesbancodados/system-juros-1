@@ -272,7 +272,7 @@ export default function WhatsAppInbox() {
   const useTemplate = (tpl: Template) => {
     if (!selected) return;
     const name = (selected.contact_name || "").split(" ")[0] || "";
-    const rendered = tpl.content.replaceAll("{nome}", name).replaceAll("{Nome}", name);
+    const rendered = tpl.content.replace(/\{nome\}/gi, name);
     setDraft(rendered);
   };
 
