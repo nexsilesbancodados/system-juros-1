@@ -287,6 +287,38 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "rate_limited" }), { headers: corsHeaders });
     }
 
+    // === Anti-eco: ignora se cliente repetiu (copiou) exatamente a última resposta do bot ===
+    if (messageType === "text" && incomingText) {
+      const last = lastBotReply.get(senderJid);
+      if (last && Date.now() - last.ts < 5 * 60 * 1000 && norm(last.text).includes(norm(incomingText)) && incomingText.length > 20) {
+        console.log("ignored echo from", senderJid);
+        return new Response(JSON.stringify({ status: "ignored_echo" }), { headers: corsHeaders });
+      }
+    }
+
+    // === Truncamento: clientes que mandam paredes de texto ===
+    if (incomingText && incomingText.length > 1500) {
+      incomingText = incomingText.slice(0, 1500) + " …[mensagem truncada]";
+    }
+
+    // === Debounce: agrupa mensagens consecutivas de texto em ~4.5s ===
+    if (messageType === "text" && incomingText) {
+      const buf = messageBuffer.get(senderJid) || { texts: [], lastTs: 0 };
+      buf.texts.push(incomingText);
+      buf.lastTs = Date.now();
+      messageBuffer.set(senderJid, buf);
+      const myTs = buf.lastTs;
+      await new Promise(r => setTimeout(r, BUFFER_WAIT_MS));
+      const current = messageBuffer.get(senderJid);
+      if (!current || current.lastTs > myTs) {
+        // chegou mensagem mais nova — essa requisição abdica
+        return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
+      }
+      incomingText = current.texts.join("\n").slice(0, 2000);
+      messageBuffer.delete(senderJid);
+    }
+
+
     // === Comando do cliente: PARAR BOT ===
     if (matchesAny(incomingText, STOP_WORDS)) {
       await supabase.from("audit_logs").insert({
