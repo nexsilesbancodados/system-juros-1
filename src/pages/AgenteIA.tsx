@@ -439,14 +439,30 @@ const AgenteIA = () => {
         if (!remoteJid || remoteJid === "status@broadcast") return;
         if (uniqueChats.has(remoteJid)) return;
 
+        const lastMsg = chat.lastMessage?.message as Record<string, unknown> | undefined;
+        let lastKind: WhatsAppChat["lastMessageKind"] = "text";
+        if (lastMsg) {
+          const m = lastMsg as any;
+          if (m.imageMessage) lastKind = "image";
+          else if (m.audioMessage || m.pttMessage) lastKind = "audio";
+          else if (m.videoMessage) lastKind = "video";
+          else if (m.documentMessage || m.documentWithCaptionMessage) lastKind = "document";
+          else if (m.stickerMessage) lastKind = "sticker";
+          else if (m.locationMessage || m.liveLocationMessage) lastKind = "location";
+          else if (m.contactMessage || m.contactsArrayMessage) lastKind = "contact";
+        }
+
         uniqueChats.set(remoteJid, {
           id: remoteJid,
           name: getChatDisplayName(chat) || chat.pushName || chat.name || remoteJid.split("@")[0],
           remoteJid,
           phone: getChatPhone(chat) || remoteJid.split("@")[0],
           lastMessage: extractWhatsAppText(chat.lastMessage?.message) || chat.lastMessage?.text || "",
+          lastMessageKind: lastKind,
+          lastMessageFromMe: !!chat.lastMessage?.key?.fromMe,
           updatedAt: chat.updatedAt || chat.updated_at || chat.lastMessage?.messageTimestamp || "",
           unreadCount: chat.unreadCount ?? chat.unread_count ?? 0,
+          profilePicUrl: chat.profilePicUrl || chat.profilePictureUrl || chat.profilePicture || undefined,
         });
       });
 
