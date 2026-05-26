@@ -16,6 +16,24 @@ const jidRateBucket = new Map<string, number[]>();
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 6;
 
+// Buffer de mensagens (debounce) — agrupa mensagens consecutivas do mesmo contato
+const messageBuffer = new Map<string, { texts: string[]; lastTs: number }>();
+const BUFFER_WAIT_MS = 4500;
+
+// Última resposta enviada pelo bot por JID — evita "eco"
+const lastBotReply = new Map<string, { text: string; ts: number }>();
+
+// Saudações variadas (lead)
+const LEAD_GREETINGS = [
+  (e: string) => `Olá! 👋 Aqui é da *${e}*.\n\nNão consegui localizar seu cadastro pelo seu número. Pode me passar seu *nome completo* e *CPF*? Assim consigo te atender direitinho. 😊`,
+  (e: string) => `Oi, tudo bem? 🙂\n\nAqui é o atendimento da *${e}*. Pra te ajudar melhor, pode me informar seu *nome* e *CPF*?`,
+  (e: string) => `Olá! Seja bem-vindo(a) à *${e}*. 🤝\n\nPra puxar seu cadastro, preciso do seu *nome completo* e *CPF*, por favor.`,
+  (e: string) => `Oi! 👋 Aqui é da *${e}*.\n\nNão te encontrei na nossa base. Me ajuda com seu *nome completo* e *CPF* pra eu seguir? 😉`,
+];
+const pickGreeting = (e: string) => LEAD_GREETINGS[Math.floor(Math.random() * LEAD_GREETINGS.length)](e);
+
+function norm(s: string) { return (s || "").toLowerCase().replace(/\s+/g, " ").trim(); }
+
 function rememberMessage(id: string) {
   const now = Date.now();
   processedMessages.set(id, now);
