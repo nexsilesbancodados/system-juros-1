@@ -236,7 +236,7 @@ serve(async (req) => {
       const shouldReply = Date.now() - recentLeadTime > 60 * 60 * 1000; // 1h cooldown
 
       if (shouldReply && apiUrl && apiKey) {
-        const greeting = `Olá! 👋 Aqui é o atendimento da ${settings.company_name || profile?.name || "nossa empresa"}.\n\nNão localizei seu cadastro pelo seu número. Pode me informar seu *nome completo* e *CPF*? Assim consigo te ajudar melhor. 😊`;
+        const greeting = pickGreeting(settings.company_name || profile?.name || "nossa empresa");
         await sendText(apiUrl, apiKey, instanceName, senderJid, greeting);
 
         // Notifica o dono
