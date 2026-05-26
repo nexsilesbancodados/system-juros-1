@@ -11,13 +11,45 @@ const corsHeaders = {
 const processedMessages = new Map<string, number>();
 const DEDUPE_TTL_MS = 5 * 60 * 1000;
 
+// Rate limit por JID — evita loops/spam
+const jidRateBucket = new Map<string, number[]>();
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_MAX = 6;
+
 function rememberMessage(id: string) {
   const now = Date.now();
   processedMessages.set(id, now);
-  // Cleanup velhas
   for (const [k, t] of processedMessages) {
     if (now - t > DEDUPE_TTL_MS) processedMessages.delete(k);
   }
+}
+
+function isRateLimited(jid: string): boolean {
+  const now = Date.now();
+  const arr = (jidRateBucket.get(jid) || []).filter(t => now - t < RATE_WINDOW_MS);
+  if (arr.length >= RATE_MAX) { jidRateBucket.set(jid, arr); return true; }
+  arr.push(now);
+  jidRateBucket.set(jid, arr);
+  return false;
+}
+
+const STOP_WORDS = ["parar bot", "pare bot", "cancelar bot", "desativar bot", "silenciar bot", "stop bot"];
+const HUMAN_WORDS = ["atendente", "humano", "pessoa de verdade", "falar com alguem", "falar com alguém", "operador", "gerente", "responsavel", "responsável"];
+const PIX_WORDS = ["qual o pix", "qual a chave pix", "me passa o pix", "manda o pix", "envia o pix", "me manda a chave pix"];
+
+function matchesAny(text: string, words: string[]): boolean {
+  const t = (text || "").toLowerCase();
+  return words.some(w => t.includes(w));
+}
+
+function isWithinBusinessHours(settings: any): boolean {
+  if (!settings?.bot_business_hours_only) return true;
+  const start = settings.bot_business_start || "08:00";
+  const end = settings.bot_business_end || "18:00";
+  const now = new Date();
+  const local = new Date(now.getTime() + (-180 - now.getTimezoneOffset()) * 60000);
+  const hm = `${String(local.getHours()).padStart(2,"0")}:${String(local.getMinutes()).padStart(2,"0")}`;
+  return hm >= start && hm <= end;
 }
 
 async function evolutionFetch(apiUrl: string, apiKey: string, path: string, body: any) {
