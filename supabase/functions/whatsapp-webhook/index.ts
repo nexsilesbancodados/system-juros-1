@@ -284,9 +284,11 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
       entity_id: client.id,
       details: {
         message_type: messageType,
+        client_message: incomingText || `[${messageType}]`,
         summary: result.summary,
         is_receipt: result.is_receipt,
         receipt_value: result.receipt_value,
+        needs_human: result.needs_human || false,
         ai_reply: result.reply
       }
     });
