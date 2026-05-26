@@ -25,8 +25,11 @@ interface WhatsAppChat {
   remoteJid: string;
   phone?: string;
   lastMessage?: string;
+  lastMessageKind?: "image" | "audio" | "video" | "document" | "sticker" | "location" | "contact" | "text";
+  lastMessageFromMe?: boolean;
   updatedAt?: string;
   unreadCount?: number;
+  profilePicUrl?: string;
 }
 
 interface WhatsAppMessageKey {
