@@ -141,8 +141,9 @@ const WhatsAppConfig = () => {
       }
 
       setInstanceData(data);
-      const inst = Array.isArray(data) ? data[0] : data.instance ?? data;
-      if (inst?.status === "open" || inst?.connectionStatus === "open") {
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : null;
+      const inst = arr ? arr[0] : (data.instance ?? data);
+      if (inst?.status === "open" || inst?.connectionStatus === "open" || inst?.state === "open") {
         setStatus("connected");
       } else {
         setStatus("disconnected");
