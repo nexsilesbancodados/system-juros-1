@@ -1,3 +1,5 @@
+// Envio manual a partir do inbox.
+// Suporta texto livre + quick actions: send_pix, mark_paid, mark_resolved, send_receipt_request, send_template
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -26,9 +28,11 @@ serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: corsHeaders });
 
     const body = await req.json();
-    const { conversation_id, text } = body;
-    if (!conversation_id || !text || typeof text !== "string") {
-      return new Response(JSON.stringify({ error: "missing_fields" }), { status: 400, headers: corsHeaders });
+    const { conversation_id, text, action } = body as {
+      conversation_id: string; text?: string; action?: string;
+    };
+    if (!conversation_id) {
+      return new Response(JSON.stringify({ error: "missing_conversation" }), { status: 400, headers: corsHeaders });
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -42,19 +46,40 @@ serve(async (req) => {
     const { data: settings } = await supabase
       .from("settings").select("whatsapp_api_url, whatsapp_api_key, whatsapp_instance")
       .eq("user_id", user.id).single();
+    const { data: profile } = await supabase
+      .from("profiles").select("pix_key, pix_key_type, name").eq("id", user.id).single();
 
     const apiUrl = (settings?.whatsapp_api_url || "").replace(/\/$/, "");
     const apiKey = settings?.whatsapp_api_key;
     const instance = convo.instance || settings?.whatsapp_instance;
-
     if (!apiUrl || !apiKey || !instance) {
       return new Response(JSON.stringify({ error: "whatsapp_not_configured" }), { status: 400, headers: corsHeaders });
+    }
+
+    // Resolve texto a partir da action
+    let finalText = (text || "").trim();
+    if (action === "send_pix" && profile?.pix_key) {
+      finalText = `Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui. ✅`;
+    } else if (action === "send_receipt_request") {
+      finalText = `Você pode me enviar o comprovante do pagamento? 📄`;
+    } else if (action === "mark_resolved") {
+      // Apenas marca como resolvida, sem enviar msg
+      await supabase.from("whatsapp_conversations").update({
+        needs_human: false, unread_count: 0, updated_at: new Date().toISOString(),
+      }).eq("id", conversation_id);
+      return new Response(JSON.stringify({ ok: true, resolved: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!finalText) {
+      return new Response(JSON.stringify({ error: "missing_text" }), { status: 400, headers: corsHeaders });
     }
 
     const sendRes = await fetch(`${apiUrl}/message/sendText/${instance}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: apiKey },
-      body: JSON.stringify({ number: convo.jid, text, delay: 600 }),
+      body: JSON.stringify({ number: convo.jid, text: finalText, delay: 600 }),
     });
 
     if (!sendRes.ok) {
@@ -66,12 +91,15 @@ serve(async (req) => {
     await supabase.from("whatsapp_messages").insert({
       conversation_id, user_id: user.id,
       direction: "out", sender: "human",
-      message_type: "text", content: text,
+      message_type: "text", content: finalText,
+      metadata: action ? { action } : {},
     });
     await supabase.from("whatsapp_conversations").update({
       last_message_at: new Date().toISOString(),
-      last_message_preview: text.slice(0, 200),
+      last_message_preview: finalText.slice(0, 200),
       last_message_from: "human",
+      needs_human: false, // humano respondeu → resolvido
+      bot_paused: true,   // bot fica pausado quando humano assume
       updated_at: new Date().toISOString(),
     }).eq("id", conversation_id);
 
