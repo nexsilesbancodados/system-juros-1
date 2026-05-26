@@ -16,6 +16,24 @@ const jidRateBucket = new Map<string, number[]>();
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 6;
 
+// Buffer de mensagens (debounce) — agrupa mensagens consecutivas do mesmo contato
+const messageBuffer = new Map<string, { texts: string[]; lastTs: number }>();
+const BUFFER_WAIT_MS = 4500;
+
+// Última resposta enviada pelo bot por JID — evita "eco"
+const lastBotReply = new Map<string, { text: string; ts: number }>();
+
+// Saudações variadas (lead)
+const LEAD_GREETINGS = [
+  (e: string) => `Olá! 👋 Aqui é da *${e}*.\n\nNão consegui localizar seu cadastro pelo seu número. Pode me passar seu *nome completo* e *CPF*? Assim consigo te atender direitinho. 😊`,
+  (e: string) => `Oi, tudo bem? 🙂\n\nAqui é o atendimento da *${e}*. Pra te ajudar melhor, pode me informar seu *nome* e *CPF*?`,
+  (e: string) => `Olá! Seja bem-vindo(a) à *${e}*. 🤝\n\nPra puxar seu cadastro, preciso do seu *nome completo* e *CPF*, por favor.`,
+  (e: string) => `Oi! 👋 Aqui é da *${e}*.\n\nNão te encontrei na nossa base. Me ajuda com seu *nome completo* e *CPF* pra eu seguir? 😉`,
+];
+const pickGreeting = (e: string) => LEAD_GREETINGS[Math.floor(Math.random() * LEAD_GREETINGS.length)](e);
+
+function norm(s: string) { return (s || "").toLowerCase().replace(/\s+/g, " ").trim(); }
+
 function rememberMessage(id: string) {
   const now = Date.now();
   processedMessages.set(id, now);
@@ -218,7 +236,7 @@ serve(async (req) => {
       const shouldReply = Date.now() - recentLeadTime > 60 * 60 * 1000; // 1h cooldown
 
       if (shouldReply && apiUrl && apiKey) {
-        const greeting = `Olá! 👋 Aqui é o atendimento da ${settings.company_name || profile?.name || "nossa empresa"}.\n\nNão localizei seu cadastro pelo seu número. Pode me informar seu *nome completo* e *CPF*? Assim consigo te ajudar melhor. 😊`;
+        const greeting = pickGreeting(settings.company_name || profile?.name || "nossa empresa");
         await sendText(apiUrl, apiKey, instanceName, senderJid, greeting);
 
         // Notifica o dono
@@ -268,6 +286,38 @@ serve(async (req) => {
       console.log("rate limited:", senderJid);
       return new Response(JSON.stringify({ status: "rate_limited" }), { headers: corsHeaders });
     }
+
+    // === Anti-eco: ignora se cliente repetiu (copiou) exatamente a última resposta do bot ===
+    if (messageType === "text" && incomingText) {
+      const last = lastBotReply.get(senderJid);
+      if (last && Date.now() - last.ts < 5 * 60 * 1000 && norm(last.text).includes(norm(incomingText)) && incomingText.length > 20) {
+        console.log("ignored echo from", senderJid);
+        return new Response(JSON.stringify({ status: "ignored_echo" }), { headers: corsHeaders });
+      }
+    }
+
+    // === Truncamento: clientes que mandam paredes de texto ===
+    if (incomingText && incomingText.length > 1500) {
+      incomingText = incomingText.slice(0, 1500) + " …[mensagem truncada]";
+    }
+
+    // === Debounce: agrupa mensagens consecutivas de texto em ~4.5s ===
+    if (messageType === "text" && incomingText) {
+      const buf = messageBuffer.get(senderJid) || { texts: [], lastTs: 0 };
+      buf.texts.push(incomingText);
+      buf.lastTs = Date.now();
+      messageBuffer.set(senderJid, buf);
+      const myTs = buf.lastTs;
+      await new Promise(r => setTimeout(r, BUFFER_WAIT_MS));
+      const current = messageBuffer.get(senderJid);
+      if (!current || current.lastTs > myTs) {
+        // chegou mensagem mais nova — essa requisição abdica
+        return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
+      }
+      incomingText = current.texts.join("\n").slice(0, 2000);
+      messageBuffer.delete(senderJid);
+    }
+
 
     // === Comando do cliente: PARAR BOT ===
     if (matchesAny(incomingText, STOP_WORDS)) {
@@ -455,18 +505,28 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     if (messageType === "text") {
       messages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
     } else if (mediaData && mimeType) {
-      const label = messageType === "audio"
-        ? "[O cliente enviou um áudio — escute e responda]"
-        : messageType === "image"
-        ? "[Imagem enviada — verifique se é comprovante de pagamento]"
-        : "[Documento enviado — analise o conteúdo]";
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: incomingText || label },
-          { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
-        ],
-      });
+      if (messageType === "audio") {
+        // Gemini aceita áudio via input_audio (formato OpenAI-compat)
+        const format = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp3") || mimeType.includes("mpeg") ? "mp3" : mimeType.includes("wav") ? "wav" : "ogg";
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: "[O cliente enviou um áudio. Escute, entenda o que ele quer e responda naturalmente em texto.]" },
+            { type: "input_audio", input_audio: { data: mediaData, format } },
+          ],
+        });
+      } else {
+        const label = messageType === "image"
+          ? "[Imagem enviada — verifique se é comprovante de pagamento. Se for, extraia o valor.]"
+          : "[Documento enviado — analise o conteúdo. Se for comprovante, extraia o valor.]";
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: incomingText || label },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
+          ],
+        });
+      }
     } else {
       messages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
     }
@@ -502,6 +562,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     // Envia resposta
     if (result.reply && apiUrl && apiKey) {
       await sendText(apiUrl, apiKey, instanceName, senderJid, result.reply);
+      lastBotReply.set(senderJid, { text: result.reply, ts: Date.now() });
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
     }
 
