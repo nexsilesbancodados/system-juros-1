@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import DashboardLayout from "@/components/DashboardLayout";
+
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -182,8 +182,7 @@ export default function WhatsAppInbox() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="h-[calc(100vh-8rem)] grid grid-cols-[340px_1fr] gap-3">
+    <div className="h-[calc(100vh-8rem)] grid grid-cols-[340px_1fr] gap-3">
         {/* Lista */}
         <Card className="flex flex-col overflow-hidden">
           <div className="p-3 border-b border-border">
