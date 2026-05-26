@@ -723,14 +723,17 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       }
     }
 
-    // Escalação para humano — marca conversa + notifica
-    if (result.needs_human) {
-      if (convoId) {
-        await supabase.from("whatsapp_conversations").update({
-          needs_human: true,
-          last_human_handoff_at: new Date().toISOString(),
-        }).eq("id", convoId);
+    // Escalação para humano + intent classificado
+    if (convoId) {
+      const update: any = { updated_at: new Date().toISOString() };
+      if (result.intent) update.last_intent = result.intent;
+      if (result.needs_human) {
+        update.needs_human = true;
+        update.last_human_handoff_at = new Date().toISOString();
       }
+      await supabase.from("whatsapp_conversations").update(update).eq("id", convoId);
+    }
+    if (result.needs_human) {
       await supabase.from("notifications").insert({
         user_id: userId,
         title: "🆘 Atendimento humano solicitado",

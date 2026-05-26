@@ -1080,6 +1080,9 @@ export type Database = {
           border_radius: string | null
           bot_auto_confirm_payment: boolean | null
           bot_auto_send: boolean | null
+          bot_business_end: string | null
+          bot_business_hours_only: boolean | null
+          bot_business_start: string | null
           bot_closing_message: string | null
           bot_enabled: boolean | null
           bot_escalation_rules: Json | null
@@ -1137,6 +1140,9 @@ export type Database = {
           border_radius?: string | null
           bot_auto_confirm_payment?: boolean | null
           bot_auto_send?: boolean | null
+          bot_business_end?: string | null
+          bot_business_hours_only?: boolean | null
+          bot_business_start?: string | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
           bot_escalation_rules?: Json | null
@@ -1194,6 +1200,9 @@ export type Database = {
           border_radius?: string | null
           bot_auto_confirm_payment?: boolean | null
           bot_auto_send?: boolean | null
+          bot_business_end?: string | null
+          bot_business_hours_only?: boolean | null
+          bot_business_start?: string | null
           bot_closing_message?: string | null
           bot_enabled?: boolean | null
           bot_escalation_rules?: Json | null
@@ -1595,11 +1604,13 @@ export type Database = {
           instance: string | null
           jid: string
           last_human_handoff_at: string | null
+          last_intent: string | null
           last_message_at: string
           last_message_from: string | null
           last_message_preview: string | null
           needs_human: boolean
           phone: string
+          tags: string[]
           unread_count: number
           updated_at: string
           user_id: string
@@ -1615,11 +1626,13 @@ export type Database = {
           instance?: string | null
           jid: string
           last_human_handoff_at?: string | null
+          last_intent?: string | null
           last_message_at?: string
           last_message_from?: string | null
           last_message_preview?: string | null
           needs_human?: boolean
           phone: string
+          tags?: string[]
           unread_count?: number
           updated_at?: string
           user_id: string
@@ -1635,13 +1648,51 @@ export type Database = {
           instance?: string | null
           jid?: string
           last_human_handoff_at?: string | null
+          last_intent?: string | null
           last_message_at?: string
           last_message_from?: string | null
           last_message_preview?: string | null
           needs_human?: boolean
           phone?: string
+          tags?: string[]
           unread_count?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_instances: {
+        Row: {
+          api_key: string
+          api_url: string
+          created_at: string
+          id: string
+          instance: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          created_at?: string
+          id?: string
+          instance: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string
+          id?: string
+          instance?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
           user_id?: string
         }
         Relationships: []
@@ -1695,6 +1746,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_notes: {
+        Row: {
+          author_name: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          author_name?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_scheduled_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          error: string | null
+          id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
