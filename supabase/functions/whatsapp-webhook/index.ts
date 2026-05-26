@@ -38,6 +38,10 @@ serve(async (req) => {
     if (!senderJid) {
       return new Response(JSON.stringify({ status: "no_jid" }), { headers: corsHeaders });
     }
+    // Ignore groups, broadcasts, status, newsletters
+    if (senderJid.includes("@g.us") || senderJid.includes("@broadcast") || senderJid.includes("status@") || senderJid.includes("@newsletter")) {
+      return new Response(JSON.stringify({ status: "ignored_group_or_broadcast" }), { headers: corsHeaders });
+    }
     const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
     const instanceName = payload.instance;
 
@@ -128,40 +132,74 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing API Key" }), { status: 500, headers: corsHeaders });
     }
 
-    // Prepare AI Prompt
-    const systemPrompt = `Você é o bot de cobrança e atendimento inteligente da empresa ${settings.company_name || profile?.name}.
-Tom de voz: ${settings.bot_tone || 'profissional'}.
+    // Conversation memory: last 10 interactions with this client
+    const { data: history } = await supabase
+      .from("audit_logs")
+      .select("details, created_at")
+      .eq("user_id", userId)
+      .eq("entity_type", "whatsapp_bot")
+      .eq("entity_id", client.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-Dados do cliente ${client.name}:
-- Total em atraso: R$ ${totalOverdue.toFixed(2)}
-- Parcelas pendentes: ${installments?.length || 0}
-${installments?.length ? `- Próxima/Última parcela: R$ ${installments[0].amount} (Venc: ${new Date(installments[0].due_date).toLocaleDateString('pt-BR')})` : ''}
-- Chave PIX: ${profile?.pix_key || "Não disponível"}
+    const conversationHistory: any[] = [];
+    (history || []).reverse().forEach((h: any) => {
+      const d = h.details || {};
+      if (d.client_message) {
+        conversationHistory.push({ role: "user", content: String(d.client_message).slice(0, 500) });
+      }
+      if (d.ai_reply) {
+        conversationHistory.push({ role: "assistant", content: String(d.ai_reply).slice(0, 800) });
+      }
+    });
 
-Funcionalidades:
-1. AUDIO: Se receber um áudio, transcreva mentalmente e responda ao que o cliente disse.
-2. COMPROVANTE: Se receber uma imagem, analise se é um comprovante de transferência/PIX. 
-   - Se for um comprovante válido, identifique o valor e a data.
-   - Responda confirmando que recebeu o comprovante e que o financeiro irá baixar o pagamento.
-   - Retorne no JSON final o campo "is_receipt": true e "receipt_value": valor_do_comprovante.
-3. NEGOCIAÇÃO: Você pode oferecer isenção de juros para pagamento HOJE.
-4. ATENDIMENTO: Responda dúvidas gerais sobre o contrato.
+    const installmentsList = (installments || []).slice(0, 5).map(i => {
+      const overdue = new Date(i.due_date) < new Date() ? " [ATRASADA]" : "";
+      return `  - Parcela ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} - Venc: ${new Date(i.due_date).toLocaleDateString('pt-BR')}${overdue}`;
+    }).join("\n");
 
-REGRAS DE RESPOSTA:
-- Seja educado e empático.
-- Máximo 3 parágrafos.
-- Se for comprovante, seja entusiasta e agradeça.
+    const today = new Date().toLocaleDateString('pt-BR');
 
-IMPORTANTE: Responda em formato JSON:
+    const systemPrompt = `Você é o atendente virtual oficial da empresa "${settings.company_name || profile?.name || 'nossa empresa'}".
+Tom de voz: ${settings.bot_tone || 'profissional, empático e cordial'}.
+Data de hoje: ${today}.
+
+═══ DADOS DO CLIENTE ═══
+Nome: ${client.name}
+Total em atraso: R$ ${totalOverdue.toFixed(2)}
+Parcelas pendentes: ${installments?.length || 0}
+${installmentsList ? `Próximas parcelas:\n${installmentsList}` : 'Nenhuma parcela pendente.'}
+Chave PIX para pagamento: ${profile?.pix_key || "Solicitar ao atendimento humano"}
+
+═══ SUAS HABILIDADES ═══
+1. ATENDIMENTO INTELIGENTE: Converse naturalmente, responda dúvidas sobre o contrato, parcelas, valores, datas e formas de pagamento. Use o histórico para manter contexto.
+2. COBRANÇA EMPÁTICA: Lembre o cliente de parcelas pendentes SEM ser agressivo. Mostre que está ali para ajudar.
+3. NEGOCIAÇÃO: Pode oferecer condições especiais para pagamento HOJE (ex: isenção parcial de multa/juros). Use bom senso.
+4. COMPROVANTE (imagem): Se for comprovante PIX/transferência, confirme com entusiasmo, identifique o valor e marque is_receipt=true.
+5. ÁUDIO: Escute o áudio, entenda o que o cliente disse e responda naturalmente.
+6. ESCALAÇÃO: Se o cliente pedir falar com humano, reclamar de algo sério, ou perguntar algo fora do seu escopo, marque "needs_human": true.
+
+═══ REGRAS DE OURO ═══
+- SEMPRE em português brasileiro, humano e natural (NÃO pareça robô).
+- Use o primeiro nome do cliente quando apropriado.
+- Mensagens curtas (máx 4-5 linhas). Use quebras de linha.
+- Emojis com moderação (😊 👍 ✅) quando o tom permitir.
+- NUNCA invente valores, datas ou informações que não estão acima.
+- Se não tiver certeza, diga que vai consultar e marque needs_human=true.
+- Não repita a mesma resposta. Olhe o histórico antes de responder.
+
+FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
 {
-  "reply": "sua resposta aqui",
+  "reply": "sua resposta natural ao cliente",
   "is_receipt": boolean,
   "receipt_value": number | null,
-  "summary": "resumo do que o cliente disse/pediu"
+  "needs_human": boolean,
+  "summary": "resumo curto do que foi dito/decidido"
 }`;
 
-    const messages = [
-      { role: "system", content: systemPrompt }
+    const messages: any[] = [
+      { role: "system", content: systemPrompt },
+      ...conversationHistory,
     ];
 
     if (messageType === "text") {
@@ -170,13 +208,15 @@ IMPORTANTE: Responda em formato JSON:
       messages.push({
         role: "user",
         content: [
-          { type: "text", text: incomingText || (messageType === "audio" ? "O cliente enviou um áudio." : "O cliente enviou uma imagem.") },
+          { type: "text", text: incomingText || (messageType === "audio" ? "[O cliente enviou um áudio - escute e responda]" : "[O cliente enviou uma imagem - analise se é comprovante]") },
           {
             type: "image_url",
             image_url: { url: `data:${mimeType};base64,${mediaData}` }
           }
         ]
-      } as any);
+      });
+    } else {
+      messages.push({ role: "user", content: `[Cliente enviou um ${messageType} mas o conteúdo não pôde ser baixado]` });
     }
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -186,10 +226,10 @@ IMPORTANTE: Responda em formato JSON:
         "Authorization": `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-1.5-flash",
+        model: "google/gemini-2.5-flash",
         messages,
         response_format: { type: "json_object" },
-        temperature: 0.2,
+        temperature: 0.6,
       }),
     });
 
@@ -244,9 +284,11 @@ IMPORTANTE: Responda em formato JSON:
       entity_id: client.id,
       details: {
         message_type: messageType,
+        client_message: incomingText || `[${messageType}]`,
         summary: result.summary,
         is_receipt: result.is_receipt,
         receipt_value: result.receipt_value,
+        needs_human: result.needs_human || false,
         ai_reply: result.reply
       }
     });
