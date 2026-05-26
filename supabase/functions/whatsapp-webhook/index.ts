@@ -292,7 +292,7 @@ serve(async (req) => {
     // Helper para o bot responder + persistir
     const botSay = async (text: string) => {
       if (!text || !apiUrl || !apiKey) return;
-      await botSay(text);
+      await sendText(apiUrl, apiKey, instanceName, senderJid, text);
       if (convoId) {
         await logMessage(supabase, {
           conversationId: convoId, userId, direction: "out", sender: "bot",
