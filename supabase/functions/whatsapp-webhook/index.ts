@@ -38,6 +38,10 @@ serve(async (req) => {
     if (!senderJid) {
       return new Response(JSON.stringify({ status: "no_jid" }), { headers: corsHeaders });
     }
+    // Ignore groups, broadcasts, status, newsletters
+    if (senderJid.includes("@g.us") || senderJid.includes("@broadcast") || senderJid.includes("status@") || senderJid.includes("@newsletter")) {
+      return new Response(JSON.stringify({ status: "ignored_group_or_broadcast" }), { headers: corsHeaders });
+    }
     const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
     const instanceName = payload.instance;
 
