@@ -105,6 +105,57 @@ async function sendText(apiUrl: string, apiKey: string, instance: string, jid: s
   }
 }
 
+// === Inbox helpers ===
+async function upsertConversation(supabase: any, params: {
+  userId: string; phone: string; jid: string; instance: string;
+  clientId?: string | null; contactName?: string | null;
+  preview: string; from: "client" | "bot" | "human"; incrementUnread: boolean;
+}): Promise<string | null> {
+  const { userId, phone, jid, instance, clientId, contactName, preview, from, incrementUnread } = params;
+  const { data: existing } = await supabase
+    .from("whatsapp_conversations").select("id, unread_count")
+    .eq("user_id", userId).eq("phone", phone).maybeSingle();
+  if (existing) {
+    await supabase.from("whatsapp_conversations").update({
+      jid, instance,
+      client_id: clientId ?? undefined,
+      contact_name: contactName ?? undefined,
+      last_message_at: new Date().toISOString(),
+      last_message_preview: preview.slice(0, 200),
+      last_message_from: from,
+      unread_count: incrementUnread ? (existing.unread_count || 0) + 1 : existing.unread_count,
+      updated_at: new Date().toISOString(),
+    }).eq("id", existing.id);
+    return existing.id;
+  }
+  const { data: created } = await supabase.from("whatsapp_conversations").insert({
+    user_id: userId, phone, jid, instance,
+    client_id: clientId ?? null, contact_name: contactName ?? null,
+    last_message_preview: preview.slice(0, 200), last_message_from: from,
+    unread_count: incrementUnread ? 1 : 0,
+  }).select("id").single();
+  return created?.id ?? null;
+}
+
+async function logMessage(supabase: any, params: {
+  conversationId: string; userId: string;
+  direction: "in" | "out"; sender: "client" | "bot" | "human";
+  messageType: string; content: string;
+  waMessageId?: string | null; mediaUrl?: string | null; metadata?: any;
+}) {
+  await supabase.from("whatsapp_messages").insert({
+    conversation_id: params.conversationId,
+    user_id: params.userId,
+    direction: params.direction,
+    sender: params.sender,
+    message_type: params.messageType,
+    content: params.content,
+    wa_message_id: params.waMessageId ?? null,
+    media_url: params.mediaUrl ?? null,
+    metadata: params.metadata ?? {},
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
