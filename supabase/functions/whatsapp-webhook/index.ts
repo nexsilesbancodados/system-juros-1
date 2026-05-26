@@ -673,6 +673,17 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       result = { reply: aiData.choices[0].message.content, is_receipt: false, needs_human: false, intent: "outro", summary: "" };
     }
 
+    // Salva transcrição do áudio na mensagem original (pra exibir no inbox)
+    if (messageType === "audio" && result.transcript && convoId && msgId) {
+      await supabase.from("whatsapp_messages")
+        .update({
+          content: `🎙️ ${result.transcript}`,
+          metadata: { jid: senderJid, mime: mimeType, transcript: result.transcript },
+        })
+        .eq("conversation_id", convoId)
+        .eq("wa_message_id", msgId);
+    }
+
     // Envia resposta
     if (result.reply && apiUrl && apiKey) {
       await botSay(result.reply);
@@ -683,23 +694,16 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
     // Comprovante: tenta casar com a parcela de valor mais próximo
     if (result.is_receipt && settings.bot_auto_confirm_payment && installments && installments.length > 0) {
       const value = Number(result.receipt_value) || 0;
-      // Prioridade: atrasadas → vence hoje → próximas
-      const ordered = [
-        ...overdueList,
-        ...dueTodayList,
-        ...upcomingList,
-      ];
+      const ordered = [...overdueList, ...dueTodayList, ...upcomingList];
       let matched = ordered[0] || installments[0];
       if (value > 0) {
         let bestDiff = Infinity;
         for (const inst of ordered) {
           const total = Number(inst.amount) + (Number(inst.late_fee) || 0);
           const diff = Math.abs(total - value);
-          // tolerância de R$ 1 para preferir parcela mais antiga
           if (diff < bestDiff - 1) { bestDiff = diff; matched = inst; }
         }
       }
-
 
       await supabase.from("contract_installments").update({
         status: "paid",
@@ -719,8 +723,14 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       }
     }
 
-    // Escalação para humano
+    // Escalação para humano — marca conversa + notifica
     if (result.needs_human) {
+      if (convoId) {
+        await supabase.from("whatsapp_conversations").update({
+          needs_human: true,
+          last_human_handoff_at: new Date().toISOString(),
+        }).eq("id", convoId);
+      }
       await supabase.from("notifications").insert({
         user_id: userId,
         title: "🆘 Atendimento humano solicitado",
