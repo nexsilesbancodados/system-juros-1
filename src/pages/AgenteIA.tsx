@@ -835,6 +835,135 @@ const AgenteIA = () => {
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   };
 
+  // Compact list timestamp: "14:32" today, "Ontem", weekday this week, else DD/MM/YY
+  const formatChatListTime = (raw: string | undefined): string => {
+    if (!raw) return "";
+    const n = Number(raw);
+    const d = !Number.isNaN(n) && n > 0
+      ? new Date(n < 1e12 ? n * 1000 : n)
+      : new Date(raw);
+    if (Number.isNaN(d.getTime())) return "";
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const y = new Date(); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Ontem";
+    const diff = (now.getTime() - d.getTime()) / 86400000;
+    if (diff < 7) return d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  };
+
+  // Deterministic vibrant gradient for avatar fallback based on JID
+  const avatarGradient = (seed: string): string => {
+    const palette = [
+      "from-sky-500 to-indigo-500",
+      "from-emerald-500 to-teal-500",
+      "from-fuchsia-500 to-pink-500",
+      "from-amber-500 to-orange-500",
+      "from-violet-500 to-purple-500",
+      "from-rose-500 to-red-500",
+      "from-cyan-500 to-blue-500",
+      "from-lime-500 to-emerald-500",
+    ];
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    return palette[Math.abs(hash) % palette.length];
+  };
+
+  const initialsOf = (name?: string): string => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    const a = parts[0][0] || "";
+    const b = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (a + b).toUpperCase().slice(0, 2);
+  };
+
+  // Avatar component (image + colored gradient fallback with initials)
+  const ChatAvatar = ({ chat, size = 40, isGroup }: { chat: { name?: string; remoteJid: string; profilePicUrl?: string }; size?: number; isGroup?: boolean }) => {
+    const [errored, setErrored] = useState(false);
+    const showImg = chat.profilePicUrl && !errored;
+    const dim = { width: size, height: size };
+    if (showImg) {
+      return (
+        <img
+          src={chat.profilePicUrl}
+          alt={chat.name || ""}
+          onError={() => setErrored(true)}
+          className="rounded-full object-cover shrink-0 ring-1 ring-border/50"
+          style={dim}
+          loading="lazy"
+        />
+      );
+    }
+    return (
+      <div
+        className={`rounded-full shrink-0 flex items-center justify-center text-white font-semibold bg-gradient-to-br ${avatarGradient(chat.remoteJid)} ring-1 ring-border/30`}
+        style={{ ...dim, fontSize: Math.round(size * 0.38) }}
+      >
+        {isGroup ? <Users size={Math.round(size * 0.45)} /> : initialsOf(chat.name)}
+      </div>
+    );
+  };
+
+  // Build a preview line for the chat list with media icon prefix and "Você:" tag
+  const renderLastMessagePreview = (chat: WhatsAppChat) => {
+    const kind = chat.lastMessageKind || "text";
+    const labels: Record<string, { icon: React.ReactNode; text: string }> = {
+      image: { icon: <ImageIcon size={12} />, text: "Foto" },
+      audio: { icon: <Mic size={12} />, text: "Mensagem de voz" },
+      video: { icon: <Video size={12} />, text: "Vídeo" },
+      document: { icon: <FileIcon size={12} />, text: "Documento" },
+      sticker: { icon: <Sticker size={12} />, text: "Figurinha" },
+      location: { icon: <MapPin size={12} />, text: "Localização" },
+      contact: { icon: <User size={12} />, text: "Contato" },
+      text: { icon: null, text: "" },
+    };
+    const meta = labels[kind];
+    const text = chat.lastMessage?.trim();
+    return (
+      <span className="flex items-center gap-1 min-w-0">
+        {chat.lastMessageFromMe && (
+          <CheckCheck size={12} className="text-muted-foreground shrink-0" />
+        )}
+        {meta.icon && <span className="opacity-70 shrink-0">{meta.icon}</span>}
+        <span className="truncate">
+          {kind === "text" ? (text || "...") : (text ? `${meta.text}: ${text}` : meta.text)}
+        </span>
+      </span>
+    );
+  };
+
+  // Linkify plain text — splits into spans + clickable anchors
+  const renderTextWithLinks = (raw: string, fromMe: boolean) => {
+    const re = /(https?:\/\/[^\s]+)/g;
+    const parts: Array<{ t: "text" | "url"; v: string }> = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(raw)) !== null) {
+      if (m.index > last) parts.push({ t: "text", v: raw.slice(last, m.index) });
+      parts.push({ t: "url", v: m[0] });
+      last = m.index + m[0].length;
+    }
+    if (last < raw.length) parts.push({ t: "text", v: raw.slice(last) });
+    if (!parts.length) return raw;
+    return parts.map((p, i) =>
+      p.t === "url" ? (
+        <a
+          key={i}
+          href={p.v}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={`underline underline-offset-2 break-all ${fromMe ? "text-primary-foreground" : "text-primary"}`}
+        >
+          {p.v}
+        </a>
+      ) : (
+        <span key={i}>{p.v}</span>
+      )
+    );
+  };
+
   const getStatusIcon = (msg: WhatsAppMsg) => {
     if (!msg.key?.fromMe) return null;
     const status = (msg as any).status;
