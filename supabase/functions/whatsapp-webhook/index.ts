@@ -292,7 +292,7 @@ serve(async (req) => {
     // Helper para o bot responder + persistir
     const botSay = async (text: string) => {
       if (!text || !apiUrl || !apiKey) return;
-      await sendText(apiUrl, apiKey, instanceName, senderJid, text);
+      await botSay(text);
       if (convoId) {
         await logMessage(supabase, {
           conversationId: convoId, userId, direction: "out", sender: "bot",
@@ -336,7 +336,7 @@ serve(async (req) => {
 
       if (shouldReply && apiUrl && apiKey) {
         const greeting = pickGreeting(settings.company_name || profile?.name || "nossa empresa");
-        await sendText(apiUrl, apiKey, instanceName, senderJid, greeting);
+        await botSay(greeting);
 
         // Notifica o dono
         await supabase.from("notifications").insert({
@@ -425,7 +425,7 @@ serve(async (req) => {
         entity_id: client.id, details: { reason: "client_request", message: incomingText },
       });
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, "Tudo bem! 🤖 Vou parar de responder por aqui. Um atendente humano vai te chamar em breve. 🙏");
+        await botSay("Tudo bem! 🤖 Vou parar de responder por aqui. Um atendente humano vai te chamar em breve. 🙏");
       }
       await supabase.from("notifications").insert({
         user_id: userId, title: "Bot pausado pelo cliente",
@@ -437,7 +437,7 @@ serve(async (req) => {
     // === Cliente pediu humano explicitamente ===
     if (matchesAny(incomingText, HUMAN_WORDS)) {
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, `Claro, ${(client.name || "").split(" ")[0]}! 👤\n\nJá estou avisando um atendente. Você será respondido em instantes. 🙏`);
+        await botSay(`Claro, ${(client.name || "").split(" ")[0]}! 👤\n\nJá estou avisando um atendente. Você será respondido em instantes. 🙏`);
       }
       await supabase.from("notifications").insert({
         user_id: userId, title: "🆘 Cliente pediu atendente humano",
@@ -453,7 +453,7 @@ serve(async (req) => {
     // === Atalho: cliente pediu PIX direto ===
     if (matchesAny(incomingText, PIX_WORDS) && profile?.pix_key) {
       const txt = `Claro! Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui que eu confirmo. ✅`;
-      if (apiUrl && apiKey) await sendText(apiUrl, apiKey, instanceName, senderJid, txt);
+      if (apiUrl && apiKey) await botSay(txt);
       await supabase.from("audit_logs").insert({
         user_id: userId, entity_type: "whatsapp_bot", action: "replied",
         entity_id: client.id, details: { intent: "pagamento", client_message: incomingText, ai_reply: txt, shortcut: "pix" },
@@ -466,7 +466,7 @@ serve(async (req) => {
       const start = settings.bot_business_start || "08:00";
       const end = settings.bot_business_end || "18:00";
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, `Olá, ${(client.name || "").split(" ")[0]}! 👋\n\nRecebi sua mensagem fora do nosso horário de atendimento (${start} às ${end}).\n\nRetornarei assim que possível. 🙏`);
+        await botSay(`Olá, ${(client.name || "").split(" ")[0]}! 👋\n\nRecebi sua mensagem fora do nosso horário de atendimento (${start} às ${end}).\n\nRetornarei assim que possível. 🙏`);
       }
       await supabase.from("audit_logs").insert({
         user_id: userId, entity_type: "whatsapp_bot", action: "off_hours",
@@ -645,7 +645,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       const errTxt = await aiResponse.text();
       console.error("AI Gateway error:", aiResponse.status, errTxt);
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, "Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
+        await botSay("Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
       }
       throw new Error("AI Gateway error: " + aiResponse.status);
     }
@@ -660,7 +660,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
 
     // Envia resposta
     if (result.reply && apiUrl && apiKey) {
-      await sendText(apiUrl, apiKey, instanceName, senderJid, result.reply);
+      await botSay(result.reply);
       lastBotReply.set(senderJid, { text: result.reply, ts: Date.now() });
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
     }
