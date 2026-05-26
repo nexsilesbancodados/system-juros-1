@@ -105,6 +105,57 @@ async function sendText(apiUrl: string, apiKey: string, instance: string, jid: s
   }
 }
 
+// === Inbox helpers ===
+async function upsertConversation(supabase: any, params: {
+  userId: string; phone: string; jid: string; instance: string;
+  clientId?: string | null; contactName?: string | null;
+  preview: string; from: "client" | "bot" | "human"; incrementUnread: boolean;
+}): Promise<string | null> {
+  const { userId, phone, jid, instance, clientId, contactName, preview, from, incrementUnread } = params;
+  const { data: existing } = await supabase
+    .from("whatsapp_conversations").select("id, unread_count")
+    .eq("user_id", userId).eq("phone", phone).maybeSingle();
+  if (existing) {
+    await supabase.from("whatsapp_conversations").update({
+      jid, instance,
+      client_id: clientId ?? undefined,
+      contact_name: contactName ?? undefined,
+      last_message_at: new Date().toISOString(),
+      last_message_preview: preview.slice(0, 200),
+      last_message_from: from,
+      unread_count: incrementUnread ? (existing.unread_count || 0) + 1 : existing.unread_count,
+      updated_at: new Date().toISOString(),
+    }).eq("id", existing.id);
+    return existing.id;
+  }
+  const { data: created } = await supabase.from("whatsapp_conversations").insert({
+    user_id: userId, phone, jid, instance,
+    client_id: clientId ?? null, contact_name: contactName ?? null,
+    last_message_preview: preview.slice(0, 200), last_message_from: from,
+    unread_count: incrementUnread ? 1 : 0,
+  }).select("id").single();
+  return created?.id ?? null;
+}
+
+async function logMessage(supabase: any, params: {
+  conversationId: string; userId: string;
+  direction: "in" | "out"; sender: "client" | "bot" | "human";
+  messageType: string; content: string;
+  waMessageId?: string | null; mediaUrl?: string | null; metadata?: any;
+}) {
+  await supabase.from("whatsapp_messages").insert({
+    conversation_id: params.conversationId,
+    user_id: params.userId,
+    direction: params.direction,
+    sender: params.sender,
+    message_type: params.messageType,
+    content: params.content,
+    wa_message_id: params.waMessageId ?? null,
+    media_url: params.mediaUrl ?? null,
+    metadata: params.metadata ?? {},
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -213,10 +264,58 @@ serve(async (req) => {
       .eq("id", userId)
       .single();
 
+    // === INBOX: upsert conversation + log incoming ===
+    const pushName = data?.pushName || data?.message?.pushName || null;
+    const incomingPreview = incomingText || `[${messageType}]`;
+    const convoId = await upsertConversation(supabase, {
+      userId, phone: senderPhone, jid: senderJid, instance: instanceName,
+      clientId: client?.id ?? null,
+      contactName: client?.name || pushName,
+      preview: incomingPreview, from: "client", incrementUnread: true,
+    });
+    if (convoId) {
+      await logMessage(supabase, {
+        conversationId: convoId, userId, direction: "in", sender: "client",
+        messageType, content: incomingText || "", waMessageId: msgId,
+        metadata: { jid: senderJid, mime: mimeType },
+      });
+    }
+
+    // Conversation-level pause (set manually pelo operador)
+    let conversationPaused = false;
+    if (convoId) {
+      const { data: convoRow } = await supabase
+        .from("whatsapp_conversations").select("bot_paused").eq("id", convoId).single();
+      conversationPaused = !!convoRow?.bot_paused;
+    }
+
+    // Helper para o bot responder + persistir
+    const botSay = async (text: string) => {
+      if (!text || !apiUrl || !apiKey) return;
+      await sendText(apiUrl, apiKey, instanceName, senderJid, text);
+      if (convoId) {
+        await logMessage(supabase, {
+          conversationId: convoId, userId, direction: "out", sender: "bot",
+          messageType: "text", content: text,
+        });
+        await supabase.from("whatsapp_conversations").update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: text.slice(0, 200),
+          last_message_from: "bot",
+          updated_at: new Date().toISOString(),
+        }).eq("id", convoId);
+      }
+    };
+
+    if (conversationPaused) {
+      return new Response(JSON.stringify({ status: "conversation_paused" }), { headers: corsHeaders });
+    }
+
     // Presence "digitando"
     if (apiUrl && apiKey) {
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "composing").catch(() => {});
     }
+
 
     // === CLIENTE NÃO ENCONTRADO: tratar como lead ===
     if (!client) {
@@ -237,7 +336,7 @@ serve(async (req) => {
 
       if (shouldReply && apiUrl && apiKey) {
         const greeting = pickGreeting(settings.company_name || profile?.name || "nossa empresa");
-        await sendText(apiUrl, apiKey, instanceName, senderJid, greeting);
+        await botSay(greeting);
 
         // Notifica o dono
         await supabase.from("notifications").insert({
@@ -326,7 +425,7 @@ serve(async (req) => {
         entity_id: client.id, details: { reason: "client_request", message: incomingText },
       });
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, "Tudo bem! 🤖 Vou parar de responder por aqui. Um atendente humano vai te chamar em breve. 🙏");
+        await botSay("Tudo bem! 🤖 Vou parar de responder por aqui. Um atendente humano vai te chamar em breve. 🙏");
       }
       await supabase.from("notifications").insert({
         user_id: userId, title: "Bot pausado pelo cliente",
@@ -338,7 +437,7 @@ serve(async (req) => {
     // === Cliente pediu humano explicitamente ===
     if (matchesAny(incomingText, HUMAN_WORDS)) {
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, `Claro, ${(client.name || "").split(" ")[0]}! 👤\n\nJá estou avisando um atendente. Você será respondido em instantes. 🙏`);
+        await botSay(`Claro, ${(client.name || "").split(" ")[0]}! 👤\n\nJá estou avisando um atendente. Você será respondido em instantes. 🙏`);
       }
       await supabase.from("notifications").insert({
         user_id: userId, title: "🆘 Cliente pediu atendente humano",
@@ -354,7 +453,7 @@ serve(async (req) => {
     // === Atalho: cliente pediu PIX direto ===
     if (matchesAny(incomingText, PIX_WORDS) && profile?.pix_key) {
       const txt = `Claro! Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui que eu confirmo. ✅`;
-      if (apiUrl && apiKey) await sendText(apiUrl, apiKey, instanceName, senderJid, txt);
+      if (apiUrl && apiKey) await botSay(txt);
       await supabase.from("audit_logs").insert({
         user_id: userId, entity_type: "whatsapp_bot", action: "replied",
         entity_id: client.id, details: { intent: "pagamento", client_message: incomingText, ai_reply: txt, shortcut: "pix" },
@@ -367,7 +466,7 @@ serve(async (req) => {
       const start = settings.bot_business_start || "08:00";
       const end = settings.bot_business_end || "18:00";
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, `Olá, ${(client.name || "").split(" ")[0]}! 👋\n\nRecebi sua mensagem fora do nosso horário de atendimento (${start} às ${end}).\n\nRetornarei assim que possível. 🙏`);
+        await botSay(`Olá, ${(client.name || "").split(" ")[0]}! 👋\n\nRecebi sua mensagem fora do nosso horário de atendimento (${start} às ${end}).\n\nRetornarei assim que possível. 🙏`);
       }
       await supabase.from("audit_logs").insert({
         user_id: userId, entity_type: "whatsapp_bot", action: "off_hours",
@@ -546,7 +645,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       const errTxt = await aiResponse.text();
       console.error("AI Gateway error:", aiResponse.status, errTxt);
       if (apiUrl && apiKey) {
-        await sendText(apiUrl, apiKey, instanceName, senderJid, "Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
+        await botSay("Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
       }
       throw new Error("AI Gateway error: " + aiResponse.status);
     }
@@ -561,7 +660,7 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
 
     // Envia resposta
     if (result.reply && apiUrl && apiKey) {
-      await sendText(apiUrl, apiKey, instanceName, senderJid, result.reply);
+      await botSay(result.reply);
       lastBotReply.set(senderJid, { text: result.reply, ts: Date.now() });
       sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
     }
