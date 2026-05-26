@@ -446,6 +446,9 @@ const WhatsAppConfig = () => {
           </Button>
         </div>
       </Card>
+
+      <BusinessHoursCard settings={settings} onUpdate={updateSettings} />
+      <WhatsAppInstancesCard />
     </div>
   );
 };
