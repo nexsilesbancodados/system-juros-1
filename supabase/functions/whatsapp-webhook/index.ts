@@ -328,10 +328,15 @@ serve(async (req) => {
     const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
     const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(5);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const overdue = (installments || []).filter(i => new Date(i.due_date) < today);
+    const now = new Date();
+    const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000); // UTC-3
+    const todayStr = brDate.toISOString().split('T')[0];
+
+    const overdue = (installments || []).filter(i => i.due_date < todayStr);
+    const dueToday = (installments || []).filter(i => i.due_date === todayStr);
+    
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
+    const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
 
     const conversationHistory: any[] = [];
     if (convoId) {
@@ -342,24 +347,33 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `Você é o Atendente Virtual com Inteligência Máxima da "${settings.company_name || 'nossa empresa'}".
+    const systemPrompt = `Você é o Atendente Virtual com Inteligência Máxima da "${settings.company_name || 'nossa empresa'}". Seu foco principal é a COBRANÇA DO DIA e a recuperação de valores em atraso.
 
 ═══ CONTEXTO DO CLIENTE ═══
 Nome: ${client.name}
 Empréstimos Ativos: ${activeContracts?.length || 0}
 ${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode || 'Normal'})`).join('\n')}
 
-═══ FINANCEIRO ═══
-Atraso: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcelas)
-Hoje: ${new Date().toLocaleDateString('pt-BR')}
+═══ SITUAÇÃO FINANCEIRA ═══
+📅 VENCE HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcela(s))
+⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcela(s))
+TOTAL PENDENTE: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
+
+DETALHE DAS PARCELAS:
+${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCE HOJE)`).join('\n')}
+${overdue.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (Vencida em ${i.due_date})`).join('\n')}
+
+Data Atual: ${brDate.toLocaleDateString('pt-BR')}
 
 CHAVE PIX: ${profile?.pix_key || "Pedir ao gerente"}
 
-═══ REGRAS ═══
-1. Seja empático mas focado em resolver pendências.
-2. Você NÃO tem autorização para dar descontos ou negociar valores. Se o cliente pedir desconto, diga que precisa falar com um atendente humano (needs_human=true).
-3. Se o cliente enviar comprovante, valide valor e destinatário.
-4. Use JSON puro na resposta.
+═══ REGRAS DE OURO ═══
+1. FOCO TOTAL NA COBRANÇA DO DIA: Se o cliente tem algo vencendo hoje, sua prioridade é confirmar o recebimento desse valor.
+2. EMPATIA PROATIVA: Entenda o cliente, mas mantenha a firmeza de que os pagamentos diários são essenciais para manter o crédito ativo.
+3. SEM NEGOCIAÇÃO: Você NÃO dá descontos. Se ele insistir em pagar menos ou pedir prazo, marque needs_human=true.
+4. VALIDAÇÃO DE COMPROVANTES: Se ele enviar foto/PDF, analise se o valor bate com o que vence HOJE ou com o ATRASO.
+5. PAGAMENTOS PARCIAIS: Se ele pagar apenas uma parte, agradeça e informe o saldo que ainda resta para completar o dia.
+6. Use JSON puro na resposta.
 
 FORMATO:
 {
@@ -396,8 +410,25 @@ FORMATO:
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
     if (result.is_receipt && installments?.length) {
-      const target = installments[0];
-      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: result.receipt_value || target.amount, notes: "Confirmado via IA" }).eq("id", target.id);
+      const receiptValue = Number(result.receipt_value);
+      // Busca parcela com valor exato, priorizando a mais antiga ou a de hoje
+      let target = installments.find(i => Number(i.amount) === receiptValue);
+      if (!target) target = installments[0]; // Fallback para a mais antiga se não houver match exato
+
+      await supabase.from("contract_installments").update({ 
+        status: "paid", 
+        paid_at: new Date().toISOString(), 
+        paid_amount: receiptValue || target.amount, 
+        notes: `Confirmado via IA. Valor Rec: ${receiptValue}` 
+      }).eq("id", target.id);
+      
+      // Notificação de pagamento
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "Pagamento Recebido",
+        message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
+        type: "success"
+      });
     }
 
     if (result.needs_human) {
