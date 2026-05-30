@@ -170,7 +170,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
     const payload = await req.json();
     console.log("Webhook event:", payload?.event, "instance:", payload?.instance);
@@ -654,66 +654,102 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
   "transcript": "se cliente mandou áudio, transcreva aqui o que ele disse (texto puro); caso contrário deixe vazio"
 }`;
 
-    const messages: any[] = [
-      { role: "system", content: systemPrompt },
-      ...conversationHistory,
-    ];
+    // ===== Monta mensagens no formato Anthropic =====
+    // Anthropic: system separado, messages só com user/assistant, content string ou blocks.
+    const anthMessages: any[] = [];
 
-    if (messageType === "text") {
-      messages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
-    } else if (mediaData && mimeType) {
-      if (messageType === "audio") {
-        // Gemini aceita áudio via input_audio (formato OpenAI-compat)
-        const format = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp3") || mimeType.includes("mpeg") ? "mp3" : mimeType.includes("wav") ? "wav" : "ogg";
-        messages.push({
-          role: "user",
-          content: [
-            { type: "text", text: "[O cliente enviou um áudio. Escute, entenda o que ele quer e responda naturalmente em texto.]" },
-            { type: "input_audio", input_audio: { data: mediaData, format } },
-          ],
-        });
-      } else {
-        const label = messageType === "image"
-          ? "[Imagem enviada — verifique se é comprovante de pagamento. Se for, extraia o valor.]"
-          : "[Documento enviado — analise o conteúdo. Se for comprovante, extraia o valor.]";
-        messages.push({
-          role: "user",
-          content: [
-            { type: "text", text: incomingText || label },
-            { type: "image_url", image_url: { url: `data:${mimeType};base64,${mediaData}` } },
-          ],
-        });
-      }
-    } else {
-      messages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
+    // Histórico (filtra qualquer system e normaliza content para string)
+    for (const m of conversationHistory) {
+      if (!m || (m.role !== "user" && m.role !== "assistant")) continue;
+      const text = typeof m.content === "string"
+        ? m.content
+        : Array.isArray(m.content)
+          ? m.content.map((c: any) => c?.text || "").join(" ").trim()
+          : String(m.content ?? "");
+      if (!text) continue;
+      anthMessages.push({ role: m.role, content: text });
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Mensagem atual
+    if (messageType === "text") {
+      anthMessages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
+    } else if (mediaData && mimeType && (messageType === "image" || messageType === "document")) {
+      const label = messageType === "image"
+        ? "[Imagem enviada — verifique se é comprovante de pagamento. Se for, extraia o valor.]"
+        : "[Documento enviado — analise o conteúdo. Se for comprovante, extraia o valor.]";
+      const blocks: any[] = [{ type: "text", text: incomingText || label }];
+      // Claude aceita imagens via base64; PDFs também via document source
+      if (messageType === "image" || mimeType.startsWith("image/")) {
+        blocks.unshift({
+          type: "image",
+          source: { type: "base64", media_type: mimeType, data: mediaData },
+        });
+      } else if (mimeType === "application/pdf") {
+        blocks.unshift({
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: mediaData },
+        });
+      }
+      anthMessages.push({ role: "user", content: blocks });
+    } else if (messageType === "audio") {
+      // Claude não processa áudio diretamente — pedir transcrição manual ao cliente.
+      anthMessages.push({
+        role: "user",
+        content: "[O cliente enviou um áudio. Responda pedindo gentilmente que digite a mensagem por escrito, pois neste canal só conseguimos ler texto, imagens e PDFs no momento.]",
+      });
+    } else {
+      anthMessages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
+    }
+
+    if (!anthropicApiKey) {
+      console.error("ANTHROPIC_API_KEY não configurada");
+      if (apiUrl && apiKey) await botSay("Desculpe, estou com uma instabilidade no momento. 🙏");
+      throw new Error("ANTHROPIC_API_KEY missing");
+    }
+
+    const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableApiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+      },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        response_format: { type: "json_object" },
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
         temperature: 0.7,
+        system: systemPrompt + "\n\nIMPORTANTE: Responda APENAS com o objeto JSON puro, sem markdown, sem ```json, sem texto antes ou depois.",
+        messages: anthMessages,
       }),
     });
 
     if (!aiResponse.ok) {
       const errTxt = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errTxt);
+      console.error("Anthropic API error:", aiResponse.status, errTxt);
       if (apiUrl && apiKey) {
         await botSay("Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
       }
-      throw new Error("AI Gateway error: " + aiResponse.status);
+      throw new Error("Anthropic API error: " + aiResponse.status);
     }
 
     const aiData = await aiResponse.json();
+    const rawText: string = (aiData?.content || [])
+      .filter((b: any) => b?.type === "text")
+      .map((b: any) => b.text)
+      .join("\n")
+      .trim();
+
+    // Extrai JSON (remove cercas de markdown se houver)
+    const cleaned = rawText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     let result: any;
     try {
-      result = JSON.parse(aiData.choices[0].message.content);
+      result = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
     } catch {
-      result = { reply: aiData.choices[0].message.content, is_receipt: false, needs_human: false, intent: "outro", summary: "" };
+      result = { reply: rawText, is_receipt: false, needs_human: false, intent: "outro", summary: "" };
     }
 
     // Salva transcrição do áudio na mensagem original (pra exibir no inbox)
