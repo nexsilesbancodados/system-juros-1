@@ -410,8 +410,25 @@ FORMATO:
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
     if (result.is_receipt && installments?.length) {
-      const target = installments[0];
-      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: result.receipt_value || target.amount, notes: "Confirmado via IA" }).eq("id", target.id);
+      const receiptValue = Number(result.receipt_value);
+      // Busca parcela com valor exato, priorizando a mais antiga ou a de hoje
+      let target = installments.find(i => Number(i.amount) === receiptValue);
+      if (!target) target = installments[0]; // Fallback para a mais antiga se não houver match exato
+
+      await supabase.from("contract_installments").update({ 
+        status: "paid", 
+        paid_at: new Date().toISOString(), 
+        paid_amount: receiptValue || target.amount, 
+        notes: `Confirmado via IA. Valor Rec: ${receiptValue}` 
+      }).eq("id", target.id);
+      
+      // Notificação de pagamento
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "Pagamento Recebido",
+        message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
+        type: "success"
+      });
     }
 
     if (result.needs_human) {
