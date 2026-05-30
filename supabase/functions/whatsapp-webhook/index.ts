@@ -170,7 +170,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
     const payload = await req.json();
     console.log("Webhook event:", payload?.event, "instance:", payload?.instance);
