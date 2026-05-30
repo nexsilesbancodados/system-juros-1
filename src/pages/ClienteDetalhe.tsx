@@ -70,6 +70,9 @@ const ClienteDetalhe = () => {
   const [editContractForm, setEditContractForm] = useState<any>({});
   const [editContractRegen, setEditContractRegen] = useState(false);
   const [editContractSaving, setEditContractSaving] = useState(false);
+  const [editInst, setEditInst] = useState<any>(null);
+  const [editInstForm, setEditInstForm] = useState<{ amount: string; due_date: string }>({ amount: "", due_date: "" });
+  const [editInstSaving, setEditInstSaving] = useState(false);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
@@ -357,6 +360,32 @@ const ClienteDetalhe = () => {
     }
   };
 
+  const openEditInst = (inst: any) => {
+    setEditInst(inst);
+    setEditInstForm({
+      amount: String(inst.amount ?? ""),
+      due_date: inst.due_date ? new Date(inst.due_date).toISOString().split("T")[0] : "",
+    });
+  };
+
+  const handleSaveInst = async () => {
+    if (!editInst) return;
+    setEditInstSaving(true);
+    try {
+      const amt = parseFloat(editInstForm.amount);
+      const dd = editInstForm.due_date ? new Date(editInstForm.due_date + "T12:00:00").toISOString() : editInst.due_date;
+      if (isNaN(amt) || amt <= 0) throw new Error("Valor inválido");
+      const { error } = await supabase.from("contract_installments").update({ amount: amt, due_date: dd }).eq("id", editInst.id);
+      if (error) throw error;
+      toast({ title: "Parcela atualizada!" });
+      setEditInst(null);
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setEditInstSaving(false);
+    }
+  };
 
 
   const patchInstallment = (instId: string, patch: any) => {
@@ -914,6 +943,36 @@ const ClienteDetalhe = () => {
         </div>
       )}
 
+      {editInst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditInst(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Editar Parcela #{editInst.installment_number}</h2>
+              <button onClick={() => setEditInst(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor (R$)</label>
+              <input type="number" step="0.01" value={editInstForm.amount} onChange={e => setEditInstForm({ ...editInstForm, amount: e.target.value })} className={INPUT} autoFocus />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Vencimento</label>
+              <input type="date" value={editInstForm.due_date} onChange={e => setEditInstForm({ ...editInstForm, due_date: e.target.value })} className={INPUT} />
+            </div>
+            {editInst.status === "paid" && (
+              <p className="text-[11px] text-amber-500">Atenção: esta parcela já está paga. A alteração não estorna o pagamento.</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setEditInst(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={handleSaveInst} disabled={editInstSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+                {editInstSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {partialPayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -1132,6 +1191,7 @@ const ClienteDetalhe = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => openEditInst(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Editar valor/vencimento"><Edit size={14} /></button>
                   {isPaid ? (
                     <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar"><RotateCcw size={14} /></button>
                   ) : (
