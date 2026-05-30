@@ -17,8 +17,13 @@ const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 6;
 
 // Buffer de mensagens (debounce) — agrupa mensagens consecutivas do mesmo contato
+// Agora suporta texto + mídia (imagem/áudio/documento) na MESMA janela
 const messageBuffer = new Map<string, { texts: string[]; lastTs: number }>();
-const BUFFER_WAIT_MS = 4500;
+const BUFFER_WAIT_MS = 5000;
+
+// Lock por JID — evita duas execuções paralelas respondendo ao mesmo contato
+const jidLock = new Map<string, number>();
+const LOCK_TTL_MS = 30 * 1000;
 
 // Última resposta enviada pelo bot por JID — evita "eco"
 const lastBotReply = new Map<string, { text: string; ts: number }>();
