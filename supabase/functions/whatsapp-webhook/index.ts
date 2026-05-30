@@ -803,10 +803,16 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       },
     });
 
+    jidLock.delete(senderJid);
     return new Response(JSON.stringify({ status: "success", result }), { headers: corsHeaders });
 
   } catch (err) {
     console.error("whatsapp-webhook error:", err);
+    // tenta liberar o lock se possível
+    try {
+      const body = (err as any)?._jid;
+      if (body) jidLock.delete(body);
+    } catch {}
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }), { status: 500, headers: corsHeaders });
   }
 });
