@@ -70,6 +70,9 @@ const ClienteDetalhe = () => {
   const [editContractForm, setEditContractForm] = useState<any>({});
   const [editContractRegen, setEditContractRegen] = useState(false);
   const [editContractSaving, setEditContractSaving] = useState(false);
+  const [editInst, setEditInst] = useState<any>(null);
+  const [editInstForm, setEditInstForm] = useState<{ amount: string; due_date: string }>({ amount: "", due_date: "" });
+  const [editInstSaving, setEditInstSaving] = useState(false);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
