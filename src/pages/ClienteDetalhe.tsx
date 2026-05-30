@@ -747,14 +747,40 @@ const ClienteDetalhe = () => {
               <button onClick={() => setNewLoanMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
             </div>
             <p className="text-xs text-muted-foreground">Para: <strong className="text-foreground">{client.name}</strong></p>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de Empréstimo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {LOAN_MODES.map(m => (
+                  <button key={m.v} type="button" onClick={() => setLoanMode(m.v)}
+                    className={`flex items-start gap-2 p-2.5 rounded-xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                    <m.Icon size={16} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className="min-w-0">
+                      <p className={`text-[11px] font-semibold leading-tight ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{m.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loanMode === "grace" && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Períodos de carência (sem pagar)</label>
+                <input type="number" value={loanGracePeriods} onChange={e => setLoanGracePeriods(e.target.value)} placeholder="2" className={INPUT} min={1} />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
                 <input type="number" value={loanCapital} onChange={e => setLoanCapital(e.target.value)} placeholder="1000" className={INPUT} />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Parcelas</label>
-                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder="12" className={INPUT} />
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {loanMode === "bullet" ? "Nº Períodos até vencer" : "Nº Parcelas"}
+                </label>
+                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder={loanMode === "bullet" ? "3" : "12"} className={INPUT} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa (%)</label>
@@ -783,12 +809,28 @@ const ClienteDetalhe = () => {
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
                 <input type="number" step="0.1" value={loanLateFee} onChange={e => setLoanLateFee(e.target.value)} className={INPUT} />
               </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                <textarea value={loanNotes} onChange={e => setLoanNotes(e.target.value)} className={INPUT + " min-h-[60px]"} placeholder="Opcional" />
+              </div>
             </div>
             {loanCalc && (
-              <div className="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-3 text-sm">
-                <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Parcela</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
+              <div className="space-y-2">
+                <div className="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-3 text-sm">
+                  <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">{loanMode === "bullet" ? "Pagamento" : "Parcela"}</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
+                </div>
+                {loanCalc.schedule.length > 1 && loanCalc.schedule.some(v => v !== loanCalc.schedule[0]) && (
+                  <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-2 text-[11px] space-y-0.5">
+                    {loanCalc.schedule.map((v, i) => (
+                      <div key={i} className="flex justify-between">
+                        <span className="text-muted-foreground">#{i + 1}</span>
+                        <span className="font-medium text-foreground">R$ {fmt(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-2 pt-2">
