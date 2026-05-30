@@ -17,8 +17,13 @@ const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 6;
 
 // Buffer de mensagens (debounce) — agrupa mensagens consecutivas do mesmo contato
+// Agora suporta texto + mídia (imagem/áudio/documento) na MESMA janela
 const messageBuffer = new Map<string, { texts: string[]; lastTs: number }>();
-const BUFFER_WAIT_MS = 4500;
+const BUFFER_WAIT_MS = 5000;
+
+// Lock por JID — evita duas execuções paralelas respondendo ao mesmo contato
+const jidLock = new Map<string, number>();
+const LOCK_TTL_MS = 30 * 1000;
 
 // Última resposta enviada pelo bot por JID — evita "eco"
 const lastBotReply = new Map<string, { text: string; ts: number }>();
@@ -246,17 +251,33 @@ serve(async (req) => {
 
     const userId = settings.user_id;
 
-    // Busca cliente
-    const { data: clients } = await supabase
-      .from("clients")
-      .select("id, name, phone, whatsapp, cpf_cnpj, status")
-      .eq("user_id", userId);
-
-    const client = clients?.find(c => {
-      const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
-      if (!cPhone) return false;
-      return cPhone.endsWith(senderPhone.slice(-8)) || senderPhone.endsWith(cPhone.slice(-8));
-    });
+    // === Lookup do cliente ===
+    // 1) Se já existe conversa com client_id salvo, usa direto (mais confiável)
+    let client: any = null;
+    const { data: convoExisting } = await supabase
+      .from("whatsapp_conversations")
+      .select("id, client_id, bot_paused, blocked")
+      .eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
+    if (convoExisting?.client_id) {
+      const { data: c } = await supabase.from("clients")
+        .select("id, name, phone, whatsapp, cpf_cnpj, status")
+        .eq("id", convoExisting.client_id).maybeSingle();
+      if (c) client = c;
+    }
+    // 2) Fallback: busca por telefone (últimos 9 dígitos — match mais confiável)
+    if (!client) {
+      const tail = senderPhone.slice(-9);
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, name, phone, whatsapp, cpf_cnpj, status")
+        .eq("user_id", userId);
+      client = clients?.find(c => {
+        const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
+        if (cPhone.length < 8) return false;
+        const cTail = cPhone.slice(-9);
+        return cTail === tail || cPhone.slice(-8) === senderPhone.slice(-8);
+      });
+    }
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -281,15 +302,9 @@ serve(async (req) => {
       });
     }
 
-    // Conversation-level pause/block (set manually pelo operador)
-    let conversationPaused = false;
-    let conversationBlocked = false;
-    if (convoId) {
-      const { data: convoRow } = await supabase
-        .from("whatsapp_conversations").select("bot_paused, blocked").eq("id", convoId).single();
-      conversationPaused = !!convoRow?.bot_paused;
-      conversationBlocked = !!convoRow?.blocked;
-    }
+    // Conversation-level pause/block (já carregamos convoExisting acima; revalida do registro atualizado)
+    const conversationPaused = !!convoExisting?.bot_paused;
+    const conversationBlocked = !!convoExisting?.blocked;
 
     // BLACKLIST — não responde nada, mas mantém log da msg recebida
     if (conversationBlocked) {
@@ -408,22 +423,32 @@ serve(async (req) => {
       incomingText = incomingText.slice(0, 1500) + " …[mensagem truncada]";
     }
 
-    // === Debounce: agrupa mensagens consecutivas de texto em ~4.5s ===
-    if (messageType === "text" && incomingText) {
+    // === Debounce: agrupa mensagens consecutivas (texto, imagem, áudio) em ~5s ===
+    // Para mídia, mantém o incomingText (caption ou label) mas espera caso venha texto logo depois
+    {
       const buf = messageBuffer.get(senderJid) || { texts: [], lastTs: 0 };
-      buf.texts.push(incomingText);
+      if (messageType === "text" && incomingText) buf.texts.push(incomingText);
       buf.lastTs = Date.now();
       messageBuffer.set(senderJid, buf);
       const myTs = buf.lastTs;
       await new Promise(r => setTimeout(r, BUFFER_WAIT_MS));
       const current = messageBuffer.get(senderJid);
       if (!current || current.lastTs > myTs) {
-        // chegou mensagem mais nova — essa requisição abdica
+        // chegou mensagem mais nova — essa requisição abdica (a mais recente responde)
         return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
       }
-      incomingText = current.texts.join("\n").slice(0, 2000);
+      if (messageType === "text") {
+        incomingText = current.texts.join("\n").slice(0, 2000);
+      }
       messageBuffer.delete(senderJid);
     }
+
+    // === Lock por JID: evita 2 execuções paralelas respondendo ao mesmo contato ===
+    const lockHeld = jidLock.get(senderJid) || 0;
+    if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) {
+      return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
+    }
+    jidLock.set(senderJid, Date.now());
 
 
     // === Comando do cliente: PARAR BOT ===
@@ -545,20 +570,30 @@ serve(async (req) => {
         .select("direction, content, message_type, metadata, created_at")
         .eq("conversation_id", convoId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(40);
       (msgHistory || []).reverse().forEach((h: any) => {
-        const txt = h.content || h.metadata?.transcript || "";
+        const txt = h.content || h.metadata?.transcript || (h.message_type !== "text" ? `[${h.message_type}]` : "");
         if (!txt) return;
         if (h.direction === "in") {
-          conversationHistory.push({ role: "user", content: String(txt).slice(0, 600) });
+          conversationHistory.push({ role: "user", content: String(txt).slice(0, 700) });
         } else {
-          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 800) });
+          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 900) });
         }
       });
-      // remove a última msg "user" porque é a atual (será adicionada abaixo)
-      if (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
+      // Remove TODAS as msgs "user" do final (são a atual + buffer pendente);
+      // serão re-injetadas como uma única mensagem agregada abaixo.
+      while (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
         conversationHistory.pop();
       }
+      // Colapsa runs consecutivos do mesmo role (limpa ruído de mensagens picotadas)
+      const collapsed: any[] = [];
+      for (const m of conversationHistory) {
+        const prev = collapsed[collapsed.length - 1];
+        if (prev && prev.role === m.role) prev.content = (prev.content + "\n" + m.content).slice(0, 1500);
+        else collapsed.push({ ...m });
+      }
+      conversationHistory.length = 0;
+      conversationHistory.push(...collapsed);
     }
 
     const fmtList = (arr: any[], max = 5) => arr.slice(0, max).map(i =>
@@ -571,33 +606,41 @@ serve(async (req) => {
 Tom: ${settings.bot_tone || 'profissional, empático, próximo e cordial — como um bom atendente humano'}.
 Data de hoje: ${today.toLocaleDateString('pt-BR')}.
 
-═══ DADOS DO CLIENTE ═══
-Nome: ${client.name} (use "${firstName}" no tratamento)
+═══ IDENTIDADE DO CLIENTE (FIXA — NÃO MUDE) ═══
+Nome COMPLETO: ${client.name}
+Primeiro nome (use no tratamento): ${firstName}
+CPF/CNPJ: ${client.cpf_cnpj || '—'}
 Status: ${client.status || 'ativo'}
+
+⚠️ JAMAIS chame o cliente por outro nome. Não use nomes que apareçam em comprovantes (são de TERCEIROS, ex: o destinatário do PIX). Use APENAS "${firstName}" ou "${client.name}".
+
+═══ SITUAÇÃO FINANCEIRA ═══
 Total em ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdueList.length} parcela(s))
 Total pendente: R$ ${totalPending.toFixed(2)} (${installments?.length || 0} parcela(s))
 Vence HOJE: ${dueTodayList.length} parcela(s)
 
 ${overdueList.length ? `🔴 PARCELAS ATRASADAS:\n${fmtList(overdueList)}\n` : ''}${dueTodayList.length ? `🟡 VENCE HOJE:\n${fmtList(dueTodayList)}\n` : ''}${upcomingList.length ? `🟢 PRÓXIMAS:\n${fmtList(upcomingList, 3)}\n` : ''}
-Chave PIX (${profile?.pix_key_type || 'PIX'}): ${profile?.pix_key || "(solicitar à equipe)"}
+Chave PIX para o cliente PAGAR (${profile?.pix_key_type || 'PIX'}): ${profile?.pix_key || "(solicitar à equipe)"}
 
 ═══ HABILIDADES ═══
 1. Atende dúvidas sobre parcelas, valores, vencimentos, formas de pagamento.
-2. Cobrança empática (sem agressividade): lembra de pendências, oferece o PIX.
-3. Pode negociar: descontos parciais de multa/juros para pagamento HOJE; quitação à vista; reagendamento de 1 parcela. Decisões maiores → marcar needs_human=true.
-4. Comprovantes (imagem/PDF): analise, identifique valor e marque is_receipt=true se for válido.
+2. Cobrança empática (sem agressividade): lembra de pendências, oferece o PIX da empresa.
+3. Pode negociar: descontos parciais de multa/juros para pagamento HOJE; quitação à vista; reagendamento de 1 parcela. Decisões maiores → needs_human=true.
+4. Comprovantes (imagem/PDF): analise, extraia valor e marque is_receipt=true SE o pagamento for para a chave PIX da empresa acima. Se foi para terceiros, peça gentilmente o comprovante correto e NÃO marque is_receipt.
 5. Áudio: escute e responda naturalmente.
 6. Saudações simples → responda curto e pergunte como pode ajudar.
 7. Se cliente já está em dia: agradeça e seja cordial; não invente cobrança.
 
 ═══ REGRAS DE OURO ═══
 - Português brasileiro, NATURAL, jamais robótico. Evite frases como "Estou aqui para ajudar com sua demanda".
-- Mensagens curtas (3-5 linhas). Pode usar 2 parágrafos separados por linha em branco — eles serão enviados como mensagens separadas.
+- Mensagens curtas (2-4 linhas). Pode usar 2 parágrafos separados por linha em branco — eles serão enviados como mensagens separadas.
 - Emojis com moderação (😊 👍 ✅ 🙏). Nunca exagere.
 - NUNCA invente valores, datas, descontos ou políticas que não estejam acima.
+- NUNCA pergunte ao cliente o PIX DELE — quem informa o PIX é VOCÊ (PIX da empresa, acima).
 - Se cliente pedir 2ª via, boleto físico, mudança contratual, ou reclamar de erro: needs_human=true.
 - Se cliente ficar agressivo ou ofensivo: responda com calma 1x e marque needs_human=true.
-- Use o histórico para NÃO se repetir. Se já cumprimentou, não cumprimente de novo.
+- Use o HISTÓRICO COMPLETO acima para não se repetir. Se já cumprimentou, não cumprimente. Se já mandou o PIX, não mande de novo a menos que o cliente peça.
+- Se cliente perguntar "quem é você", responda UMA vez: "Sou o atendente virtual da ${settings.company_name || 'empresa'}, ${firstName}". Não repita essa apresentação em toda mensagem.
 - Se não houver dívida em atraso, NÃO cobre — apenas responda o que foi perguntado.
 
 FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
@@ -760,10 +803,16 @@ FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
       },
     });
 
+    jidLock.delete(senderJid);
     return new Response(JSON.stringify({ status: "success", result }), { headers: corsHeaders });
 
   } catch (err) {
     console.error("whatsapp-webhook error:", err);
+    // tenta liberar o lock se possível
+    try {
+      const body = (err as any)?._jid;
+      if (body) jidLock.delete(body);
+    } catch {}
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }), { status: 500, headers: corsHeaders });
   }
 });
