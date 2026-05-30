@@ -943,6 +943,36 @@ const ClienteDetalhe = () => {
         </div>
       )}
 
+      {editInst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditInst(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">Editar Parcela #{editInst.installment_number}</h2>
+              <button onClick={() => setEditInst(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor (R$)</label>
+              <input type="number" step="0.01" value={editInstForm.amount} onChange={e => setEditInstForm({ ...editInstForm, amount: e.target.value })} className={INPUT} autoFocus />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Vencimento</label>
+              <input type="date" value={editInstForm.due_date} onChange={e => setEditInstForm({ ...editInstForm, due_date: e.target.value })} className={INPUT} />
+            </div>
+            {editInst.status === "paid" && (
+              <p className="text-[11px] text-amber-500">Atenção: esta parcela já está paga. A alteração não estorna o pagamento.</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setEditInst(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={handleSaveInst} disabled={editInstSaving}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
+                {editInstSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {partialPayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
