@@ -251,17 +251,33 @@ serve(async (req) => {
 
     const userId = settings.user_id;
 
-    // Busca cliente
-    const { data: clients } = await supabase
-      .from("clients")
-      .select("id, name, phone, whatsapp, cpf_cnpj, status")
-      .eq("user_id", userId);
-
-    const client = clients?.find(c => {
-      const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
-      if (!cPhone) return false;
-      return cPhone.endsWith(senderPhone.slice(-8)) || senderPhone.endsWith(cPhone.slice(-8));
-    });
+    // === Lookup do cliente ===
+    // 1) Se já existe conversa com client_id salvo, usa direto (mais confiável)
+    let client: any = null;
+    const { data: convoExisting } = await supabase
+      .from("whatsapp_conversations")
+      .select("id, client_id, bot_paused, blocked")
+      .eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
+    if (convoExisting?.client_id) {
+      const { data: c } = await supabase.from("clients")
+        .select("id, name, phone, whatsapp, cpf_cnpj, status")
+        .eq("id", convoExisting.client_id).maybeSingle();
+      if (c) client = c;
+    }
+    // 2) Fallback: busca por telefone (últimos 9 dígitos — match mais confiável)
+    if (!client) {
+      const tail = senderPhone.slice(-9);
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, name, phone, whatsapp, cpf_cnpj, status")
+        .eq("user_id", userId);
+      client = clients?.find(c => {
+        const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
+        if (cPhone.length < 8) return false;
+        const cTail = cPhone.slice(-9);
+        return cTail === tail || cPhone.slice(-8) === senderPhone.slice(-8);
+      });
+    }
 
     const { data: profile } = await supabase
       .from("profiles")
