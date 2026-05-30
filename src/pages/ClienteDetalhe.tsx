@@ -258,36 +258,16 @@ const ClienteDetalhe = () => {
       const { error: iErr } = await supabase.from("contract_installments").insert(
         dueDates.map((dd, i) => ({ user_id: user.id, contract_id: contract.id, client_id: id!, installment_number: i + 1, amount: loanCalc.schedule[i] ?? loanCalc.installmentAmount, due_date: dd, status: "pending" }))
       );
-
-  const handleCreateLoan = async () => {
-    if (!user || !loanCalc) return;
-    setLoanLoading(true);
-    try {
-      const n = parseInt(loanInstallments);
-      const { data: contract, error: cErr } = await supabase.from("contracts").insert({
-        user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
-        interest_rate: parseFloat(loanInterestRate), num_installments: n,
-        installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
-        start_date: new Date(loanStart + "T12:00:00").toISOString(),
-        late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
-        total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
-      }).select().single();
-      if (cErr) throw cErr;
-
-      const dueDates = generateDueDates(loanStart, loanFreq, n);
-      const { error: iErr } = await supabase.from("contract_installments").insert(
-        dueDates.map((dd, i) => ({ user_id: user.id, contract_id: contract.id, client_id: id!, installment_number: i + 1, amount: loanCalc.installmentAmount, due_date: dd, status: "pending" }))
-      );
       if (iErr) throw iErr;
 
       await supabase.from("transactions").insert({
         user_id: user.id, amount: parseFloat(loanCapital), type: "loan",
-        description: `Empréstimo para ${client?.name} - ${n}x R$ ${fmt(loanCalc.installmentAmount)}`,
+        description: `Empréstimo para ${client?.name} - ${LOAN_MODE_LABEL[loanMode]} - ${nReal}x R$ ${fmt(loanCalc.installmentAmount)}`,
         client_id: id, contract_id: contract.id,
       });
 
-      toast({ title: "Empréstimo criado!", description: `${n} parcelas geradas.` });
-      setNewLoanMode(false); setLoanCapital(""); setLoanInstallments("");
+      toast({ title: "Empréstimo criado!", description: `${nReal} parcela(s) gerada(s).` });
+      setNewLoanMode(false); setLoanCapital(""); setLoanInstallments(""); setLoanNotes("");
       invAll();
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
