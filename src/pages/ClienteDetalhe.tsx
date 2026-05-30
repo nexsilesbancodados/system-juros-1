@@ -360,6 +360,32 @@ const ClienteDetalhe = () => {
     }
   };
 
+  const openEditInst = (inst: any) => {
+    setEditInst(inst);
+    setEditInstForm({
+      amount: String(inst.amount ?? ""),
+      due_date: inst.due_date ? new Date(inst.due_date).toISOString().split("T")[0] : "",
+    });
+  };
+
+  const handleSaveInst = async () => {
+    if (!editInst) return;
+    setEditInstSaving(true);
+    try {
+      const amt = parseFloat(editInstForm.amount);
+      const dd = editInstForm.due_date ? new Date(editInstForm.due_date + "T12:00:00").toISOString() : editInst.due_date;
+      if (isNaN(amt) || amt <= 0) throw new Error("Valor inválido");
+      const { error } = await supabase.from("contract_installments").update({ amount: amt, due_date: dd }).eq("id", editInst.id);
+      if (error) throw error;
+      toast({ title: "Parcela atualizada!" });
+      setEditInst(null);
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setEditInstSaving(false);
+    }
+  };
 
 
   const patchInstallment = (instId: string, patch: any) => {
