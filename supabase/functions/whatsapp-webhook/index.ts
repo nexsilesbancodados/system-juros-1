@@ -324,8 +324,8 @@ serve(async (req) => {
     }
 
     // ENRICH DATA
-    const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode").eq("client_id", client.id).eq("status", "active");
-    const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
+    const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode, frequency, interest_rate").eq("client_id", client.id).eq("status", "active");
+    const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number, contract_id").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
     const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(5);
 
     const now = new Date();
@@ -337,6 +337,19 @@ serve(async (req) => {
     
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
     const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
+
+    // Calculate rollover/interest only options
+    const rolloverOptions = (activeContracts || []).map(c => {
+      const inst = installments?.find(i => i.contract_id === c.id);
+      if (!inst) return null;
+      const interestOnly = Number(inst.amount) - Number(c.capital);
+      return {
+        contractId: c.id,
+        interestOnly: interestOnly > 0 ? interestOnly : (Number(c.capital) * (Number(c.interest_rate) / 100)),
+        totalAmount: Number(inst.amount),
+        frequency: c.frequency
+      };
+    }).filter(Boolean);
 
     const conversationHistory: any[] = [];
     if (convoId) {
@@ -363,16 +376,21 @@ DETALHE DAS PARCELAS:
 ${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCE HOJE)`).join('\n')}
 ${overdue.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (Vencida em ${i.due_date})`).join('\n')}
 
+═══ OPÇÃO DE RENOVAÇÃO (PAGAR JUROS) ═══
+Se o cliente não puder pagar o valor total hoje, você PODE oferecer a opção de pagar apenas os juros para renovar a dívida para o próximo vencimento.
+Opções disponíveis:
+${rolloverOptions.map(o => `- Pagar apenas R$ ${o.interestOnly.toFixed(2)} de juros. A dívida de R$ ${o.totalAmount.toFixed(2)} será renovada para a próxima data (${o.frequency}).`).join('\n')}
+
 Data Atual: ${brDate.toLocaleDateString('pt-BR')}
 
 CHAVE PIX: ${profile?.pix_key || "Pedir ao gerente"}
 
 ═══ REGRAS DE OURO ═══
 1. FOCO TOTAL NA COBRANÇA DO DIA: Se o cliente tem algo vencendo hoje, sua prioridade é confirmar o recebimento desse valor.
-2. EMPATIA PROATIVA: Entenda o cliente, mas mantenha a firmeza de que os pagamentos diários são essenciais para manter o crédito ativo.
-3. SEM NEGOCIAÇÃO: Você NÃO dá descontos. Se ele insistir em pagar menos ou pedir prazo, marque needs_human=true.
-4. VALIDAÇÃO DE COMPROVANTES: Se ele enviar foto/PDF, analise se o valor bate com o que vence HOJE ou com o ATRASO.
-5. PAGAMENTOS PARCIAIS: Se ele pagar apenas uma parte, agradeça e informe o saldo que ainda resta para completar o dia.
+2. OPÇÃO DE RENOVAÇÃO: Se o cliente disser que está difícil ou que não tem o valor total, ofereça IMEDIATAMENTE a opção de "Pagar só os Juros" para não sujar o nome e manter o crédito.
+3. EMPATIA PROATIVA: Entenda o cliente, mas mantenha a firmeza de que os pagamentos (pelo menos os juros) são essenciais.
+4. SEM NEGOCIAÇÃO DE DESCONTO: Você NÃO dá descontos no principal. A única flexibilidade é a renovação (pagar só juros).
+5. VALIDAÇÃO DE COMPROVANTES: Se ele enviar comprovante, verifique se é do Valor Total ou apenas dos Juros (Renovação).
 6. Use JSON puro na resposta.
 
 FORMATO:
@@ -380,6 +398,7 @@ FORMATO:
   "thought": "analise interna",
   "reply": "texto para o cliente",
   "is_receipt": boolean,
+  "is_rollover": boolean,
   "receipt_value": number,
   "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|reclamacao|promessa",
@@ -411,24 +430,55 @@ FORMATO:
 
     if (result.is_receipt && installments?.length) {
       const receiptValue = Number(result.receipt_value);
-      // Busca parcela com valor exato, priorizando a mais antiga ou a de hoje
-      let target = installments.find(i => Number(i.amount) === receiptValue);
-      if (!target) target = installments[0]; // Fallback para a mais antiga se não houver match exato
-
-      await supabase.from("contract_installments").update({ 
-        status: "paid", 
-        paid_at: new Date().toISOString(), 
-        paid_amount: receiptValue || target.amount, 
-        notes: `Confirmado via IA. Valor Rec: ${receiptValue}` 
-      }).eq("id", target.id);
       
-      // Notificação de pagamento
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        title: "Pagamento Recebido",
-        message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
-        type: "success"
-      });
+      if (result.is_rollover) {
+        // Lógica de Renovação (Pagar apenas Juros)
+        const target = installments[0]; // Pega a mais antiga/atual
+        const contract = activeContracts?.find(c => c.id === target.contract_id);
+        
+        let nextDate = new Date(target.due_date);
+        const freq = contract?.frequency || 'daily';
+        
+        if (freq === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+        else if (freq === 'daily_mon-sat') {
+          nextDate.setDate(nextDate.getDate() + 1);
+          if (nextDate.getDay() === 0) nextDate.setDate(nextDate.getDate() + 1); // Pula domingo
+        }
+        else if (freq === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+        else if (freq === 'biweekly') nextDate.setDate(nextDate.getDate() + 14);
+        else if (freq === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+        else nextDate.setDate(nextDate.getDate() + 1); // Default +1 day
+
+        await supabase.from("contract_installments").update({ 
+          due_date: nextDate.toISOString(),
+          notes: `Renovação via juros: R$ ${receiptValue}. Próximo venc: ${nextDate.toLocaleDateString('pt-BR')}`
+        }).eq("id", target.id);
+
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: "Renovação de Contrato",
+          message: `Cliente ${client.name} pagou juros de R$ ${receiptValue.toFixed(2)}. Dívida renovada para ${nextDate.toLocaleDateString('pt-BR')}.`,
+          type: "info"
+        });
+      } else {
+        // Pagamento Normal (Amortização/Liquidação)
+        let target = installments.find(i => Number(i.amount) === receiptValue);
+        if (!target) target = installments[0];
+
+        await supabase.from("contract_installments").update({ 
+          status: "paid", 
+          paid_at: new Date().toISOString(), 
+          paid_amount: receiptValue || target.amount, 
+          notes: `Confirmado via IA. Valor Rec: ${receiptValue}` 
+        }).eq("id", target.id);
+        
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: "Pagamento Recebido",
+          message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
+          type: "success"
+        });
+      }
     }
 
     if (result.needs_human) {
