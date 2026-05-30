@@ -357,7 +357,7 @@ CHAVE PIX: ${profile?.pix_key || "Pedir ao gerente"}
 
 ═══ REGRAS ═══
 1. Seja empático mas focado em resolver pendências.
-2. Pode dar 50% de desconto na multa para pagamento HOJE.
+2. Você NÃO tem autorização para dar descontos ou negociar valores. Se o cliente pedir desconto, diga que precisa falar com um atendente humano (needs_human=true).
 3. Se o cliente enviar comprovante, valide valor e destinatário.
 4. Use JSON puro na resposta.
 
@@ -402,7 +402,7 @@ FORMATO:
 
     if (result.needs_human) {
       await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
-      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} precisa de ajuda: ${result.summary}`, type: "warning" });
+      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
     }
 
     jidLock.delete(senderJid);
