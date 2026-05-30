@@ -423,22 +423,32 @@ serve(async (req) => {
       incomingText = incomingText.slice(0, 1500) + " …[mensagem truncada]";
     }
 
-    // === Debounce: agrupa mensagens consecutivas de texto em ~4.5s ===
-    if (messageType === "text" && incomingText) {
+    // === Debounce: agrupa mensagens consecutivas (texto, imagem, áudio) em ~5s ===
+    // Para mídia, mantém o incomingText (caption ou label) mas espera caso venha texto logo depois
+    {
       const buf = messageBuffer.get(senderJid) || { texts: [], lastTs: 0 };
-      buf.texts.push(incomingText);
+      if (messageType === "text" && incomingText) buf.texts.push(incomingText);
       buf.lastTs = Date.now();
       messageBuffer.set(senderJid, buf);
       const myTs = buf.lastTs;
       await new Promise(r => setTimeout(r, BUFFER_WAIT_MS));
       const current = messageBuffer.get(senderJid);
       if (!current || current.lastTs > myTs) {
-        // chegou mensagem mais nova — essa requisição abdica
+        // chegou mensagem mais nova — essa requisição abdica (a mais recente responde)
         return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
       }
-      incomingText = current.texts.join("\n").slice(0, 2000);
+      if (messageType === "text") {
+        incomingText = current.texts.join("\n").slice(0, 2000);
+      }
       messageBuffer.delete(senderJid);
     }
+
+    // === Lock por JID: evita 2 execuções paralelas respondendo ao mesmo contato ===
+    const lockHeld = jidLock.get(senderJid) || 0;
+    if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) {
+      return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
+    }
+    jidLock.set(senderJid, Date.now());
 
 
     // === Comando do cliente: PARAR BOT ===
