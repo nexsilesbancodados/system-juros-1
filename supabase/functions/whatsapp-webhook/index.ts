@@ -402,7 +402,7 @@ FORMATO:
 
     if (result.needs_human) {
       await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
-      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} precisa de ajuda: ${result.summary}`, type: "warning" });
+      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
     }
 
     jidLock.delete(senderJid);
