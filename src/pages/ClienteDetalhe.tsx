@@ -208,26 +208,56 @@ const ClienteDetalhe = () => {
     toast({ title: "Endereço atualizado!" }); setEditAddressMode(false); inv("client-detail");
   };
 
-  const generateDueDates = (start: string, freq: string, count: number) => {
+  const generateDueDates = (start: string, freq: string, count: number, periodsAhead?: number) => {
     const dates: string[] = [];
     const [sy, sm, sd] = start.split("-").map(Number);
     const base = new Date(sy, (sm || 1) - 1, sd || 1, 12, 0, 0, 0);
-    for (let i = 0; i < count; i++) {
-      let nd: Date;
-      if (freq === "daily") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1)); }
-      else if (freq === "weekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 7); }
-      else if (freq === "biweekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 14); }
+    const stepFor = (i: number) => {
+      const nd = new Date(base);
+      if (freq === "daily") nd.setDate(base.getDate() + i);
+      else if (freq === "weekly") nd.setDate(base.getDate() + i * 7);
+      else if (freq === "biweekly") nd.setDate(base.getDate() + i * 14);
       else {
-        const tm = base.getMonth() + (i + 1);
+        const tm = base.getMonth() + i;
         const y = base.getFullYear() + Math.floor(tm / 12);
         const m = ((tm % 12) + 12) % 12;
         const lastDay = new Date(y, m + 1, 0).getDate();
-        nd = new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
+        return new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
       }
-      dates.push(nd.toISOString());
+      return nd;
+    };
+    if (periodsAhead && count === 1) {
+      dates.push(stepFor(periodsAhead).toISOString());
+      return dates;
     }
+    for (let i = 0; i < count; i++) dates.push(stepFor(i + 1).toISOString());
     return dates;
   };
+
+  const handleCreateLoan = async () => {
+    if (!user || !loanCalc) return;
+    setLoanLoading(true);
+    try {
+      const nInput = parseInt(loanInstallments) || 0;
+      const nReal = loanCalc.numInstallments;
+      const periodsAhead = loanMode === "bullet" ? nInput : undefined;
+      const { data: contract, error: cErr } = await supabase.from("contracts").insert({
+        user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
+        interest_rate: parseFloat(loanInterestRate), num_installments: nReal,
+        installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
+        start_date: new Date(loanStart + "T12:00:00").toISOString(),
+        late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
+        total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
+        loan_mode: loanMode,
+        grace_periods: loanMode === "grace" ? (parseInt(loanGracePeriods) || 0) : 0,
+        notes: loanNotes || null,
+      }).select().single();
+      if (cErr) throw cErr;
+
+      const dueDates = generateDueDates(loanStart, loanFreq, nReal, periodsAhead);
+      const { error: iErr } = await supabase.from("contract_installments").insert(
+        dueDates.map((dd, i) => ({ user_id: user.id, contract_id: contract.id, client_id: id!, installment_number: i + 1, amount: loanCalc.schedule[i] ?? loanCalc.installmentAmount, due_date: dd, status: "pending" }))
+      );
 
   const handleCreateLoan = async () => {
     if (!user || !loanCalc) return;
