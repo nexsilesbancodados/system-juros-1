@@ -302,15 +302,9 @@ serve(async (req) => {
       });
     }
 
-    // Conversation-level pause/block (set manually pelo operador)
-    let conversationPaused = false;
-    let conversationBlocked = false;
-    if (convoId) {
-      const { data: convoRow } = await supabase
-        .from("whatsapp_conversations").select("bot_paused, blocked").eq("id", convoId).single();
-      conversationPaused = !!convoRow?.bot_paused;
-      conversationBlocked = !!convoRow?.blocked;
-    }
+    // Conversation-level pause/block (já carregamos convoExisting acima; revalida do registro atualizado)
+    const conversationPaused = !!convoExisting?.bot_paused;
+    const conversationBlocked = !!convoExisting?.blocked;
 
     // BLACKLIST — não responde nada, mas mantém log da msg recebida
     if (conversationBlocked) {
