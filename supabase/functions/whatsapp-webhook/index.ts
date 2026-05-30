@@ -14,10 +14,9 @@ const DEDUPE_TTL_MS = 5 * 60 * 1000;
 // Rate limit por JID — evita loops/spam
 const jidRateBucket = new Map<string, number[]>();
 const RATE_WINDOW_MS = 60 * 1000;
-const RATE_MAX = 6;
+const RATE_MAX = 8;
 
 // Buffer de mensagens (debounce) — agrupa mensagens consecutivas do mesmo contato
-// Agora suporta texto + mídia (imagem/áudio/documento) na MESMA janela
 const messageBuffer = new Map<string, { texts: string[]; lastTs: number }>();
 const BUFFER_WAIT_MS = 5000;
 
@@ -97,7 +96,6 @@ async function markAsRead(apiUrl: string, apiKey: string, instance: string, key:
 }
 
 async function sendText(apiUrl: string, apiKey: string, instance: string, jid: string, text: string) {
-  // Quebra textos longos em parágrafos (mais natural)
   const chunks = text.split(/\n\n+/).map(s => s.trim()).filter(Boolean);
   const list = chunks.length > 0 ? chunks : [text];
   for (let i = 0; i < list.length; i++) {
@@ -110,7 +108,6 @@ async function sendText(apiUrl: string, apiKey: string, instance: string, jid: s
   }
 }
 
-// === Inbox helpers ===
 async function upsertConversation(supabase: any, params: {
   userId: string; phone: string; jid: string; instance: string;
   clientId?: string | null; contactName?: string | null;
@@ -120,6 +117,7 @@ async function upsertConversation(supabase: any, params: {
   const { data: existing } = await supabase
     .from("whatsapp_conversations").select("id, unread_count")
     .eq("user_id", userId).eq("phone", phone).maybeSingle();
+  
   if (existing) {
     await supabase.from("whatsapp_conversations").update({
       jid, instance,
@@ -133,6 +131,7 @@ async function upsertConversation(supabase: any, params: {
     }).eq("id", existing.id);
     return existing.id;
   }
+  
   const { data: created } = await supabase.from("whatsapp_conversations").insert({
     user_id: userId, phone, jid, instance,
     client_id: clientId ?? null, contact_name: contactName ?? null,
@@ -162,9 +161,7 @@ async function logMessage(supabase: any, params: {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -173,8 +170,6 @@ serve(async (req) => {
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
     const payload = await req.json();
-    console.log("Webhook event:", payload?.event, "instance:", payload?.instance);
-
     if (payload.event !== "messages.upsert" && payload.event !== "MESSAGES_UPSERT") {
       return new Response(JSON.stringify({ status: "ignored_event" }), { headers: corsHeaders });
     }
@@ -182,28 +177,19 @@ serve(async (req) => {
     const data = payload.data;
     const key = data?.key ?? data?.message?.key;
     const msgContent = data?.message?.message ?? data?.message;
-    if (!key || key.fromMe) {
-      return new Response(JSON.stringify({ status: "ignored_self_or_empty" }), { headers: corsHeaders });
-    }
+    if (!key || key.fromMe) return new Response(JSON.stringify({ status: "ignored_self" }), { headers: corsHeaders });
 
-    // Dedupe
     const msgId = key.id;
-    if (msgId && processedMessages.has(msgId)) {
-      return new Response(JSON.stringify({ status: "duplicate" }), { headers: corsHeaders });
-    }
+    if (msgId && processedMessages.has(msgId)) return new Response(JSON.stringify({ status: "duplicate" }), { headers: corsHeaders });
     if (msgId) rememberMessage(msgId);
 
     const senderJid = key.remoteJid;
-    if (!senderJid) {
-      return new Response(JSON.stringify({ status: "no_jid" }), { headers: corsHeaders });
-    }
-    if (senderJid.includes("@g.us") || senderJid.includes("@broadcast") || senderJid.includes("status@") || senderJid.includes("@newsletter")) {
-      return new Response(JSON.stringify({ status: "ignored_group_or_broadcast" }), { headers: corsHeaders });
+    if (!senderJid || senderJid.includes("@g.us") || senderJid.includes("@broadcast")) {
+      return new Response(JSON.stringify({ status: "ignored_jid" }), { headers: corsHeaders });
     }
     const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
     const instanceName = payload.instance;
 
-    // Tipo de mensagem
     let messageType = "text";
     let incomingText = msgContent?.conversation || msgContent?.extendedTextMessage?.text || "";
     let mediaData: string | null = null;
@@ -222,209 +208,75 @@ serve(async (req) => {
       incomingText = msgContent.documentMessage.caption || msgContent.documentMessage.fileName || "";
     }
 
-    const message = { key, message: msgContent };
-
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("*")
-      .eq("whatsapp_instance", instanceName)
-      .single();
-
-    if (!settings || !settings.bot_enabled) {
-      return new Response(JSON.stringify({ status: "bot_disabled" }), { headers: corsHeaders });
-    }
+    const { data: settings } = await supabase.from("settings").select("*").eq("whatsapp_instance", instanceName).single();
+    if (!settings || !settings.bot_enabled) return new Response(JSON.stringify({ status: "bot_disabled" }), { headers: corsHeaders });
 
     const apiUrl = (settings.whatsapp_api_url || "").replace(/\/$/, "");
     const apiKey = settings.whatsapp_api_key;
-
-    // Marcar como lido imediatamente
-    if (apiUrl && apiKey) {
-      markAsRead(apiUrl, apiKey, instanceName, key).catch(() => {});
-    }
-
-    if (messageType === "audio" && !settings.bot_process_audio) {
-      return new Response(JSON.stringify({ status: "audio_processing_disabled" }), { headers: corsHeaders });
-    }
-    if (messageType === "image" && !settings.bot_process_receipts) {
-      return new Response(JSON.stringify({ status: "receipt_processing_disabled" }), { headers: corsHeaders });
-    }
+    if (apiUrl && apiKey) markAsRead(apiUrl, apiKey, instanceName, key).catch(() => {});
 
     const userId = settings.user_id;
 
-    // === Lookup do cliente ===
-    // 1) Se já existe conversa com client_id salvo, usa direto (mais confiável)
+    // CLIENT LOOKUP
     let client: any = null;
-    const { data: convoExisting } = await supabase
-      .from("whatsapp_conversations")
-      .select("id, client_id, bot_paused, blocked")
-      .eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
+    const { data: convoExisting } = await supabase.from("whatsapp_conversations").select("id, client_id, bot_paused, blocked").eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
     if (convoExisting?.client_id) {
-      const { data: c } = await supabase.from("clients")
-        .select("id, name, phone, whatsapp, cpf_cnpj, status")
-        .eq("id", convoExisting.client_id).maybeSingle();
+      const { data: c } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("id", convoExisting.client_id).maybeSingle();
       if (c) client = c;
     }
-    // 2) Fallback: busca por telefone (últimos 9 dígitos — match mais confiável)
     if (!client) {
       const tail = senderPhone.slice(-9);
-      const { data: clients } = await supabase
-        .from("clients")
-        .select("id, name, phone, whatsapp, cpf_cnpj, status")
-        .eq("user_id", userId);
+      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("user_id", userId);
       client = clients?.find(c => {
         const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
-        if (cPhone.length < 8) return false;
-        const cTail = cPhone.slice(-9);
-        return cTail === tail || cPhone.slice(-8) === senderPhone.slice(-8);
+        return cPhone.slice(-9) === tail || cPhone.slice(-8) === senderPhone.slice(-8);
       });
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, pix_key, pix_key_type")
-      .eq("id", userId)
-      .single();
+    const { data: profile } = await supabase.from("profiles").select("name, pix_key, pix_key_type").eq("id", userId).single();
 
-    // === INBOX: upsert conversation + log incoming ===
     const pushName = data?.pushName || data?.message?.pushName || null;
-    const incomingPreview = incomingText || `[${messageType}]`;
     const convoId = await upsertConversation(supabase, {
       userId, phone: senderPhone, jid: senderJid, instance: instanceName,
-      clientId: client?.id ?? null,
-      contactName: client?.name || pushName,
-      preview: incomingPreview, from: "client", incrementUnread: true,
+      clientId: client?.id ?? null, contactName: client?.name || pushName,
+      preview: incomingText || `[${messageType}]`, from: "client", incrementUnread: true,
     });
     if (convoId) {
       await logMessage(supabase, {
         conversationId: convoId, userId, direction: "in", sender: "client",
-        messageType, content: incomingText || "", waMessageId: msgId,
-        metadata: { jid: senderJid, mime: mimeType },
+        messageType, content: incomingText || "", waMessageId: msgId, metadata: { jid: senderJid, mime: mimeType },
       });
     }
 
-    // Conversation-level pause/block (já carregamos convoExisting acima; revalida do registro atualizado)
-    const conversationPaused = !!convoExisting?.bot_paused;
-    const conversationBlocked = !!convoExisting?.blocked;
+    if (convoExisting?.blocked) return new Response(JSON.stringify({ status: "blocked" }), { headers: corsHeaders });
 
-    // BLACKLIST — não responde nada, mas mantém log da msg recebida
-    if (conversationBlocked) {
-      return new Response(JSON.stringify({ status: "conversation_blocked" }), { headers: corsHeaders });
-    }
-
-    // Helper para o bot responder + persistir
     const botSay = async (text: string) => {
       if (!text || !apiUrl || !apiKey) return;
       await sendText(apiUrl, apiKey, instanceName, senderJid, text);
       if (convoId) {
-        await logMessage(supabase, {
-          conversationId: convoId, userId, direction: "out", sender: "bot",
-          messageType: "text", content: text,
-        });
+        await logMessage(supabase, { conversationId: convoId, userId, direction: "out", sender: "bot", messageType: "text", content: text });
         await supabase.from("whatsapp_conversations").update({
-          last_message_at: new Date().toISOString(),
-          last_message_preview: text.slice(0, 200),
-          last_message_from: "bot",
-          followup_sent_at: null,
-          updated_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString(), last_message_preview: text.slice(0, 200), last_message_from: "bot", updated_at: new Date().toISOString(),
         }).eq("id", convoId);
       }
     };
 
-    if (conversationPaused) {
-      return new Response(JSON.stringify({ status: "conversation_paused" }), { headers: corsHeaders });
-    }
+    if (convoExisting?.bot_paused) return new Response(JSON.stringify({ status: "paused" }), { headers: corsHeaders });
+    if (apiUrl && apiKey) sendPresence(apiUrl, apiKey, instanceName, senderJid, "composing").catch(() => {});
 
-    // Presence "digitando"
-    if (apiUrl && apiKey) {
-      sendPresence(apiUrl, apiKey, instanceName, senderJid, "composing").catch(() => {});
-    }
-
-
-    // === CLIENTE NÃO ENCONTRADO: tratar como lead ===
     if (!client) {
-      // Cooldown: evitar spammar lead a cada msg
-      const { data: recentLead } = await supabase
-        .from("audit_logs")
-        .select("created_at")
-        .eq("user_id", userId)
-        .eq("entity_type", "whatsapp_lead")
-        .eq("action", "lead_message")
-        .ilike("details->>phone", senderPhone)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const recentLeadTime = recentLead ? new Date(recentLead.created_at).getTime() : 0;
-      const shouldReply = Date.now() - recentLeadTime > 60 * 60 * 1000; // 1h cooldown
-
-      if (shouldReply && apiUrl && apiKey) {
-        const greeting = pickGreeting(settings.company_name || profile?.name || "nossa empresa");
-        await botSay(greeting);
-
-        // Notifica o dono
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          title: "Novo contato no WhatsApp",
-          message: `Número ${senderPhone} entrou em contato e não está cadastrado. Mensagem: "${incomingText?.slice(0, 100) || `[${messageType}]`}"`,
-          type: "info",
-        });
+      const { data: recentLead } = await supabase.from("audit_logs").select("created_at").eq("user_id", userId).eq("entity_type", "whatsapp_lead").eq("action", "lead_message").ilike("details->>phone", senderPhone).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!recentLead || Date.now() - new Date(recentLead.created_at).getTime() > 60 * 60 * 1000) {
+        await botSay(pickGreeting(settings.company_name || profile?.name || "nossa empresa"));
+        await supabase.from("notifications").insert({ user_id: userId, title: "Novo contato", message: `Número ${senderPhone} não cadastrado.`, type: "info" });
       }
-
-      await supabase.from("audit_logs").insert({
-        user_id: userId,
-        entity_type: "whatsapp_lead",
-        action: "lead_message",
-        details: { phone: senderPhone, message: incomingText, message_type: messageType, replied: shouldReply },
-      });
-
-      return new Response(JSON.stringify({ status: "lead_handled" }), { headers: corsHeaders });
+      await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_lead", action: "lead_message", details: { phone: senderPhone, message: incomingText } });
+      return new Response(JSON.stringify({ status: "lead" }), { headers: corsHeaders });
     }
 
-    // Cliente pausado individualmente?
-    const { data: pauseFlag } = await supabase
-      .from("audit_logs")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("entity_type", "whatsapp_bot")
-      .eq("entity_id", client.id)
-      .eq("action", "paused")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (pauseFlag) {
-      // Bot está pausado para esse cliente — apenas registra
-      await supabase.from("audit_logs").insert({
-        user_id: userId,
-        entity_type: "whatsapp_bot",
-        action: "message_while_paused",
-        entity_id: client.id,
-        details: { client_message: incomingText || `[${messageType}]` },
-      });
-      return new Response(JSON.stringify({ status: "client_paused" }), { headers: corsHeaders });
-    }
+    if (isRateLimited(senderJid)) return new Response(JSON.stringify({ status: "rate_limit" }), { headers: corsHeaders });
 
-    // === Rate limit por contato (anti-loop) ===
-    if (isRateLimited(senderJid)) {
-      console.log("rate limited:", senderJid);
-      return new Response(JSON.stringify({ status: "rate_limited" }), { headers: corsHeaders });
-    }
-
-    // === Anti-eco: ignora se cliente repetiu (copiou) exatamente a última resposta do bot ===
-    if (messageType === "text" && incomingText) {
-      const last = lastBotReply.get(senderJid);
-      if (last && Date.now() - last.ts < 5 * 60 * 1000 && norm(last.text).includes(norm(incomingText)) && incomingText.length > 20) {
-        console.log("ignored echo from", senderJid);
-        return new Response(JSON.stringify({ status: "ignored_echo" }), { headers: corsHeaders });
-      }
-    }
-
-    // === Truncamento: clientes que mandam paredes de texto ===
-    if (incomingText && incomingText.length > 1500) {
-      incomingText = incomingText.slice(0, 1500) + " …[mensagem truncada]";
-    }
-
-    // === Debounce: agrupa mensagens consecutivas (texto, imagem, áudio) em ~5s ===
-    // Para mídia, mantém o incomingText (caption ou label) mas espera caso venha texto logo depois
+    // DEBOUNCE
     {
       const buf = messageBuffer.get(senderJid) || { texts: [], lastTs: 0 };
       if (messageType === "text" && incomingText) buf.texts.push(incomingText);
@@ -433,422 +285,131 @@ serve(async (req) => {
       const myTs = buf.lastTs;
       await new Promise(r => setTimeout(r, BUFFER_WAIT_MS));
       const current = messageBuffer.get(senderJid);
-      if (!current || current.lastTs > myTs) {
-        // chegou mensagem mais nova — essa requisição abdica (a mais recente responde)
-        return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
-      }
-      if (messageType === "text") {
-        incomingText = current.texts.join("\n").slice(0, 2000);
-      }
+      if (!current || current.lastTs > myTs) return new Response(JSON.stringify({ status: "debounced" }), { headers: corsHeaders });
+      if (messageType === "text") incomingText = current.texts.join("\n").slice(0, 2000);
       messageBuffer.delete(senderJid);
     }
 
-    // === Lock por JID: evita 2 execuções paralelas respondendo ao mesmo contato ===
+    // LOCK
     const lockHeld = jidLock.get(senderJid) || 0;
-    if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) {
-      return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
-    }
+    if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
     jidLock.set(senderJid, Date.now());
 
-
-    // === Comando do cliente: PARAR BOT ===
+    // COMMANDS
     if (matchesAny(incomingText, STOP_WORDS)) {
-      await supabase.from("audit_logs").insert({
-        user_id: userId, entity_type: "whatsapp_bot", action: "paused",
-        entity_id: client.id, details: { reason: "client_request", message: incomingText },
-      });
-      if (apiUrl && apiKey) {
-        await botSay("Tudo bem! 🤖 Vou parar de responder por aqui. Um atendente humano vai te chamar em breve. 🙏");
-      }
-      await supabase.from("notifications").insert({
-        user_id: userId, title: "Bot pausado pelo cliente",
-        message: `${client.name} pediu para parar o bot.`, type: "warning",
-      });
-      return new Response(JSON.stringify({ status: "paused_by_client" }), { headers: corsHeaders });
+      await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "paused", entity_id: client.id, details: { reason: "client_stop" } });
+      await botSay("🤖 Bot pausado. Um atendente humano falará com você em breve.");
+      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      return new Response(JSON.stringify({ status: "stopped" }), { headers: corsHeaders });
     }
-
-    // === Cliente pediu humano explicitamente ===
     if (matchesAny(incomingText, HUMAN_WORDS)) {
-      if (apiUrl && apiKey) {
-        await botSay(`Claro, ${(client.name || "").split(" ")[0]}! 👤\n\nJá estou avisando um atendente. Você será respondido em instantes. 🙏`);
-      }
-      await supabase.from("notifications").insert({
-        user_id: userId, title: "🆘 Cliente pediu atendente humano",
-        message: `${client.name} pediu para falar com humano. Mensagem: "${incomingText?.slice(0,120)}"`, type: "warning",
-      });
-      await supabase.from("audit_logs").insert({
-        user_id: userId, entity_type: "whatsapp_bot", action: "human_requested",
-        entity_id: client.id, details: { client_message: incomingText },
-      });
-      return new Response(JSON.stringify({ status: "human_requested" }), { headers: corsHeaders });
+      await botSay("👤 Chamando um atendente humano...");
+      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      return new Response(JSON.stringify({ status: "human" }), { headers: corsHeaders });
     }
-
-    // === Atalho: cliente pediu PIX direto ===
     if (matchesAny(incomingText, PIX_WORDS) && profile?.pix_key) {
-      const txt = `Claro! Segue a chave PIX:\n\n*${profile.pix_key}*\n(${profile.pix_key_type || "PIX"})\n\nApós o pagamento, é só me enviar o comprovante por aqui que eu confirmo. ✅`;
-      if (apiUrl && apiKey) await botSay(txt);
-      await supabase.from("audit_logs").insert({
-        user_id: userId, entity_type: "whatsapp_bot", action: "replied",
-        entity_id: client.id, details: { intent: "pagamento", client_message: incomingText, ai_reply: txt, shortcut: "pix" },
-      });
-      return new Response(JSON.stringify({ status: "pix_shortcut" }), { headers: corsHeaders });
+      await botSay(`Chave PIX: *${profile.pix_key}* (${profile.pix_key_type || "PIX"}). Aguardo o comprovante! ✅`);
+      return new Response(JSON.stringify({ status: "pix" }), { headers: corsHeaders });
     }
 
-    // === Fora do horário de atendimento ===
     if (!isWithinBusinessHours(settings)) {
-      const start = settings.bot_business_start || "08:00";
-      const end = settings.bot_business_end || "18:00";
-      if (apiUrl && apiKey) {
-        await botSay(`Olá, ${(client.name || "").split(" ")[0]}! 👋\n\nRecebi sua mensagem fora do nosso horário de atendimento (${start} às ${end}).\n\nRetornarei assim que possível. 🙏`);
-      }
-      await supabase.from("audit_logs").insert({
-        user_id: userId, entity_type: "whatsapp_bot", action: "off_hours",
-        entity_id: client.id, details: { client_message: incomingText },
-      });
+      await botSay(`Olá! Recebi sua mensagem fora do horário (${settings.bot_business_start || "08:00"} às ${settings.bot_business_end || "18:00"}). Retorno em breve! 🙏`);
       return new Response(JSON.stringify({ status: "off_hours" }), { headers: corsHeaders });
     }
 
-
-    // Download de mídia
+    // DOWNLOAD MEDIA
     if (messageType !== "text" && apiUrl && apiKey) {
-      try {
-        const response = await fetch(`${apiUrl}/chat/getBase64FromMediaMessage/${instanceName}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", apikey: apiKey },
-          body: JSON.stringify({ message: message, convertToMp4: false }),
-        });
-        if (response.ok) {
-          const mediaResponse = await response.json();
-          mediaData = mediaResponse.base64;
-        } else {
-          // Fallback rota antiga
-          const fallback = await fetch(`${apiUrl}/message/getBase64FromMediaMessage/${instanceName}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", apikey: apiKey },
-            body: JSON.stringify({ message }),
-          });
-          if (fallback.ok) {
-            const j = await fallback.json();
-            mediaData = j.base64;
-          }
-        }
-      } catch (e) {
-        console.error("Error downloading media:", e);
-      }
+      const resp = await evolutionFetch(apiUrl, apiKey, `/chat/getBase64FromMediaMessage/${instanceName}`, { message: { key, message: msgContent }, convertToMp4: false });
+      if (resp?.ok) mediaData = (await resp.json()).base64;
     }
 
-    // Contexto financeiro completo
-    const { data: installments } = await supabase
-      .from("contract_installments")
-      .select("id, amount, due_date, status, late_fee, installment_number, contract_id")
-      .eq("client_id", client.id)
-      .in("status", ["pending", "overdue"])
-      .order("due_date", { ascending: true });
+    // ENRICH DATA
+    const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode").eq("client_id", client.id).eq("status", "active");
+    const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
+    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(5);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const overdue = (installments || []).filter(i => new Date(i.due_date) < today);
+    const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
 
-    const overdueList = (installments || []).filter(i => new Date(i.due_date) < today);
-    const dueTodayList = (installments || []).filter(i => {
-      const d = new Date(i.due_date);
-      return d.toDateString() === today.toDateString();
-    });
-    const upcomingList = (installments || []).filter(i => new Date(i.due_date) > today);
-
-    const totalOverdue = overdueList.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
-    const totalPending = (installments || []).reduce((s, i) => s + Number(i.amount), 0);
-
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "Missing API Key" }), { status: 500, headers: corsHeaders });
-    }
-
-    // Histórico conversacional persistente (lê do banco — sobrevive a restart)
     const conversationHistory: any[] = [];
     if (convoId) {
-      const { data: msgHistory } = await supabase
-        .from("whatsapp_messages")
-        .select("direction, content, message_type, metadata, created_at")
-        .eq("conversation_id", convoId)
-        .order("created_at", { ascending: false })
-        .limit(40);
-      (msgHistory || []).reverse().forEach((h: any) => {
-        const txt = h.content || h.metadata?.transcript || (h.message_type !== "text" ? `[${h.message_type}]` : "");
-        if (!txt) return;
-        if (h.direction === "in") {
-          conversationHistory.push({ role: "user", content: String(txt).slice(0, 700) });
-        } else {
-          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 900) });
-        }
+      const { data: msgHistory } = await supabase.from("whatsapp_messages").select("direction, content, message_type, metadata").eq("conversation_id", convoId).order("created_at", { ascending: false }).limit(20);
+      (msgHistory || []).reverse().forEach(h => {
+        const txt = h.content || h.metadata?.transcript || `[${h.message_type}]`;
+        conversationHistory.push({ role: h.direction === "in" ? "user" : "assistant", content: txt });
       });
-      // Remove TODAS as msgs "user" do final (são a atual + buffer pendente);
-      // serão re-injetadas como uma única mensagem agregada abaixo.
-      while (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
-        conversationHistory.pop();
-      }
-      // Colapsa runs consecutivos do mesmo role (limpa ruído de mensagens picotadas)
-      const collapsed: any[] = [];
-      for (const m of conversationHistory) {
-        const prev = collapsed[collapsed.length - 1];
-        if (prev && prev.role === m.role) prev.content = (prev.content + "\n" + m.content).slice(0, 1500);
-        else collapsed.push({ ...m });
-      }
-      conversationHistory.length = 0;
-      conversationHistory.push(...collapsed);
     }
 
-    const fmtList = (arr: any[], max = 5) => arr.slice(0, max).map(i =>
-      `  • Parc. ${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} - Venc: ${new Date(i.due_date).toLocaleDateString('pt-BR')}${Number(i.late_fee) > 0 ? ` (+ multa R$ ${Number(i.late_fee).toFixed(2)})` : ""}`
-    ).join("\n");
+    const systemPrompt = `Você é o Atendente Virtual com Inteligência Máxima da "${settings.company_name || 'nossa empresa'}".
 
-    const firstName = (client.name || "").split(" ")[0];
+═══ CONTEXTO DO CLIENTE ═══
+Nome: ${client.name}
+Empréstimos Ativos: ${activeContracts?.length || 0}
+${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode || 'Normal'})`).join('\n')}
 
-    const systemPrompt = `Você é o atendente virtual oficial da empresa "${settings.company_name || profile?.name || 'nossa empresa'}".
-Tom: ${settings.bot_tone || 'profissional, empático, próximo e cordial — como um bom atendente humano'}.
-Data de hoje: ${today.toLocaleDateString('pt-BR')}.
+═══ FINANCEIRO ═══
+Atraso: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcelas)
+Hoje: ${new Date().toLocaleDateString('pt-BR')}
 
-═══ IDENTIDADE DO CLIENTE (FIXA — NÃO MUDE) ═══
-Nome COMPLETO: ${client.name}
-Primeiro nome (use no tratamento): ${firstName}
-CPF/CNPJ: ${client.cpf_cnpj || '—'}
-Status: ${client.status || 'ativo'}
+CHAVE PIX: ${profile?.pix_key || "Pedir ao gerente"}
 
-⚠️ JAMAIS chame o cliente por outro nome. Não use nomes que apareçam em comprovantes (são de TERCEIROS, ex: o destinatário do PIX). Use APENAS "${firstName}" ou "${client.name}".
+═══ REGRAS ═══
+1. Seja empático mas focado em resolver pendências.
+2. Pode dar 50% de desconto na multa para pagamento HOJE.
+3. Se o cliente enviar comprovante, valide valor e destinatário.
+4. Use JSON puro na resposta.
 
-═══ SITUAÇÃO FINANCEIRA ═══
-Total em ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdueList.length} parcela(s))
-Total pendente: R$ ${totalPending.toFixed(2)} (${installments?.length || 0} parcela(s))
-Vence HOJE: ${dueTodayList.length} parcela(s)
-
-${overdueList.length ? `🔴 PARCELAS ATRASADAS:\n${fmtList(overdueList)}\n` : ''}${dueTodayList.length ? `🟡 VENCE HOJE:\n${fmtList(dueTodayList)}\n` : ''}${upcomingList.length ? `🟢 PRÓXIMAS:\n${fmtList(upcomingList, 3)}\n` : ''}
-Chave PIX para o cliente PAGAR (${profile?.pix_key_type || 'PIX'}): ${profile?.pix_key || "(solicitar à equipe)"}
-
-═══ HABILIDADES ═══
-1. Atende dúvidas sobre parcelas, valores, vencimentos, formas de pagamento.
-2. Cobrança empática (sem agressividade): lembra de pendências, oferece o PIX da empresa.
-3. Pode negociar: descontos parciais de multa/juros para pagamento HOJE; quitação à vista; reagendamento de 1 parcela. Decisões maiores → needs_human=true.
-4. Comprovantes (imagem/PDF): analise, extraia valor e marque is_receipt=true SE o pagamento for para a chave PIX da empresa acima. Se foi para terceiros, peça gentilmente o comprovante correto e NÃO marque is_receipt.
-5. Áudio: escute e responda naturalmente.
-6. Saudações simples → responda curto e pergunte como pode ajudar.
-7. Se cliente já está em dia: agradeça e seja cordial; não invente cobrança.
-
-═══ REGRAS DE OURO ═══
-- Português brasileiro, NATURAL, jamais robótico. Evite frases como "Estou aqui para ajudar com sua demanda".
-- Mensagens curtas (2-4 linhas). Pode usar 2 parágrafos separados por linha em branco — eles serão enviados como mensagens separadas.
-- Emojis com moderação (😊 👍 ✅ 🙏). Nunca exagere.
-- NUNCA invente valores, datas, descontos ou políticas que não estejam acima.
-- NUNCA pergunte ao cliente o PIX DELE — quem informa o PIX é VOCÊ (PIX da empresa, acima).
-- Se cliente pedir 2ª via, boleto físico, mudança contratual, ou reclamar de erro: needs_human=true.
-- Se cliente ficar agressivo ou ofensivo: responda com calma 1x e marque needs_human=true.
-- Use o HISTÓRICO COMPLETO acima para não se repetir. Se já cumprimentou, não cumprimente. Se já mandou o PIX, não mande de novo a menos que o cliente peça.
-- Se cliente perguntar "quem é você", responda UMA vez: "Sou o atendente virtual da ${settings.company_name || 'empresa'}, ${firstName}". Não repita essa apresentação em toda mensagem.
-- Se não houver dívida em atraso, NÃO cobre — apenas responda o que foi perguntado.
-
-FORMATO DE RESPOSTA (JSON OBRIGATÓRIO, sem markdown):
+FORMATO:
 {
-  "reply": "texto natural para o cliente (use \\n\\n para dividir em msgs)",
+  "thought": "analise interna",
+  "reply": "texto para o cliente",
   "is_receipt": boolean,
-  "receipt_value": number | null,
+  "receipt_value": number,
   "needs_human": boolean,
-  "intent": "saudacao|duvida|pagamento|comprovante|negociacao|reclamacao|outro",
-  "summary": "1 linha resumindo a interação",
-  "transcript": "se cliente mandou áudio, transcreva aqui o que ele disse (texto puro); caso contrário deixe vazio"
+  "intent": "saudacao|pagamento|comprovante|reclamacao|promessa",
+  "summary": "resumo"
 }`;
 
-    // ===== Monta mensagens no formato Anthropic =====
-    // Anthropic: system separado, messages só com user/assistant, content string ou blocks.
-    const anthMessages: any[] = [];
-
-    // Histórico (filtra qualquer system e normaliza content para string)
-    for (const m of conversationHistory) {
-      if (!m || (m.role !== "user" && m.role !== "assistant")) continue;
-      const text = typeof m.content === "string"
-        ? m.content
-        : Array.isArray(m.content)
-          ? m.content.map((c: any) => c?.text || "").join(" ").trim()
-          : String(m.content ?? "");
-      if (!text) continue;
-      anthMessages.push({ role: m.role, content: text });
-    }
-
-    // Mensagem atual
-    if (messageType === "text") {
-      anthMessages.push({ role: "user", content: incomingText || "(mensagem vazia)" });
-    } else if (mediaData && mimeType && (messageType === "image" || messageType === "document")) {
-      const label = messageType === "image"
-        ? "[Imagem enviada — verifique se é comprovante de pagamento. Se for, extraia o valor.]"
-        : "[Documento enviado — analise o conteúdo. Se for comprovante, extraia o valor.]";
-      const blocks: any[] = [{ type: "text", text: incomingText || label }];
-      // Claude aceita imagens via base64; PDFs também via document source
-      if (messageType === "image" || mimeType.startsWith("image/")) {
-        blocks.unshift({
-          type: "image",
-          source: { type: "base64", media_type: mimeType, data: mediaData },
-        });
-      } else if (mimeType === "application/pdf") {
-        blocks.unshift({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: mediaData },
-        });
-      }
+    const anthMessages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
+    if (messageType === "text") anthMessages.push({ role: "user", content: incomingText });
+    else if (mediaData && mimeType) {
+      const blocks: any[] = [{ type: "text", text: incomingText || `[Enviou ${messageType}]` }];
+      if (messageType === "image") blocks.unshift({ type: "image", source: { type: "base64", media_type: mimeType, data: mediaData } });
+      else if (mimeType === "application/pdf") blocks.unshift({ type: "document", source: { type: "base64", media_type: "application/pdf", data: mediaData } });
       anthMessages.push({ role: "user", content: blocks });
-    } else if (messageType === "audio") {
-      // Claude não processa áudio diretamente — pedir transcrição manual ao cliente.
-      anthMessages.push({
-        role: "user",
-        content: "[O cliente enviou um áudio. Responda pedindo gentilmente que digite a mensagem por escrito, pois neste canal só conseguimos ler texto, imagens e PDFs no momento.]",
-      });
-    } else {
-      anthMessages.push({ role: "user", content: `[Cliente enviou ${messageType} mas não foi possível baixar o conteúdo. Peça gentilmente para reenviar.]` });
     }
 
-    if (!anthropicApiKey) {
-      console.error("ANTHROPIC_API_KEY não configurada");
-      if (apiUrl && apiKey) await botSay("Desculpe, estou com uma instabilidade no momento. 🙏");
-      throw new Error("ANTHROPIC_API_KEY missing");
-    }
-
-    const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicApiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        temperature: 0.7,
-        system: systemPrompt + "\n\nIMPORTANTE: Responda APENAS com o objeto JSON puro, sem markdown, sem ```json, sem texto antes ou depois.",
-        messages: anthMessages,
-      }),
+      headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: "claude-3-7-sonnet-20250219", max_tokens: 1000, temperature: 0.5, system: systemPrompt, messages: anthMessages }),
     });
 
-    if (!aiResponse.ok) {
-      const errTxt = await aiResponse.text();
-      console.error("Anthropic API error:", aiResponse.status, errTxt);
-      if (apiUrl && apiKey) {
-        await botSay("Desculpe, estou com uma instabilidade no momento. Em instantes alguém da equipe vai te responder. 🙏");
-      }
-      throw new Error("Anthropic API error: " + aiResponse.status);
+    if (!aiResp.ok) throw new Error(await aiResp.text());
+    const aiData = await aiResp.json();
+    const result = JSON.parse(aiData.content[0].text.match(/\{[\s\S]*\}/)[0]);
+
+    if (result.reply) await botSay(result.reply);
+    
+    await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
+
+    if (result.is_receipt && installments?.length) {
+      const target = installments[0];
+      await supabase.from("contract_installments").update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: result.receipt_value || target.amount, notes: "Confirmado via IA" }).eq("id", target.id);
     }
 
-    const aiData = await aiResponse.json();
-    const rawText: string = (aiData?.content || [])
-      .filter((b: any) => b?.type === "text")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
-
-    // Extrai JSON (remove cercas de markdown se houver)
-    const cleaned = rawText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    let result: any;
-    try {
-      result = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
-    } catch {
-      result = { reply: rawText, is_receipt: false, needs_human: false, intent: "outro", summary: "" };
-    }
-
-    // Salva transcrição do áudio na mensagem original (pra exibir no inbox)
-    if (messageType === "audio" && result.transcript && convoId && msgId) {
-      await supabase.from("whatsapp_messages")
-        .update({
-          content: `🎙️ ${result.transcript}`,
-          metadata: { jid: senderJid, mime: mimeType, transcript: result.transcript },
-        })
-        .eq("conversation_id", convoId)
-        .eq("wa_message_id", msgId);
-    }
-
-    // Envia resposta
-    if (result.reply && apiUrl && apiKey) {
-      await botSay(result.reply);
-      lastBotReply.set(senderJid, { text: result.reply, ts: Date.now() });
-      sendPresence(apiUrl, apiKey, instanceName, senderJid, "paused").catch(() => {});
-    }
-
-    // Comprovante: tenta casar com a parcela de valor mais próximo
-    if (result.is_receipt && settings.bot_auto_confirm_payment && installments && installments.length > 0) {
-      const value = Number(result.receipt_value) || 0;
-      const ordered = [...overdueList, ...dueTodayList, ...upcomingList];
-      let matched = ordered[0] || installments[0];
-      if (value > 0) {
-        let bestDiff = Infinity;
-        for (const inst of ordered) {
-          const total = Number(inst.amount) + (Number(inst.late_fee) || 0);
-          const diff = Math.abs(total - value);
-          if (diff < bestDiff - 1) { bestDiff = diff; matched = inst; }
-        }
-      }
-
-      await supabase.from("contract_installments").update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        paid_amount: value || matched.amount,
-        payment_method: "pix",
-        notes: `Confirmado automaticamente via Bot IA (comprovante WhatsApp).`,
-      }).eq("id", matched.id);
-
-      if (settings.bot_notify_owner) {
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          title: "✅ Pagamento confirmado via IA",
-          message: `Bot identificou comprovante de R$ ${(value || matched.amount).toFixed(2)} de ${client.name} (parc. ${matched.installment_number}).`,
-          type: "payment",
-        });
-      }
-    }
-
-    // Escalação para humano + intent classificado
-    if (convoId) {
-      const update: any = { updated_at: new Date().toISOString() };
-      if (result.intent) update.last_intent = result.intent;
-      if (result.needs_human) {
-        update.needs_human = true;
-        update.last_human_handoff_at = new Date().toISOString();
-      }
-      await supabase.from("whatsapp_conversations").update(update).eq("id", convoId);
-    }
     if (result.needs_human) {
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        title: "🆘 Atendimento humano solicitado",
-        message: `${client.name} precisa de atendimento humano. Resumo: ${result.summary || incomingText?.slice(0, 100)}`,
-        type: "warning",
-      });
+      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} precisa de ajuda: ${result.summary}`, type: "warning" });
     }
-
-    // Log
-    await supabase.from("audit_logs").insert({
-      user_id: userId,
-      entity_type: "whatsapp_bot",
-      action: result.is_receipt ? "receipt_detected" : "replied",
-      entity_id: client.id,
-      details: {
-        message_type: messageType,
-        client_message: incomingText || `[${messageType}]`,
-        intent: result.intent,
-        summary: result.summary,
-        is_receipt: !!result.is_receipt,
-        receipt_value: result.receipt_value,
-        needs_human: !!result.needs_human,
-        ai_reply: result.reply,
-      },
-    });
 
     jidLock.delete(senderJid);
-    return new Response(JSON.stringify({ status: "success", result }), { headers: corsHeaders });
+    return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
 
   } catch (err) {
-    console.error("whatsapp-webhook error:", err);
-    // tenta liberar o lock se possível
-    try {
-      const body = (err as any)?._jid;
-      if (body) jidLock.delete(body);
-    } catch {}
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }), { status: 500, headers: corsHeaders });
+    console.error("Webhook Error:", err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
   }
 });
