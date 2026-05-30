@@ -61,6 +61,9 @@ const ClienteDetalhe = () => {
   const [loanInterestRate, setLoanInterestRate] = useState("10");
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
   const [loanLateFee, setLoanLateFee] = useState("2");
+  const [loanMode, setLoanMode] = useState<LoanMode>("installments");
+  const [loanGracePeriods, setLoanGracePeriods] = useState("2");
+  const [loanNotes, setLoanNotes] = useState("");
   const [loanLoading, setLoanLoading] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [editContract, setEditContract] = useState<any>(null);
