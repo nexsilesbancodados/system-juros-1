@@ -14,11 +14,22 @@ import {
   ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign,
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
-  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera
+  Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera,
+  Hash, Coins, TrendingDown, Target, PauseCircle,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
+
+const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
+  { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
+  { v: "percentage", label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
+  { v: "interest_only", label: "Só Juros + Capital no Fim", desc: "Juros por período, capital na última", Icon: Coins },
+  { v: "price", label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
+  { v: "bullet", label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
+  { v: "grace", label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
+];
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 const FREQ: Record<string, string> = { daily: "Diário", weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal" };
@@ -50,6 +61,9 @@ const ClienteDetalhe = () => {
   const [loanInterestRate, setLoanInterestRate] = useState("10");
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
   const [loanLateFee, setLoanLateFee] = useState("2");
+  const [loanMode, setLoanMode] = useState<LoanMode>("installments");
+  const [loanGracePeriods, setLoanGracePeriods] = useState("2");
+  const [loanNotes, setLoanNotes] = useState("");
   const [loanLoading, setLoanLoading] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [editContract, setEditContract] = useState<any>(null);
@@ -144,10 +158,22 @@ const ClienteDetalhe = () => {
     const cap = parseFloat(loanCapital) || 0;
     const rate = parseFloat(loanInterestRate) || 0;
     const n = parseInt(loanInstallments) || 0;
-    if (!cap || !n) return null;
-    const totalInterest = cap * (rate / 100) * n;
-    return { totalInterest, total: cap + totalInterest, installmentAmount: (cap + totalInterest) / n };
-  }, [loanCapital, loanInterestRate, loanInstallments]);
+    const grace = parseInt(loanGracePeriods) || 0;
+    if (!cap) return null;
+    const r = calculateLoan({
+      capital: cap, rate, periods: n,
+      frequency: loanFreq as any, loanMode,
+      gracePeriods: loanMode === "grace" ? grace : 0,
+    });
+    if (!r) return null;
+    return {
+      installmentAmount: r.installmentAmount,
+      total: r.totalAmount,
+      totalInterest: r.totalInterest,
+      schedule: r.schedule,
+      numInstallments: r.numInstallments,
+    };
+  }, [loanCapital, loanInterestRate, loanInstallments, loanFreq, loanMode, loanGracePeriods]);
 
   // Actions
   const startEdit = () => {
@@ -182,24 +208,29 @@ const ClienteDetalhe = () => {
     toast({ title: "Endereço atualizado!" }); setEditAddressMode(false); inv("client-detail");
   };
 
-  const generateDueDates = (start: string, freq: string, count: number) => {
+  const generateDueDates = (start: string, freq: string, count: number, periodsAhead?: number) => {
     const dates: string[] = [];
     const [sy, sm, sd] = start.split("-").map(Number);
     const base = new Date(sy, (sm || 1) - 1, sd || 1, 12, 0, 0, 0);
-    for (let i = 0; i < count; i++) {
-      let nd: Date;
-      if (freq === "daily") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1)); }
-      else if (freq === "weekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 7); }
-      else if (freq === "biweekly") { nd = new Date(base); nd.setDate(base.getDate() + (i + 1) * 14); }
+    const stepFor = (i: number) => {
+      const nd = new Date(base);
+      if (freq === "daily") nd.setDate(base.getDate() + i);
+      else if (freq === "weekly") nd.setDate(base.getDate() + i * 7);
+      else if (freq === "biweekly") nd.setDate(base.getDate() + i * 14);
       else {
-        const tm = base.getMonth() + (i + 1);
+        const tm = base.getMonth() + i;
         const y = base.getFullYear() + Math.floor(tm / 12);
         const m = ((tm % 12) + 12) % 12;
         const lastDay = new Date(y, m + 1, 0).getDate();
-        nd = new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
+        return new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
       }
-      dates.push(nd.toISOString());
+      return nd;
+    };
+    if (periodsAhead && count === 1) {
+      dates.push(stepFor(periodsAhead).toISOString());
+      return dates;
     }
+    for (let i = 0; i < count; i++) dates.push(stepFor(i + 1).toISOString());
     return dates;
   };
 
@@ -207,31 +238,36 @@ const ClienteDetalhe = () => {
     if (!user || !loanCalc) return;
     setLoanLoading(true);
     try {
-      const n = parseInt(loanInstallments);
+      const nInput = parseInt(loanInstallments) || 0;
+      const nReal = loanCalc.numInstallments;
+      const periodsAhead = loanMode === "bullet" ? nInput : undefined;
       const { data: contract, error: cErr } = await supabase.from("contracts").insert({
         user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
-        interest_rate: parseFloat(loanInterestRate), num_installments: n,
+        interest_rate: parseFloat(loanInterestRate), num_installments: nReal,
         installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
         start_date: new Date(loanStart + "T12:00:00").toISOString(),
         late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
         total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
+        loan_mode: loanMode,
+        grace_periods: loanMode === "grace" ? (parseInt(loanGracePeriods) || 0) : 0,
+        notes: loanNotes || null,
       }).select().single();
       if (cErr) throw cErr;
 
-      const dueDates = generateDueDates(loanStart, loanFreq, n);
+      const dueDates = generateDueDates(loanStart, loanFreq, nReal, periodsAhead);
       const { error: iErr } = await supabase.from("contract_installments").insert(
-        dueDates.map((dd, i) => ({ user_id: user.id, contract_id: contract.id, client_id: id!, installment_number: i + 1, amount: loanCalc.installmentAmount, due_date: dd, status: "pending" }))
+        dueDates.map((dd, i) => ({ user_id: user.id, contract_id: contract.id, client_id: id!, installment_number: i + 1, amount: loanCalc.schedule[i] ?? loanCalc.installmentAmount, due_date: dd, status: "pending" }))
       );
       if (iErr) throw iErr;
 
       await supabase.from("transactions").insert({
         user_id: user.id, amount: parseFloat(loanCapital), type: "loan",
-        description: `Empréstimo para ${client?.name} - ${n}x R$ ${fmt(loanCalc.installmentAmount)}`,
+        description: `Empréstimo para ${client?.name} - ${LOAN_MODE_LABEL[loanMode]} - ${nReal}x R$ ${fmt(loanCalc.installmentAmount)}`,
         client_id: id, contract_id: contract.id,
       });
 
-      toast({ title: "Empréstimo criado!", description: `${n} parcelas geradas.` });
-      setNewLoanMode(false); setLoanCapital(""); setLoanInstallments("");
+      toast({ title: "Empréstimo criado!", description: `${nReal} parcela(s) gerada(s).` });
+      setNewLoanMode(false); setLoanCapital(""); setLoanInstallments(""); setLoanNotes("");
       invAll();
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -711,14 +747,40 @@ const ClienteDetalhe = () => {
               <button onClick={() => setNewLoanMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
             </div>
             <p className="text-xs text-muted-foreground">Para: <strong className="text-foreground">{client.name}</strong></p>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de Empréstimo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {LOAN_MODES.map(m => (
+                  <button key={m.v} type="button" onClick={() => setLoanMode(m.v)}
+                    className={`flex items-start gap-2 p-2.5 rounded-xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                    <m.Icon size={16} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className="min-w-0">
+                      <p className={`text-[11px] font-semibold leading-tight ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{m.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loanMode === "grace" && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Períodos de carência (sem pagar)</label>
+                <input type="number" value={loanGracePeriods} onChange={e => setLoanGracePeriods(e.target.value)} placeholder="2" className={INPUT} min={1} />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
                 <input type="number" value={loanCapital} onChange={e => setLoanCapital(e.target.value)} placeholder="1000" className={INPUT} />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Parcelas</label>
-                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder="12" className={INPUT} />
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {loanMode === "bullet" ? "Nº Períodos até vencer" : "Nº Parcelas"}
+                </label>
+                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder={loanMode === "bullet" ? "3" : "12"} className={INPUT} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa (%)</label>
@@ -747,12 +809,28 @@ const ClienteDetalhe = () => {
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
                 <input type="number" step="0.1" value={loanLateFee} onChange={e => setLoanLateFee(e.target.value)} className={INPUT} />
               </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                <textarea value={loanNotes} onChange={e => setLoanNotes(e.target.value)} className={INPUT + " min-h-[60px]"} placeholder="Opcional" />
+              </div>
             </div>
             {loanCalc && (
-              <div className="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-3 text-sm">
-                <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Parcela</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
+              <div className="space-y-2">
+                <div className="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-3 text-sm">
+                  <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">{loanMode === "bullet" ? "Pagamento" : "Parcela"}</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
+                </div>
+                {loanCalc.schedule.length > 1 && loanCalc.schedule.some(v => v !== loanCalc.schedule[0]) && (
+                  <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-2 text-[11px] space-y-0.5">
+                    {loanCalc.schedule.map((v, i) => (
+                      <div key={i} className="flex justify-between">
+                        <span className="text-muted-foreground">#{i + 1}</span>
+                        <span className="font-medium text-foreground">R$ {fmt(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="flex gap-2 pt-2">
