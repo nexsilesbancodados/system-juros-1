@@ -1161,6 +1161,7 @@ const ClienteDetalhe = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => openEditInst(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Editar valor/vencimento"><Edit size={14} /></button>
                   {isPaid ? (
                     <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar"><RotateCcw size={14} /></button>
                   ) : (
