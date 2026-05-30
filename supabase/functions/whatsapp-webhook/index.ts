@@ -570,20 +570,30 @@ serve(async (req) => {
         .select("direction, content, message_type, metadata, created_at")
         .eq("conversation_id", convoId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(40);
       (msgHistory || []).reverse().forEach((h: any) => {
-        const txt = h.content || h.metadata?.transcript || "";
+        const txt = h.content || h.metadata?.transcript || (h.message_type !== "text" ? `[${h.message_type}]` : "");
         if (!txt) return;
         if (h.direction === "in") {
-          conversationHistory.push({ role: "user", content: String(txt).slice(0, 600) });
+          conversationHistory.push({ role: "user", content: String(txt).slice(0, 700) });
         } else {
-          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 800) });
+          conversationHistory.push({ role: "assistant", content: String(txt).slice(0, 900) });
         }
       });
-      // remove a última msg "user" porque é a atual (será adicionada abaixo)
-      if (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
+      // Remove TODAS as msgs "user" do final (são a atual + buffer pendente);
+      // serão re-injetadas como uma única mensagem agregada abaixo.
+      while (conversationHistory.length && conversationHistory[conversationHistory.length - 1].role === "user") {
         conversationHistory.pop();
       }
+      // Colapsa runs consecutivos do mesmo role (limpa ruído de mensagens picotadas)
+      const collapsed: any[] = [];
+      for (const m of conversationHistory) {
+        const prev = collapsed[collapsed.length - 1];
+        if (prev && prev.role === m.role) prev.content = (prev.content + "\n" + m.content).slice(0, 1500);
+        else collapsed.push({ ...m });
+      }
+      conversationHistory.length = 0;
+      conversationHistory.push(...collapsed);
     }
 
     const fmtList = (arr: any[], max = 5) => arr.slice(0, max).map(i =>
