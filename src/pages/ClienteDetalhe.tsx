@@ -158,10 +158,22 @@ const ClienteDetalhe = () => {
     const cap = parseFloat(loanCapital) || 0;
     const rate = parseFloat(loanInterestRate) || 0;
     const n = parseInt(loanInstallments) || 0;
-    if (!cap || !n) return null;
-    const totalInterest = cap * (rate / 100) * n;
-    return { totalInterest, total: cap + totalInterest, installmentAmount: (cap + totalInterest) / n };
-  }, [loanCapital, loanInterestRate, loanInstallments]);
+    const grace = parseInt(loanGracePeriods) || 0;
+    if (!cap) return null;
+    const r = calculateLoan({
+      capital: cap, rate, periods: n,
+      frequency: loanFreq as any, loanMode,
+      gracePeriods: loanMode === "grace" ? grace : 0,
+    });
+    if (!r) return null;
+    return {
+      installmentAmount: r.installmentAmount,
+      total: r.totalAmount,
+      totalInterest: r.totalInterest,
+      schedule: r.schedule,
+      numInstallments: r.numInstallments,
+    };
+  }, [loanCapital, loanInterestRate, loanInstallments, loanFreq, loanMode, loanGracePeriods]);
 
   // Actions
   const startEdit = () => {
