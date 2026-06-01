@@ -332,8 +332,14 @@ serve(async (req) => {
     const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000); // UTC-3
     const todayStr = brDate.toISOString().split('T')[0];
 
-    const overdue = (installments || []).filter(i => i.due_date < todayStr);
-    const dueToday = (installments || []).filter(i => i.due_date === todayStr);
+    const overdue = (installments || []).filter(i => {
+      const dueDate = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
+      return dueDate < todayStr;
+    });
+    const dueToday = (installments || []).filter(i => {
+      const dueDate = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
+      return dueDate === todayStr;
+    });
     
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
     const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
@@ -386,11 +392,11 @@ Data Atual: ${brDate.toLocaleDateString('pt-BR')}
 CHAVE PIX: ${profile?.pix_key || "Pedir ao gerente"}
 
 ═══ REGRAS DE OURO ═══
-1. FOCO TOTAL NA COBRANÇA DO DIA: Se o cliente tem algo vencendo hoje, sua prioridade é confirmar o recebimento desse valor.
-2. OPÇÃO DE RENOVAÇÃO: Se o cliente disser que está difícil ou que não tem o valor total, ofereça IMEDIATAMENTE a opção de "Pagar só os Juros" para não sujar o nome e manter o crédito.
-3. EMPATIA PROATIVA: Entenda o cliente, mas mantenha a firmeza de que os pagamentos (pelo menos os juros) são essenciais.
-4. SEM NEGOCIAÇÃO DE DESCONTO: Você NÃO dá descontos no principal. A única flexibilidade é a renovação (pagar só juros).
-5. VALIDAÇÃO DE COMPROVANTES: Se ele enviar comprovante, verifique se é do Valor Total ou apenas dos Juros (Renovação).
+ 1. FOCO TOTAL NA COBRANÇA: Se o cliente tem parcelas vencendo HOJE ou JÁ VENCIDAS (EM ATRASO), sua prioridade absoluta é cobrar esses valores. Comece mencionando as parcelas em atraso e as que vencem hoje.
+ 2. OPÇÃO DE RENOVAÇÃO: Se o cliente disser que não pode pagar o total, ofereça IMEDIATAMENTE a opção de "Pagar só os Juros" para cada contrato.
+ 3. EMPATIA PROATIVA: Entenda o cliente, mas seja firme sobre a necessidade de regularizar os atrasos hoje mesmo.
+ 4. SEM NEGOCIAÇÃO DE DESCONTO: Você NÃO dá descontos. A única flexibilidade é a renovação (pagar só juros).
+ 5. VALIDAÇÃO DE COMPROVANTES: Verifique se o comprovante enviado cobre o Valor Total ou apenas os Juros (Renovação).
 6. Use JSON puro na resposta.
 
 FORMATO:
