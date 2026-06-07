@@ -218,6 +218,42 @@ const AgenteIA = () => {
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState<"all" | "unread" | "users" | "groups">("all");
 
+  // AI Assist State
+  const [aiAssist, setAiAssist] = useState<{ summary?: string; intent?: string; suggestions: string[] }>({ suggestions: [] });
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  // Fetch AI assist data
+  const loadAiAssist = async (convoId: string) => {
+    setLoadingAi(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const [resSummary, resSuggest] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-ai-assist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ conversation_id: convoId, mode: "summarize" }),
+        }).then(r => r.json()),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-ai-assist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ conversation_id: convoId, mode: "suggest" }),
+        }).then(r => r.json())
+      ]);
+
+      setAiAssist({
+        summary: resSummary?.summary || "",
+        intent: resSummary?.next_action || "",
+        suggestions: resSuggest?.suggestions || []
+      });
+    } catch (err) {
+      console.error("Erro AI Assist:", err);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
   // Agent config state
   const [agentConfig, setAgentConfig] = useState({
     chatbotEnabled: true,
