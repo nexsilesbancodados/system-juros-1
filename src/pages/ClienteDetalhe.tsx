@@ -364,8 +364,8 @@ const ClienteDetalhe = () => {
     const ok = await confirm({
       title: "Excluir Empréstimo?",
       description: "Isso apagará o contrato, todas as parcelas e movimentações ligadas a ele. Esta ação não pode ser desfeita.",
-      confirmText: "Excluir",
-      cancelText: "Voltar",
+      confirmLabel: "Excluir",
+      cancelLabel: "Voltar",
       variant: "destructive"
     });
     if (!ok) return;
