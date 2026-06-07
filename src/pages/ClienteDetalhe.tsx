@@ -1210,43 +1210,63 @@ const ClienteDetalhe = () => {
 
       {/* Tab: Parcelas */}
       {activeTab === "parcelas" && (
-        <div className="space-y-2">
+        <div className="space-y-6">
           {installments.length === 0 ? (
             <EmptyState icon={Receipt} title="Nenhuma parcela" description="As parcelas aparecerão aqui quando o contrato for criado." compact />
-          ) : installments.map((inst: any) => {
-            const isOverdue = inst.status === "overdue";
-            const isPaid = inst.status === "paid";
-            const partial = !isPaid && Number(inst.paid_amount || 0) > 0;
+          ) : Object.entries(groupedInstallments).map(([cid, insts]) => {
+            const contract = contracts.find((c: any) => c.id === cid);
             return (
-              <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isOverdue ? "bg-destructive/10 text-destructive" : isPaid ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                  {inst.installment_number}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {formatBR(inst.due_date)}
-                    {inst.paid_at && ` · Pago: ${formatBR(inst.paid_at)}`}
-                    {partial && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
-                    {inst.payment_method && ` · ${String(inst.payment_method).toUpperCase()}`}
-                  </p>
-                  {inst.receipt_url && (
-                    <a href={inst.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
-                      <Receipt size={10} /> Ver comprovante
-                    </a>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => openEditInst(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Editar valor/vencimento"><Edit size={14} /></button>
-                  {isPaid ? (
-                    <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar"><RotateCcw size={14} /></button>
-                  ) : (
-                    <>
-                      <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Cobrar"><Send size={14} /></button>
-                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); setPayMethod("pix"); setPayReceiptFile(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
-                      <button onClick={() => { setPartialPayModal(inst); setPartialAmount(String(inst.amount)); setPayMethod("pix"); setPayReceiptFile(null); }} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Pagar</button>
-                    </>
-                  )}
+              <div key={cid} className="space-y-2">
+                {contract && (
+                  <div className="flex items-center justify-between px-1 mb-1">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <FileText size={12} className="text-primary" />
+                      Empréstimo R$ {fmt(Number(contract.capital))} ({formatBR(contract.start_date)})
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] py-0 h-5">
+                      {insts.filter((i: any) => i.status === "paid").length}/{insts.length} pagas
+                    </Badge>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {insts.map((inst: any) => {
+                    const isOverdue = inst.status === "overdue";
+                    const isPaid = inst.status === "paid";
+                    const partial = !isPaid && Number(inst.paid_amount || 0) > 0;
+                    return (
+                      <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${isOverdue ? "bg-destructive/5 border-destructive/15" : isPaid ? "bg-success/5 border-success/15" : "bg-card border-border"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isOverdue ? "bg-destructive/10 text-destructive" : isPaid ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                          {inst.installment_number}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">R$ {fmt(Number(inst.amount))}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatBR(inst.due_date)}
+                            {inst.paid_at && ` · Pago: ${formatBR(inst.paid_at)}`}
+                            {partial && ` · Parcial: R$ ${fmt(Number(inst.paid_amount))}`}
+                            {inst.payment_method && ` · ${String(inst.payment_method).toUpperCase()}`}
+                          </p>
+                          {inst.receipt_url && (
+                            <a href={inst.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
+                              <Receipt size={10} /> Ver comprovante
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => openEditInst(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Editar valor/vencimento"><Edit size={14} /></button>
+                          {isPaid ? (
+                            <button onClick={() => reversePayment(inst.id)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Estornar"><RotateCcw size={14} /></button>
+                          ) : (
+                            <>
+                              <button onClick={() => sendBilling(inst)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Cobrar"><Send size={14} /></button>
+                              <button onClick={() => { setPartialPayModal(inst); setPartialAmount(""); setPayMethod("pix"); setPayReceiptFile(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground" title="Parcial"><Percent size={14} /></button>
+                              <button onClick={() => { setPartialPayModal(inst); setPartialAmount(String(inst.amount)); setPayMethod("pix"); setPayReceiptFile(null); }} className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-success/10 text-success hover:bg-success/20 transition-colors">Pagar</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
