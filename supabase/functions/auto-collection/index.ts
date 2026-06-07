@@ -218,7 +218,7 @@ serve(async (req) => {
         let message = "";
 
         // ----- AI generation -----
-        if (settings.bot_use_ai && lovableApiKey) {
+        if (settings.bot_use_ai && anthropicKey) {
           try {
             const tone = settings.bot_tone || "profissional";
             const severity = mostOverdue.days >= 30 ? "FIRME e direta"
@@ -226,19 +226,9 @@ serve(async (req) => {
               : mostOverdue.days >= 7 ? "preocupada e clara"
               : "amigável e gentil";
 
-            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                model: "google/gemini-3-flash-preview",
-                messages: [
-                  {
-                    role: "system",
-                    content: `Você é especialista em recuperação de crédito da empresa ${companyName}. Tom: ${tone}. Severidade atual: ${severity}. NUNCA diga que é uma IA. Use português brasileiro. Máximo 4 linhas curtas. Emojis discretos (1-2).`,
-                  },
-                  {
-                    role: "user",
-                    content: `Gere mensagem WhatsApp personalizada para cobrança:
+            const systemPrompt = `Você é especialista em recuperação de crédito da empresa ${companyName}. Tom: ${tone}. Severidade atual: ${severity}. NUNCA diga que é uma IA. Use português brasileiro. Máximo 4 linhas curtas. Emojis discretos (1-2). Gere APENAS o texto da mensagem, sem aspas, sem comentários.`;
+
+            const userPrompt = `Gere mensagem WhatsApp personalizada para cobrança:
 
 CLIENTE: ${client.name}
 DÍVIDA: R$ ${totalAmount.toFixed(2)} (${installments.length} parcela(s))
@@ -246,21 +236,17 @@ ATRASO: ${mostOverdue.days} dia(s)
 SCORE INTERNO: ${client.credit_score ?? 100}/100
 HISTÓRICO: ${paidCount} pagas de ${totalHist} (${reliability}% confiabilidade), ${lateCount} pagas em atraso
 ${settings.bot_negotiation_enabled && mostOverdue.days >= 15 ? "MENCIONE que há proposta de acordo abaixo." : ""}
-${reliability >= 80 ? "Cliente bom pagador — reconheça isso." : reliability < 40 && totalHist > 3 ? "Cliente recorrente em atraso — seja mais firme." : ""}
+${reliability >= 80 ? "Cliente bom pagador — reconheça isso." : reliability < 40 && totalHist > 3 ? "Cliente recorrente em atraso — seja mais firme." : ""}`;
 
-Gere APENAS o texto da mensagem, sem aspas, sem comentários.`,
-                  },
-                ],
-                temperature: 0.75,
-              }),
+            message = await callAnthropic({
+              system: systemPrompt,
+              messages: [{ role: "user", content: userPrompt }],
+              temperature: 0.75,
+              maxTokens: 400,
             });
-
-            if (aiResp.ok) {
-              const aiData = await aiResp.json();
-              message = aiData.choices?.[0]?.message?.content?.trim() || "";
-            }
+            message = (message || "").trim();
           } catch (aiErr) {
-            console.error("AI fail:", aiErr);
+            console.error("Anthropic AI fail:", aiErr);
           }
         }
 
