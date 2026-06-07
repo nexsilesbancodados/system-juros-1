@@ -40,7 +40,7 @@ const Hoje = () => {
       const today = startOfToday().toISOString();
       const eod = endOfToday().toISOString();
 
-      const [dueTodayRes, overdueRes, todosRes, notifRes, profitsTodayRes] = await Promise.all([
+      const [dueTodayRes, overdueRes, todosRes, notifRes, profitsTodayRes, promisesRes] = await Promise.all([
         supabase.from("contract_installments")
           .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, phone, whatsapp)")
           .eq("user_id", user.id).eq("status", "pending")
@@ -54,6 +54,7 @@ const Hoje = () => {
         supabase.from("todos").select("id, task, is_complete").eq("user_id", user.id).eq("is_complete", false).order("created_at", { ascending: false }).limit(8),
         supabase.from("notifications").select("id, message, type, link, sent_at").eq("user_id", user.id).eq("is_read", false).order("sent_at", { ascending: false }).limit(5),
         supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", today).lte("date", eod),
+        supabase.from("audit_logs").select("id, details, created_at").eq("user_id", user.id).eq("action", "promise_to_pay").order("created_at", { ascending: false }).limit(5),
       ]);
 
       return {
@@ -62,6 +63,12 @@ const Hoje = () => {
         todos: todosRes.data || [],
         notifications: notifRes.data || [],
         profitToday: (profitsTodayRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0),
+        promises: (promisesRes.data || []).map((p: any) => ({
+          id: p.id,
+          date: p.details?.promise_date,
+          client: p.details?.client_name || "Cliente",
+          msg: p.details?.message
+        })),
       };
     },
     enabled: !!user,
