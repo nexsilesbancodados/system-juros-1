@@ -345,6 +345,7 @@ export type Database = {
           address: Json | null
           avatar_url: string | null
           birth_date: string | null
+          bot_memory: string | null
           cellphone_sale: Json | null
           client_type: string
           cpf_cnpj: string | null
@@ -364,6 +365,7 @@ export type Database = {
           address?: Json | null
           avatar_url?: string | null
           birth_date?: string | null
+          bot_memory?: string | null
           cellphone_sale?: Json | null
           client_type?: string
           cpf_cnpj?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           address?: Json | null
           avatar_url?: string | null
           birth_date?: string | null
+          bot_memory?: string | null
           cellphone_sale?: Json | null
           client_type?: string
           cpf_cnpj?: string | null
