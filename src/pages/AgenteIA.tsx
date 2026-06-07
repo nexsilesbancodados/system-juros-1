@@ -1254,7 +1254,29 @@ const AgenteIA = () => {
                   )}
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10">
+              <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10 relative">
+                {/* AI Assist Sidebar/Panel */}
+                {selectedChat && aiAssist.summary && (
+                  <div className="sticky top-0 z-20 mb-4 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-md p-3 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Sparkles size={16} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">Resumo Inteligente</h4>
+                        <p className="text-xs text-foreground/90 leading-relaxed">{aiAssist.summary}</p>
+                        {aiAssist.intent && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">Próxima Ação:</span>
+                            <span className="text-[10px] font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">{aiAssist.intent}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => setAiAssist({ suggestions: [] })} className="p-1 rounded hover:bg-primary/10 text-muted-foreground"><X size={14} /></button>
+                    </div>
+                  </div>
+                )}
+
                 {loadingMsgs ? (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 size={24} className="animate-spin text-muted-foreground" />
