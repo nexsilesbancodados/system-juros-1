@@ -219,14 +219,15 @@ serve(async (req) => {
 
     // CLIENT LOOKUP
     let client: any = null;
+    const CLIENT_FIELDS = "id, name, phone, whatsapp, cpf_cnpj, status, credit_score, bot_memory, birth_date";
     const { data: convoExisting } = await supabase.from("whatsapp_conversations").select("id, client_id, bot_paused, blocked").eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
     if (convoExisting?.client_id) {
-      const { data: c } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("id", convoExisting.client_id).maybeSingle();
+      const { data: c } = await supabase.from("clients").select(CLIENT_FIELDS).eq("id", convoExisting.client_id).maybeSingle();
       if (c) client = c;
     }
     if (!client) {
       const tail = senderPhone.slice(-9);
-      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("user_id", userId);
+      const { data: clients } = await supabase.from("clients").select(CLIENT_FIELDS).eq("user_id", userId);
       client = clients?.find(c => {
         const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
         return cPhone.slice(-9) === tail || cPhone.slice(-8) === senderPhone.slice(-8);
