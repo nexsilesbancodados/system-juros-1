@@ -219,14 +219,15 @@ serve(async (req) => {
 
     // CLIENT LOOKUP
     let client: any = null;
+    const CLIENT_FIELDS = "id, name, phone, whatsapp, cpf_cnpj, status, credit_score, bot_memory, birth_date";
     const { data: convoExisting } = await supabase.from("whatsapp_conversations").select("id, client_id, bot_paused, blocked").eq("user_id", userId).eq("phone", senderPhone).maybeSingle();
     if (convoExisting?.client_id) {
-      const { data: c } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("id", convoExisting.client_id).maybeSingle();
+      const { data: c } = await supabase.from("clients").select(CLIENT_FIELDS).eq("id", convoExisting.client_id).maybeSingle();
       if (c) client = c;
     }
     if (!client) {
       const tail = senderPhone.slice(-9);
-      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, cpf_cnpj, status").eq("user_id", userId);
+      const { data: clients } = await supabase.from("clients").select(CLIENT_FIELDS).eq("user_id", userId);
       client = clients?.find(c => {
         const cPhone = (c.whatsapp || c.phone || "").replace(/\D/g, "");
         return cPhone.slice(-9) === tail || cPhone.slice(-8) === senderPhone.slice(-8);
@@ -361,16 +362,24 @@ serve(async (req) => {
 
     const conversationHistory: any[] = [];
     if (convoId) {
-      const { data: msgHistory } = await supabase.from("whatsapp_messages").select("direction, content, message_type, metadata").eq("conversation_id", convoId).order("created_at", { ascending: false }).limit(20);
+      const { data: msgHistory } = await supabase
+        .from("whatsapp_messages")
+        .select("direction, content, message_type, metadata, created_at")
+        .eq("conversation_id", convoId)
+        .order("created_at", { ascending: false })
+        .limit(40);
       (msgHistory || []).reverse().forEach(h => {
         const txt = h.content || h.metadata?.transcript || `[${h.message_type}]`;
         conversationHistory.push({ role: h.direction === "in" ? "user" : "assistant", content: txt });
       });
     }
 
-    const systemPrompt = `Você é o Atendente Virtual de Cobrança Inteligente e Empático da "${settings.company_name || 'nossa empresa'}". Seu objetivo é RECUPERAR VALORES HOJE de forma estratégica.
+    // Memória de longo prazo persistida (fatos consolidados sobre o cliente)
+    const longTermMemory = (client.bot_memory || "").toString().slice(0, 2000);
 
-  ═══ PERFIL DO CLIENTE ═══
+    const systemPrompt = `Você é o Atendente Virtual Inteligente da "${settings.company_name || 'nossa empresa'}". Seu objetivo é RECUPERAR VALORES de forma estratégica, empática e CONTEXTUAL.
+
+═══ PERFIL DO CLIENTE ═══
 Nome: ${client.name}
 Status: ${client.status || 'Ativo'}
 Score de Crédito: ${client.credit_score || 50}/100
@@ -378,50 +387,48 @@ Parcelas Pagas no Histórico: ${paidCount}
 Contratos Ativos: ${activeContracts?.length || 0}
 ${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode || 'Normal'}, ${c.frequency})`).join('\n')}
 
+═══ 🧠 MEMÓRIA DE LONGO PRAZO (fatos consolidados de conversas anteriores) ═══
+${longTermMemory || "(sem memória prévia — primeira interação relevante)"}
+
+⚠️ USE essa memória para personalizar o atendimento. Cite fatos relevantes naturalmente ("como combinamos da última vez...", "lembro que você mencionou..."), NUNCA invente fatos.
+
 ═══ SITUAÇÃO FINANCEIRA (ATUALIZADO) ═══
 📅 VENCE HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcelas)
 ⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcelas)
 💰 TOTAL PARA QUITAR PENDÊNCIAS: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
 ⚖️ COMPORTAMENTO: ${client.credit_score > 80 ? 'Excelente pagador. Seja flexível.' : client.credit_score < 40 ? 'Risco alto. Seja firme e direto.' : 'Padrão.'}
 
-
 DETALHAMENTO:
 ${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCE HOJE)`).join('\n')}
 ${overdue.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCIDA DESDE ${i.due_date})`).join('\n')}
 
 ═══ OPÇÕES DE RENOVAÇÃO (PAGAR SÓ JUROS) ═══
-Se o cliente não puder pagar o valor total, ofereça a RENOVAÇÃO (Rollover):
 ${rolloverOptions.map(o => `- Pagar APENAS OS JUROS de R$ ${o.interestOnly.toFixed(2)}. O valor principal continua para a próxima data (${o.frequency}).`).join('\n')}
 
 ═══ ESTRATÉGIA DE ATENDIMENTO ═══
-1. TOM DE VOZ: Profissional, prestativo e persuasivo. Use emojis moderadamente.
-2. ABORDAGEM: Se houver atrasos, foque na regularização. Se o cliente for "Bom Pagador" (Score > 70), agradeça a parceria.
-3. FLEXIBILIDADE: Se o cliente disser que está difícil, apresente a opção de "Pagar só os Juros" (Renovação).
-4. COMPROVANTES: Sempre peça o comprovante. Se receber um, valide o valor.
-5. FIDELIZAÇÃO: Se o cliente estiver quitando o último contrato e tiver score bom, sugira que ele pode solicitar um novo limite maior em breve.
-6. PROMESSAS: Se o cliente prometer pagar em uma data específica, identifique isso.
+1. CONTEXTO É TUDO: Antes de responder, releia o histórico recente E a memória de longo prazo. NUNCA repita uma pergunta já respondida. NUNCA peça dado que já está no perfil.
+2. TOM: Profissional, prestativo, humano. Emojis com moderação.
+3. CONTINUIDADE: Se há promessa registrada na memória, faça follow-up natural ("você havia combinado pagar dia X, conseguiu?").
+4. COMPROVANTES: Sempre peça e valide o valor.
+5. ESCALONAMENTO: Pedido explícito de humano → needs_human=true.
+6. MEMÓRIA: Ao final, ATUALIZE a memória consolidada com fatos novos relevantes (preferências, histórico, promessas, motivos de atraso, contatos, etc.) — máx 1500 chars, em tópicos curtos. Mantenha fatos antigos relevantes, remova só o que ficou obsoleto.
 
 Data Atual: ${brDate.toLocaleDateString('pt-BR')}
 CHAVE PIX: ${profile?.pix_key || "Solicitar ao gerente"} (${profile?.pix_key_type || "PIX"})
 
 Responda em JSON puro:
 {
-  "thought": "análise lógica da conversa e próxima ação",
+  "thought": "análise lógica considerando memória + histórico + situação",
   "reply": "sua resposta ao cliente (em português)",
-  "is_receipt": boolean (se o cliente enviou comprovante ou confirmou pagamento),
-  "is_rollover": boolean (se o pagamento é APENAS de juros para renovação),
-  "is_promise": boolean (se o cliente prometeu pagar em uma data futura),
-  "promise_date": "YYYY-MM-DD" (data da promessa, se houver),
-  "receipt_value": number (valor identificado),
-  "needs_human": boolean (se o cliente pediu atendente),
+  "is_receipt": boolean,
+  "is_rollover": boolean,
+  "is_promise": boolean,
+  "promise_date": "YYYY-MM-DD",
+  "receipt_value": number,
+  "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida",
-  "summary": "resumo do status"
-}
-  "is_rollover": boolean (se o pagamento é APENAS de juros para renovação),
-  "receipt_value": number (valor identificado no comprovante ou mensagem),
-  "needs_human": boolean (se o cliente pediu atendente ou o caso é complexo),
-  "intent": "saudacao|pagamento|comprovante|renovacao|reclamacao|duvida",
-  "summary": "resumo do status do atendimento"
+  "summary": "resumo do status",
+  "memory_update": "memória consolidada atualizada (substitui a anterior) — fatos em tópicos curtos, máx 1500 chars. Se não houver nada novo relevante, retorne a memória anterior inalterada."
 }`;
 
     const anthMessages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
@@ -444,7 +451,15 @@ Responda em JSON puro:
     const result = JSON.parse(aiData.content[0].text.match(/\{[\s\S]*\}/)[0]);
 
     if (result.reply) await botSay(result.reply);
-    
+
+    // Persiste memória de longo prazo atualizada pelo modelo
+    if (typeof result.memory_update === "string" && result.memory_update.trim()) {
+      const newMem = result.memory_update.trim().slice(0, 2000);
+      if (newMem !== longTermMemory) {
+        await supabase.from("clients").update({ bot_memory: newMem }).eq("id", client.id);
+      }
+    }
+
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
     if (result.is_receipt && installments?.length) {

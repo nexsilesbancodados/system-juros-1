@@ -404,16 +404,6 @@ const WhatsAppConfig = () => {
                   onCheckedChange={(v) => updateSettings({ bot_auto_confirm_payment: v })}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bot size={14} className="text-amber-500" />
-                  <span className="text-xs font-medium">Negociação com IA</span>
-                </div>
-                <Switch 
-                  checked={settings?.bot_negotiation_enabled} 
-                  onCheckedChange={(v) => updateSettings({ bot_negotiation_enabled: v })}
-                />
-              </div>
             </div>
           </Card>
 

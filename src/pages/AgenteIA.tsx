@@ -1538,12 +1538,6 @@ const AgenteIA = () => {
               description="Usa o Lovable AI para gerar mensagens de cobrança persuasivas e humanizadas"
             />
             <ToggleSwitch
-              enabled={agentConfig.negotiationEnabled}
-              onToggle={() => setAgentConfig((p) => ({ ...p, negotiationEnabled: !p.negotiationEnabled }))}
-              label="Negociação Inteligente"
-              description="O bot responde e negocia prazos e descontos simples via chat"
-            />
-            <ToggleSwitch
               enabled={agentConfig.sendAudio}
               onToggle={() => setAgentConfig((p) => ({ ...p, sendAudio: !p.sendAudio }))}
               label="Enviar Áudio (Beta)"
@@ -1626,7 +1620,7 @@ const AgenteIA = () => {
               <p className="text-sm text-muted-foreground">Instância: <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{instanceName}</span></p>
               <div className="bg-muted/30 border border-border rounded-xl p-3 text-left max-w-sm mx-auto">
                 <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Shield size={12} className="text-primary" /> Webhook de IA configurado automaticamente</p>
-                <p className="text-[10px] text-muted-foreground mt-1">A negociação automática já está ativa nesta instância.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">O atendente IA está ativo nesta instância, com memória de longo prazo por cliente.</p>
               </div>
               <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mt-4">
                 <div className="rounded-xl bg-muted/30 border border-border p-3 text-center">
