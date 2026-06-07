@@ -833,7 +833,7 @@ const Configuracoes = () => {
                 <div className="space-y-4 p-4 rounded-2xl border border-primary/20 bg-primary/5">
                   <div className="flex items-center gap-2">
                     <Bot size={16} className="text-primary" />
-                    <p className="text-sm font-semibold text-foreground">Inteligência Artificial & Negociação</p>
+                    <p className="text-sm font-semibold text-foreground">Inteligência Artificial</p>
                   </div>
                   
                   <div className="space-y-3">
