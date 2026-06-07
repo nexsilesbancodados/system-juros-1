@@ -505,6 +505,29 @@ Responda em JSON puro:
       await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
     }
 
+    if (result.is_promise && result.promise_date) {
+      await supabase.from("audit_logs").insert({
+        user_id: userId, entity_type: "whatsapp_bot", action: "promise_to_pay", entity_id: client.id,
+        details: { promise_date: result.promise_date, message: incomingText }
+      });
+      // Adiciona uma nota na conversa
+      await supabase.from("whatsapp_notes").insert({
+        user_id: userId, client_id: client.id, content: `Promessa de pagamento para: ${result.promise_date}`, created_by: 'bot'
+      });
+    }
+
+    // Aumento de Score por bom comportamento (pagou em dia ou renovou)
+    if (result.is_receipt) {
+      const currentScore = client.credit_score || 50;
+      let newScore = currentScore;
+      if (result.is_rollover) newScore = Math.min(100, currentScore + 2); // Renovação = +2
+      else newScore = Math.min(100, currentScore + 5); // Pagamento = +5
+      
+      if (newScore !== currentScore) {
+        await supabase.from("clients").update({ credit_score: newScore }).eq("id", client.id);
+      }
+    }
+
     jidLock.delete(senderJid);
     return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
 
