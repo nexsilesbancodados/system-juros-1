@@ -290,6 +290,29 @@ const Hoje = () => {
             </ul>
           </section>
 
+          {/* Promessas capturadas pela IA */}
+          {data?.promises && data.promises.length > 0 && (
+            <section aria-labelledby="hoje-promessas-title" className="rounded-2xl border border-primary/20 bg-primary/5 overflow-hidden">
+              <div className="px-4 py-3 border-b border-primary/20 flex items-center justify-between">
+                <h2 id="hoje-promessas-title" className="text-sm font-bold text-primary flex items-center gap-2">
+                  <Sparkles size={14} /> Promessas IA
+                </h2>
+              </div>
+              <ul className="divide-y divide-primary/10">
+                {data.promises.map((p: any) => (
+                  <li key={p.id} className="px-4 py-2.5">
+                    <p className="text-[11px] font-bold text-foreground">{p.client}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1 italic">"{p.msg}"</p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Clock size={10} className="text-primary" />
+                      <span className="text-[10px] font-bold text-primary">Paga em: {p.date ? formatBR(p.date) : '??'}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {/* Alertas inteligentes agrupados */}
           <SmartAlerts
             overdue={data?.overdue || []}
