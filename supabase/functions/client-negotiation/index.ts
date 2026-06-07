@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
@@ -80,31 +80,73 @@ serve(async (req) => {
     
     Objetivo: Converter a dívida em uma promessa de pagamento ou pagamento imediato via PIX.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const anthMessages = messages
+      .filter((m: any) => m.role === "user" || m.role === "assistant")
+      .map((m: any) => ({ role: m.role, content: m.content }));
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableApiKey}`,
+        "x-api-key": anthropicKey!,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
+        model: "claude-3-7-sonnet-20250219",
+        max_tokens: 1024,
         temperature: 0.7,
+        system: systemPrompt,
+        messages: anthMessages,
+        stream: true,
       }),
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Erro na IA" }), {
+      const t = await response.text();
+      return new Response(JSON.stringify({ error: `Anthropic: ${t}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
+    // Re-encoda SSE da Anthropic para formato OpenAI-style esperado pelo frontend
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+        let buffer = "";
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const payload = line.slice(6).trim();
+              if (!payload) continue;
+              try {
+                const evt = JSON.parse(payload);
+                if (evt.type === "content_block_delta" && evt.delta?.text) {
+                  const chunk = { choices: [{ delta: { content: evt.delta.text } }] };
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+                } else if (evt.type === "message_stop") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                }
+              } catch {}
+            }
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (err) {
