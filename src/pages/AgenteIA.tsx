@@ -1457,8 +1457,22 @@ const AgenteIA = () => {
                 )}
                 <div ref={chatScrollRef} />
               </div>
-              <div className="border-t border-border p-3">
+              <div className="border-t border-border p-3 space-y-3">
+                {selectedChat && aiAssist.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    {aiAssist.suggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setReplyInput(s)}
+                        className="px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all active:scale-95"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
+
                   <input
                     value={replyInput}
                     onChange={(e) => setReplyInput(e.target.value)}
