@@ -498,6 +498,12 @@ Responda em JSON puro:
           type: "success"
         });
       }
+
+      // Se não houver mais parcelas atrasadas, volta o cliente para 'active'
+      const { data: stillOverdue } = await supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "overdue");
+      if (!stillOverdue?.length) {
+        await supabase.from("clients").update({ status: 'active' }).eq("id", client.id);
+      }
     }
 
     if (result.needs_human) {
