@@ -157,6 +157,16 @@ const ClienteDetalhe = () => {
     return { totalCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst };
   }, [contracts, installments, profits]);
 
+  const groupedInstallments = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    installments.forEach((inst: any) => {
+      const cid = inst.contract_id || "no-contract";
+      if (!groups[cid]) groups[cid] = [];
+      groups[cid].push(inst);
+    });
+    return groups;
+  }, [installments]);
+
   const loanCalc = useMemo(() => {
     const cap = parseFloat(loanCapital) || 0;
     const rate = parseFloat(loanInterestRate) || 0;
