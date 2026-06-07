@@ -572,6 +572,20 @@ const AgenteIA = () => {
 
   const openChat = async (chat: WhatsAppChat) => {
     setSelectedChat(chat);
+    setReplyInput("");
+    setAiAssist({ suggestions: [] });
+    
+    const { data: convo } = await supabase
+      .from("whatsapp_conversations")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("phone", chat.phone)
+      .maybeSingle();
+
+    if (convo) {
+      loadAiAssist(convo.id);
+    }
+
     await refreshChatMessages(chat.remoteJid);
   };
 
