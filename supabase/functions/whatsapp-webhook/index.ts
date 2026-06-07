@@ -326,7 +326,9 @@ serve(async (req) => {
     // ENRICH DATA
     const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode, frequency, interest_rate").eq("client_id", client.id).eq("status", "active");
     const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number, contract_id").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
-    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(5);
+    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(10);
+    const { data: allPaid } = await supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "paid");
+    const paidCount = allPaid?.length || 0;
 
     const now = new Date();
     const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000); // UTC-3
