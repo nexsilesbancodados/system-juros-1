@@ -7,9 +7,10 @@ import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { toast } from "sonner";
 import {
   Sunrise, AlertCircle, CheckCircle2, Bell, ListTodo, Receipt,
-  TrendingUp, ArrowRight, Phone, MessageSquare, Loader2, Plus, Clock
+  TrendingUp, ArrowRight, Phone, MessageSquare, Loader2, Plus, Clock, Sparkles
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
+import { formatBR } from "@/lib/dateUtils";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
@@ -40,7 +41,7 @@ const Hoje = () => {
       const today = startOfToday().toISOString();
       const eod = endOfToday().toISOString();
 
-      const [dueTodayRes, overdueRes, todosRes, notifRes, profitsTodayRes] = await Promise.all([
+      const [dueTodayRes, overdueRes, todosRes, notifRes, profitsTodayRes, promisesRes] = await Promise.all([
         supabase.from("contract_installments")
           .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, phone, whatsapp)")
           .eq("user_id", user.id).eq("status", "pending")
@@ -54,6 +55,7 @@ const Hoje = () => {
         supabase.from("todos").select("id, task, is_complete").eq("user_id", user.id).eq("is_complete", false).order("created_at", { ascending: false }).limit(8),
         supabase.from("notifications").select("id, message, type, link, sent_at").eq("user_id", user.id).eq("is_read", false).order("sent_at", { ascending: false }).limit(5),
         supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", today).lte("date", eod),
+        supabase.from("audit_logs").select("id, details, created_at").eq("user_id", user.id).eq("action", "promise_to_pay").order("created_at", { ascending: false }).limit(5),
       ]);
 
       return {
@@ -62,6 +64,12 @@ const Hoje = () => {
         todos: todosRes.data || [],
         notifications: notifRes.data || [],
         profitToday: (profitsTodayRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0),
+        promises: (promisesRes.data || []).map((p: any) => ({
+          id: p.id,
+          date: p.details?.promise_date,
+          client: p.details?.client_name || "Cliente",
+          msg: p.details?.message
+        })),
       };
     },
     enabled: !!user,
@@ -282,6 +290,29 @@ const Hoje = () => {
               ))}
             </ul>
           </section>
+
+          {/* Promessas capturadas pela IA */}
+          {data?.promises && data.promises.length > 0 && (
+            <section aria-labelledby="hoje-promessas-title" className="rounded-2xl border border-primary/20 bg-primary/5 overflow-hidden">
+              <div className="px-4 py-3 border-b border-primary/20 flex items-center justify-between">
+                <h2 id="hoje-promessas-title" className="text-sm font-bold text-primary flex items-center gap-2">
+                  <Sparkles size={14} /> Promessas IA
+                </h2>
+              </div>
+              <ul className="divide-y divide-primary/10">
+                {data.promises.map((p: any) => (
+                  <li key={p.id} className="px-4 py-2.5">
+                    <p className="text-[11px] font-bold text-foreground">{p.client}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1 italic">"{p.msg}"</p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Clock size={10} className="text-primary" />
+                      <span className="text-[10px] font-bold text-primary">Paga em: {p.date ? formatBR(p.date) : '??'}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Alertas inteligentes agrupados */}
           <SmartAlerts

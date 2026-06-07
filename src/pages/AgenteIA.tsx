@@ -218,6 +218,42 @@ const AgenteIA = () => {
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState<"all" | "unread" | "users" | "groups">("all");
 
+  // AI Assist State
+  const [aiAssist, setAiAssist] = useState<{ summary?: string; intent?: string; suggestions: string[] }>({ suggestions: [] });
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  // Fetch AI assist data
+  const loadAiAssist = async (convoId: string) => {
+    setLoadingAi(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const [resSummary, resSuggest] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-ai-assist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ conversation_id: convoId, mode: "summarize" }),
+        }).then(r => r.json()),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-ai-assist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ conversation_id: convoId, mode: "suggest" }),
+        }).then(r => r.json())
+      ]);
+
+      setAiAssist({
+        summary: resSummary?.summary || "",
+        intent: resSummary?.next_action || "",
+        suggestions: resSuggest?.suggestions || []
+      });
+    } catch (err) {
+      console.error("Erro AI Assist:", err);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
   // Agent config state
   const [agentConfig, setAgentConfig] = useState({
     chatbotEnabled: true,
@@ -536,6 +572,20 @@ const AgenteIA = () => {
 
   const openChat = async (chat: WhatsAppChat) => {
     setSelectedChat(chat);
+    setReplyInput("");
+    setAiAssist({ suggestions: [] });
+    
+    const { data: convo } = await supabase
+      .from("whatsapp_conversations")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("phone", chat.phone)
+      .maybeSingle();
+
+    if (convo) {
+      loadAiAssist(convo.id);
+    }
+
     await refreshChatMessages(chat.remoteJid);
   };
 
@@ -1204,7 +1254,29 @@ const AgenteIA = () => {
                   )}
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10">
+              <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-gradient-to-b from-background to-muted/10 relative">
+                {/* AI Assist Sidebar/Panel */}
+                {selectedChat && aiAssist.summary && (
+                  <div className="sticky top-0 z-20 mb-4 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-md p-3 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Sparkles size={16} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">Resumo Inteligente</h4>
+                        <p className="text-xs text-foreground/90 leading-relaxed">{aiAssist.summary}</p>
+                        {aiAssist.intent && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase">Próxima Ação:</span>
+                            <span className="text-[10px] font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">{aiAssist.intent}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => setAiAssist({ suggestions: [] })} className="p-1 rounded hover:bg-primary/10 text-muted-foreground"><X size={14} /></button>
+                    </div>
+                  </div>
+                )}
+
                 {loadingMsgs ? (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 size={24} className="animate-spin text-muted-foreground" />
@@ -1385,8 +1457,22 @@ const AgenteIA = () => {
                 )}
                 <div ref={chatScrollRef} />
               </div>
-              <div className="border-t border-border p-3">
+              <div className="border-t border-border p-3 space-y-3">
+                {selectedChat && aiAssist.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    {aiAssist.suggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setReplyInput(s)}
+                        className="px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all active:scale-95"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
+
                   <input
                     value={replyInput}
                     onChange={(e) => setReplyInput(e.target.value)}

@@ -326,7 +326,9 @@ serve(async (req) => {
     // ENRICH DATA
     const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode, frequency, interest_rate").eq("client_id", client.id).eq("status", "active");
     const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number, contract_id").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
-    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(5);
+    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(10);
+    const { data: allPaid } = await supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "paid");
+    const paidCount = allPaid?.length || 0;
 
     const now = new Date();
     const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000); // UTC-3
@@ -368,9 +370,11 @@ serve(async (req) => {
 
     const systemPrompt = `Você é o Atendente Virtual de Cobrança Inteligente e Empático da "${settings.company_name || 'nossa empresa'}". Seu objetivo é RECUPERAR VALORES HOJE de forma estratégica.
 
-═══ PERFIL DO CLIENTE ═══
+  ═══ PERFIL DO CLIENTE ═══
 Nome: ${client.name}
 Status: ${client.status || 'Ativo'}
+Score de Crédito: ${client.credit_score || 50}/100
+Parcelas Pagas no Histórico: ${paidCount}
 Contratos Ativos: ${activeContracts?.length || 0}
 ${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode || 'Normal'}, ${c.frequency})`).join('\n')}
 
@@ -378,6 +382,8 @@ ${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode
 📅 VENCE HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcelas)
 ⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcelas)
 💰 TOTAL PARA QUITAR PENDÊNCIAS: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
+⚖️ COMPORTAMENTO: ${client.credit_score > 80 ? 'Excelente pagador. Seja flexível.' : client.credit_score < 40 ? 'Risco alto. Seja firme e direto.' : 'Padrão.'}
+
 
 DETALHAMENTO:
 ${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCE HOJE)`).join('\n')}
@@ -389,10 +395,11 @@ ${rolloverOptions.map(o => `- Pagar APENAS OS JUROS de R$ ${o.interestOnly.toFix
 
 ═══ ESTRATÉGIA DE ATENDIMENTO ═══
 1. TOM DE VOZ: Profissional, prestativo e persuasivo. Use emojis moderadamente.
-2. ABORDAGEM: Se houver atrasos, foque na regularização para evitar juros extras e manter o crédito disponível.
-3. FLEXIBILIDADE: Se o cliente disser que está difícil, apresente a opção de "Pagar só os Juros" como uma solução para não ficar inadimplente.
-4. COMPROVANTES: Sempre peça o comprovante de pagamento (Pix/Transferência).
-5. INTELIGÊNCIA: Se o cliente enviar um comprovante, tente identificar se o valor corresponde à parcela total ou apenas aos juros da renovação.
+2. ABORDAGEM: Se houver atrasos, foque na regularização. Se o cliente for "Bom Pagador" (Score > 70), agradeça a parceria.
+3. FLEXIBILIDADE: Se o cliente disser que está difícil, apresente a opção de "Pagar só os Juros" (Renovação).
+4. COMPROVANTES: Sempre peça o comprovante. Se receber um, valide o valor.
+5. FIDELIZAÇÃO: Se o cliente estiver quitando o último contrato e tiver score bom, sugira que ele pode solicitar um novo limite maior em breve.
+6. PROMESSAS: Se o cliente prometer pagar em uma data específica, identifique isso.
 
 Data Atual: ${brDate.toLocaleDateString('pt-BR')}
 CHAVE PIX: ${profile?.pix_key || "Solicitar ao gerente"} (${profile?.pix_key_type || "PIX"})
@@ -402,6 +409,14 @@ Responda em JSON puro:
   "thought": "análise lógica da conversa e próxima ação",
   "reply": "sua resposta ao cliente (em português)",
   "is_receipt": boolean (se o cliente enviou comprovante ou confirmou pagamento),
+  "is_rollover": boolean (se o pagamento é APENAS de juros para renovação),
+  "is_promise": boolean (se o cliente prometeu pagar em uma data futura),
+  "promise_date": "YYYY-MM-DD" (data da promessa, se houver),
+  "receipt_value": number (valor identificado),
+  "needs_human": boolean (se o cliente pediu atendente),
+  "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida",
+  "summary": "resumo do status"
+}
   "is_rollover": boolean (se o pagamento é APENAS de juros para renovação),
   "receipt_value": number (valor identificado no comprovante ou mensagem),
   "needs_human": boolean (se o cliente pediu atendente ou o caso é complexo),
@@ -483,11 +498,40 @@ Responda em JSON puro:
           type: "success"
         });
       }
+
+      // Se não houver mais parcelas atrasadas, volta o cliente para 'active'
+      const { data: stillOverdue } = await supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "overdue");
+      if (!stillOverdue?.length) {
+        await supabase.from("clients").update({ status: 'active' }).eq("id", client.id);
+      }
     }
 
     if (result.needs_human) {
       await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
       await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
+    }
+
+    if (result.is_promise && result.promise_date) {
+      await supabase.from("audit_logs").insert({
+        user_id: userId, entity_type: "whatsapp_bot", action: "promise_to_pay", entity_id: client.id,
+        details: { promise_date: result.promise_date, message: incomingText }
+      });
+      // Adiciona uma nota na conversa
+      await supabase.from("whatsapp_notes").insert({
+        user_id: userId, client_id: client.id, content: `Promessa de pagamento para: ${result.promise_date}`, created_by: 'bot'
+      });
+    }
+
+    // Aumento de Score por bom comportamento (pagou em dia ou renovou)
+    if (result.is_receipt) {
+      const currentScore = client.credit_score || 50;
+      let newScore = currentScore;
+      if (result.is_rollover) newScore = Math.min(100, currentScore + 2); // Renovação = +2
+      else newScore = Math.min(100, currentScore + 5); // Pagamento = +5
+      
+      if (newScore !== currentScore) {
+        await supabase.from("clients").update({ credit_score: newScore }).eq("id", client.id);
+      }
     }
 
     jidLock.delete(senderJid);
