@@ -359,6 +359,33 @@ const ClienteDetalhe = () => {
       setEditContractSaving(false);
     }
   };
+  
+  const handleDeleteContract = async (contractId: string) => {
+    const ok = await confirm({
+      title: "Excluir Empréstimo?",
+      description: "Isso apagará o contrato, todas as parcelas e movimentações ligadas a ele. Esta ação não pode ser desfeita.",
+      confirmText: "Excluir",
+      cancelText: "Voltar",
+      variant: "destructive"
+    });
+    if (!ok) return;
+
+    try {
+      // Deleta parcelas primeiro (FK)
+      await supabase.from("contract_installments").delete().eq("contract_id", contractId);
+      // Deleta transações ligadas ao contrato
+      await supabase.from("transactions").delete().eq("contract_id", contractId);
+      // Deleta o contrato
+      const { error } = await supabase.from("contracts").delete().eq("id", contractId);
+      
+      if (error) throw error;
+      
+      toast({ title: "Empréstimo excluído com sucesso!" });
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    }
+  };
 
   const openEditInst = (inst: any) => {
     setEditInst(inst);
