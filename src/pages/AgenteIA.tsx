@@ -1538,12 +1538,6 @@ const AgenteIA = () => {
               description="Usa o Lovable AI para gerar mensagens de cobrança persuasivas e humanizadas"
             />
             <ToggleSwitch
-              enabled={agentConfig.negotiationEnabled}
-              onToggle={() => setAgentConfig((p) => ({ ...p, negotiationEnabled: !p.negotiationEnabled }))}
-              label="Negociação Inteligente"
-              description="O bot responde e negocia prazos e descontos simples via chat"
-            />
-            <ToggleSwitch
               enabled={agentConfig.sendAudio}
               onToggle={() => setAgentConfig((p) => ({ ...p, sendAudio: !p.sendAudio }))}
               label="Enviar Áudio (Beta)"
