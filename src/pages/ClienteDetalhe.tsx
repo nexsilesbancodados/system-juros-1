@@ -1176,13 +1176,22 @@ const ClienteDetalhe = () => {
                   <p className="text-xs text-muted-foreground">{formatBR(c.start_date)}</p>
                   <p className="text-xs font-medium text-primary">Lucro: R$ {fmt(Number(c.total_interest))}</p>
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
-                  className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  title="Editar empréstimo"
-                >
-                  <Edit size={14} />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
+                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    title="Editar empréstimo"
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteContract(c.id); }}
+                    className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors shrink-0"
+                    title="Excluir empréstimo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
