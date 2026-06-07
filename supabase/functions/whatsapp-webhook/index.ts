@@ -451,7 +451,15 @@ Responda em JSON puro:
     const result = JSON.parse(aiData.content[0].text.match(/\{[\s\S]*\}/)[0]);
 
     if (result.reply) await botSay(result.reply);
-    
+
+    // Persiste memória de longo prazo atualizada pelo modelo
+    if (typeof result.memory_update === "string" && result.memory_update.trim()) {
+      const newMem = result.memory_update.trim().slice(0, 2000);
+      if (newMem !== longTermMemory) {
+        await supabase.from("clients").update({ bot_memory: newMem }).eq("id", client.id);
+      }
+    }
+
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
     if (result.is_receipt && installments?.length) {
