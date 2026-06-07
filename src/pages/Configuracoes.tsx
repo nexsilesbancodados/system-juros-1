@@ -850,18 +850,6 @@ const Configuracoes = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-foreground">Negociação Inteligente</p>
-                        <p className="text-[10px] text-muted-foreground">Permite que o bot responda e negocie datas e descontos simples</p>
-                      </div>
-                      <button 
-                        onClick={() => setForm({ ...form, bot_negotiation_enabled: !form.bot_negotiation_enabled })}
-                        className={`w-10 h-6 rounded-full transition-colors relative ${form.bot_negotiation_enabled ? "bg-primary" : "bg-muted"}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.bot_negotiation_enabled ? "left-5" : "left-1"}`} />
-                      </button>
-                    </div>
 
                     <div className="flex items-center justify-between">
                       <div>
