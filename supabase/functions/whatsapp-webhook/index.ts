@@ -443,7 +443,7 @@ Responda em JSON puro:
     const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-3-7-sonnet-20250219", max_tokens: 1000, temperature: 0.5, system: systemPrompt, messages: anthMessages }),
+      body: JSON.stringify({ model: "claude-3-5-sonnet-20241022", max_tokens: 1000, temperature: 0.5, system: systemPrompt, messages: anthMessages }),
     });
 
     if (!aiResp.ok) throw new Error(await aiResp.text());
