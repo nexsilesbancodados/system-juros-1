@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callAnthropicJSON } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,63 +79,18 @@ serve(async (req) => {
       current_score: client.credit_score || 100,
     };
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um analista de crédito brasileiro especializado em empréstimos pessoais. Analise o histórico do cliente e gere um score de 0 a 1000, classificação de risco e recomendações práticas. Seja direto, em português brasileiro.",
-          },
-          {
-            role: "user",
-            content: `Analise este cliente:\n${JSON.stringify(summary, null, 2)}\n\nGere score (0-1000), risco, limite recomendado e justificativa curta.`,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "credit_analysis",
-              description: "Análise de crédito completa",
-              parameters: {
-                type: "object",
-                properties: {
-                  score: { type: "number", description: "Score 0-1000" },
-                  risk_level: { type: "string", enum: ["baixo", "medio", "alto", "critico"] },
-                  risk_label: { type: "string", description: "Texto curto: Excelente / Bom / Regular / Ruim / Crítico" },
-                  recommended_limit: { type: "number", description: "Limite máximo recomendado em R$" },
-                  recommended_max_installments: { type: "number" },
-                  reasoning: { type: "string", description: "Justificativa em 1-2 frases" },
-                  positive_points: { type: "array", items: { type: "string" } },
-                  red_flags: { type: "array", items: { type: "string" } },
-                  recommendations: { type: "array", items: { type: "string" }, description: "3-4 ações práticas para o operador" },
-                },
-                required: ["score", "risk_level", "risk_label", "recommended_limit", "recommended_max_installments", "reasoning", "positive_points", "red_flags", "recommendations"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "credit_analysis" } },
-      }),
+    const analysis = await callAnthropicJSON({
+      system: "Você é um analista de crédito brasileiro especializado em empréstimos pessoais. Analise o histórico do cliente e gere um score de 0 a 1000, classificação de risco e recomendações práticas. Seja direto, em português brasileiro. Responda APENAS com JSON válido no formato: {\"score\": number (0-1000), \"risk_level\": \"baixo\"|\"medio\"|\"alto\"|\"critico\", \"risk_label\": string, \"recommended_limit\": number, \"recommended_max_installments\": number, \"reasoning\": string, \"positive_points\": string[], \"red_flags\": string[], \"recommendations\": string[3-4]}",
+      messages: [{
+        role: "user",
+        content: `Analise este cliente:\n${JSON.stringify(summary, null, 2)}\n\nGere score (0-1000), risco, limite recomendado e justificativa curta. Retorne somente o JSON.`,
+      }],
+      maxTokens: 1200,
+      temperature: 0.4,
     });
-
-    if (!response.ok) {
-      if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de uso atingido. Tente novamente em alguns minutos." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos esgotados. Adicione créditos no workspace Lovable AI." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    const analysis = toolCall ? JSON.parse(toolCall.function.arguments) : null;
     if (!analysis) throw new Error("AI did not return structured analysis");
 
     return new Response(JSON.stringify({ analysis, summary }), {
