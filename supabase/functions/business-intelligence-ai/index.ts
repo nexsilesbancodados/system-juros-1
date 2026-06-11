@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
-import { generateText, Output } from "npm:ai";
-import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
 import { z } from "npm:zod";
+import { callAnthropicJSON } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,16 +12,6 @@ const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-
-const createLovableAiGatewayProvider = (lovableApiKey: string) =>
-  createOpenAICompatible({
-    name: "lovable",
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    headers: {
-      "Lovable-API-Key": lovableApiKey,
-      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-    },
   });
 
 const BiInsightsSchema = z.object({
