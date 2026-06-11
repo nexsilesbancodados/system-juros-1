@@ -62,53 +62,18 @@ Deno.serve(async (req) => {
 
 Nome do usuário: ${profile?.name?.split(" ")[0] || "Operador"}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "Você é um assistente executivo de cobranças. Gere um briefing curto, motivador e prático em português brasileiro. Seja direto. Use 'você'. NÃO use markdown nem emojis em excesso (no máximo 1)." },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "daily_briefing",
-            description: "Briefing executivo do dia",
-            parameters: {
-              type: "object",
-              properties: {
-                greeting: { type: "string", description: "Saudação curta (1 frase) personalizada com nome" },
-                summary: { type: "string", description: "Resumo do dia em 1-2 frases destacando o número mais importante" },
-                priorities: {
-                  type: "array",
-                  description: "2 a 3 prioridades acionáveis para hoje",
-                  items: { type: "string" },
-                },
-                tone: { type: "string", enum: ["positivo", "neutro", "alerta"], description: "Tom geral do dia" },
-              },
-              required: ["greeting", "summary", "priorities", "tone"],
-              additionalProperties: false,
-            },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "daily_briefing" } },
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) return new Response(JSON.stringify({ error: "Rate limit" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (response.status === 402) return new Response(JSON.stringify({ error: "Sem créditos de IA" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      const t = await response.text();
-      console.error("AI error", response.status, t);
+    let briefing;
+    try {
+      briefing = await callAnthropicJSON({
+        system: "Você é um assistente executivo de cobranças. Gere um briefing curto, motivador e prático em português brasileiro. Seja direto. Use 'você'. NÃO use markdown nem emojis em excesso (no máximo 1). Responda APENAS com JSON válido no formato: {\"greeting\": string, \"summary\": string, \"priorities\": string[2-3], \"tone\": \"positivo\"|\"neutro\"|\"alerta\"}",
+        messages: [{ role: "user", content: userPrompt + "\n\nRetorne somente o JSON." }],
+        maxTokens: 600,
+        temperature: 0.7,
+      });
+    } catch (err) {
+      console.error("Anthropic error", err);
       return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    const data = await response.json();
-    const tc = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!tc) throw new Error("No tool call");
-    const briefing = JSON.parse(tc.function.arguments);
 
     return new Response(JSON.stringify({
       briefing,
