@@ -49,52 +49,18 @@ serve(async (req) => {
       overdue_installments: installments.data?.filter(i => i.status !== "paid" && new Date(i.due_date) < new Date()).length || 0,
     };
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um consultor financeiro sênior especializado em microcrédito e empréstimos pessoais. Analise os dados do período e gere um sumário executivo com insights estratégicos, pontos de atenção e recomendações para o próximo mês. Seja profissional, direto e em português brasileiro.",
-          },
-          {
-            role: "user",
-            content: `Analise este resumo financeiro:\n${JSON.stringify(summary, null, 2)}\n\nGere um título impactante, análise de saúde do negócio, 3 insights baseados em dados e 3 recomendações prioritárias.`,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "report_analysis",
-              description: "Análise executiva do relatório",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  business_health: { type: "string", enum: ["excelente", "bom", "estavel", "atencao", "critico"] },
-                  health_label: { type: "string", description: "Texto curto explicando a saúde" },
-                  summary_text: { type: "string", description: "Resumo de 2-3 frases" },
-                  insights: { type: "array", items: { type: "string" } },
-                  recommendations: { type: "array", items: { type: "string" } },
-                },
-                required: ["title", "business_health", "health_label", "summary_text", "insights", "recommendations"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "report_analysis" } },
-      }),
+    const analysis = await callAnthropicJSON({
+      system: "Você é um consultor financeiro sênior especializado em microcrédito e empréstimos pessoais. Analise os dados do período e gere um sumário executivo com insights estratégicos, pontos de atenção e recomendações para o próximo mês. Seja profissional, direto e em português brasileiro. Responda APENAS com JSON válido no formato: {\"title\": string, \"business_health\": \"excelente\"|\"bom\"|\"estavel\"|\"atencao\"|\"critico\", \"health_label\": string, \"summary_text\": string, \"insights\": string[3], \"recommendations\": string[3]}",
+      messages: [{
+        role: "user",
+        content: `Analise este resumo financeiro:\n${JSON.stringify(summary, null, 2)}\n\nGere um título impactante, análise de saúde do negócio, 3 insights baseados em dados e 3 recomendações prioritárias. Retorne somente o JSON.`,
+      }],
+      maxTokens: 1200,
+      temperature: 0.5,
     });
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    const analysis = toolCall ? JSON.parse(toolCall.function.arguments) : null;
 
     return new Response(JSON.stringify({ analysis, summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
