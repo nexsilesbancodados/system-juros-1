@@ -138,40 +138,39 @@ serve(async (req) => {
       ? (data.installments.filter(i => i.status === "pending" && new Date(i.due_date) < new Date()).length / data.installments.length) * 100 
       : 0;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.warn("LOVABLE_API_KEY not configured; returning local BI insights");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      console.warn("ANTHROPIC_API_KEY not configured; returning local BI insights");
       return jsonResponse(buildLocalInsights(data));
     }
 
-    const prompt = `
-      Você é um especialista sênior em BI financeiro. 
-      Analise os dados abaixo de uma empresa de crédito:
-      - Capital Total: R$ ${totalCapital.toFixed(2)}
-      - Em Atraso: R$ ${overdueAmount.toFixed(2)}
-      - Inadimplência: ${delinquencyRate.toFixed(1)}%
-      - Total Clientes: ${data.clients.length}
-      
-      Gere um relatório JSON estruturado com:
-      1. predictive_cashflow: Array de 4 meses {month: string, expected: number, likely: number}
-      2. risk_assessment: "Baixo", "Médio", "Alto" ou "Crítico"
-      3. risk_reason: Justificativa curta
-      4. strategic_advice: Array de 3 strings com conselhos táticos
-      5. top_client_segments: Array de 3 strings com os segmentos de maior risco.
-    `;
+    const prompt = `Você é um especialista sênior em BI financeiro.
+Analise os dados abaixo de uma empresa de crédito:
+- Capital Total: R$ ${totalCapital.toFixed(2)}
+- Em Atraso: R$ ${overdueAmount.toFixed(2)}
+- Inadimplência: ${delinquencyRate.toFixed(1)}%
+- Total Clientes: ${data.clients.length}
+
+Retorne APENAS JSON válido neste formato exato:
+{
+  "predictive_cashflow": [{"month": string, "expected": number, "likely": number}] (exatamente 4 meses),
+  "risk_assessment": "Baixo"|"Médio"|"Alto"|"Crítico",
+  "risk_reason": string,
+  "strategic_advice": string[3],
+  "top_client_segments": string[3]
+}`;
 
     try {
-      const gateway = createLovableAiGatewayProvider(LOVABLE_API_KEY);
-      const { output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
-        system: "Você é um analista de BI financeiro. Retorne somente os campos solicitados, em português brasileiro.",
-        prompt,
-        output: Output.object({ schema: BiInsightsSchema }),
+      const raw = await callAnthropicJSON({
+        system: "Você é um analista de BI financeiro. Retorne somente JSON válido em português brasileiro.",
+        messages: [{ role: "user", content: prompt }],
+        maxTokens: 1200,
+        temperature: 0.5,
       });
-
+      const output = BiInsightsSchema.parse(raw);
       return jsonResponse(output);
     } catch (aiError) {
-      console.error("AI Gateway fallback:", aiError instanceof Error ? aiError.message : aiError);
+      console.error("Anthropic fallback:", aiError instanceof Error ? aiError.message : aiError);
       return jsonResponse(buildLocalInsights(data));
     }
   } catch (error) {
