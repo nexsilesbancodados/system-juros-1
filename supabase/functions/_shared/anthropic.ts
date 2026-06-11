@@ -1,5 +1,5 @@
 // Helper compartilhado para chamadas à API Anthropic (Claude)
-export const ANTHROPIC_MODEL = "claude-3-7-sonnet-20250219";
+export const ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022";
 
 export interface AnthropicMessage {
   role: "user" | "assistant";
