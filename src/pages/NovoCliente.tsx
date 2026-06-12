@@ -746,7 +746,7 @@ const NovoCliente = () => {
       </div>
 
       {/* Draft restore banner */}
-      {hasDraft && (
+      {hasDraft && !isNewContractOnly && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-primary/30 bg-primary/5 animate-fade-in">
           <div className="flex items-center gap-2 text-sm">
             <Save size={16} className="text-primary" />
