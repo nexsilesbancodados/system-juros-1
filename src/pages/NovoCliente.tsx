@@ -1048,9 +1048,18 @@ const NovoCliente = () => {
           </div>
 
           {/* Values */}
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Valores</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-foreground">Valores</h2>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  {loanMode === "installments" && "Capital + Parcela + Nº"}
+                  {loanMode === "percentage" && "Capital + Taxa"}
+                  {(loanMode === "interest_only" || loanMode === "price") && "Capital + Taxa + Nº Parcelas"}
+                  {loanMode === "bullet" && "Capital + Taxa + Nº Períodos"}
+                  {loanMode === "grace" && "Capital + Taxa + Carência + Nº"}
+                </span>
+              </div>
               {loanMode === "installments" && (
                 <div className="inline-flex bg-muted/40 rounded-full p-0.5">
                   <button
@@ -1070,32 +1079,35 @@ const NovoCliente = () => {
                 </div>
               )}
             </div>
-            {/* Quick guide per loan mode */}
-            <div className="text-[11px] text-muted-foreground bg-muted/20 border border-border/60 rounded-xl px-3 py-2">
-              {loanMode === "installments" && <>Informe <strong>Capital</strong>, <strong>Valor da Parcela</strong> e <strong>Nº de Parcelas</strong>. Ex: R$ 1.000 em 10x de R$ 200. A taxa equivalente é calculada automaticamente.</>}
-              {loanMode === "percentage" && <>Informe <strong>Capital</strong> e <strong>Taxa por período</strong>. Nº de parcelas é opcional (auto se vazio).</>}
-              {loanMode === "interest_only" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. Cliente paga só juros; capital cai na última parcela.</>}
-              {loanMode === "price" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Parcelas</strong>. PMT fixo com amortização (juros compostos).</>}
-              {loanMode === "bullet" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong> e <strong>Nº de Períodos até o vencimento</strong>. Pagamento único ao fim.</>}
-              {loanMode === "grace" && <>Informe <strong>Capital</strong>, <strong>Taxa</strong>, <strong>Períodos de Carência</strong> e <strong>Nº de Parcelas</strong>. Juros acumulam durante a carência.</>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital (R$) *</label>
-                <div className="relative">
-                  <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" value={capitalDisplay} onChange={(e) => handleCapitalChange(e.target.value)} placeholder="0,00" className={`${INPUT} pl-8 ${loanErrors.capital ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.capital} />
-                </div>
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {[500, 1000, 2000, 5000, 10000].map(v => (
-                    <button key={v} type="button" onClick={() => handleCapitalChange(String(v * 100))}
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary transition-colors">
-                      R$ {v >= 1000 ? `${v / 1000}k` : v}
-                    </button>
-                  ))}
-                </div>
-                {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
+
+            {/* Capital em destaque */}
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital Emprestado *</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-semibold text-muted-foreground">R$</span>
+                <input
+                  type="text"
+                  value={capitalDisplay}
+                  onChange={(e) => handleCapitalChange(e.target.value)}
+                  placeholder="0,00"
+                  className={`${INPUT} pl-12 text-xl font-bold h-14 ${loanErrors.capital ? "border-destructive/60" : ""}`}
+                  inputMode="numeric"
+                  aria-invalid={!!loanErrors.capital}
+                />
               </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[500, 1000, 2000, 5000, 10000, 20000].map(v => (
+                  <button key={v} type="button" onClick={() => handleCapitalChange(String(v * 100))}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${capital === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
+                    R$ {v >= 1000 ? `${v / 1000}k` : v}
+                  </button>
+                ))}
+              </div>
+              {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+
               {valueMode === "rate" ? (
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
