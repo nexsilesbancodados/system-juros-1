@@ -588,7 +588,10 @@ const NovoCliente = () => {
       setCreatedContractId(contract.id);
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
       setHasDraft(false);
-      toast({ title: "✓ Cliente e contrato criados!", description: `${n} parcelas geradas com sucesso.` });
+      toast({
+        title: existingClientId ? "✓ Novo contrato criado!" : "✓ Cliente e contrato criados!",
+        description: `${n} parcelas geradas com sucesso.`,
+      });
       setShowContract(true);
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
