@@ -490,10 +490,10 @@ const NovoCliente = () => {
     setSaving(true);
 
     try {
-      const clientId = crypto.randomUUID();
+      const clientId = existingClientId || crypto.randomUUID();
       let avatar_url: string | null = null;
 
-      if (avatarFile) {
+      if (avatarFile && !existingClientId) {
         const ext = avatarFile.name.split(".").pop();
         const path = `${user!.id}/client-avatars/${clientId}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
@@ -503,21 +503,23 @@ const NovoCliente = () => {
         }
       }
 
-      // 1. Create client
-      const { error: clientErr } = await supabase.from("clients").insert({
-        id: clientId,
-        user_id: user.id,
-        name: nome.trim(),
-        email: email.trim() || null,
-        phone: telefone.trim() || null,
-        whatsapp: whatsapp.trim() || null,
-        cpf_cnpj: cpfCnpj.trim() || null,
-        client_type: "loan",
-        status: "Ativo",
-        avatar_url,
-        address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
-      });
-      if (clientErr) throw clientErr;
+      // 1. Create client (only when not adding to an existing one)
+      if (!existingClientId) {
+        const { error: clientErr } = await supabase.from("clients").insert({
+          id: clientId,
+          user_id: user.id,
+          name: nome.trim(),
+          email: email.trim() || null,
+          phone: telefone.trim() || null,
+          whatsapp: whatsapp.trim() || null,
+          cpf_cnpj: cpfCnpj.trim() || null,
+          client_type: "loan",
+          status: "Ativo",
+          avatar_url,
+          address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
+        });
+        if (clientErr) throw clientErr;
+      }
 
       // 2. Create contract
       const n = calc.numParcelas;
