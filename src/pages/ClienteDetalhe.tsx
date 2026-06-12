@@ -1170,7 +1170,7 @@ const ClienteDetalhe = () => {
       {/* Tab: Contratos */}
       {activeTab === "contratos" && (
         <div className="space-y-3">
-          <button onClick={() => setNewLoanMode(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors">
+          <button onClick={() => navigate(`/clientes/novo?clientId=${id}`)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/30 hover:text-foreground transition-colors">
             <Plus size={16} /> Novo Empréstimo
           </button>
           {contracts.length === 0 ? (
