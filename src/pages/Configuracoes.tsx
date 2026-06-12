@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, Trash2, Check, AlertTriangle, Palette, Upload, Image, Key, CreditCard, Bot, Clock, Shield, Zap, ToggleLeft, Send, Volume2, Sun, Moon, Monitor, Eye, LayoutDashboard, Users, Receipt, Info, Copy, ExternalLink, FileText, RotateCcw, Sparkles } from "lucide-react";
 import { CONTRACT_PLACEHOLDERS, DEFAULT_CONTRACT_TEMPLATE } from "@/utils/contractTemplate";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 const COLOR_PRESETS = [
   { label: "Azul Steel", primary: "#4a86c8", accent: "#6ba3d6", emoji: "🔷" },
@@ -177,14 +178,16 @@ const Configuracoes = () => {
     if (!file || !user) return;
     setUploadingLogo(true);
     const ext = file.name.split(".").pop();
-    const path = `logos/${user.id}/logo.${ext}`;
+    const path = `${user.id}/logos/logo.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     } else {
-      const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-      setForm({ ...form, company_logo_url: urlData.publicUrl });
-      toast({ title: "✓ Logo enviado!" });
+      const url = await getSignedUploadUrl(path);
+      if (url) {
+        setForm({ ...form, company_logo_url: url });
+        toast({ title: "✓ Logo enviado!" });
+      }
     }
     setUploadingLogo(false);
   };

@@ -173,8 +173,9 @@ const CobradorExterno = () => {
         const path = `${userId}/comprovantes/${payInstallment.id}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("uploads").upload(path, payFile, { upsert: true });
         if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
-        receipt_url = pub.publicUrl;
+        const { data: signed, error: sErr } = await supabase.storage.from("uploads").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+        if (sErr || !signed?.signedUrl) throw sErr ?? new Error("Falha ao gerar URL");
+        receipt_url = signed.signedUrl;
       }
 
       const { error } = await supabase

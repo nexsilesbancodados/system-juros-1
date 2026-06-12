@@ -21,6 +21,7 @@ import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
   { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
@@ -437,14 +438,13 @@ const ClienteDetalhe = () => {
   const uploadReceipt = async (file: File): Promise<string | null> => {
     if (!user) return null;
     const ext = file.name.split(".").pop() || "bin";
-    const path = `receipts/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const path = `${user.id}/receipts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
     if (error) {
       toast({ title: "Erro ao enviar comprovante", description: error.message, variant: "destructive" });
       return null;
     }
-    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-    return data.publicUrl;
+    return await getSignedUploadUrl(path);
   };
 
   const payFull = async (instId: string, amount: number, method: string = "pix", receiptUrl: string | null = null) => {
@@ -709,11 +709,11 @@ const ClienteDetalhe = () => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
                   const ext = file.name.split(".").pop();
-                  const path = `client-avatars/${id}.${ext}`;
+                  const path = `${user!.id}/client-avatars/${id}.${ext}`;
                   const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
                   if (!upErr) {
-                    const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-                    await supabase.from("clients").update({ avatar_url: urlData.publicUrl + "?t=" + Date.now() }).eq("id", id);
+                    const signedUrl = await getSignedUploadUrl(path);
+                    if (signedUrl) await supabase.from("clients").update({ avatar_url: signedUrl }).eq("id", id);
                     inv("client-detail");
                     toast({ title: "✓ Foto atualizada!" });
                   } else {

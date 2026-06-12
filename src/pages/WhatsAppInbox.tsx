@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 interface Conversation {
   id: string; user_id: string; client_id: string | null;
@@ -318,10 +319,11 @@ export default function WhatsAppInbox() {
     setSending(true);
     try {
       const ext = file.name.split(".").pop() || "bin";
-      const path = `whatsapp/${user.id}/${Date.now()}.${ext}`;
+      const path = `${user.id}/whatsapp/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
       if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from("uploads").getPublicUrl(path);
+      const publicUrl = await getSignedUploadUrl(path);
+      if (!publicUrl) throw new Error("Falha ao gerar URL do arquivo");
       const type: "image" | "document" | "audio" =
         file.type.startsWith("image/") ? "image"
         : file.type.startsWith("audio/") ? "audio"

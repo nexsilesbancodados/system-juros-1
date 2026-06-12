@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { formatBR } from "@/lib/dateUtils";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 const Perfil = () => {
   const { user, profile, signOut } = useAuth();
@@ -43,11 +44,11 @@ const Perfil = () => {
     let avatar_url = profile?.avatar_url || null;
     if (avatarFile) {
       const ext = avatarFile.name.split(".").pop();
-      const path = `avatars/${user.id}.${ext}`;
+      const path = `${user.id}/avatars/avatar.${ext}`;
       const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
       if (!uploadError) {
-        const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-        avatar_url = data.publicUrl;
+        const signed = await getSignedUploadUrl(path);
+        if (signed) avatar_url = signed;
       }
     }
     const { error } = await supabase.from("profiles").update({

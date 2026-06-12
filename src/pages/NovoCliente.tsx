@@ -13,6 +13,7 @@ import ContractTemplate from "@/components/ContractTemplate";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
+import { getSignedUploadUrl } from "@/lib/storage";
 import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
 
 
@@ -464,11 +465,11 @@ const NovoCliente = () => {
 
       if (avatarFile) {
         const ext = avatarFile.name.split(".").pop();
-        const path = `client-avatars/${clientId}.${ext}`;
+        const path = `${user!.id}/client-avatars/${clientId}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
         if (!uploadError) {
-          const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-          avatar_url = urlData.publicUrl;
+          const signed = await getSignedUploadUrl(path);
+          if (signed) avatar_url = signed;
         }
       }
 
@@ -1411,8 +1412,8 @@ const NovoCliente = () => {
                       const path = `${user.id}/contracts/${Date.now()}-${file.name}`;
                       const { error } = await supabase.storage.from("uploads").upload(path, file);
                       if (!error) {
-                        const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-                        uploaded.push({ name: file.name, url: data.publicUrl, type: file.type });
+                        const signed = await getSignedUploadUrl(path);
+                        if (signed) uploaded.push({ name: file.name, url: signed, type: file.type });
                       }
                     }
                     setAttachments([...attachments, ...uploaded]);
