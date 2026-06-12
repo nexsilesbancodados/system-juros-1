@@ -1388,12 +1388,19 @@ const ClienteDetalhe = () => {
           title: p.description, subtitle: `+ R$ ${fmt(Number(p.amount))}`,
           icon: TrendingUp, color: "text-success", bg: "bg-success/10",
         }));
-        // Transações genéricas restantes
-        transactions.filter((t: any) => t.type !== "payment").forEach((t: any) => events.push({
-          id: `t-${t.id}`, date: t.date, type: t.type,
-          title: t.description, subtitle: `R$ ${fmt(Number(t.amount))}`,
-          icon: DollarSign, color: "text-muted-foreground", bg: "bg-muted",
-        }));
+        // Transações genéricas restantes (incluindo notas e contatos)
+        transactions.filter((t: any) => t.type !== "payment").forEach((t: any) => {
+          const isNote = t.type === "note";
+          const isContact = t.type === "contact";
+          events.push({
+            id: `t-${t.id}`, date: t.date, type: t.type,
+            title: t.description,
+            subtitle: isNote || isContact ? "" : `R$ ${fmt(Number(t.amount))}`,
+            icon: isNote ? StickyNote : isContact ? PhoneCall : DollarSign,
+            color: isNote ? "text-warning" : isContact ? "text-primary" : "text-muted-foreground",
+            bg: isNote ? "bg-warning/10" : isContact ? "bg-primary/10" : "bg-muted",
+          });
+        });
         const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         return sorted.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento no histórico</p>
