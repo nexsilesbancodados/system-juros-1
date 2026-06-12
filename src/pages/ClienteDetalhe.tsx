@@ -828,23 +828,20 @@ const ClienteDetalhe = () => {
           </div>
         </div>
         <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar"><Edit size={16} /></button>
-        <div className="relative">
-          <button onClick={() => setShowMoreActions(!showMoreActions)} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors"><Activity size={16} /></button>
-          {showMoreActions && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-              <div className="absolute right-0 top-10 w-48 bg-card border border-border rounded-2xl shadow-lg z-50 py-1">
-                {moreActions.map((item, idx) => (
-                  <button key={idx} onClick={() => { item.action(); setShowMoreActions(false); }}
-                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent transition-colors ${item.destructive ? "text-destructive" : "text-foreground"}`}>
-                    <item.icon size={14} className={item.destructive ? "text-destructive" : "text-muted-foreground"} />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <ClientToolsPanel
+          open={showMoreActions}
+          onOpenChange={setShowMoreActions}
+          groups={toolGroups}
+          trigger={
+            <button
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-foreground"
+              style={{ background: "var(--gradient-button)" }}
+              title="Abrir ferramentas"
+            >
+              <Wrench size={14} /> Ferramentas
+            </button>
+          }
+        />
         </div>
       </div>
 
