@@ -297,25 +297,18 @@ const Configuracoes = () => {
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
     { id: "pix", label: "PIX", icon: CreditCard },
-    { id: "pwa", label: "Aplicativo Mobile", icon: Zap },
-    { id: "ia-voz", label: "IA Voz e Áudio", icon: Volume2 },
     { id: "bot", label: "Bot Cobranças", icon: Bot },
-    { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
-    { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
     { id: "templates", label: "Templates", icon: MessageSquare },
-    ...(profile?.is_admin ? [{ id: "webhooks", label: "Webhooks", icon: Webhook } as any] : []),
-    { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
-    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
+    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any] : []),
   ];
 
   const configSteps = [
     { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
     { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
     { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
-    { label: "WhatsApp API", done: !!form.whatsapp_api_url, tab: "whatsapp" },
   ];
   const completedSteps = configSteps.filter(s => s.done).length;
   const progressPercent = (completedSteps / configSteps.length) * 100;
