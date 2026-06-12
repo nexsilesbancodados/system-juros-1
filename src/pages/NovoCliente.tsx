@@ -1412,8 +1412,8 @@ const NovoCliente = () => {
                       const path = `${user.id}/contracts/${Date.now()}-${file.name}`;
                       const { error } = await supabase.storage.from("uploads").upload(path, file);
                       if (!error) {
-                        const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-                        uploaded.push({ name: file.name, url: data.publicUrl, type: file.type });
+                        const signed = await getSignedUploadUrl(path);
+                        if (signed) uploaded.push({ name: file.name, url: signed, type: file.type });
                       }
                     }
                     setAttachments([...attachments, ...uploaded]);
