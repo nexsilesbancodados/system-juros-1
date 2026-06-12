@@ -266,18 +266,31 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
     );
   };
 
+  // Estado de seções colapsáveis: abrem automaticamente se contêm rota ativa
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (title: string) =>
+    setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
+
   const renderSection = (section: MenuSection, index: number) => {
     const sectionHasActive = section.items.some((i) => isActive(i.path));
     const SectionIcon = section.sectionIcon;
+    const isCollapsible = !!section.collapsible && !collapsed && !searchQuery;
+    const userToggled = openSections[section.title];
+    const isOpen = isCollapsible
+      ? (userToggled !== undefined ? userToggled : (section.defaultOpen || sectionHasActive))
+      : true;
 
     return (
       <div key={section.title} className={index > 0 ? "mt-1" : ""}>
         {/* Cabeçalho da seção */}
         {!collapsed && (
-          <div
+          <button
+            type="button"
+            onClick={isCollapsible ? () => toggleSection(section.title) : undefined}
             className={`
-              flex items-center gap-2 px-3 py-2 mb-1
+              w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-lg
               transition-colors duration-200
+              ${isCollapsible ? "hover:bg-accent/20 cursor-pointer" : "cursor-default"}
             `}
           >
             {SectionIcon && (
@@ -296,13 +309,23 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
               {section.title}
             </p>
             <div className="flex-1 h-px bg-border/20 ml-1" />
-          </div>
+            {isCollapsible && (
+              <ChevronDown
+                size={12}
+                className={`shrink-0 text-muted-foreground/40 transition-transform duration-200 ${
+                  isOpen ? "rotate-0" : "-rotate-90"
+                }`}
+              />
+            )}
+          </button>
         )}
 
         {/* Itens da seção */}
-        <div className="space-y-0.5">
-          {section.items.map(renderItem)}
-        </div>
+        {isOpen && (
+          <div className="space-y-0.5">
+            {section.items.map(renderItem)}
+          </div>
+        )}
       </div>
     );
   };
