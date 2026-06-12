@@ -1227,8 +1227,9 @@ const NovoCliente = () => {
                   <p className="text-[10px] text-muted-foreground mt-1">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
                 )}
               </div>
-              {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
+              </div>
             </div>
+            {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
 
             {/* Opções extras movidas para "Condições Avançadas" abaixo, evitando duplicação */}
 
