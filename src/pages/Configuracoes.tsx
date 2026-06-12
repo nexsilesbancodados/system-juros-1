@@ -297,25 +297,18 @@ const Configuracoes = () => {
     { id: "marca", label: "Marca", icon: Palette },
     { id: "empresa", label: "Empresa", icon: Building },
     { id: "pix", label: "PIX", icon: CreditCard },
-    { id: "pwa", label: "Aplicativo Mobile", icon: Zap },
-    { id: "ia-voz", label: "IA Voz e Áudio", icon: Volume2 },
     { id: "bot", label: "Bot Cobranças", icon: Bot },
-    { id: "cobranca", label: "Cobrança", icon: MessageSquare },
     { id: "padroes", label: "Padrões", icon: Percent },
-    { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
     { id: "templates", label: "Templates", icon: MessageSquare },
-    ...(profile?.is_admin ? [{ id: "webhooks", label: "Webhooks", icon: Webhook } as any] : []),
-    { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
     { id: "contrato", label: "Contrato", icon: FileText },
-    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any, { id: "admin_global", label: "Admin Global", icon: Shield } as any] : []),
+    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any] : []),
   ];
 
   const configSteps = [
     { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
     { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
     { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
-    { label: "WhatsApp API", done: !!form.whatsapp_api_url, tab: "whatsapp" },
   ];
   const completedSteps = configSteps.filter(s => s.done).length;
   const progressPercent = (completedSteps / configSteps.length) * 100;
@@ -509,8 +502,16 @@ const Configuracoes = () => {
               </div>
             </div>
 
+            <details className="group rounded-2xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-hidden">
+              <summary className="cursor-pointer select-none px-5 py-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                <span className="flex items-center gap-2"><Settings size={12} className="text-primary" /> Personalização Avançada</span>
+                <span className="text-[10px] opacity-60 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="p-4 space-y-6 border-t border-border/20">
+
             {/* Live Preview */}
             <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
+
               <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Eye size={12} className="text-primary" /> Pré-visualização ao Vivo
               </p>
@@ -705,6 +706,8 @@ const Configuracoes = () => {
                 <p className="text-[10px] text-muted-foreground mt-1">Aparece no login e no portal do cliente</p>
               </div>
             </div>
+              </div>
+            </details>
           </>
         )}
 

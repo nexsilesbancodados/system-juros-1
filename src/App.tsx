@@ -143,7 +143,7 @@ const App = () => (
                     <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
                     <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
                     <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
-                    <Route path="/automacoes" element={<Navigate to="/comunicacao?tab=automacoes" replace />} />
+                    <Route path="/automacoes" element={<Navigate to="/configuracoes?tab=bot" replace />} />
                     <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
                     <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
