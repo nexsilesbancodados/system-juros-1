@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 interface Conversation {
   id: string; user_id: string; client_id: string | null;
