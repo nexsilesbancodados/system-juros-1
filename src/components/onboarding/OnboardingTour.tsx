@@ -96,7 +96,15 @@ const OnboardingTour = ({ open, onClose }: { open: boolean; onClose: () => void 
 
   const finish = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, "1");
-    if (user) localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+    if (user) {
+      localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+      // Persist server-side so it never reappears on other devices/sessions
+      supabase
+        .from("profiles")
+        .update({ onboarding_completed_at: new Date().toISOString() } as any)
+        .eq("id", user.id)
+        .then(() => {});
+    }
     setStepIdx(0);
     onClose();
   }, [onClose, user]);
