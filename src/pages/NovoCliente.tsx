@@ -1168,6 +1168,16 @@ const NovoCliente = () => {
                 </div>
                 {loanErrors.n && <p className="text-[10px] text-destructive mt-1">{loanErrors.n}</p>}
               </div>
+            </div>
+
+            {/* Datas */}
+            <div className="pt-1">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Datas</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
