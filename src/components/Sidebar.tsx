@@ -5,11 +5,11 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
   TrendingUp, DollarSign, Database, Info, Search, X,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown, ChevronRight,
+  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown,
   FileText, Crown, ClipboardList, Sparkles,
-  Settings, Bot, QrCode, UserCheck, Shield, Zap,
+  Settings, Bot, QrCode, UserCheck, Shield,
   Briefcase, PieChart, Cog, LogOut, User, LifeBuoy, MessageCircle,
-  AlertTriangle, Bell, ChevronLeft, Star,
+  AlertTriangle, ChevronLeft, Wrench,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
@@ -30,39 +30,26 @@ interface MenuSection {
   title: string;
   sectionIcon?: LucideIcon;
   items: MenuItem[];
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }
 
-// Cores por rota - paleta refinada
+// Paleta unificada — 4 tons semânticos
 const iconColorMap: Record<string, string> = {
+  // destaque / inteligência
   "/hoje": "text-amber-400",
-  "/dashboard": "text-blue-400",
-  "/analises": "text-indigo-400",
-  "/relatorios": "text-sky-300",
-  "/clientes": "text-cyan-400",
-  "/cobrancas": "text-blue-300",
-  "/inadimplencia": "text-rose-400",
-  "/cobradores": "text-slate-300",
-  "/carteira": "text-sky-400",
+  "/comunicacao": "text-violet-400",
+  "/comunicacao/inbox": "text-violet-400",
+  "/chat": "text-violet-400",
+  // positivo / financeiro
+  "/carteira": "text-emerald-400",
   "/lucros": "text-emerald-400",
+  // alerta
+  "/inadimplencia": "text-rose-400",
   "/gastos": "text-rose-400",
-  "/agente-ia": "text-violet-400",
-  "/ferramentas/simulador": "text-cyan-300",
-  "/ferramentas/metas": "text-blue-300",
-  "/ferramentas/tarefas": "text-sky-300",
-  "/ferramentas/anotacoes": "text-slate-300",
-  "/ferramentas/planilha": "text-indigo-300",
-  "/puxada-dados": "text-blue-400",
-  "/qrcode": "text-cyan-400",
-  "/historico": "text-slate-400",
-  "/auditoria": "text-red-300",
-  "/automacoes": "text-amber-400",
-  "/configuracoes/whatsapp": "text-emerald-400",
-  "/configuracoes": "text-zinc-400",
+  // admin / sistema
   "/admin": "text-amber-300",
-  "/sobre": "text-blue-300",
-  "/suporte": "text-pink-400",
-  "/chat": "text-emerald-400",
-  "/notificacoes": "text-orange-400",
+  "/auditoria": "text-amber-300",
 };
 
 const sections: MenuSection[] = [
@@ -84,6 +71,7 @@ const sections: MenuSection[] = [
       { label: "Cobranças", icon: Receipt, path: "/cobrancas", shortcut: "5" },
       { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia" },
       { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
+      { label: "Portais", icon: QrCode, path: "/qrcode" },
     ],
   },
   {
@@ -96,27 +84,34 @@ const sections: MenuSection[] = [
     ],
   },
   {
-    title: "Inteligência",
-    sectionIcon: Sparkles,
+    title: "Comunicação",
+    sectionIcon: Bot,
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
+      { label: "Chat interno", icon: MessageCircle, path: "/chat" },
+    ],
+  },
+  {
+    title: "Ferramentas",
+    sectionIcon: Wrench,
+    collapsible: true,
+    defaultOpen: false,
+    items: [
       { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
       { label: "Metas", icon: Target, path: "/ferramentas/metas" },
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
       { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
       { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
       { label: "Puxada de Dados", icon: Database, path: "/puxada-dados" },
-      { label: "Portais", icon: QrCode, path: "/qrcode" },
     ],
   },
   {
     title: "Sistema",
     sectionIcon: Cog,
+    collapsible: true,
+    defaultOpen: false,
     items: [
-      
-      { label: "Notificações", icon: Bell, path: "/notificacoes" },
-      { label: "Chat", icon: MessageCircle, path: "/chat" },
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
       { label: "Sobre", icon: Info, path: "/sobre" },
@@ -271,18 +266,31 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
     );
   };
 
+  // Estado de seções colapsáveis: abrem automaticamente se contêm rota ativa
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (title: string) =>
+    setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
+
   const renderSection = (section: MenuSection, index: number) => {
     const sectionHasActive = section.items.some((i) => isActive(i.path));
     const SectionIcon = section.sectionIcon;
+    const isCollapsible = !!section.collapsible && !collapsed && !searchQuery;
+    const userToggled = openSections[section.title];
+    const isOpen = isCollapsible
+      ? (userToggled !== undefined ? userToggled : (section.defaultOpen || sectionHasActive))
+      : true;
 
     return (
       <div key={section.title} className={index > 0 ? "mt-1" : ""}>
         {/* Cabeçalho da seção */}
         {!collapsed && (
-          <div
+          <button
+            type="button"
+            onClick={isCollapsible ? () => toggleSection(section.title) : undefined}
             className={`
-              flex items-center gap-2 px-3 py-2 mb-1
+              w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-lg
               transition-colors duration-200
+              ${isCollapsible ? "hover:bg-accent/20 cursor-pointer" : "cursor-default"}
             `}
           >
             {SectionIcon && (
@@ -301,13 +309,23 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
               {section.title}
             </p>
             <div className="flex-1 h-px bg-border/20 ml-1" />
-          </div>
+            {isCollapsible && (
+              <ChevronDown
+                size={12}
+                className={`shrink-0 text-muted-foreground/40 transition-transform duration-200 ${
+                  isOpen ? "rotate-0" : "-rotate-90"
+                }`}
+              />
+            )}
+          </button>
         )}
 
         {/* Itens da seção */}
-        <div className="space-y-0.5">
-          {section.items.map(renderItem)}
-        </div>
+        {isOpen && (
+          <div className="space-y-0.5">
+            {section.items.map(renderItem)}
+          </div>
+        )}
       </div>
     );
   };
