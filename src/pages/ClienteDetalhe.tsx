@@ -437,14 +437,13 @@ const ClienteDetalhe = () => {
   const uploadReceipt = async (file: File): Promise<string | null> => {
     if (!user) return null;
     const ext = file.name.split(".").pop() || "bin";
-    const path = `receipts/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const path = `${user.id}/receipts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
     if (error) {
       toast({ title: "Erro ao enviar comprovante", description: error.message, variant: "destructive" });
       return null;
     }
-    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-    return data.publicUrl;
+    return await getSignedUploadUrl(path);
   };
 
   const payFull = async (instId: string, amount: number, method: string = "pix", receiptUrl: string | null = null) => {
