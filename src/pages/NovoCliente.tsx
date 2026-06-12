@@ -1623,9 +1623,19 @@ const NovoCliente = () => {
 
       {/* ═══ NAV BAR ═══ */}
       <div className="sticky bottom-4 z-10 flex items-center justify-between p-4 rounded-2xl bg-card/95 backdrop-blur border border-border">
-        <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-          <ArrowLeft size={16} /> {step > 1 ? "Voltar" : "Cancelar"}
+        <button
+          onClick={() => {
+            if (isNewContractOnly) {
+              if (step > 2) setStep(step - 1);
+              else navigate(`/clientes/${existingClientId}`);
+            } else {
+              step > 1 ? setStep(step - 1) : navigate("/clientes");
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <ArrowLeft size={16} />{" "}
+          {isNewContractOnly ? (step > 2 ? "Voltar" : "Cancelar") : step > 1 ? "Voltar" : "Cancelar"}
         </button>
         {step < 3 ? (
           <button onClick={goNext}
@@ -1639,7 +1649,7 @@ const NovoCliente = () => {
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
             style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-            {saving ? "Criando..." : "Criar Cliente e Contrato"}
+            {saving ? "Criando..." : isNewContractOnly ? "Criar Contrato" : "Criar Cliente e Contrato"}
           </button>
         )}
       </div>
