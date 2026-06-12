@@ -657,6 +657,71 @@ const ClienteDetalhe = () => {
     toast({ title: "Cliente excluído!" }); navigate("/clientes");
   };
 
+  // --- Novas ações úteis ---
+
+  const duplicateLastLoan = async () => {
+    if (!user) return;
+    const last = contracts[0];
+    if (!last) { toast({ title: "Nenhum empréstimo anterior", variant: "destructive" }); return; }
+    if (!(await confirm(`Duplicar último empréstimo de R$ ${fmt(Number(last.capital))} (${last.num_installments}x)?`))) return;
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: contract, error: cErr } = await supabase.from("contracts").insert({
+        user_id: user.id, client_id: id!,
+        capital: last.capital, interest_rate: last.interest_rate,
+        num_installments: last.num_installments, installment_amount: last.installment_amount,
+        frequency: last.frequency, start_date: new Date(today + "T12:00:00").toISOString(),
+        late_fee_percent: last.late_fee_percent, daily_interest_percent: last.daily_interest_percent,
+        total_amount: last.total_amount, total_interest: last.total_interest, status: "active",
+        loan_mode: last.loan_mode, grace_periods: last.grace_periods,
+        notes: `Renovação de contrato anterior (${formatBR(last.start_date)})`,
+      }).select().single();
+      if (cErr) throw cErr;
+      const dueDates = generateDueDates(today, last.frequency, last.num_installments);
+      await supabase.from("contract_installments").insert(
+        dueDates.map((dd, i) => ({
+          user_id: user.id, contract_id: contract.id, client_id: id!,
+          installment_number: i + 1, amount: last.installment_amount, due_date: dd, status: "pending",
+        }))
+      );
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount: Number(last.capital), type: "loan",
+        description: `Renovação: empréstimo para ${client?.name} - ${last.num_installments}x`,
+        client_id: id, contract_id: contract.id,
+      });
+      toast({ title: "Empréstimo duplicado!" });
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const markContact = async () => {
+    if (!user) return;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: 0, type: "contact",
+      description: `Contato realizado com ${client?.name}`,
+      client_id: id,
+    });
+    toast({ title: "Contato registrado!" });
+    invAll();
+  };
+
+  const quickNote = async () => {
+    if (!user) return;
+    const text = window.prompt("Anotação rápida (aparece no histórico):");
+    if (!text || !text.trim()) return;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: 0, type: "note",
+      description: `📝 ${text.trim()}`,
+      client_id: id,
+    });
+    toast({ title: "Anotação salva!" });
+    invAll();
+  };
+
+
+
   if (isLoading) return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Skeleton className="h-8 w-48" />
