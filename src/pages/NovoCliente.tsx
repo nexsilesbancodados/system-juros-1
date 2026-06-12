@@ -1199,66 +1199,8 @@ const NovoCliente = () => {
               </div>
             </div>
 
-            {/* Opções rápidas extras */}
-            <div className="border-t border-border/60 pt-4 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
-                    Carência (dias)
-                    <span className="text-[9px] text-muted-foreground font-normal">sem multa</span>
-                  </label>
-                  <input type="number" min={0} value={graceDays} onChange={(e) => setGraceDays(e.target.value)} placeholder="0" className={INPUT} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
-                    Desc. Antecipação (%)
-                    <span className="text-[9px] text-muted-foreground font-normal">pgto antes</span>
-                  </label>
-                  <input type="number" step="0.1" min={0} max={100} value={earlyDiscount} onChange={(e) => setEarlyDiscount(e.target.value)} placeholder="0" className={INPUT} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1">
-                    Teto de Juros (%)
-                    <span className="text-[9px] text-muted-foreground font-normal">opcional</span>
-                  </label>
-                  <input type="number" step="1" min={0} value={maxInterestCap} onChange={(e) => setMaxInterestCap(e.target.value)} placeholder="Sem limite" className={INPUT} />
-                </div>
-              </div>
+            {/* Opções extras movidas para "Condições Avançadas" abaixo, evitando duplicação */}
 
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Forma de Pagamento Preferida</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {([
-                    { v: "pix", label: "PIX" },
-                    { v: "cash", label: "Dinheiro" },
-                    { v: "boleto", label: "Boleto" },
-                    { v: "transfer", label: "Transf." },
-                  ] as const).map(p => (
-                    <button key={p.v} type="button" onClick={() => setPaymentMethod(p.v)}
-                      className={`text-xs font-semibold py-2 rounded-lg border-2 transition-colors ${paymentMethod === p.v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setAutoRenew(!autoRenew)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors text-left ${autoRenew ? "border-primary bg-primary/5" : "border-border"}`}>
-                  <div className={`w-8 h-4 rounded-full transition-colors relative ${autoRenew ? "bg-primary" : "bg-muted"}`}>
-                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${autoRenew ? "left-4" : "left-0.5"}`} />
-                  </div>
-                  <span className="text-xs font-semibold text-foreground">Renovação Automática</span>
-                </button>
-                <button type="button" onClick={() => setRequireSignature(!requireSignature)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors text-left ${requireSignature ? "border-primary bg-primary/5" : "border-border"}`}>
-                  <div className={`w-8 h-4 rounded-full transition-colors relative ${requireSignature ? "bg-primary" : "bg-muted"}`}>
-                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${requireSignature ? "left-4" : "left-0.5"}`} />
-                  </div>
-                  <span className="text-xs font-semibold text-foreground">Exigir Assinatura</span>
-                </button>
-              </div>
-            </div>
 
             <div>
               <label className="text-xs font-semibold text-foreground mb-1.5 block">Observações</label>
