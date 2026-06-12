@@ -114,7 +114,6 @@ const sections: MenuSection[] = [
     items: [
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
-      { label: "Sobre", icon: Info, path: "/sobre" },
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
       { label: "Admin", icon: Crown, path: "/admin" },

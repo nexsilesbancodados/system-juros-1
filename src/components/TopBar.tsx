@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark, UserPlus, ListTodo, Calculator, ChevronDown } from "lucide-react";
+import { TrendingUp, LogOut, Sun, Moon, Search, Wallet, User, Settings, Plus, Users, Receipt, Landmark, UserPlus, ListTodo, Calculator, ChevronDown, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
@@ -38,14 +38,18 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const { data: financials } = useQuery({
     queryKey: ["topbar-financials", user?.id],
     queryFn: async () => {
-      const [contractsRes, profitsRes] = await Promise.all([
+      const nowIso = new Date().toISOString();
+      const [contractsRes, profitsRes, overdueRes] = await Promise.all([
         supabase.from("contracts").select("capital, status").eq("user_id", user!.id),
         supabase.from("profits").select("amount").eq("user_id", user!.id).eq("status", "available"),
+        supabase.from("contract_installments").select("id", { count: "exact", head: true })
+          .eq("user_id", user!.id).eq("status", "pending").lt("due_date", nowIso),
       ]);
       const activeContracts = (contractsRes.data || []).filter((c: any) => c.status === "active" || c.status === "overdue");
       const carteira = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
       const lucro = (profitsRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
-      return { carteira, lucro };
+      const overdue = overdueRes.count || 0;
+      return { carteira, lucro, overdue };
     },
     enabled: !!user,
     staleTime: 60_000,
@@ -112,6 +116,16 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
             <TrendingUp size={13} className="text-success/70 group-hover:text-success transition-colors" />
             <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
           </button>
+          {(financials?.overdue ?? 0) > 0 && (
+            <button
+              onClick={() => navigate("/inadimplencia")}
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/5 border border-destructive/15 hover:border-destructive/40 hover:bg-destructive/10 transition-all duration-200"
+              title="Ver Inadimplência"
+            >
+              <AlertTriangle size={13} className="text-destructive/70 group-hover:text-destructive transition-colors" />
+              <span className="text-[11px] font-semibold text-destructive">{financials?.overdue} atrasada{financials!.overdue! > 1 ? "s" : ""}</span>
+            </button>
+          )}
         </div>
       )}
 
