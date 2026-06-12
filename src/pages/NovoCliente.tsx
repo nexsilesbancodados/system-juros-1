@@ -172,6 +172,33 @@ const NovoCliente = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Load existing client when adding a new contract to an existing client (?clientId=…)
+  const { data: existingClient } = useQuery({
+    queryKey: ["existing-client-for-new-contract", existingClientId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("*").eq("id", existingClientId!).maybeSingle();
+      return data;
+    },
+    enabled: !!existingClientId && !!user,
+    staleTime: 60_000,
+  });
+
+  // Prefill client fields from existing client (read-only display in step 1, but step is skipped)
+  useEffect(() => {
+    if (!existingClient) return;
+    setNome(existingClient.name || "");
+    setEmail(existingClient.email || "");
+    setTelefone(existingClient.phone || "");
+    setWhatsapp(existingClient.whatsapp || "");
+    setCpfCnpj(existingClient.cpf_cnpj || "");
+    const a: any = existingClient.address || {};
+    if (a) {
+      setCep(a.cep || ""); setRua(a.street || ""); setNumero(a.number || "");
+      setComplemento(a.complement || ""); setBairro(a.neighborhood || "");
+      setCidade(a.city || ""); setEstado(a.state || "");
+    }
+  }, [existingClient]);
+
   // Apply defaults from settings on first load
   useState(() => {
     if (settings) {
