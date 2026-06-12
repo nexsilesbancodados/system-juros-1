@@ -744,16 +744,44 @@ const ClienteDetalhe = () => {
     { key: "historico" as const, label: "Histórico", Icon: Clock },
   ];
 
-  const moreActions = [
-    { icon: Copy, label: "Copiar Dados", action: copyClientInfo },
-    { icon: Send, label: "Enviar Portal", action: sendPortalLink },
-    { icon: Download, label: "Exportar Resumo", action: exportSummary },
-    { icon: Printer, label: "Gerar PDF", action: generatePDF },
-    { icon: Star, label: "Score +50", action: () => updateScore(50) },
-    { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50) },
-    { icon: Ban, label: client.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus },
-    { icon: Trash2, label: "Excluir", action: handleDelete, destructive: true },
+  const toolGroups: ToolGroup[] = [
+    {
+      label: "Contrato",
+      actions: [
+        { icon: Plus, label: "Novo Empréstimo", description: "Wizard completo com todas as opções", action: () => navigate(`/clientes/novo?clientId=${id}`) },
+        { icon: Repeat, label: "Duplicar Último", description: "Renovação rápida com os mesmos valores", action: duplicateLastLoan, disabled: contracts.length === 0 },
+        { icon: CheckCircle, label: "Quitar Todas", description: "Marca todas as parcelas pendentes como pagas", action: payAllPending },
+        { icon: Edit, label: "Editar Cliente", description: "Nome, telefone, CPF, email", action: startEdit },
+      ],
+    },
+    {
+      label: "Cobrança",
+      actions: [
+        { icon: Send, label: "Cobrar Atrasadas", description: `${kpis.overdueInst.length} parcela(s) em atraso via WhatsApp`, action: sendAllOverdue, disabled: kpis.overdueInst.length === 0 },
+        { icon: MessageSquare, label: "Enviar Portal", description: "Link do portal do cliente via WhatsApp", action: sendPortalLink },
+        { icon: PhoneCall, label: "Marcar Contato", description: "Registra um contato realizado no histórico", action: markContact },
+        { icon: StickyNote, label: "Anotação Rápida", description: "Adiciona uma nota no histórico do cliente", action: quickNote },
+      ],
+    },
+    {
+      label: "Documentos",
+      actions: [
+        { icon: Printer, label: "Gerar PDF", description: "Extrato completo do cliente em PDF", action: generatePDF },
+        { icon: Download, label: "Exportar Resumo", description: "Copia resumo financeiro para a área de transferência", action: exportSummary },
+        { icon: Copy, label: "Copiar Dados", description: "Nome, CPF, telefone e email", action: copyClientInfo },
+      ],
+    },
+    {
+      label: "Score & Status",
+      actions: [
+        { icon: Star, label: "Score +50", description: "Aumenta o score de crédito", action: () => updateScore(50) },
+        { icon: TrendingUp, label: "Score -50", description: "Reduz o score de crédito", action: () => updateScore(-50) },
+        { icon: Ban, label: client.status === "Ativo" ? "Inativar Cliente" : "Reativar Cliente", description: client.status === "Ativo" ? "Suspende novas operações" : "Volta a aceitar operações", action: toggleStatus },
+        { icon: Trash2, label: "Excluir Cliente", description: "Remove cliente e todos os dados — irreversível", action: handleDelete, destructive: true },
+      ],
+    },
   ];
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-24">
