@@ -698,31 +698,49 @@ const NovoCliente = () => {
       {/* Header */}
       <div className="page-hero animate-fade-in">
         <div className="page-hero-content flex items-center gap-3">
-          <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors">
+          <button
+            onClick={() => {
+              if (isNewContractOnly) {
+                if (step > 2) setStep(step - 1);
+                else navigate(`/clientes/${existingClientId}`);
+              } else {
+                step > 1 ? setStep(step - 1) : navigate("/clientes");
+              }
+            }}
+            className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors"
+          >
             <ArrowLeft size={18} />
           </button>
           <div className="page-hero-icon">
             <User size={22} />
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-shimmer">Cadastrar Novo Cliente</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
+            <h1 className="text-xl font-bold text-shimmer">
+              {isNewContractOnly ? `Novo Contrato${existingClient?.name ? ` — ${existingClient.name}` : ""}` : "Cadastrar Novo Cliente"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isNewContractOnly
+                ? `Etapa ${step - 1} de 2 — ${stepLabels[step - 1]}`
+                : `Etapa ${step} de 3 — ${stepLabels[step - 1]}`}
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setExpressMode(!expressMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
-            title="Reduz o formulário aos campos essenciais"
-          >
-            ⚡ {expressMode ? "Express ON" : "Modo Express"}
-          </button>
+          {!isNewContractOnly && (
+            <button
+              type="button"
+              onClick={() => setExpressMode(!expressMode)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+              title="Reduz o formulário aos campos essenciais"
+            >
+              ⚡ {expressMode ? "Express ON" : "Modo Express"}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Progress */}
       <div className="flex gap-2">
-        {[1, 2, 3].map((s) => (
-          <button key={s} onClick={() => { if (s < step) setStep(s); }}
+        {(isNewContractOnly ? [2, 3] : [1, 2, 3]).map((s) => (
+          <button key={s} onClick={() => { if (s < step && (!isNewContractOnly || s >= 2)) setStep(s); }}
             className={`h-2 flex-1 rounded-full transition-colors ${s < step ? "bg-success cursor-pointer" : s === step ? "bg-primary" : "bg-border"}`} />
         ))}
       </div>
