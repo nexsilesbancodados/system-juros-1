@@ -680,7 +680,7 @@ const NovoCliente = () => {
               <Printer size={16} /> Imprimir
             </button>
             <button
-              onClick={() => navigate("/clientes")}
+              onClick={() => navigate(existingClientId ? `/clientes/${existingClientId}` : "/clientes")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity"
               style={{ background: "var(--gradient-button)" }}
             >
