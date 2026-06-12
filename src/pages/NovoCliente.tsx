@@ -106,6 +106,7 @@ const NovoCliente = () => {
   useEffect(() => {
     try { localStorage.setItem("novo_cliente_express", expressMode ? "1" : "0"); } catch {}
   }, [expressMode]);
+  const [showMoreModes, setShowMoreModes] = useState(false);
 
   // ── Step 1: Client data ──
   const [nome, setNome] = useState("");
@@ -927,19 +928,33 @@ const NovoCliente = () => {
 
           {/* Loan Mode */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
+              <button
+                type="button"
+                onClick={() => setShowMoreModes(v => !v)}
+                className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+              >
+                {showMoreModes ? "Menos opções" : "+ Mais modos"}
+              </button>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {([
-                { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Valor fixo por parcela (ex: 10x de R$ 200)", Icon: Hash },
-                { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
-                { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros por período, capital no último", Icon: Coins },
-                { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
-                { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
-                { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
-              ]).map(m => (
+              {(() => {
+                const primary = [
+                  { v: "installments" as LoanMode, label: "Por Parcelas", desc: "Valor fixo por parcela (ex: 10x de R$ 200)", Icon: Hash },
+                  { v: "percentage" as LoanMode, label: "Por Porcentagem", desc: "Paga % até quitar", Icon: Percent },
+                ];
+                const extra = [
+                  { v: "interest_only" as LoanMode, label: "Só Juros + Capital no Fim", desc: "Juros por período, capital no último", Icon: Coins },
+                  { v: "price" as LoanMode, label: "Juros Compostos (Price)", desc: "PMT fixo com amortização", Icon: TrendingDown },
+                  { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
+                  { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
+                ];
+                // Auto-mostra extras se o modo atual for um dos secundários
+                const all = (showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
+                return all.map(m => (
                 <button key={m.v} onClick={() => {
                   setLoanMode(m.v);
-                  // "Por Parcelas" abre direto no modo "valor da parcela"; demais usam taxa %.
                   setValueMode(m.v === "installments" ? "installment" : "rate");
                 }}
                   className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
@@ -949,7 +964,8 @@ const NovoCliente = () => {
                     <p className="text-[10px] text-muted-foreground leading-tight">{m.desc}</p>
                   </div>
                 </button>
-              ))}
+                ));
+              })()}
             </div>
             {loanMode === "grace" && (
               <div className="pt-3 border-t border-border">
@@ -1189,14 +1205,7 @@ const NovoCliente = () => {
                   <p className="text-[10px] text-muted-foreground mt-1">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
                 )}
               </div>
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
-                <input type="number" step="0.01" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Mensal (%)</label>
-                <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={INPUT} />
-              </div>
+              {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
             </div>
 
             {/* Opções extras movidas para "Condições Avançadas" abaixo, evitando duplicação */}
@@ -1320,7 +1329,16 @@ const NovoCliente = () => {
                   <input type="number" step="1" value={maxInterestCap} onChange={(e) => setMaxInterestCap(e.target.value)} placeholder="Sem limite" className={INPUT} />
                   <p className="text-[10px] text-muted-foreground mt-1">Máx. % do capital em juros</p>
                 </div>
-              </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Diária (%)</label>
+                  <input type="number" step="0.01" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className={INPUT} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Padrão: 0,33%/dia em atraso</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Multa Mensal (%)</label>
+                  <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={INPUT} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Padrão: 2%/mês de atraso</p>
+                </div>
 
               {/* Renovação automática + Assinatura */}
               <div className="grid grid-cols-2 gap-3">
