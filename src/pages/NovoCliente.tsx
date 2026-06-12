@@ -13,6 +13,7 @@ import ContractTemplate from "@/components/ContractTemplate";
 import AISimulatorInsights from "@/components/simulator/AISimulatorInsights";
 import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
+import { getSignedUploadUrl } from "@/lib/storage";
 import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
 
 
