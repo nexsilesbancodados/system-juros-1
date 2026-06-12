@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Camera, Search, ArrowLeft, ArrowRight, User, Phone, Mail, MapPin, Check, Loader2,
   Copy, AlertCircle, Hash, Percent, Calendar, Clock, Repeat, DollarSign, FileText, Printer, Shield,
@@ -93,7 +93,10 @@ const NovoCliente = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const [searchParams] = useSearchParams();
+  const existingClientId = searchParams.get("clientId");
+  const isNewContractOnly = !!existingClientId;
+  const [step, setStep] = useState(isNewContractOnly ? 2 : 1);
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
@@ -168,6 +171,33 @@ const NovoCliente = () => {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Load existing client when adding a new contract to an existing client (?clientId=…)
+  const { data: existingClient } = useQuery({
+    queryKey: ["existing-client-for-new-contract", existingClientId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("*").eq("id", existingClientId!).maybeSingle();
+      return data;
+    },
+    enabled: !!existingClientId && !!user,
+    staleTime: 60_000,
+  });
+
+  // Prefill client fields from existing client (read-only display in step 1, but step is skipped)
+  useEffect(() => {
+    if (!existingClient) return;
+    setNome(existingClient.name || "");
+    setEmail(existingClient.email || "");
+    setTelefone(existingClient.phone || "");
+    setWhatsapp(existingClient.whatsapp || "");
+    setCpfCnpj(existingClient.cpf_cnpj || "");
+    const a: any = existingClient.address || {};
+    if (a) {
+      setCep(a.cep || ""); setRua(a.street || ""); setNumero(a.number || "");
+      setComplemento(a.complement || ""); setBairro(a.neighborhood || "");
+      setCidade(a.city || ""); setEstado(a.state || "");
+    }
+  }, [existingClient]);
 
   // Apply defaults from settings on first load
   useState(() => {
@@ -460,10 +490,10 @@ const NovoCliente = () => {
     setSaving(true);
 
     try {
-      const clientId = crypto.randomUUID();
+      const clientId = existingClientId || crypto.randomUUID();
       let avatar_url: string | null = null;
 
-      if (avatarFile) {
+      if (avatarFile && !existingClientId) {
         const ext = avatarFile.name.split(".").pop();
         const path = `${user!.id}/client-avatars/${clientId}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
@@ -473,21 +503,23 @@ const NovoCliente = () => {
         }
       }
 
-      // 1. Create client
-      const { error: clientErr } = await supabase.from("clients").insert({
-        id: clientId,
-        user_id: user.id,
-        name: nome.trim(),
-        email: email.trim() || null,
-        phone: telefone.trim() || null,
-        whatsapp: whatsapp.trim() || null,
-        cpf_cnpj: cpfCnpj.trim() || null,
-        client_type: "loan",
-        status: "Ativo",
-        avatar_url,
-        address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
-      });
-      if (clientErr) throw clientErr;
+      // 1. Create client (only when not adding to an existing one)
+      if (!existingClientId) {
+        const { error: clientErr } = await supabase.from("clients").insert({
+          id: clientId,
+          user_id: user.id,
+          name: nome.trim(),
+          email: email.trim() || null,
+          phone: telefone.trim() || null,
+          whatsapp: whatsapp.trim() || null,
+          cpf_cnpj: cpfCnpj.trim() || null,
+          client_type: "loan",
+          status: "Ativo",
+          avatar_url,
+          address: rua ? { cep, street: rua, number: numero, complement: complemento, neighborhood: bairro, city: cidade, state: estado } : null,
+        });
+        if (clientErr) throw clientErr;
+      }
 
       // 2. Create contract
       const n = calc.numParcelas;
@@ -556,7 +588,10 @@ const NovoCliente = () => {
       setCreatedContractId(contract.id);
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
       setHasDraft(false);
-      toast({ title: "✓ Cliente e contrato criados!", description: `${n} parcelas geradas com sucesso.` });
+      toast({
+        title: existingClientId ? "✓ Novo contrato criado!" : "✓ Cliente e contrato criados!",
+        description: `${n} parcelas geradas com sucesso.`,
+      });
       setShowContract(true);
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
@@ -645,7 +680,7 @@ const NovoCliente = () => {
               <Printer size={16} /> Imprimir
             </button>
             <button
-              onClick={() => navigate("/clientes")}
+              onClick={() => navigate(existingClientId ? `/clientes/${existingClientId}` : "/clientes")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity"
               style={{ background: "var(--gradient-button)" }}
             >
@@ -663,37 +698,55 @@ const NovoCliente = () => {
       {/* Header */}
       <div className="page-hero animate-fade-in">
         <div className="page-hero-content flex items-center gap-3">
-          <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors">
+          <button
+            onClick={() => {
+              if (isNewContractOnly) {
+                if (step > 2) setStep(step - 1);
+                else navigate(`/clientes/${existingClientId}`);
+              } else {
+                step > 1 ? setStep(step - 1) : navigate("/clientes");
+              }
+            }}
+            className="p-2.5 rounded-xl hover:bg-card/60 text-muted-foreground transition-colors"
+          >
             <ArrowLeft size={18} />
           </button>
           <div className="page-hero-icon">
             <User size={22} />
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-shimmer">Cadastrar Novo Cliente</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Etapa {step} de 3 — {stepLabels[step - 1]}</p>
+            <h1 className="text-xl font-bold text-shimmer">
+              {isNewContractOnly ? `Novo Contrato${existingClient?.name ? ` — ${existingClient.name}` : ""}` : "Cadastrar Novo Cliente"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isNewContractOnly
+                ? `Etapa ${step - 1} de 2 — ${stepLabels[step - 1]}`
+                : `Etapa ${step} de 3 — ${stepLabels[step - 1]}`}
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setExpressMode(!expressMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
-            title="Reduz o formulário aos campos essenciais"
-          >
-            ⚡ {expressMode ? "Express ON" : "Modo Express"}
-          </button>
+          {!isNewContractOnly && (
+            <button
+              type="button"
+              onClick={() => setExpressMode(!expressMode)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors ${expressMode ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+              title="Reduz o formulário aos campos essenciais"
+            >
+              ⚡ {expressMode ? "Express ON" : "Modo Express"}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Progress */}
       <div className="flex gap-2">
-        {[1, 2, 3].map((s) => (
-          <button key={s} onClick={() => { if (s < step) setStep(s); }}
+        {(isNewContractOnly ? [2, 3] : [1, 2, 3]).map((s) => (
+          <button key={s} onClick={() => { if (s < step && (!isNewContractOnly || s >= 2)) setStep(s); }}
             className={`h-2 flex-1 rounded-full transition-colors ${s < step ? "bg-success cursor-pointer" : s === step ? "bg-primary" : "bg-border"}`} />
         ))}
       </div>
 
       {/* Draft restore banner */}
-      {hasDraft && (
+      {hasDraft && !isNewContractOnly && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-primary/30 bg-primary/5 animate-fade-in">
           <div className="flex items-center gap-2 text-sm">
             <Save size={16} className="text-primary" />
@@ -1570,9 +1623,19 @@ const NovoCliente = () => {
 
       {/* ═══ NAV BAR ═══ */}
       <div className="sticky bottom-4 z-10 flex items-center justify-between p-4 rounded-2xl bg-card/95 backdrop-blur border border-border">
-        <button onClick={() => step > 1 ? setStep(step - 1) : navigate("/clientes")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-          <ArrowLeft size={16} /> {step > 1 ? "Voltar" : "Cancelar"}
+        <button
+          onClick={() => {
+            if (isNewContractOnly) {
+              if (step > 2) setStep(step - 1);
+              else navigate(`/clientes/${existingClientId}`);
+            } else {
+              step > 1 ? setStep(step - 1) : navigate("/clientes");
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <ArrowLeft size={16} />{" "}
+          {isNewContractOnly ? (step > 2 ? "Voltar" : "Cancelar") : step > 1 ? "Voltar" : "Cancelar"}
         </button>
         {step < 3 ? (
           <button onClick={goNext}
@@ -1586,7 +1649,7 @@ const NovoCliente = () => {
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
             style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-            {saving ? "Criando..." : "Criar Cliente e Contrato"}
+            {saving ? "Criando..." : isNewContractOnly ? "Criar Contrato" : "Criar Cliente e Contrato"}
           </button>
         )}
       </div>
