@@ -1,91 +1,62 @@
+## Plano: Melhorar as Ferramentas
 
-# Plano de Melhorias — SYSTEM JUROS
+O escopo é amplo (4 áreas × 4 tipos de melhoria). Para entregar valor real sem virar refactor infinito, priorizo o que mais incomoda hoje e empilho em 4 lotes independentes.
 
-Auditoria rápida revelou os principais pontos a atacar:
+### Lote 1 — Hub de Ações do Cliente (ClienteDetalhe)
 
-- **Sidebar com 30+ itens** em 5 seções, com sobreposição (`/comunicacao`, `/comunicacao/inbox`, `/chat`, `/notificacoes`) — sobrecarga cognitiva.
-- **Páginas gigantes**: `AgenteIA.tsx` (1835 linhas), `WhatsAppInbox.tsx` (861), `Clientes.tsx` (790), `Cobrancas.tsx` (760), `Dashboard.tsx` (625) — impacto direto em carregamento e manutenção.
-- **Sem code-splitting por rota** — bundle inicial carrega tudo.
-- **Mobile**: bottom nav existe, mas páginas pesadas não estão otimizadas para toque/scroll.
-- **Refinamento visual** já está em bom nível (glassmorphism, paleta metálica), mas há ruído visual (cores de ícone por rota muito variadas, badges duplicados).
+Hoje as 17+ ferramentas estão espalhadas: 3 botões no topo (Editar / "...") + 3 botões no meio (Novo / Quitar / Cobrar) + ações dentro de cada parcela + ações dentro de cada contrato. Custa achar.
 
----
+**O que muda:**
+- Substituir o menu "..." por um **painel lateral "Ferramentas"** (Sheet) agrupado por categoria:
+  - **Contrato** — Novo Empréstimo, Quitar Todas, Editar Cliente, Excluir
+  - **Cobrança** — Cobrar Todas Atrasadas, Enviar Portal, Lembrete WhatsApp, Renegociar
+  - **Documentos** — Gerar PDF, Exportar Resumo, Copiar Dados, Imprimir
+  - **Score & Status** — Score +50/-50, IA Score, Inativar/Reativar
+- Cada ação com ícone + label + descrição curta (1 linha) — fica óbvio o que faz.
+- Botão flutuante "Ações" no header (sempre visível) abre o painel.
+- Mantém atalhos primários no hero: Novo Empréstimo, Quitar Todas, Cobrar.
+- **Novas ações úteis** que faltam hoje:
+  - "Duplicar último empréstimo" (renovação rápida)
+  - "Marcar contato realizado" (registra interação manual)
+  - "Adicionar anotação rápida" (sem sair da tela)
 
-## Fase 1 — Navegação & Layout (alta prioridade)
+### Lote 2 — Paleta de Comando Global (Cmd+K)
 
-**1.1 Reorganizar sidebar (5 → 4 seções, ~24 itens)**
-- Mesclar **"Comunicação & IA" + "Inbox WhatsApp" + "Chat"** em um único hub `/comunicacao` com abas internas (Inbox, Chat interno, Agente IA, Configurações WA).
-- Mover **Simulador, Metas, Tarefas, Anotações, Planilha, Puxada de Dados** para um único item **"Ferramentas"** com submenu expansível (já há padrão `/ferramentas/*`).
-- Promover **Portais (QR Code)** para Operações.
-- Remover **Notificações** do menu (já existe sino na TopBar).
-- Unificar paleta de cores dos ícones em **3 tons** (primário/sucesso/alerta) em vez de 20 cores diferentes.
+`GlobalSearch.tsx` já existe mas só busca clientes. Expandir para command palette real:
+- **Ações** ("Criar cliente", "Novo empréstimo", "Ir para Inadimplência", "Backup agora")
+- **Navegação** (todas as 30+ páginas)
+- **Clientes** (busca atual)
+- **Contratos** por número/valor
+- Atalho `Cmd/Ctrl + K` global + dica visual na TopBar.
 
-**1.2 TopBar mais funcional**
-- Adicionar **breadcrumb compacto** à esquerda (já existe componente `Breadcrumbs.tsx`, integrar).
-- Quick actions: "+ Novo Cliente", "+ Cobrança", busca global (Cmd+K já existe via `GlobalSearch`).
+### Lote 3 — Limpeza de Duplicações
 
-**1.3 Mobile**
-- Bottom nav com 5 itens fixos: Hoje, Clientes, Cobranças, Comunicação, Mais.
-- Botão FAB central "+" para ação rápida (novo cliente/cobrança).
-- Páginas grandes (Clientes, Cobranças) ganham **filtros em sheet/drawer** no mobile em vez de barras horizontais.
+Auditar e remover/fundir:
+- `Automacoes.tsx` (vazia, redireciona) → deletar arquivo
+- `Notificacoes.tsx` vs `NotificationsBell.tsx` → manter só o sino
+- `Suporte.tsx` + `Sobre.tsx` → fundir em "Ajuda"
+- `Hoje.tsx` vs `Dashboard.tsx` → avaliar se "Hoje" agrega
+- `BuscarClientes.tsx` → remove (Cmd+K substitui)
+- Sidebar: reordenar por frequência de uso real (Hoje → Clientes → Cobranças → Financeiro → resto colapsado)
 
----
+### Lote 4 — Ferramentas de Cobrança e Financeiro
 
-## Fase 2 — Performance
+- **Cobranças**: adicionar ação em lote "Enviar para todos selecionados" (checkbox + bulk action bar fixa no rodapé).
+- **Inadimplência**: botão "Renegociar em massa" abrindo wizard.
+- **Financeiro**: exportar CSV/Excel dos KPIs visíveis, filtro de período salvável como preset.
+- **TopBar KPIs**: tornar clicáveis (clicar em "Em Atraso" leva a Inadimplência filtrada).
 
-**2.1 Code-splitting por rota**
-- Converter rotas em `src/App.tsx` para `React.lazy()` + `<Suspense>`.
-- Ganho estimado: bundle inicial -40 a -60%.
+### Ordem de execução
 
-**2.2 Quebrar componentes grandes**
-- `AgenteIA.tsx` (1835 → ~300 + módulos): separar Memória, Treinamento, Histórico, Configurações.
-- `WhatsAppInbox.tsx` (861 → ~250 + subcomponentes): lista de conversas, painel de chat, painel de detalhes.
-- `Clientes.tsx` / `Cobrancas.tsx`: extrair tabela, filtros e modais.
+Implemento na ordem 1 → 2 → 3 → 4, cada lote testável de forma independente. Posso parar entre lotes para você revisar.
 
-**2.3 Queries**
-- Padronizar `staleTime`/`gcTime` no QueryClient para listas pesadas (clientes, cobranças) — evita refetch desnecessário ao trocar de aba.
-- Virtualizar listas longas em Clientes/Cobranças/Inbox (`@tanstack/react-virtual`).
-- Realtime: auditar `useRealtimeSubscription` para garantir cleanup (já está documentado, validar uso).
+### Detalhes técnicos
 
----
+- Sheet do shadcn para o painel de ações (já instalado).
+- Command (cmdk via shadcn) para paleta — instalar se faltar.
+- Sem migrações de banco neste plano (só UI/rotas/components).
+- Nenhuma mudança em RLS, Edge Functions, ou lógica de cálculo de empréstimo.
 
-## Fase 3 — Refinamento Visual
+### Pergunta antes de começar
 
-**3.1 Consistência de tokens**
-- Auditar `text-white`, `bg-[#...]` em componentes — mover para tokens semânticos.
-- Padronizar 1 sistema de "card" (glass card) com 3 variantes (default, elevated, interactive).
-
-**3.2 Estados vazios e loading**
-- `EmptyState` já existe — aplicar consistentemente em Clientes/Cobranças/Inbox/Tarefas.
-- Skeletons em vez de spinners nas tabelas principais.
-
-**3.3 Densidade**
-- Compactar TopBar KPIs em mobile (carrossel horizontal de 1 card visível).
-- Reduzir padding excessivo em cards do Dashboard.
-
----
-
-## Fase 4 — Novas Funcionalidades (curtas)
-
-- **Command Palette estendido** (Cmd+K): ações além de busca — "criar cliente", "marcar pago", "abrir conversa de X".
-- **Atalhos de teclado documentados** (`KeyboardShortcutsHelp` já existe, expandir).
-- **Pin/Favoritos** de clientes para acesso rápido na sidebar.
-- **Modo foco** no Inbox WhatsApp (esconde sidebar automaticamente).
-
----
-
-## Ordem sugerida de execução
-
-Faria em **passos pequenos e validáveis**, começando pelo que dá mais ganho percebido:
-
-1. **Reorganizar sidebar** (Fase 1.1) — 1 passo, alto impacto visual e cognitivo.
-2. **Code-splitting de rotas** (Fase 2.1) — 1 passo, ganho de performance imediato.
-3. **Quebrar AgenteIA.tsx** (Fase 2.2 parte 1) — destrava manutenção da página mais pesada.
-4. **Hub de Comunicação unificado** (Fase 1.1 parte 2) — abas internas.
-5. Demais itens conforme prioridade.
-
----
-
-## Pergunta antes de começar
-
-Quer que eu **comece pelos passos 1 e 2 já** (reorganizar sidebar + code-splitting), que dão ganho imediato e são reversíveis? Ou prefere atacar uma área específica primeiro (ex.: só Inbox WhatsApp, só Dashboard)?
+Quer que eu execute **todos os 4 lotes em sequência**, ou prefere ir **um lote por vez** com sua aprovação entre cada um?
