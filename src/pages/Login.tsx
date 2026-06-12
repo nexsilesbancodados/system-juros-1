@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
-import { supabase, setRememberMe, getRememberMe } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { setRememberMe, getRememberMe } from "@/integrations/supabase/remember";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
