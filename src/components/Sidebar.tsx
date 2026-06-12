@@ -4,7 +4,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
-  TrendingUp, DollarSign, Database, Info, Search, X,
+  TrendingUp, DollarSign, Database, Search, X,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown,
   FileText, Crown, ClipboardList, Sparkles,
   Settings, Bot, QrCode, UserCheck, Shield,
@@ -114,7 +114,6 @@ const sections: MenuSection[] = [
     items: [
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
-      { label: "Sobre", icon: Info, path: "/sobre" },
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
       { label: "Admin", icon: Crown, path: "/admin" },
