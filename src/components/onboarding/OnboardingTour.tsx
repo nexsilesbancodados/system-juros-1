@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Step {
   selector?: string;
@@ -95,7 +96,15 @@ const OnboardingTour = ({ open, onClose }: { open: boolean; onClose: () => void 
 
   const finish = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, "1");
-    if (user) localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+    if (user) {
+      localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+      // Persist server-side so it never reappears on other devices/sessions
+      supabase
+        .from("profiles")
+        .update({ onboarding_completed_at: new Date().toISOString() } as any)
+        .eq("id", user.id)
+        .then(() => {});
+    }
     setStepIdx(0);
     onClose();
   }, [onClose, user]);
@@ -231,13 +240,37 @@ export const OnboardingTourAuto = () => {
 
   useEffect(() => {
     if (!user) return;
-    const completed =
-      localStorage.getItem(STORAGE_KEY) === "1" ||
-      localStorage.getItem(`${STORAGE_KEY}_${user.id}`) === "1";
-    if (!completed) {
-      const t = setTimeout(() => setOpen(true), 1200);
+    let cancelled = false;
+    (async () => {
+      // Check server-side flag first (source of truth across devices)
+      const { data } = await supabase
+        .from("profiles")
+        .select("onboarding_completed_at" as any)
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const serverCompleted = !!(data as any)?.onboarding_completed_at;
+      if (serverCompleted) {
+        localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+        return;
+      }
+      const localCompleted =
+        localStorage.getItem(STORAGE_KEY) === "1" ||
+        localStorage.getItem(`${STORAGE_KEY}_${user.id}`) === "1";
+      if (localCompleted) {
+        // Sync local → server so it never reappears
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed_at: new Date().toISOString() } as any)
+          .eq("id", user.id);
+        return;
+      }
+      const t = setTimeout(() => !cancelled && setOpen(true), 1200);
       return () => clearTimeout(t);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   return <OnboardingTour open={open} onClose={() => setOpen(false)} />;
