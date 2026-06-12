@@ -708,11 +708,11 @@ const ClienteDetalhe = () => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
                   const ext = file.name.split(".").pop();
-                  const path = `client-avatars/${id}.${ext}`;
+                  const path = `${user!.id}/client-avatars/${id}.${ext}`;
                   const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
                   if (!upErr) {
-                    const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-                    await supabase.from("clients").update({ avatar_url: urlData.publicUrl + "?t=" + Date.now() }).eq("id", id);
+                    const signedUrl = await getSignedUploadUrl(path);
+                    if (signedUrl) await supabase.from("clients").update({ avatar_url: signedUrl }).eq("id", id);
                     inv("client-detail");
                     toast({ title: "✓ Foto atualizada!" });
                   } else {
