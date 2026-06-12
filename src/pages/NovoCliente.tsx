@@ -1339,6 +1339,7 @@ const NovoCliente = () => {
                   <input type="number" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2" className={INPUT} />
                   <p className="text-[10px] text-muted-foreground mt-1">Padrão: 2%/mês de atraso</p>
                 </div>
+              </div>
 
               {/* Renovação automática + Assinatura */}
               <div className="grid grid-cols-2 gap-3">
