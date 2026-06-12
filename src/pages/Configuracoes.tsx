@@ -706,6 +706,8 @@ const Configuracoes = () => {
                 <p className="text-[10px] text-muted-foreground mt-1">Aparece no login e no portal do cliente</p>
               </div>
             </div>
+              </div>
+            </details>
           </>
         )}
 
