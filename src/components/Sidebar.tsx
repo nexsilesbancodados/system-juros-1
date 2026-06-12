@@ -4,7 +4,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
-  TrendingUp, DollarSign, Database, Info, Search, X,
+  TrendingUp, DollarSign, Database, Search, X,
   Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown,
   FileText, Crown, ClipboardList, Sparkles,
   Settings, Bot, QrCode, UserCheck, Shield,
