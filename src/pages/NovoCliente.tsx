@@ -93,7 +93,10 @@ const NovoCliente = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const [searchParams] = useSearchParams();
+  const existingClientId = searchParams.get("clientId");
+  const isNewContractOnly = !!existingClientId;
+  const [step, setStep] = useState(isNewContractOnly ? 2 : 1);
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
