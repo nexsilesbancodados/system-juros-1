@@ -1047,32 +1047,37 @@ const NovoCliente = () => {
             )}
           </div>
 
-          {/* Values */}
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-foreground">Valores</h2>
-                <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                  {loanMode === "installments" && "Capital + Parcela + Nº"}
-                  {loanMode === "percentage" && "Capital + Taxa"}
-                  {(loanMode === "interest_only" || loanMode === "price") && "Capital + Taxa + Nº Parcelas"}
-                  {loanMode === "bullet" && "Capital + Taxa + Nº Períodos"}
-                  {loanMode === "grace" && "Capital + Taxa + Carência + Nº"}
+          {/* Values — Metallic glow */}
+          <div className="relative overflow-hidden bg-card/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
+            {/* Metallic radial background */}
+            <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[100px] bg-primary/10" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-24 w-64 h-64 rounded-full blur-[100px] bg-blue-500/10" />
+
+            {/* Header */}
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold text-foreground tracking-tight font-display">Valores</h2>
+                <span className="block text-[10px] font-medium text-muted-foreground uppercase tracking-[0.2em]">
+                  {loanMode === "installments" && "Capital • Parcela • Prazo"}
+                  {loanMode === "percentage" && "Capital • Taxa"}
+                  {(loanMode === "interest_only" || loanMode === "price") && "Capital • Taxa • Nº Parcelas"}
+                  {loanMode === "bullet" && "Capital • Taxa • Nº Períodos"}
+                  {loanMode === "grace" && "Capital • Taxa • Carência • Nº"}
                 </span>
               </div>
               {loanMode === "installments" && (
-                <div className="inline-flex bg-muted/40 rounded-full p-0.5">
+                <div className="inline-flex p-1 bg-black/40 rounded-xl border border-white/5 backdrop-blur-md">
                   <button
                     type="button"
                     onClick={() => setValueMode("rate")}
-                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "rate" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                    className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all ${valueMode === "rate" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-1 ring-primary/30" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     Por Taxa
                   </button>
                   <button
                     type="button"
                     onClick={() => setValueMode("installment")}
-                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${valueMode === "installment" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                    className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all ${valueMode === "installment" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-1 ring-primary/30" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     Por Valor da Parcela
                   </button>
@@ -1080,155 +1085,170 @@ const NovoCliente = () => {
               )}
             </div>
 
-            {/* Capital em destaque */}
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1.5 block">Capital Emprestado *</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-semibold text-muted-foreground">R$</span>
-                <input
-                  type="text"
-                  value={capitalDisplay}
-                  onChange={(e) => handleCapitalChange(e.target.value)}
-                  placeholder="0,00"
-                  className={`${INPUT} pl-12 text-xl font-bold h-14 ${loanErrors.capital ? "border-destructive/60" : ""}`}
-                  inputMode="numeric"
-                  aria-invalid={!!loanErrors.capital}
-                />
+            <div className="relative z-10 space-y-8">
+              {/* Capital em destaque */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-foreground/90 ml-1">
+                  Capital Emprestado <span className="text-primary">*</span>
+                </label>
+                <div className="relative group">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-semibold text-muted-foreground">R$</span>
+                  <input
+                    type="text"
+                    value={capitalDisplay}
+                    onChange={(e) => handleCapitalChange(e.target.value)}
+                    onBlur={() => markTouched("capital")}
+                    placeholder="0,00"
+                    className={`w-full bg-white/5 border rounded-2xl py-5 pl-16 pr-6 text-3xl font-bold text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all font-display ${touched.capital && loanErrors.capital ? "border-destructive/60" : "border-white/10"}`}
+                    inputMode="numeric"
+                    aria-invalid={!!(touched.capital && loanErrors.capital)}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[500, 1000, 2000, 5000, 10000, 20000].map(v => (
+                    <button key={v} type="button" onClick={() => { handleCapitalChange(String(v * 100)); markTouched("capital"); }}
+                      className={`px-4 py-2 rounded-lg border text-xs font-medium transition-all ${capital === String(v) ? "bg-primary/15 border-primary/30 text-primary" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10 hover:border-white/20 hover:text-foreground"}`}>
+                      R$ {v >= 1000 ? `${v / 1000}k` : v}
+                    </button>
+                  ))}
+                </div>
+                {touched.capital && loanErrors.capital && <p className="text-[10px] text-destructive ml-1">{loanErrors.capital}</p>}
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {[500, 1000, 2000, 5000, 10000, 20000].map(v => (
-                  <button key={v} type="button" onClick={() => handleCapitalChange(String(v * 100))}
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${capital === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
-                    R$ {v >= 1000 ? `${v / 1000}k` : v}
-                  </button>
-                ))}
-              </div>
-              {loanErrors.capital && <p className="text-[10px] text-destructive mt-1">{loanErrors.capital}</p>}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-
-              {valueMode === "rate" ? (
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Taxa (% por {periodLabel}) *</label>
-                  <div className="relative">
-                    <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} placeholder="10" className={`${INPUT} pl-8 ${loanErrors.taxa ? "border-destructive/60" : ""}`} aria-invalid={!!loanErrors.taxa} min={0} max={100} step="0.01" />
+              {/* Parcela & Numero */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {valueMode === "rate" ? (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-foreground/90 ml-1">
+                      Taxa (% por {periodLabel}) <span className="text-primary">*</span>
+                    </label>
+                    <div className="relative">
+                      <Percent size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input type="number" value={taxaJuros} onChange={(e) => setTaxaJuros(e.target.value)} onBlur={() => markTouched("taxa")} placeholder="10"
+                        className={`w-full bg-white/5 border rounded-xl py-4 pl-10 pr-4 text-xl font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${touched.taxa && loanErrors.taxa ? "border-destructive/60" : "border-white/10"}`}
+                        aria-invalid={!!(touched.taxa && loanErrors.taxa)} min={0} max={100} step="0.01" />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[5, 10, 15, 20, 30].map(v => (
+                        <button key={v} type="button" onClick={() => { setTaxaJuros(String(v)); markTouched("taxa"); }}
+                          className={`w-10 h-8 flex items-center justify-center rounded-md border text-[10px] font-bold transition-colors ${taxaJuros === String(v) ? "bg-primary/20 border-primary/30 text-primary" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
+                          {v}%
+                        </button>
+                      ))}
+                    </div>
+                    {touched.taxa && loanErrors.taxa && <p className="text-[10px] text-destructive ml-1">{loanErrors.taxa}</p>}
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {[5, 10, 15, 20, 30].map(v => (
-                      <button key={v} type="button" onClick={() => setTaxaJuros(String(v))}
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${taxaJuros === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
-                        {v}%
+                ) : (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-foreground/90 ml-1">
+                      Valor da Parcela (R$) <span className="text-primary">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-medium text-muted-foreground">$</span>
+                      <input
+                        type="text"
+                        value={installmentValueDisplay}
+                        onChange={(e) => {
+                          setInstallmentValueDisplay(formatCurrency(e.target.value));
+                          setInstallmentValue(parseCurrency(e.target.value));
+                        }}
+                        onBlur={() => markTouched("parcela")}
+                        placeholder="0,00"
+                        className={`w-full bg-white/5 border rounded-xl py-4 pl-10 pr-4 text-xl font-semibold text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${touched.parcela && loanErrors.parcela ? "border-destructive/60" : "border-white/10"}`}
+                        inputMode="numeric"
+                        aria-invalid={!!(touched.parcela && loanErrors.parcela)}
+                      />
+                    </div>
+                    {touched.parcela && loanErrors.parcela && <p className="text-[10px] text-destructive ml-1">{loanErrors.parcela}</p>}
+                    {(!touched.parcela || !loanErrors.parcela) && calc && (calc as any).derivedRate !== undefined && (
+                      <p className="text-[10px] text-muted-foreground ml-1">Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {periodLabel}</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-foreground/90 ml-1">
+                    {loanMode === "bullet"
+                      ? <>Nº de Períodos até Vencimento <span className="text-primary">*</span></>
+                      : loanMode === "percentage" && valueMode === "rate"
+                        ? "Nº Períodos (opcional)"
+                        : <>Nº de Parcelas <span className="text-primary">*</span></>}
+                  </label>
+                  <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} onBlur={() => markTouched("n")}
+                    placeholder={loanMode === "bullet" ? `Ex: 3 ${periodLabel}s` : loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"}
+                    className={`w-full bg-white/5 border rounded-xl py-4 px-4 text-xl font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${touched.n && loanErrors.n ? "border-destructive/60" : "border-white/10"}`}
+                    inputMode="numeric" aria-invalid={!!(touched.n && loanErrors.n)} min={1} max={360} step={1} />
+                  <div className="flex flex-wrap gap-1.5">
+                    {(loanMode === "bullet" ? [1, 2, 3, 6, 12] : [4, 6, 8, 10, 12, 24]).map(v => (
+                      <button key={v} type="button" onClick={() => { setNumInstallments(String(v)); markTouched("n"); }}
+                        className={`min-w-10 h-8 px-2 flex items-center justify-center rounded-md border text-[10px] font-bold transition-colors ${numInstallments === String(v) ? "bg-primary/20 border-primary/30 text-primary" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
+                        {loanMode === "bullet" ? `${v} ${periodLabel}` : `${v}x`}
                       </button>
                     ))}
                   </div>
-                  {loanErrors.taxa && <p className="text-[10px] text-destructive mt-1">{loanErrors.taxa}</p>}
+                  {touched.n && loanErrors.n && <p className="text-[10px] text-destructive ml-1">{loanErrors.n}</p>}
                 </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Valor da Parcela (R$) *</label>
-                  <div className="relative">
-                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="text"
-                      value={installmentValueDisplay}
-                      onChange={(e) => {
-                        setInstallmentValueDisplay(formatCurrency(e.target.value));
-                        setInstallmentValue(parseCurrency(e.target.value));
-                      }}
-                      placeholder="0,00"
-                      className={`${INPUT} pl-8 ${loanErrors.parcela ? "border-destructive/60" : ""}`}
-                      inputMode="numeric"
-                      aria-invalid={!!loanErrors.parcela}
-                    />
-                  </div>
-                  {loanErrors.parcela && <p className="text-[10px] text-destructive mt-1">{loanErrors.parcela}</p>}
-                  {!loanErrors.parcela && calc && (calc as any).derivedRate !== undefined && (
-                    <p className="text-[10px] text-muted-foreground mt-1">Taxa equivalente: {(calc as any).derivedRate.toFixed(2)}% por {periodLabel}</p>
-                  )}
-                </div>
-              )}
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                  {loanMode === "bullet"
-                    ? `Nº de Períodos até Vencimento *`
-                    : loanMode === "percentage" && valueMode === "rate"
-                      ? "Nº Períodos (opcional)"
-                      : "Nº de Parcelas *"}
-                </label>
-                <input type="number" value={numInstallments} onChange={(e) => setNumInstallments(e.target.value)} placeholder={loanMode === "bullet" ? `Ex: 3 ${periodLabel}s` : loanMode === "percentage" && valueMode === "rate" ? "Auto" : "10"} className={`${INPUT} ${loanErrors.n ? "border-destructive/60" : ""}`} inputMode="numeric" aria-invalid={!!loanErrors.n} min={1} max={360} step={1} />
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {(loanMode === "bullet" ? [1, 2, 3, 6, 12] : [4, 6, 8, 10, 12, 24]).map(v => (
-                    <button key={v} type="button" onClick={() => setNumInstallments(String(v))}
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${numInstallments === String(v) ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary"}`}>
-                      {loanMode === "bullet" ? `${v} ${periodLabel}` : `${v}x`}
-                    </button>
-                  ))}
-                </div>
-                {loanErrors.n && <p className="text-[10px] text-destructive mt-1">{loanErrors.n}</p>}
               </div>
-            </div>
 
-            {/* Datas */}
-            <div className="pt-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Datas</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Data Início</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={INPUT} />
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {[
-                    { label: "Hoje", days: 0 },
-                    { label: "+1d", days: 1 },
-                    { label: "+7d", days: 7 },
-                    { label: "+15d", days: 15 },
-                  ].map(o => (
-                    <button key={o.label} type="button" onClick={() => {
-                      const d = new Date(); d.setDate(d.getDate() + o.days);
-                      setStartDate(d.toISOString().split("T")[0]);
-                    }} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:bg-primary/15 hover:text-primary transition-colors">
-                      {o.label}
-                    </button>
-                  ))}
+              {/* Datas */}
+              <div className="pt-4 border-t border-white/5">
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">Agendamento</span>
+                  <div className="flex-1 h-px bg-white/5" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-foreground/90 ml-1">Data Início</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all [color-scheme:dark]" />
+                    <div className="flex gap-2">
+                      {[
+                        { label: "Hoje", days: 0 },
+                        { label: "+1d", days: 1 },
+                        { label: "+7d", days: 7 },
+                        { label: "+15d", days: 15 },
+                      ].map(o => (
+                        <button key={o.label} type="button" onClick={() => {
+                          const d = new Date(); d.setDate(d.getDate() + o.days);
+                          setStartDate(d.toISOString().split("T")[0]);
+                        }} className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors">
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-sm font-medium text-foreground/90 ml-1">1º Vencimento</label>
+                      <button
+                        type="button"
+                        onClick={() => setAutoFirstDue(!autoFirstDue)}
+                        className={`text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border transition-colors ${autoFirstDue ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-muted-foreground border-white/10"}`}
+                      >
+                        {autoFirstDue ? "Automático" : "Manual"}
+                      </button>
+                    </div>
+                    <input
+                      type="date"
+                      value={
+                        autoFirstDue
+                          ? (() => {
+                              if (!startDate) return "";
+                              const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
+                              return preview[0] ? toDateInputValue(preview[0]) : "";
+                          })()
+                          : firstDueDate
+                      }
+                      onChange={(e) => setFirstDueDate(e.target.value)}
+                      disabled={autoFirstDue}
+                      className={`w-full border rounded-xl py-4 px-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all [color-scheme:dark] ${autoFirstDue ? "bg-white/[0.02] border-white/5 text-muted-foreground cursor-not-allowed" : "bg-white/5 border-white/10"}`}
+                    />
+                    {autoFirstDue && (
+                      <p className="text-[10px] text-muted-foreground ml-1 italic">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-foreground">1º Vencimento</label>
-                  <button
-                    type="button"
-                    onClick={() => setAutoFirstDue(!autoFirstDue)}
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors ${autoFirstDue ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}
-                  >
-                    {autoFirstDue ? "Automático" : "Manual"}
-                  </button>
-                </div>
-                <input
-                  type="date"
-                  value={
-                    autoFirstDue
-                      ? (() => {
-                          if (!startDate) return "";
-                          const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
-                          return preview[0] ? toDateInputValue(preview[0]) : "";
-                        })()
-                      : firstDueDate
-                  }
-                  onChange={(e) => setFirstDueDate(e.target.value)}
-                  disabled={autoFirstDue}
-                  className={`${INPUT} ${autoFirstDue ? "opacity-70 cursor-not-allowed" : ""}`}
-                />
-                {autoFirstDue && (
-                  <p className="text-[10px] text-muted-foreground mt-1">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
-                )}
-              </div>
-              </div>
-            </div>
             {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
 
             {/* Opções extras movidas para "Condições Avançadas" abaixo, evitando duplicação */}
