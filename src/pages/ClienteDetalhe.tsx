@@ -59,6 +59,7 @@ const ClienteDetalhe = () => {
   const [loanCapital, setLoanCapital] = useState("");
   const [loanInstallments, setLoanInstallments] = useState("");
   const [loanFreq, setLoanFreq] = useState("monthly");
+  const [loanStartDate, setLoanStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [loanStart, setLoanStart] = useState(new Date().toISOString().split("T")[0]);
   const [loanInterestRate, setLoanInterestRate] = useState("10");
   const [loanDailyFee, setLoanDailyFee] = useState("0.33");
@@ -260,7 +261,7 @@ const ClienteDetalhe = () => {
         user_id: user.id, client_id: id!, capital: parseFloat(loanCapital),
         interest_rate: parseFloat(loanInterestRate), num_installments: nReal,
         installment_amount: loanCalc.installmentAmount, frequency: loanFreq,
-        start_date: new Date(loanStart + "T12:00:00").toISOString(),
+        start_date: new Date(loanStartDate + "T12:00:00").toISOString(),
         late_fee_percent: parseFloat(loanLateFee), daily_interest_percent: parseFloat(loanDailyFee),
         total_amount: loanCalc.total, total_interest: loanCalc.totalInterest, status: "active",
         loan_mode: loanMode,
@@ -953,6 +954,10 @@ const ClienteDetalhe = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Início</label>
+                <input type="date" value={loanStartDate} onChange={e => setLoanStartDate(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
