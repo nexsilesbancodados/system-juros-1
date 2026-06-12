@@ -384,16 +384,17 @@ const Chat = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "bin";
-      const path = `chat/${user.id}/${Date.now()}.${ext}`;
+      const path = `${user.id}/chat/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("uploads").upload(path, file);
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("uploads").getPublicUrl(path);
+      const signedUrl = await getSignedUploadUrl(path);
+      if (!signedUrl) throw new Error("Falha ao gerar URL");
       const isImage = file.type.startsWith("image/");
       const type: "audio" | "image" | "file" = asAudio ? "audio" : isImage ? "image" : "file";
       const payload: any = {
         user_id: user.id, user_name: profile.name, user_avatar: profile.avatar_url || null,
         content: isImage || asAudio ? "" : file.name, type,
-        file_url: pub.publicUrl, file_name: file.name, file_type: file.type,
+        file_url: signedUrl, file_name: file.name, file_type: file.type,
       };
       if (scope.kind === "channel") payload.channel_id = scope.id; else payload.dm_thread_id = scope.id;
       await supabase.from("chat_messages").insert(payload);
