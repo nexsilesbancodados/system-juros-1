@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
