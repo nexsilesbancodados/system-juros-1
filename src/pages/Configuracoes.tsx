@@ -178,14 +178,16 @@ const Configuracoes = () => {
     if (!file || !user) return;
     setUploadingLogo(true);
     const ext = file.name.split(".").pop();
-    const path = `logos/${user.id}/logo.${ext}`;
+    const path = `${user.id}/logos/logo.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     } else {
-      const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-      setForm({ ...form, company_logo_url: urlData.publicUrl });
-      toast({ title: "✓ Logo enviado!" });
+      const url = await getSignedUploadUrl(path);
+      if (url) {
+        setForm({ ...form, company_logo_url: url });
+        toast({ title: "✓ Logo enviado!" });
+      }
     }
     setUploadingLogo(false);
   };
