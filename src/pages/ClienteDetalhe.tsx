@@ -15,13 +15,14 @@ import {
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera,
-  Hash, Coins, TrendingDown, Target, PauseCircle,
+  Hash, Coins, TrendingDown, Target, PauseCircle, Wrench, Repeat, PhoneCall, StickyNote,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
 import { getSignedUploadUrl } from "@/lib/storage";
+import ClientToolsPanel, { type ToolGroup } from "@/components/clients/ClientToolsPanel";
 
 const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
   { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
@@ -656,6 +657,71 @@ const ClienteDetalhe = () => {
     toast({ title: "Cliente excluído!" }); navigate("/clientes");
   };
 
+  // --- Novas ações úteis ---
+
+  const duplicateLastLoan = async () => {
+    if (!user) return;
+    const last = contracts[0];
+    if (!last) { toast({ title: "Nenhum empréstimo anterior", variant: "destructive" }); return; }
+    if (!(await confirm(`Duplicar último empréstimo de R$ ${fmt(Number(last.capital))} (${last.num_installments}x)?`))) return;
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: contract, error: cErr } = await supabase.from("contracts").insert({
+        user_id: user.id, client_id: id!,
+        capital: last.capital, interest_rate: last.interest_rate,
+        num_installments: last.num_installments, installment_amount: last.installment_amount,
+        frequency: last.frequency, start_date: new Date(today + "T12:00:00").toISOString(),
+        late_fee_percent: last.late_fee_percent, daily_interest_percent: last.daily_interest_percent,
+        total_amount: last.total_amount, total_interest: last.total_interest, status: "active",
+        loan_mode: last.loan_mode, grace_periods: last.grace_periods,
+        notes: `Renovação de contrato anterior (${formatBR(last.start_date)})`,
+      }).select().single();
+      if (cErr) throw cErr;
+      const dueDates = generateDueDates(today, last.frequency, last.num_installments);
+      await supabase.from("contract_installments").insert(
+        dueDates.map((dd, i) => ({
+          user_id: user.id, contract_id: contract.id, client_id: id!,
+          installment_number: i + 1, amount: last.installment_amount, due_date: dd, status: "pending",
+        }))
+      );
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount: Number(last.capital), type: "loan",
+        description: `Renovação: empréstimo para ${client?.name} - ${last.num_installments}x`,
+        client_id: id, contract_id: contract.id,
+      });
+      toast({ title: "Empréstimo duplicado!" });
+      invAll();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const markContact = async () => {
+    if (!user) return;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: 0, type: "contact",
+      description: `Contato realizado com ${client?.name}`,
+      client_id: id,
+    });
+    toast({ title: "Contato registrado!" });
+    invAll();
+  };
+
+  const quickNote = async () => {
+    if (!user) return;
+    const text = window.prompt("Anotação rápida (aparece no histórico):");
+    if (!text || !text.trim()) return;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount: 0, type: "note",
+      description: `📝 ${text.trim()}`,
+      client_id: id,
+    });
+    toast({ title: "Anotação salva!" });
+    invAll();
+  };
+
+
+
   if (isLoading) return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Skeleton className="h-8 w-48" />
@@ -678,16 +744,44 @@ const ClienteDetalhe = () => {
     { key: "historico" as const, label: "Histórico", Icon: Clock },
   ];
 
-  const moreActions = [
-    { icon: Copy, label: "Copiar Dados", action: copyClientInfo },
-    { icon: Send, label: "Enviar Portal", action: sendPortalLink },
-    { icon: Download, label: "Exportar Resumo", action: exportSummary },
-    { icon: Printer, label: "Gerar PDF", action: generatePDF },
-    { icon: Star, label: "Score +50", action: () => updateScore(50) },
-    { icon: TrendingUp, label: "Score -50", action: () => updateScore(-50) },
-    { icon: Ban, label: client.status === "Ativo" ? "Inativar" : "Reativar", action: toggleStatus },
-    { icon: Trash2, label: "Excluir", action: handleDelete, destructive: true },
+  const toolGroups: ToolGroup[] = [
+    {
+      label: "Contrato",
+      actions: [
+        { icon: Plus, label: "Novo Empréstimo", description: "Wizard completo com todas as opções", action: () => navigate(`/clientes/novo?clientId=${id}`) },
+        { icon: Repeat, label: "Duplicar Último", description: "Renovação rápida com os mesmos valores", action: duplicateLastLoan, disabled: contracts.length === 0 },
+        { icon: CheckCircle, label: "Quitar Todas", description: "Marca todas as parcelas pendentes como pagas", action: payAllPending },
+        { icon: Edit, label: "Editar Cliente", description: "Nome, telefone, CPF, email", action: startEdit },
+      ],
+    },
+    {
+      label: "Cobrança",
+      actions: [
+        { icon: Send, label: "Cobrar Atrasadas", description: `${kpis.overdueInst.length} parcela(s) em atraso via WhatsApp`, action: sendAllOverdue, disabled: kpis.overdueInst.length === 0 },
+        { icon: MessageSquare, label: "Enviar Portal", description: "Link do portal do cliente via WhatsApp", action: sendPortalLink },
+        { icon: PhoneCall, label: "Marcar Contato", description: "Registra um contato realizado no histórico", action: markContact },
+        { icon: StickyNote, label: "Anotação Rápida", description: "Adiciona uma nota no histórico do cliente", action: quickNote },
+      ],
+    },
+    {
+      label: "Documentos",
+      actions: [
+        { icon: Printer, label: "Gerar PDF", description: "Extrato completo do cliente em PDF", action: generatePDF },
+        { icon: Download, label: "Exportar Resumo", description: "Copia resumo financeiro para a área de transferência", action: exportSummary },
+        { icon: Copy, label: "Copiar Dados", description: "Nome, CPF, telefone e email", action: copyClientInfo },
+      ],
+    },
+    {
+      label: "Score & Status",
+      actions: [
+        { icon: Star, label: "Score +50", description: "Aumenta o score de crédito", action: () => updateScore(50) },
+        { icon: TrendingUp, label: "Score -50", description: "Reduz o score de crédito", action: () => updateScore(-50) },
+        { icon: Ban, label: client.status === "Ativo" ? "Inativar Cliente" : "Reativar Cliente", description: client.status === "Ativo" ? "Suspende novas operações" : "Volta a aceitar operações", action: toggleStatus },
+        { icon: Trash2, label: "Excluir Cliente", description: "Remove cliente e todos os dados — irreversível", action: handleDelete, destructive: true },
+      ],
+    },
   ];
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-24">
@@ -734,23 +828,20 @@ const ClienteDetalhe = () => {
           </div>
         </div>
         <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar"><Edit size={16} /></button>
-        <div className="relative">
-          <button onClick={() => setShowMoreActions(!showMoreActions)} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors"><Activity size={16} /></button>
-          {showMoreActions && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-              <div className="absolute right-0 top-10 w-48 bg-card border border-border rounded-2xl shadow-lg z-50 py-1">
-                {moreActions.map((item, idx) => (
-                  <button key={idx} onClick={() => { item.action(); setShowMoreActions(false); }}
-                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent transition-colors ${item.destructive ? "text-destructive" : "text-foreground"}`}>
-                    <item.icon size={14} className={item.destructive ? "text-destructive" : "text-muted-foreground"} />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <ClientToolsPanel
+          open={showMoreActions}
+          onOpenChange={setShowMoreActions}
+          groups={toolGroups}
+          trigger={
+            <button
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-foreground"
+              style={{ background: "var(--gradient-button)" }}
+              title="Abrir ferramentas"
+            >
+              <Wrench size={14} /> Ferramentas
+            </button>
+          }
+        />
         </div>
       </div>
 
@@ -1297,12 +1388,19 @@ const ClienteDetalhe = () => {
           title: p.description, subtitle: `+ R$ ${fmt(Number(p.amount))}`,
           icon: TrendingUp, color: "text-success", bg: "bg-success/10",
         }));
-        // Transações genéricas restantes
-        transactions.filter((t: any) => t.type !== "payment").forEach((t: any) => events.push({
-          id: `t-${t.id}`, date: t.date, type: t.type,
-          title: t.description, subtitle: `R$ ${fmt(Number(t.amount))}`,
-          icon: DollarSign, color: "text-muted-foreground", bg: "bg-muted",
-        }));
+        // Transações genéricas restantes (incluindo notas e contatos)
+        transactions.filter((t: any) => t.type !== "payment").forEach((t: any) => {
+          const isNote = t.type === "note";
+          const isContact = t.type === "contact";
+          events.push({
+            id: `t-${t.id}`, date: t.date, type: t.type,
+            title: t.description,
+            subtitle: isNote || isContact ? "" : `R$ ${fmt(Number(t.amount))}`,
+            icon: isNote ? StickyNote : isContact ? PhoneCall : DollarSign,
+            color: isNote ? "text-warning" : isContact ? "text-primary" : "text-muted-foreground",
+            bg: isNote ? "bg-warning/10" : isContact ? "bg-primary/10" : "bg-muted",
+          });
+        });
         const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         return sorted.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento no histórico</p>
