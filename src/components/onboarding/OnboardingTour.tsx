@@ -240,13 +240,37 @@ export const OnboardingTourAuto = () => {
 
   useEffect(() => {
     if (!user) return;
-    const completed =
-      localStorage.getItem(STORAGE_KEY) === "1" ||
-      localStorage.getItem(`${STORAGE_KEY}_${user.id}`) === "1";
-    if (!completed) {
-      const t = setTimeout(() => setOpen(true), 1200);
+    let cancelled = false;
+    (async () => {
+      // Check server-side flag first (source of truth across devices)
+      const { data } = await supabase
+        .from("profiles")
+        .select("onboarding_completed_at" as any)
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const serverCompleted = !!(data as any)?.onboarding_completed_at;
+      if (serverCompleted) {
+        localStorage.setItem(`${STORAGE_KEY}_${user.id}`, "1");
+        return;
+      }
+      const localCompleted =
+        localStorage.getItem(STORAGE_KEY) === "1" ||
+        localStorage.getItem(`${STORAGE_KEY}_${user.id}`) === "1";
+      if (localCompleted) {
+        // Sync local → server so it never reappears
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed_at: new Date().toISOString() } as any)
+          .eq("id", user.id);
+        return;
+      }
+      const t = setTimeout(() => !cancelled && setOpen(true), 1200);
       return () => clearTimeout(t);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   return <OnboardingTour open={open} onClose={() => setOpen(false)} />;
