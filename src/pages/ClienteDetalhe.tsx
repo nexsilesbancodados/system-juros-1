@@ -1114,7 +1114,7 @@ const ClienteDetalhe = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
+        <button onClick={() => navigate(`/clientes/novo?clientId=${id}`)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
           <Plus size={15} /> Novo Empréstimo
         </button>
         <button onClick={payAllPending} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-success/10 text-success border border-success/20 text-sm font-medium hover:bg-success/20 transition-colors">
