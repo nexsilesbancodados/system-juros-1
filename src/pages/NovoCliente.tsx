@@ -465,11 +465,11 @@ const NovoCliente = () => {
 
       if (avatarFile) {
         const ext = avatarFile.name.split(".").pop();
-        const path = `client-avatars/${clientId}.${ext}`;
+        const path = `${user!.id}/client-avatars/${clientId}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("uploads").upload(path, avatarFile, { upsert: true });
         if (!uploadError) {
-          const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-          avatar_url = urlData.publicUrl;
+          const signed = await getSignedUploadUrl(path);
+          if (signed) avatar_url = signed;
         }
       }
 
