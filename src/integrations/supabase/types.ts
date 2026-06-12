@@ -947,6 +947,7 @@ export type Database = {
           is_chat_blocked: boolean
           loan_balance: number
           name: string
+          onboarding_completed_at: string | null
           pix_key: string | null
           pix_key_type: string | null
           profit_balance: number
@@ -966,6 +967,7 @@ export type Database = {
           is_chat_blocked?: boolean
           loan_balance?: number
           name?: string
+          onboarding_completed_at?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           profit_balance?: number
@@ -985,6 +987,7 @@ export type Database = {
           is_chat_blocked?: boolean
           loan_balance?: number
           name?: string
+          onboarding_completed_at?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           profit_balance?: number
