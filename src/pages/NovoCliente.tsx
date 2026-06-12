@@ -1332,6 +1332,7 @@ const NovoCliente = () => {
                 <AlertCircle size={14} /> Informe o número de parcelas
               </div>
             )}
+            </div>
           </div>
 
           {/* ── ADVANCED CONTRACT FIELDS ── */}
