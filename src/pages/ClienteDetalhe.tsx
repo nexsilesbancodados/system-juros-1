@@ -21,6 +21,7 @@ import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
+import { getSignedUploadUrl } from "@/lib/storage";
 
 const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
   { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
