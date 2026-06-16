@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -401,15 +402,7 @@ serve(async (req) => {
     }
 
     // Memória de longo prazo — JSON estruturado (com fallback p/ texto legado)
-    let memoryObj: any = {};
-    const rawMem = (client.bot_memory || "").toString();
-    try { memoryObj = rawMem.trim().startsWith("{") ? JSON.parse(rawMem) : { notas_legadas: rawMem.slice(0, 1500) }; } catch { memoryObj = { notas_legadas: rawMem.slice(0, 1500) }; }
-    memoryObj.fatos ??= [];
-    memoryObj.preferencias ??= [];
-    memoryObj.motivos_atraso ??= [];
-    memoryObj.contatos_alternativos ??= [];
-    memoryObj.promessas ??= [];
-
+    const memoryObj = parseMemory(client.bot_memory);
     const memoryPretty = JSON.stringify(memoryObj, null, 2);
 
     // Promessas pendentes (audit_logs) ainda não concluídas
@@ -552,26 +545,17 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     if (result.reply) await botSay(result.reply);
 
-    // Merge inteligente da memória (não substitui — funde e deduplica)
-    if (result.memory_update && typeof result.memory_update === "object") {
-      const dedupArr = (a: any[] = [], b: any[] = []) => {
-        const seen = new Set<string>();
-        return [...a, ...b].filter(x => {
-          const k = typeof x === "string" ? x.toLowerCase().trim() : JSON.stringify(x);
-          if (seen.has(k)) return false; seen.add(k); return true;
-        }).slice(-20); // mantém últimos 20 únicos por seção
-      };
-      const merged = {
-        fatos: dedupArr(memoryObj.fatos, result.memory_update.fatos),
-        preferencias: dedupArr(memoryObj.preferencias, result.memory_update.preferencias),
-        motivos_atraso: dedupArr(memoryObj.motivos_atraso, result.memory_update.motivos_atraso),
-        contatos_alternativos: dedupArr(memoryObj.contatos_alternativos, result.memory_update.contatos_alternativos),
-        promessas: dedupArr(memoryObj.promessas, result.memory_update.promessas),
-        ultima_interacao: result.memory_update.ultima_interacao || todayStr,
-        notas_legadas: memoryObj.notas_legadas, // preserva legado
-      };
-      const serialized = JSON.stringify(merged).slice(0, 6000);
-      await supabase.from("clients").update({ bot_memory: serialized }).eq("id", client.id);
+    // Merge inteligente da memória (validado + dedup + limite por seção, ver _shared/memory.ts)
+    if (result.memory_update) {
+      try {
+        const merged = mergeMemory(memoryObj, result.memory_update, todayStr);
+        const serialized = serializeMemory(merged);
+        // Garantia final: só grava se for JSON parseável (nunca corrompe a coluna)
+        JSON.parse(serialized);
+        await supabase.from("clients").update({ bot_memory: serialized }).eq("id", client.id);
+      } catch (e) {
+        console.error("[memory] merge falhou, mantendo memória anterior:", e);
+      }
     }
 
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
