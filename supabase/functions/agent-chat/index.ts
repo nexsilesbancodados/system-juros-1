@@ -82,7 +82,7 @@ Instruções:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-7-sonnet-20250219",
+        model: "claude-sonnet-4-5-20250929",
         max_tokens: 2048,
         temperature: 0.7,
         system: systemPrompt,
