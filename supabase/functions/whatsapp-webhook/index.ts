@@ -436,15 +436,17 @@ serve(async (req) => {
     const recentPaidText = (recentPaid || []).map(p => `- Parcela #${p.installment_number}: R$ ${Number(p.paid_amount || p.amount).toFixed(2)} em ${(p.paid_at || '').slice(0,10)}${p.payment_method ? ` (${p.payment_method})` : ''}`).join("\n");
     const templatesText = (messageTemplates || []).map(t => `• ${t.name}: ${t.content.slice(0, 120)}`).join("\n").slice(0, 800);
 
+    const contractShort = (id?: string) => id ? `#${String(id).slice(0,6)}` : '';
+
     const overdueDetail = overdue.map(i => {
       const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
       const days = daysBetween(d, todayStr);
-      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (${days}d em atraso, desde ${d}${i.late_fee ? `, multa R$ ${Number(i.late_fee).toFixed(2)}` : ''})`;
+      return `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (${days}d em atraso, desde ${d}${i.late_fee ? `, multa R$ ${Number(i.late_fee).toFixed(2)}` : ''})`;
     }).join('\n');
 
     const upcomingDetail = upcoming.map(i => {
       const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
-      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (vence em ${d})`;
+      return `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (vence em ${d})`;
     }).join('\n');
 
     const addr: any = client.address || {};
@@ -468,24 +470,25 @@ Parcelas pagas no histórico: ${paidCount}
 Notas internas do cliente (cadastro): ${client.notes || '(nenhuma)'}
 
 ═══ 📂 CONTRATOS ATIVOS (${activeContracts?.length || 0}) ═══
-${(activeContracts || []).map(c => `- Contrato ${c.id.slice(0,8)}: Capital R$ ${Number(c.capital).toFixed(2)} | ${c.num_installments || '?'}x | ${c.loan_mode || 'normal'} | ${c.frequency} | taxa ${c.interest_rate}% | início ${c.start_date}`).join('\n') || '(nenhum)'}
+IMPORTANTE: Cada contrato é INDEPENDENTE. NUNCA some parcelas de contratos diferentes como se fossem o mesmo empréstimo. Sempre cite o ID curto do contrato (ex: #abc123) ao falar de uma parcela específica, e use APENAS os valores listados abaixo — não invente nem arredonde.
+${(activeContracts || []).map(c => `- Contrato ${contractShort(c.id)}: Capital R$ ${Number(c.capital).toFixed(2)} | ${c.num_installments || '?'}x | ${c.loan_mode || 'normal'} | ${c.frequency} | taxa ${c.interest_rate}% | início ${c.start_date}`).join('\n') || '(nenhum)'}
 
 ═══ 💰 SITUAÇÃO FINANCEIRA — HOJE ${brDate.toLocaleDateString('pt-BR')} ═══
 📅 Vence HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcela(s))
 ⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcela(s))
 💯 TOTAL p/ quitar pendências AGORA: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
 
-Detalhe ATRASADAS:
+Detalhe ATRASADAS (cada linha = um contrato específico, NÃO misture):
 ${overdueDetail || '(sem atrasos)'}
 
 Detalhe VENCE HOJE:
-${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)}`).join('\n') || '(nenhuma)'}
+${dueToday.map(i => `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)}`).join('\n') || '(nenhuma)'}
 
 Próximas (preview):
 ${upcomingDetail || '(sem próximas pendentes)'}
 
-═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) ═══
-${rolloverOptions.map((o: any) => `- Juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
+═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) — por contrato ═══
+${rolloverOptions.map((o: any) => `- Contrato ${contractShort(o.contractId)}: juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
 
 ═══ ✅ ÚLTIMOS PAGAMENTOS (referência p/ continuidade) ═══
 ${recentPaidText || '(nenhum pagamento ainda)'}
@@ -513,7 +516,7 @@ Recebedor: ${profile?.name || settings.company_name}
 1. CONTEXTO ABSOLUTO: Releia o histórico recente, memória, notas humanas e promessas ANTES de responder. NUNCA repita pergunta já respondida. NUNCA peça dado já no perfil.
 2. CONTINUIDADE: Se houver promessa pendente, faça follow-up natural ("você havia combinado pagar até DD/MM, conseguiu?"). Se houve pagamento recente, agradeça pelo nome.
 3. TOM: Profissional, empático, humano, brasileiro coloquial. Emojis com moderação (1–2 por mensagem).
-4. PRECISÃO DE VALORES: Sempre cite valor exato, número da parcela e data. Nunca arredonde sem dizer.
+4. PRECISÃO DE VALORES: Sempre cite o ID curto do contrato (#abcdef), número da parcela, valor exato e data, copiados LITERALMENTE das listas acima. NUNCA invente valor, NUNCA arredonde, NUNCA some parcelas de contratos diferentes — cada contrato tem suas próprias parcelas independentes. Se o cliente tiver vários contratos, trate-os separadamente e deixe claro qual contrato você está discutindo.
 5. NEGOCIAÇÃO: Para score >80 ofereça flexibilidade (descontos pequenos na multa, parcelar atraso). Para score <40 seja firme, mas humano.
 6. COMPROVANTE: Quando o cliente enviar comprovante (imagem/PDF), extraia valor e data. Confirme o pagamento explicitamente antes de marcar (is_receipt=true).
 7. RENOVAÇÃO: Oferte só quando o cliente disser que não tem o total — apresente "pagar só os juros" como alívio temporário.
