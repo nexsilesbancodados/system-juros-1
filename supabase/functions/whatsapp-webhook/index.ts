@@ -555,7 +555,13 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     if (!aiResp.ok) throw new Error(await aiResp.text());
     const aiData = await aiResp.json();
-    const result = JSON.parse(aiData.content[0].text.match(/\{[\s\S]*\}/)[0]);
+    const rawText = aiData?.content?.[0]?.text ?? "";
+    let parsed = extractJsonObject(rawText);
+    if (!parsed) {
+      console.warn("[ai] resposta sem JSON válido, devolvendo fallback:", rawText.slice(0, 200));
+      parsed = { reply: rawText.slice(0, 400) || "Desculpe, tive um problema técnico. Pode repetir, por favor?" };
+    }
+    const result = sanitizeAiResult(parsed);
 
     if (result.reply) await botSay(result.reply);
 
@@ -574,8 +580,26 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
-    if (result.is_receipt && installments?.length) {
-      const receiptValue = Number(result.receipt_value);
+    // Aceita comprovante só se houver mídia anexada OU texto com palavra-chave + valor.
+    // Evita baixar parcela por mensagem solta como "vou pagar amanhã".
+    const trustedReceipt = result.is_receipt && shouldTrustReceipt({
+      messageType,
+      hasMedia: !!mediaData,
+      incomingText,
+      receiptValue: result.receipt_value,
+    });
+    if (result.is_receipt && !trustedReceipt) {
+      console.log("[receipt] IA marcou is_receipt mas falta evidência — ignorando baixa automática");
+      await supabase.from("notifications").insert({
+        user_id: userId, title: "Possível pagamento",
+        message: `Cliente ${client.name} mencionou pagamento sem enviar comprovante. Confirme manualmente.`,
+        type: "warning",
+      });
+    }
+
+    if (trustedReceipt && installments?.length) {
+      const receiptValue = result.receipt_value;
+
       
       if (result.is_rollover) {
         // Lógica de Renovação (Pagar apenas Juros)
