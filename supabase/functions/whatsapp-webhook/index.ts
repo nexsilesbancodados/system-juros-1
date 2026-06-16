@@ -387,16 +387,20 @@ serve(async (req) => {
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
     const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
 
-    // Renovação (pagar só juros)
+    // Renovação (pagar só juros) — usa cálculo estável (capital × taxa)
     const rolloverOptions = (activeContracts || []).map(c => {
       const inst = installments?.find(i => i.contract_id === c.id);
       if (!inst) return null;
-      const interestOnly = Number(inst.amount) - Number(c.capital);
       return {
         contractId: c.id,
-        interestOnly: interestOnly > 0 ? interestOnly : (Number(c.capital) * (Number(c.interest_rate) / 100)),
+        interestOnly: computeRolloverInterest({
+          capital: Number(c.capital),
+          interestRate: Number(c.interest_rate),
+          installmentAmount: Number(inst.amount),
+          numInstallments: Number(c.num_installments),
+        }),
         totalAmount: Number(inst.amount),
-        frequency: c.frequency
+        frequency: c.frequency,
       };
     }).filter(Boolean);
 
