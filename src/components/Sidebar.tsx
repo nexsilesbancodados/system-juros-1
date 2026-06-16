@@ -4,18 +4,16 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, BarChart3, Users, Receipt, Wallet,
-  TrendingUp, DollarSign, Database, Search, X,
-  Target, Calculator, CheckSquare, StickyNote, Table, ChevronDown,
-  FileText, Crown, ClipboardList, Sparkles,
-  Settings, Bot, QrCode, UserCheck, Shield,
-  Briefcase, PieChart, Cog, LogOut, User, LifeBuoy, MessageCircle,
-  AlertTriangle, ChevronLeft, Wrench,
+  TrendingUp, DollarSign, Database, Target, Calculator,
+  CheckSquare, StickyNote, Table, ChevronDown, FileText,
+  Crown, ClipboardList, Sparkles, Settings, Bot, QrCode,
+  UserCheck, Shield, Cog, LogOut, User, LifeBuoy, MessageCircle,
+  AlertTriangle, ChevronLeft, Plus, Search,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { isSuperAdminEmail } from "@/lib/admin";
 import { useChatUnread } from "@/hooks/useChatUnread";
-import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
   label: string;
@@ -23,52 +21,30 @@ interface MenuItem {
   path: string;
   badge?: number;
   highlight?: boolean;
-  shortcut?: string;
 }
 
 interface MenuSection {
   title: string;
-  sectionIcon?: LucideIcon;
   items: MenuItem[];
   collapsible?: boolean;
   defaultOpen?: boolean;
 }
 
-// Paleta unificada — 4 tons semânticos
-const iconColorMap: Record<string, string> = {
-  // destaque / inteligência
-  "/hoje": "text-amber-400",
-  "/comunicacao": "text-violet-400",
-  "/comunicacao/inbox": "text-violet-400",
-  "/chat": "text-violet-400",
-  // positivo / financeiro
-  "/carteira": "text-emerald-400",
-  "/lucros": "text-emerald-400",
-  // alerta
-  "/inadimplencia": "text-rose-400",
-  "/gastos": "text-rose-400",
-  // admin / sistema
-  "/admin": "text-amber-300",
-  "/auditoria": "text-amber-300",
-};
-
 const sections: MenuSection[] = [
   {
-    title: "Principal",
-    sectionIcon: PieChart,
+    title: "Visão Geral",
     items: [
-      { label: "Hoje", icon: Sparkles, path: "/hoje", highlight: true, shortcut: "h" },
-      { label: "Painel", icon: LayoutDashboard, path: "/dashboard", shortcut: "1" },
-      { label: "Análises", icon: BarChart3, path: "/analises", shortcut: "2" },
-      { label: "Relatórios", icon: FileText, path: "/relatorios", shortcut: "3" },
+      { label: "Hoje", icon: Sparkles, path: "/hoje", highlight: true },
+      { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
+      { label: "Análises", icon: BarChart3, path: "/analises" },
+      { label: "Relatórios", icon: FileText, path: "/relatorios" },
     ],
   },
   {
-    title: "Operações",
-    sectionIcon: Briefcase,
+    title: "Operação",
     items: [
-      { label: "Clientes", icon: Users, path: "/clientes", shortcut: "4" },
-      { label: "Cobranças", icon: Receipt, path: "/cobrancas", shortcut: "5" },
+      { label: "Clientes", icon: Users, path: "/clientes" },
+      { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
       { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia" },
       { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
       { label: "Portais", icon: QrCode, path: "/qrcode" },
@@ -76,7 +52,6 @@ const sections: MenuSection[] = [
   },
   {
     title: "Financeiro",
-    sectionIcon: DollarSign,
     items: [
       { label: "Carteira", icon: Wallet, path: "/carteira" },
       { label: "Lucros", icon: TrendingUp, path: "/lucros" },
@@ -85,7 +60,8 @@ const sections: MenuSection[] = [
   },
   {
     title: "Comunicação",
-    sectionIcon: Bot,
+    collapsible: true,
+    defaultOpen: true,
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
@@ -94,7 +70,6 @@ const sections: MenuSection[] = [
   },
   {
     title: "Ferramentas",
-    sectionIcon: Wrench,
     collapsible: true,
     defaultOpen: false,
     items: [
@@ -108,14 +83,13 @@ const sections: MenuSection[] = [
   },
   {
     title: "Sistema",
-    sectionIcon: Cog,
     collapsible: true,
     defaultOpen: false,
     items: [
       { label: "Configurações", icon: Settings, path: "/configuracoes" },
       { label: "Suporte", icon: LifeBuoy, path: "/suporte" },
-      { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
+      { label: "Auditoria", icon: Shield, path: "/auditoria" },
       { label: "Admin", icon: Crown, path: "/admin" },
     ],
   },
@@ -135,10 +109,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const brandName = config.companyName || "SYSTEM JUROS";
   const isSuperAdmin = isSuperAdminEmail(user?.email);
   const chatUnread = useChatUnread();
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtra item "Admin" do menu para usuários comuns
   const visibleSections = useMemo(() =>
     sections.map((s) => ({
       ...s,
@@ -149,26 +120,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       }),
     })), [isSuperAdmin, profile?.is_admin]);
 
-  // Filtra por busca
-  const filteredSections = useMemo(() => {
-    if (!searchQuery.trim()) return visibleSections;
-    const q = searchQuery.toLowerCase();
-    return visibleSections
-      .map((s) => ({
-        ...s,
-        items: s.items.filter((i) => i.label.toLowerCase().includes(q)),
-      }))
-      .filter((s) => s.items.length > 0);
-  }, [visibleSections, searchQuery]);
-
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const openGlobalSearch = () => {
+    // dispara o atalho global Cmd/Ctrl+K (GlobalSearch escuta esse evento)
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }));
+  };
 
   const renderItem = (item: MenuItem) => {
     const active = isActive(item.path);
     const Icon = item.icon;
     const badge = item.path === "/chat" && chatUnread > 0 ? chatUnread : item.badge || 0;
-    const colorClass = iconColorMap[item.path] || "text-muted-foreground";
 
     return (
       <button
@@ -176,150 +139,86 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`
-          group relative w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[13px] font-medium
-          transition-all duration-300 ease-out
+          group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+          transition-colors duration-200
           ${active
-            ? "text-foreground sidebar-item-active"
-            : "text-muted-foreground hover:text-foreground"
+            ? "bg-primary/15 text-foreground"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
           }
           ${collapsed ? "justify-center px-2" : ""}
         `}
       >
-        {/* Indicador ativo - barra lateral */}
         {active && (
-          <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.6)]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />
         )}
 
-        {/* Container do ícone */}
-        <div
-          className={`
-            relative w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0
-            transition-all duration-300 ease-out
-            ${active
-              ? "bg-primary/20 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
-              : `${colorClass} group-hover:bg-accent/40 group-hover:shadow-[0_0_12px_hsl(var(--primary)/0.1)] group-hover:scale-105`
-            }
-          `}
-        >
-          <Icon size={17} strokeWidth={active ? 2.5 : 2} />
-
-          {/* Badge no ícone (modo collapsed) */}
+        <div className={`relative shrink-0 ${active ? "text-primary" : ""}`}>
+          <Icon size={16} strokeWidth={active ? 2.4 : 1.9} />
+          {item.highlight && !active && !collapsed && (
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
+          )}
           {badge > 0 && collapsed && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-card animate-pulse">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-card">
               {badge > 9 ? "9+" : badge}
             </span>
           )}
-
-          {/* Highlight dot */}
-          {item.highlight && !active && !collapsed && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)] animate-pulse" />
-          )}
         </div>
 
-        {/* Label */}
         {!collapsed && (
-          <span className="truncate flex-1 text-left transition-all duration-200">
-            {item.label}
-          </span>
+          <span className="truncate flex-1 text-left">{item.label}</span>
         )}
 
-        {/* Badge (modo expandido) */}
         {!collapsed && badge > 0 && (
-          <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-destructive/90 text-destructive-foreground text-[10px] font-bold flex items-center justify-center animate-pulse shrink-0 shadow-sm">
+          <span className="min-w-[18px] h-4 px-1.5 rounded-full bg-destructive/90 text-destructive-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
             {badge > 99 ? "99+" : badge}
           </span>
         )}
 
-        {/* Shortcut */}
-        {!collapsed && item.shortcut && !active && !searchQuery && (
-          <kbd className="hidden lg:inline-flex h-5 px-1.5 rounded-md bg-muted text-[10px] font-mono text-muted-foreground/60 items-center border border-border/30">
-            {item.shortcut}
-          </kbd>
-        )}
-
-        {/* Tooltip no modo collapsed */}
         {collapsed && (
-          <div
-            className="
-              absolute left-full ml-3 px-3.5 py-2.5 rounded-xl
-              bg-popover/95 backdrop-blur-xl border border-border/40
-              text-[13px] text-foreground font-medium whitespace-nowrap
-              opacity-0 pointer-events-none
-              group-hover:opacity-100 group-hover:pointer-events-auto
-              transition-all duration-200 ease-out
-              shadow-2xl z-50 translate-x-2 group-hover:translate-x-0
-              before:absolute before:-left-1 before:top-1/2 before:-translate-y-1/2
-              before:w-2 before:h-2 before:bg-popover/95 before:rotate-45
-              before:border-l before:border-b before:border-border/40
-            "
-          >
+          <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-popover border border-border/40 text-[12px] text-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl z-50">
             {item.label}
-            {badge > 0 && (
-              <span className="ml-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold">
-                {badge}
-              </span>
-            )}
           </div>
         )}
       </button>
     );
   };
 
-  // Estado de seções colapsáveis: abrem automaticamente se contêm rota ativa
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const toggleSection = (title: string) =>
     setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
 
   const renderSection = (section: MenuSection, index: number) => {
     const sectionHasActive = section.items.some((i) => isActive(i.path));
-    const SectionIcon = section.sectionIcon;
-    const isCollapsible = !!section.collapsible && !collapsed && !searchQuery;
+    const isCollapsible = !!section.collapsible && !collapsed;
     const userToggled = openSections[section.title];
     const isOpen = isCollapsible
       ? (userToggled !== undefined ? userToggled : (section.defaultOpen || sectionHasActive))
       : true;
 
     return (
-      <div key={section.title} className={index > 0 ? "mt-1" : ""}>
-        {/* Cabeçalho da seção */}
+      <div key={section.title} className={index > 0 ? "mt-3" : ""}>
         {!collapsed && (
           <button
             type="button"
             onClick={isCollapsible ? () => toggleSection(section.title) : undefined}
             className={`
-              w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-lg
-              transition-colors duration-200
+              w-full flex items-center gap-2 px-3 py-1 mb-0.5 rounded-md
               ${isCollapsible ? "hover:bg-accent/20 cursor-pointer" : "cursor-default"}
             `}
           >
-            {SectionIcon && (
-              <SectionIcon
-                size={12}
-                className={`shrink-0 transition-colors duration-200 ${
-                  sectionHasActive ? "text-primary/70" : "text-muted-foreground/30"
-                }`}
-              />
-            )}
-            <p
-              className={`text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-200 ${
-                sectionHasActive ? "text-primary/60" : "text-muted-foreground/40"
-              }`}
-            >
+            <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${sectionHasActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
               {section.title}
             </p>
-            <div className="flex-1 h-px bg-border/20 ml-1" />
+            <div className="flex-1" />
             {isCollapsible && (
               <ChevronDown
-                size={12}
-                className={`shrink-0 text-muted-foreground/40 transition-transform duration-200 ${
-                  isOpen ? "rotate-0" : "-rotate-90"
-                }`}
+                size={11}
+                className={`text-muted-foreground/40 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`}
               />
             )}
           </button>
         )}
 
-        {/* Itens da seção */}
         {isOpen && (
           <div className="space-y-0.5">
             {section.items.map(renderItem)}
@@ -343,215 +242,139 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       className={`
         fixed left-0 top-0 h-screen flex flex-col z-50
         transition-[width] duration-300 ease-out
-        border-r border-border/5 shadow-2xl shadow-black/40
-        ${collapsed ? "w-[76px]" : "w-[260px]"}
+        border-r border-border/10 shadow-2xl shadow-black/40
+        ${collapsed ? "w-[68px]" : "w-[232px]"}
       `}
       style={{
-        background: sidebarBg || "hsl(var(--card) / 0.4)",
+        background: sidebarBg || "hsl(var(--card) / 0.45)",
         backdropFilter: "blur(40px)",
       }}
     >
-      {/* Background Subtle Eagle */}
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 opacity-[0.03] pointer-events-none rotate-[-15deg] -z-10">
-        <img src={eagleLogo} alt="" className="w-full h-full object-contain grayscale" />
-      </div>
-
       {/* Logo */}
-      <div
-        className={`
-          flex items-center h-20 border-b border-border/5 shrink-0
-          transition-all duration-300
-          ${collapsed ? "justify-center px-2" : "px-4 gap-3"}
-        `}
-      >
+      <div className={`flex items-center h-14 border-b border-border/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-3 gap-2.5"}`}>
         <div className="relative shrink-0">
-          <img
-            src={logoSrc}
-            alt={brandName}
-            width={34}
-            height={34}
-            className="rounded-xl ring-1 ring-primary/20 shadow-lg shadow-primary/5"
-          />
-          {/* Status online dot */}
-          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+          <img src={logoSrc} alt={brandName} width={30} height={30} className="rounded-lg ring-1 ring-primary/20" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-card" />
         </div>
-
         {!collapsed && (
           <div className="flex flex-col min-w-0 overflow-hidden">
-            <span className="text-sm font-bold tracking-wider text-gradient-gold leading-none truncate">
+            <span className="text-[13px] font-bold tracking-wide text-gradient-gold leading-none truncate">
               {brandName.split(" ")[0] || brandName}
             </span>
-            <span className="text-[10px] font-semibold tracking-[0.15em] text-muted-foreground/40 leading-tight truncate">
+            <span className="text-[9px] font-semibold tracking-[0.15em] text-muted-foreground/40 leading-tight truncate">
               {brandName.split(" ").slice(1).join(" ") || "PRO"}
             </span>
           </div>
         )}
       </div>
 
-      {/* Botão de colapsar */}
+      {/* Botão colapsar */}
       <button
         onClick={onToggleCollapse}
-        className="
-          absolute -right-3 top-[3.5rem] w-7 h-7
-          rounded-full bg-background border border-border/20 shadow-xl
-          flex items-center justify-center
-          text-muted-foreground hover:text-primary hover:border-primary/30
-          hover:scale-110 hover:shadow-lg hover:shadow-primary/10
-          transition-all duration-300 focus-ring z-10
-        "
+        className="absolute -right-3 top-12 w-6 h-6 rounded-full bg-background border border-border/30 shadow-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors z-10"
         title={collapsed ? "Expandir" : "Minimizar"}
       >
-        <span
-          className={`transition-transform duration-300 ${
-            collapsed ? "rotate-0" : "rotate-180"
-          }`}
-        >
-          <ChevronLeft size={13} />
+        <span className={`transition-transform duration-300 ${collapsed ? "rotate-0" : "rotate-180"}`}>
+          <ChevronLeft size={12} />
         </span>
       </button>
 
-      {/* Busca */}
+      {/* Busca rápida + Ação rápida */}
       {!collapsed && (
-        <div className="px-3 pt-3 pb-2">
-          <div className="relative group">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary/60 transition-colors"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar no menu..."
-              className="
-                w-full h-9 pl-9 pr-8 rounded-xl
-                bg-accent/30 border border-border/20
-                text-[13px] text-foreground placeholder:text-muted-foreground/40
-                focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30
-                focus:bg-accent/50
-                transition-all duration-200
-              "
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-accent/50 text-muted-foreground/50 hover:text-foreground transition-colors"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
+        <div className="px-3 pt-3 pb-2 space-y-1.5">
+          <button
+            onClick={openGlobalSearch}
+            className="w-full flex items-center gap-2 h-8 px-2.5 rounded-lg bg-accent/30 border border-border/20 text-[12px] text-muted-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
+          >
+            <Search size={13} />
+            <span className="flex-1 text-left">Buscar...</span>
+            <kbd className="hidden lg:inline text-[9px] font-mono px-1.5 py-0.5 rounded bg-muted/50 border border-border/30">⌘K</kbd>
+          </button>
+          <button
+            onClick={() => navigate("/clientes/novo")}
+            className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 transition-colors shadow-md shadow-primary/10"
+          >
+            <Plus size={13} /> Novo cliente
+          </button>
+        </div>
+      )}
+
+      {collapsed && (
+        <div className="px-2 pt-3 pb-1 flex flex-col gap-1.5">
+          <button
+            onClick={openGlobalSearch}
+            title="Buscar (⌘K)"
+            className="w-full h-9 rounded-lg bg-accent/30 hover:bg-accent/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Search size={15} />
+          </button>
+          <button
+            onClick={() => navigate("/clientes/novo")}
+            title="Novo cliente"
+            className="w-full h-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center transition-colors"
+          >
+            <Plus size={15} />
+          </button>
         </div>
       )}
 
       {/* Navegação */}
       <nav
-        className="flex-1 overflow-y-auto px-2.5 py-2 space-y-1 scrollbar-none"
+        className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {filteredSections.map((section, idx) => renderSection(section, idx))}
-
-        {filteredSections.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/40">
-            <Search size={24} className="mb-2 opacity-50" />
-            <p className="text-xs">Nenhum item encontrado</p>
-          </div>
-        )}
+        {visibleSections.map((section, idx) => renderSection(section, idx))}
       </nav>
 
       {/* Footer do usuário */}
-      <div
-        className={`
-          shrink-0 border-t border-border/5 p-3.5 bg-background/20
-          ${collapsed ? "flex flex-col items-center gap-2" : ""}
-        `}
-      >
+      <div className={`shrink-0 border-t border-border/10 p-2.5 bg-background/20 ${collapsed ? "flex flex-col items-center gap-2" : ""}`}>
         {!collapsed ? (
-          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-accent/30 transition-all duration-200 cursor-pointer group">
-            {/* Avatar */}
+          <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent/30 transition-colors group">
             <div
-              className="
-                w-10 h-10 rounded-xl
-                bg-primary/10 flex items-center justify-center shrink-0
-                ring-1 ring-primary/15 group-hover:ring-primary/30
-                transition-all duration-200
-              "
+              className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/15 cursor-pointer"
               onClick={() => navigate("/perfil")}
             >
               {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt=""
-                  className="w-10 h-10 rounded-xl object-cover"
-                />
+                <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
               ) : (
-                <User size={18} className="text-primary" />
+                <User size={15} className="text-primary" />
               )}
             </div>
-
-            {/* Info */}
-            <div
-              className="flex-1 min-w-0 cursor-pointer"
-              onClick={() => navigate("/perfil")}
-            >
-              <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate("/perfil")}>
+              <p className="text-[12px] font-semibold text-foreground truncate leading-tight">
                 {profile?.name || "Usuário"}
               </p>
-              <p className="text-[10px] text-muted-foreground/50 truncate">
-                {profile?.email || ""}
-              </p>
+              <p className="text-[10px] text-muted-foreground/50 truncate">{profile?.email || ""}</p>
             </div>
-
-            {/* Sair */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSignOut();
-              }}
-              className="
-                p-2 rounded-lg
-                text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10
-                transition-all duration-200 opacity-0 group-hover:opacity-100
-              "
+              onClick={(e) => { e.stopPropagation(); handleSignOut(); }}
+              className="p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
               title="Sair"
             >
-              <LogOut size={15} />
+              <LogOut size={13} />
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2">
+          <>
             <button
               onClick={() => navigate("/perfil")}
-              className="
-                w-11 h-11 rounded-xl
-                bg-primary/10 flex items-center justify-center
-                hover:bg-primary/15 hover:ring-2 hover:ring-primary/20
-                transition-all duration-200
-              "
+              className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center hover:bg-primary/15 transition-colors"
               title={profile?.name || "Perfil"}
             >
               {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt=""
-                  className="w-11 h-11 rounded-xl object-cover"
-                />
+                <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-lg object-cover" />
               ) : (
-                <User size={18} className="text-primary" />
+                <User size={15} className="text-primary" />
               )}
             </button>
             <button
               onClick={handleSignOut}
-              className="
-                p-2 rounded-lg
-                text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10
-                transition-all duration-200
-              "
+              className="p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Sair"
             >
-              <LogOut size={15} />
+              <LogOut size={13} />
             </button>
-          </div>
+          </>
         )}
       </div>
     </aside>
