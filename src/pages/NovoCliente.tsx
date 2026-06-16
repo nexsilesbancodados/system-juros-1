@@ -930,13 +930,15 @@ const NovoCliente = () => {
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
-              <button
-                type="button"
-                onClick={() => setShowMoreModes(v => !v)}
-                className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
-              >
-                {showMoreModes ? "Menos opções" : "+ Mais modos"}
-              </button>
+              {!isNewContractOnly && (
+                <button
+                  type="button"
+                  onClick={() => setShowMoreModes(v => !v)}
+                  className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {showMoreModes ? "Menos opções" : "+ Mais modos"}
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(() => {
