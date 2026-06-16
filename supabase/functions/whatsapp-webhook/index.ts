@@ -530,6 +530,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
   "is_promise": boolean,
   "promise_date": "YYYY-MM-DD ou null",
   "receipt_value": number,
+  "receipt_date": "YYYY-MM-DD se conseguir LER do comprovante (foto/PDF), senão null",
   "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida|negociacao|atualizacao_dados|outro",
   "summary": "resumo de 1 linha do status atual",
