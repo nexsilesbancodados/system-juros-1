@@ -39,7 +39,7 @@ const Configuracoes = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).maybeSingle();
+      const { data } = await (supabase as any).from("settings_safe").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -122,7 +122,7 @@ const Configuracoes = () => {
         default_daily_interest: String(s.default_daily_interest || 0.33),
         default_frequency: s.default_frequency || "monthly",
         whatsapp_api_url: s.whatsapp_api_url || "",
-        whatsapp_api_key: s.whatsapp_api_key || "",
+        whatsapp_api_key: "", // never loaded from server; type new value to replace
         whatsapp_instance: s.whatsapp_instance || "",
         n8n_webhook_url: s.n8n_webhook_url || "",
         push_notifications_enabled: s.push_notifications_enabled || false,
@@ -157,7 +157,7 @@ const Configuracoes = () => {
         portal_contact_email: s.portal_contact_email || "",
         custom_contract_template: s.custom_contract_template || "",
         hubla_checkout_url: s.hubla_checkout_url || "",
-        hubla_webhook_token: s.hubla_webhook_token || "",
+        hubla_webhook_token: "", // never loaded from server; type new value to replace
       }));
     }
   }, [settings]);
@@ -213,7 +213,7 @@ const Configuracoes = () => {
       default_daily_interest: parseFloat(form.default_daily_interest),
       default_frequency: form.default_frequency,
       whatsapp_api_url: form.whatsapp_api_url || null,
-      whatsapp_api_key: form.whatsapp_api_key || null,
+      // whatsapp_api_key intentionally omitted — saved via edge function settings-set-secret
       whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
@@ -248,7 +248,7 @@ const Configuracoes = () => {
       portal_contact_email: form.portal_contact_email,
       custom_contract_template: form.custom_contract_template?.trim() || null,
       hubla_checkout_url: form.hubla_checkout_url ? form.hubla_checkout_url.trim() : null,
-      hubla_webhook_token: form.hubla_webhook_token ? form.hubla_webhook_token.trim() : null, // Final sync
+      // hubla_webhook_token intentionally omitted — saved via edge function settings-set-secret
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
