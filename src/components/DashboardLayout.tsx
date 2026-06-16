@@ -63,7 +63,7 @@ const DashboardLayout = () => {
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
       )}
 
-      <div className={`transition-[margin] duration-300 ${isMobile ? "ml-0" : collapsed ? "ml-[72px]" : "ml-[260px]"}`}>
+      <div className={`transition-[margin] duration-300 ${isMobile ? "ml-0" : collapsed ? "ml-[68px]" : "ml-[232px]"}`}>
         <TopBar onSearchClick={() => setSearchOpen(true)} />
         <Breadcrumbs />
         <main className={`p-3 lg:p-6 ${isMobile ? "pb-24" : ""}`}>

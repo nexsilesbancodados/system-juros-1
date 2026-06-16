@@ -1,62 +1,56 @@
-## Plano: Melhorar as Ferramentas
+# Plano: Simplificar e organizar o app
 
-O escopo é amplo (4 áreas × 4 tipos de melhoria). Para entregar valor real sem virar refactor infinito, priorizo o que mais incomoda hoje e empilho em 4 lotes independentes.
+Objetivo: deixar o app mais fácil de usar e mais limpo, **mantendo 100% das funções**. Abordagem: agrupar melhor (não esconder), reduzir cliques e ruído visual, padronizar cabeçalhos e ações.
 
-### Lote 1 — Hub de Ações do Cliente (ClienteDetalhe)
+## 1. Navegação — Sidebar (desktop) e Bottom Nav (mobile)
 
-Hoje as 17+ ferramentas estão espalhadas: 3 botões no topo (Editar / "...") + 3 botões no meio (Novo / Quitar / Cobrar) + ações dentro de cada parcela + ações dentro de cada contrato. Custa achar.
+**Sidebar (`src/components/Sidebar.tsx`)**
+- Consolidar 6 seções → 4: **Visão Geral** (Hoje, Painel, Análises, Relatórios), **Operação** (Clientes, Cobranças, Inadimplência, Cobradores, Portais), **Financeiro** (Carteira, Lucros, Gastos), **Mais** (Comunicação, Ferramentas, Sistema agrupadas, sempre colapsáveis).
+- Reduzir tamanhos: ícones 16, padding vertical menor, espaçamento mais compacto → mais itens visíveis sem rolar.
+- Remover o mapa de cores por rota (mais simples visualmente) — manter só um tom neutro + accent no ativo.
+- Mover busca para `Ctrl/⌘ K` global (já existe `GlobalSearch`) — tirar input do menu para ganhar espaço.
+- Botão "Ações rápidas" fixo no topo: Novo cliente, Cobrar agora, Nova nota.
 
-**O que muda:**
-- Substituir o menu "..." por um **painel lateral "Ferramentas"** (Sheet) agrupado por categoria:
-  - **Contrato** — Novo Empréstimo, Quitar Todas, Editar Cliente, Excluir
-  - **Cobrança** — Cobrar Todas Atrasadas, Enviar Portal, Lembrete WhatsApp, Renegociar
-  - **Documentos** — Gerar PDF, Exportar Resumo, Copiar Dados, Imprimir
-  - **Score & Status** — Score +50/-50, IA Score, Inativar/Reativar
-- Cada ação com ícone + label + descrição curta (1 linha) — fica óbvio o que faz.
-- Botão flutuante "Ações" no header (sempre visível) abre o painel.
-- Mantém atalhos primários no hero: Novo Empréstimo, Quitar Todas, Cobrar.
-- **Novas ações úteis** que faltam hoje:
-  - "Duplicar último empréstimo" (renovação rápida)
-  - "Marcar contato realizado" (registra interação manual)
-  - "Adicionar anotação rápida" (sem sair da tela)
+**Bottom Nav mobile (`src/components/MobileBottomNav.tsx`)**
+- Manter 5 abas: Hoje, Clientes, Cobranças, Painel, Mais.
+- No painel "Mais": reorganizar em 3 grupos consistentes com a sidebar (Visão, Comunicação, Ferramentas, Sistema).
+- Adicionar **FAB** (botão flutuante "+") acima da bottom nav para "Novo cliente / Cobrar agora / Anotação".
 
-### Lote 2 — Paleta de Comando Global (Cmd+K)
+## 2. Tela "Hoje" (`src/pages/Hoje.tsx`)
+- Hero limpo: saudação + KPI principal do dia (a receber hoje, atrasos, recebido) em 3 cards grandes.
+- Lista única "O que fazer agora" combinando cobranças do dia + atrasos + tarefas — cada item com 1 ação primária (Cobrar / Marcar pago / WhatsApp).
+- Mover atalhos secundários para um rodapé discreto.
 
-`GlobalSearch.tsx` já existe mas só busca clientes. Expandir para command palette real:
-- **Ações** ("Criar cliente", "Novo empréstimo", "Ir para Inadimplência", "Backup agora")
-- **Navegação** (todas as 30+ páginas)
-- **Clientes** (busca atual)
-- **Contratos** por número/valor
-- Atalho `Cmd/Ctrl + K` global + dica visual na TopBar.
+## 3. Cadastro de cliente (`src/pages/NovoCliente.tsx`, 1729 linhas)
+- Manter wizard de 3 passos, porém:
+  - Cabeçalho fixo com stepper visual + botões Voltar/Avançar sempre visíveis.
+  - Passo 1 (Cliente): apenas Nome + CPF + Telefone obrigatórios; restante em accordion "Dados complementares".
+  - Passo 2 (Empréstimo): presets de modalidade ("Parcelado mensal", "Diário 22 dias", "Só juros mensal") que pré-preenchem campos.
+  - Passo 3 (Revisão): card-resumo com edição inline; CTA único "Criar contrato".
+- Extrair seções pesadas em sub-componentes em `src/components/onboarding/` (não criar arquivos novos se já existem; preencher os existentes).
 
-### Lote 3 — Limpeza de Duplicações
+## 4. Cobranças (`src/pages/Cobrancas.tsx`, 760 linhas)
+- Cabeçalho com chips de filtro rápido: **Hoje · Atrasadas · Próximos 7 dias · Pagas · Todas**.
+- Tabela → cards em mobile, tabela densa em desktop.
+- Ação primária por linha = botão único "Cobrar" que abre `CobrarAgoraModal`; ações secundárias num menu `⋯`.
+- Toolbar: busca + botão "Receber pagamento" como ação primária do topo.
 
-Auditar e remover/fundir:
-- `Automacoes.tsx` (vazia, redireciona) → deletar arquivo
-- `Notificacoes.tsx` vs `NotificationsBell.tsx` → manter só o sino
-- `Suporte.tsx` + `Sobre.tsx` → fundir em "Ajuda"
-- `Hoje.tsx` vs `Dashboard.tsx` → avaliar se "Hoje" agrega
-- `BuscarClientes.tsx` → remove (Cmd+K substitui)
-- Sidebar: reordenar por frequência de uso real (Hoje → Clientes → Cobranças → Financeiro → resto colapsado)
+## 5. Padronização global
+- `TopBar`: reduzir altura, agrupar KPIs num único pill expansível.
+- Componente reutilizável `PageHeader` (título + descrição + ações) aplicado nas 4 páginas acima.
+- Espaçamentos: padronizar `py-6 px-4 md:px-6` em todas as páginas.
 
-### Lote 4 — Ferramentas de Cobrança e Financeiro
+## 6. Segurança (correções obrigatórias detectadas no scan)
+- **profiles**: bloquear escalonamento de privilégio — UPDATE pelo dono não pode alterar `is_admin`, `is_blocked`, `is_chat_blocked` (policy com `WITH CHECK` comparando colunas via trigger ou policy separada).
+- **settings**: remover default hardcoded da `whatsapp_api_key`; criar view pública sem colunas sensíveis e revogar SELECT direto dessas colunas (ou mover para tabela `settings_secrets` só acessível por service_role/edge functions).
+- **storage uploads**: remover policy de UPDATE anônima em `comprovantes/*` (manter só INSERT) ou exigir validação de token no path.
 
-- **Cobranças**: adicionar ação em lote "Enviar para todos selecionados" (checkbox + bulk action bar fixa no rodapé).
-- **Inadimplência**: botão "Renegociar em massa" abrindo wizard.
-- **Financeiro**: exportar CSV/Excel dos KPIs visíveis, filtro de período salvável como preset.
-- **TopBar KPIs**: tornar clicáveis (clicar em "Em Atraso" leva a Inadimplência filtrada).
+## Técnico
+- Edições focadas; não duplicar componentes existentes.
+- Mantém todas as rotas e features — apenas reagrupa/UX.
+- Sem mudanças de stack; Tailwind + shadcn + tokens semânticos existentes.
+- Migrations SQL apenas para o item 6.
 
-### Ordem de execução
-
-Implemento na ordem 1 → 2 → 3 → 4, cada lote testável de forma independente. Posso parar entre lotes para você revisar.
-
-### Detalhes técnicos
-
-- Sheet do shadcn para o painel de ações (já instalado).
-- Command (cmdk via shadcn) para paleta — instalar se faltar.
-- Sem migrações de banco neste plano (só UI/rotas/components).
-- Nenhuma mudança em RLS, Edge Functions, ou lógica de cálculo de empréstimo.
-
-### Pergunta antes de começar
-
-Quer que eu execute **todos os 4 lotes em sequência**, ou prefere ir **um lote por vez** com sua aprovação entre cada um?
+## Fora de escopo
+- Redesign visual completo (tema, paleta, fontes) — manter identidade atual.
+- Remover páginas ou funções.

@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Receipt, Wallet, MoreHorizontal,
+  LayoutDashboard, Users, Receipt, MoreHorizontal,
   BarChart3, FileSignature, TrendingUp, DollarSign, Bot,
   Calculator, Target, CheckSquare, StickyNote, Table, Database,
   QrCode, ClipboardList, Shield, Settings, Crown, Info,
-  UserCheck, FileText, X, Sparkles, Zap, MessageCircle,
+  UserCheck, FileText, X, Sparkles, MessageCircle,
+  Plus, UserPlus, Wallet as WalletIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,7 +92,14 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showMore, setShowMore] = useState(false);
+  const [showFab, setShowFab] = useState(false);
   const isSuperAdmin = isSuperAdminEmail(user?.email);
+
+  const fabActions = [
+    { label: "Novo cliente", icon: UserPlus, onClick: () => navigate("/clientes/novo") },
+    { label: "Cobrar agora", icon: WalletIcon, onClick: () => navigate("/cobrancas") },
+    { label: "Nova anotação", icon: StickyNote, onClick: () => navigate("/ferramentas/anotacoes") },
+  ];
 
   const isActive = (path: string) => {
     if (path === "__more__") return showMore;
@@ -173,6 +181,34 @@ const MobileBottomNav = () => {
           </div>
         </>
       )}
+
+      {/* FAB - Ações rápidas */}
+      {showFab && (
+        <div
+          className="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowFab(false)}
+        />
+      )}
+      <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-2.5">
+        {showFab && fabActions.map((a, i) => (
+          <button
+            key={a.label}
+            onClick={() => { a.onClick(); setShowFab(false); }}
+            style={{ animationDelay: `${i * 40}ms` }}
+            className="animate-slide-up flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-full bg-card border border-border/40 shadow-xl text-foreground text-[13px] font-semibold hover:scale-105 transition-transform"
+          >
+            <a.icon size={16} className="text-primary" />
+            {a.label}
+          </button>
+        ))}
+        <button
+          onClick={() => setShowFab(!showFab)}
+          aria-label="Ações rápidas"
+          className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-2xl shadow-primary/30 flex items-center justify-center transition-transform active:scale-90 ${showFab ? "rotate-45" : ""}`}
+        >
+          <Plus size={26} strokeWidth={2.5} />
+        </button>
+      </div>
 
       {/* Bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/40 safe-area-bottom">
