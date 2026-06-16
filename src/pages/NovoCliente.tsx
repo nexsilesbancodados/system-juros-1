@@ -951,7 +951,8 @@ const NovoCliente = () => {
                   { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
                 ];
                 // Auto-mostra extras se o modo atual for um dos secundários
-                const all = (showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
+                // Cliente existente sempre vê todos os modos; novo cliente esconde os avançados por padrão
+                const all = (isNewContractOnly || showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
                 return all.map(m => (
                 <button key={m.v} onClick={() => {
                   setLoanMode(m.v);
