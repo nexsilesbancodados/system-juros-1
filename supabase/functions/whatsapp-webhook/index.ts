@@ -696,6 +696,6 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
   } catch (err) {
     console.error("Webhook Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), { status: 500, headers: corsHeaders });
   }
 });
