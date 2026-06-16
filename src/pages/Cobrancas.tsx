@@ -680,6 +680,12 @@ const Cobrancas = () => {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
                     <span className="flex items-center gap-1"><CalendarDays size={10} /> {formatBR(inst.due_date)}</span>
+                    {inst.contract_id && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.contract_id}`}>
+                        #{String(inst.contract_id).slice(0, 6)}
+                        {inst.contracts?.capital ? ` · R$ ${fmt(Number(inst.contracts.capital))}` : ""}
+                      </span>
+                    )}
                     {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
                     {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
                   </div>
