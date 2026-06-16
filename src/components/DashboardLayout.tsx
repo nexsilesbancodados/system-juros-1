@@ -3,12 +3,9 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
 // Defer heavy overlays — they're only rendered after user interaction.
 const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
@@ -23,62 +20,9 @@ const DashboardLayout = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const isMobile = useIsMobile();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
   usePushNotifications();
 
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    const key = `__sub_checked_${user.id}`;
-    if (sessionStorage.getItem(key)) return;
-
-    (async () => {
-      // Skip admins or check trial/subscription
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_admin, trial_ends_at, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const hasValidTrial = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
-
-      if (cancelled || profile?.is_admin || hasValidTrial) {
-        sessionStorage.setItem(key, "1");
-        return;
-      }
-
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("email", profile?.email || user.email!)
-        .maybeSingle();
-
-      sessionStorage.setItem(key, "1");
-
-      if (!cancelled && (!sub || sub.status !== 'active')) {
-        const { data: settings } = await supabase
-          .from("settings")
-          .select("hubla_checkout_url")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (settings?.hubla_checkout_url) {
-          toast({
-            title: "Assinatura Requerida",
-            description: "Seu teste grátis expirou. Redirecionando para o checkout...",
-            variant: "destructive",
-          });
-          setTimeout(() => {
-            window.location.href = settings.hubla_checkout_url;
-          }, 3000);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  // Subscription enforcement lives in ProtectedRoute (single source of truth).
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
