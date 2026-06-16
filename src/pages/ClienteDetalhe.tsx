@@ -167,8 +167,16 @@ const ClienteDetalhe = () => {
       if (!groups[cid]) groups[cid] = [];
       groups[cid].push(inst);
     });
-    return groups;
-  }, [installments]);
+    // Ordena cada grupo por número da parcela
+    Object.values(groups).forEach((arr) => arr.sort((a: any, b: any) => (a.installment_number ?? 0) - (b.installment_number ?? 0)));
+    // Ordena os grupos por data de criação do contrato (mais recente primeiro)
+    const order = new Map(contracts.map((c: any, idx: number) => [c.id, idx]));
+    const sorted: Record<string, any[]> = {};
+    Object.keys(groups)
+      .sort((a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999))
+      .forEach((k) => { sorted[k] = groups[k]; });
+    return sorted;
+  }, [installments, contracts]);
 
   const loanCalc = useMemo(() => {
     const cap = parseFloat(loanCapital) || 0;
@@ -1309,21 +1317,26 @@ const ClienteDetalhe = () => {
         <div className="space-y-6">
           {installments.length === 0 ? (
             <EmptyState icon={Receipt} title="Nenhuma parcela" description="As parcelas aparecerão aqui quando o contrato for criado." compact />
-          ) : Object.entries(groupedInstallments).map(([cid, insts]) => {
+          ) : Object.entries(groupedInstallments).map(([cid, insts], gIdx) => {
             const contract = contracts.find((c: any) => c.id === cid);
             return (
-              <div key={cid} className="space-y-2">
-                {contract && (
-                  <div className="flex items-center justify-between px-1 mb-1">
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <FileText size={12} className="text-primary" />
-                      Empréstimo R$ {fmt(Number(contract.capital))} ({formatBR(contract.start_date)})
-                    </h3>
-                    <Badge variant="outline" className="text-[10px] py-0 h-5">
-                      {insts.filter((i: any) => i.status === "paid").length}/{insts.length} pagas
-                    </Badge>
-                  </div>
-                )}
+              <div key={cid} className="rounded-2xl border border-border/60 bg-card/40 p-3 space-y-2">
+                <div className="flex items-center justify-between px-1 mb-1 gap-2">
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2 min-w-0">
+                    <FileText size={12} className="text-primary shrink-0" />
+                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${cid}`}>
+                      Contrato {gIdx + 1} · #{String(cid).slice(0, 6)}
+                    </span>
+                    {contract && (
+                      <span className="truncate text-muted-foreground normal-case font-medium">
+                        R$ {fmt(Number(contract.capital))} · {formatBR(contract.start_date)}
+                      </span>
+                    )}
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] py-0 h-5 shrink-0">
+                    {insts.filter((i: any) => i.status === "paid").length}/{insts.length} pagas
+                  </Badge>
+                </div>
                 <div className="space-y-2">
                   {insts.map((inst: any) => {
                     const isOverdue = inst.status === "overdue";

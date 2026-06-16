@@ -35,7 +35,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     queryFn: async () => {
       if (!user) return [];
       const { data } = await supabase.from("contract_installments")
-        .select("id, amount, paid_amount, due_date, installment_number, client_id, clients:client_id(name, cpf_cnpj)")
+        .select("id, amount, paid_amount, due_date, installment_number, client_id, contract_id, clients:client_id(name, cpf_cnpj), contracts:contract_id(capital)")
         .eq("user_id", user.id).eq("status", "pending")
         .order("due_date", { ascending: true })
         .limit(200);
@@ -267,6 +267,12 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                     <p className="text-sm font-semibold text-foreground truncate">{inst.clients?.name || "Cliente"}</p>
                     <p className="text-[11px] text-muted-foreground">
                       Parcela {inst.installment_number} · {formatBR(inst.due_date)}
+                      {inst.contract_id && (
+                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.contract_id}`}>
+                          #{String(inst.contract_id).slice(0, 6)}
+                          {inst.contracts?.capital ? ` · R$ ${fmtBRL(Number(inst.contracts.capital))}` : ""}
+                        </span>
+                      )}
                       {isOverdue && <span className="text-destructive font-bold ml-1">· ATRASADO</span>}
                       {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
                       {Number(inst.paid_amount || 0) > 0 && (

@@ -62,12 +62,12 @@ const Hoje = () => {
         next7Res, paidRecentRes, profitsMonthRes, pendingMonthRes, clientsRes,
       ] = await Promise.all([
         supabase.from("contract_installments")
-          .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, phone, whatsapp)")
+          .select("id, amount, due_date, installment_number, client_id, contract_id, clients:client_id(name, phone, whatsapp), contracts:contract_id(capital)")
           .eq("user_id", user.id).eq("status", "pending")
           .gte("due_date", today).lte("due_date", eod)
           .order("due_date", { ascending: true }).limit(50),
         supabase.from("contract_installments")
-          .select("id, amount, due_date, installment_number, client_id, clients:client_id(name, phone, whatsapp)")
+          .select("id, amount, due_date, installment_number, client_id, contract_id, clients:client_id(name, phone, whatsapp), contracts:contract_id(capital)")
           .eq("user_id", user.id).eq("status", "pending")
           .lt("due_date", today)
           .order("due_date", { ascending: true }).limit(200),
@@ -311,7 +311,14 @@ const Hoje = () => {
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-bold">{daysLate}d</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Parc {inst.installment_number} · {fmtTime(inst.due_date)}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      Parc {inst.installment_number} · {fmtTime(inst.due_date)}
+                      {inst.contract_id && (
+                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[9px]" title={`Contrato ${inst.contract_id}`}>
+                          #{String(inst.contract_id).slice(0, 6)}
+                        </span>
+                      )}
+                    </p>
                   </button>
                   <p className="text-xs font-bold text-foreground shrink-0">R$ {fmtBRL(amount)}</p>
                   <div className="flex gap-1 shrink-0">
