@@ -436,15 +436,17 @@ serve(async (req) => {
     const recentPaidText = (recentPaid || []).map(p => `- Parcela #${p.installment_number}: R$ ${Number(p.paid_amount || p.amount).toFixed(2)} em ${(p.paid_at || '').slice(0,10)}${p.payment_method ? ` (${p.payment_method})` : ''}`).join("\n");
     const templatesText = (messageTemplates || []).map(t => `• ${t.name}: ${t.content.slice(0, 120)}`).join("\n").slice(0, 800);
 
+    const contractShort = (id?: string) => id ? `#${String(id).slice(0,6)}` : '';
+
     const overdueDetail = overdue.map(i => {
       const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
       const days = daysBetween(d, todayStr);
-      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (${days}d em atraso, desde ${d}${i.late_fee ? `, multa R$ ${Number(i.late_fee).toFixed(2)}` : ''})`;
+      return `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (${days}d em atraso, desde ${d}${i.late_fee ? `, multa R$ ${Number(i.late_fee).toFixed(2)}` : ''})`;
     }).join('\n');
 
     const upcomingDetail = upcoming.map(i => {
       const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
-      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (vence em ${d})`;
+      return `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (vence em ${d})`;
     }).join('\n');
 
     const addr: any = client.address || {};
@@ -468,18 +470,19 @@ Parcelas pagas no histórico: ${paidCount}
 Notas internas do cliente (cadastro): ${client.notes || '(nenhuma)'}
 
 ═══ 📂 CONTRATOS ATIVOS (${activeContracts?.length || 0}) ═══
-${(activeContracts || []).map(c => `- Contrato ${c.id.slice(0,8)}: Capital R$ ${Number(c.capital).toFixed(2)} | ${c.num_installments || '?'}x | ${c.loan_mode || 'normal'} | ${c.frequency} | taxa ${c.interest_rate}% | início ${c.start_date}`).join('\n') || '(nenhum)'}
+IMPORTANTE: Cada contrato é INDEPENDENTE. NUNCA some parcelas de contratos diferentes como se fossem o mesmo empréstimo. Sempre cite o ID curto do contrato (ex: #abc123) ao falar de uma parcela específica, e use APENAS os valores listados abaixo — não invente nem arredonde.
+${(activeContracts || []).map(c => `- Contrato ${contractShort(c.id)}: Capital R$ ${Number(c.capital).toFixed(2)} | ${c.num_installments || '?'}x | ${c.loan_mode || 'normal'} | ${c.frequency} | taxa ${c.interest_rate}% | início ${c.start_date}`).join('\n') || '(nenhum)'}
 
 ═══ 💰 SITUAÇÃO FINANCEIRA — HOJE ${brDate.toLocaleDateString('pt-BR')} ═══
 📅 Vence HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcela(s))
 ⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcela(s))
 💯 TOTAL p/ quitar pendências AGORA: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
 
-Detalhe ATRASADAS:
+Detalhe ATRASADAS (cada linha = um contrato específico, NÃO misture):
 ${overdueDetail || '(sem atrasos)'}
 
 Detalhe VENCE HOJE:
-${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)}`).join('\n') || '(nenhuma)'}
+${dueToday.map(i => `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)}`).join('\n') || '(nenhuma)'}
 
 Próximas (preview):
 ${upcomingDetail || '(sem próximas pendentes)'}
