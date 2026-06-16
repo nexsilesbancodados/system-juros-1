@@ -661,8 +661,10 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
       }
     }
 
-    jidLock.delete(senderJid);
-    return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
+    } finally {
+      jidLock.delete(senderJid);
+    }
 
   } catch (err) {
     console.error("Webhook Error:", err);
