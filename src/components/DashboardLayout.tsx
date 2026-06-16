@@ -3,10 +3,9 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useAuth } from "@/contexts/AuthContext";
 
 // Defer heavy overlays — they're only rendered after user interaction.
 const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
@@ -21,11 +20,9 @@ const DashboardLayout = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const isMobile = useIsMobile();
-  const location = useLocation();
-  const { user } = useAuth();
   usePushNotifications();
 
-  // Subscription enforcement lives in ProtectedRoute now (single source of truth).
+  // Subscription enforcement lives in ProtectedRoute (single source of truth).
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
