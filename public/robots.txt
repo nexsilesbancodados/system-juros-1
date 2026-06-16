@@ -7,4 +7,4 @@ Disallow: /cobrancas
 Disallow: /perfil
 Disallow: /configuracoes
 
-Sitemap: https://systemjuros.com.br/sitemap.xml
+Sitemap: https://hello-login-buddy-00.lovable.app/sitemap.xml

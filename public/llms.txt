@@ -1,0 +1,16 @@
+# System Juros
+
+> Sistema white-label de gestão profissional de empréstimos pessoais, cobranças automatizadas e portais para clientes e cobradores externos.
+
+System Juros centraliza emissão de contratos, cálculo de parcelas (price/percentual), agenda de vencimentos, multas automáticas, mensagens via WhatsApp e relatórios financeiros em um único painel.
+
+## Pages
+
+- [Início](/): Visão geral do produto, principais benefícios e chamada para teste.
+- [Planos](/planos): Planos, preços e condições de assinatura via Hubla.
+- [Portal do Cliente](/portal-cliente): Área externa onde o cliente consulta contratos e parcelas usando CPF e data de nascimento.
+- [Portal do Cobrador](/cobrador-externo): Área externa do cobrador autenticada por token entregue pelo gestor.
+
+## Optional
+
+- [Login](/login): Acesso de gestores e operadores já assinantes.
