@@ -186,49 +186,48 @@ const Login = () => {
     navigate(nextPath ?? "/dashboard", { replace: true });
   };
 
+  // NEW FLOW: don't create the auth user here. Send the visitor straight to checkout.
+  // The Hubla webhook will create the account (invite email) only after a confirmed payment.
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     if (!validateAll("register")) return;
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { name: name.trim() },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    if (error) {
-      setLoading(false);
-      const msg = friendlyAuthError(error);
-      setFormError(msg);
-      toast({ title: "Erro ao registar", description: msg, variant: "destructive" });
-      return;
-    }
 
-    supabase.functions
-      .invoke("send-welcome-email", { body: { email: email.trim(), name: name.trim() } })
-      .catch((err) => console.error("Error sending welcome email:", err));
-
-    if (selectedPlan === "paid") {
+    try {
       const { data: checkoutUrl } = await supabase.rpc("get_signup_checkout_url");
-      if (checkoutUrl) {
-        toast({ title: "Conta criada! 🎉", description: "Redirecionando para o pagamento..." });
-        setTimeout(() => {
-          window.location.href = checkoutUrl as string;
-        }, 1500);
+      if (!checkoutUrl) {
+        setLoading(false);
+        const msg = "Nenhum link de pagamento configurado. Entre em contato com o suporte.";
+        setFormError(msg);
+        toast({ title: "Indisponível", description: msg, variant: "destructive" });
         return;
       }
-      toast({ title: "Conta criada!", description: "Confirme seu e-mail para continuar." });
-    } else {
+
+      // Pass email + name to the checkout so Hubla can pre-fill and link the payer.
+      let url = String(checkoutUrl);
+      try {
+        const u = new URL(url);
+        u.searchParams.set("email", email.trim());
+        if (name.trim()) u.searchParams.set("name", name.trim());
+        url = u.toString();
+      } catch {
+        // checkout URL might be a non-standard string — fall back to raw URL
+      }
+
       toast({
-        title: "Bem-vindo! 🎁",
-        description: "Seu teste grátis de 3 dias está ativo. Confirme seu e-mail e faça login.",
+        title: "Redirecionando para o pagamento 💳",
+        description: "Após a confirmação, você receberá um e-mail para criar sua senha e acessar o sistema.",
       });
+      setTimeout(() => {
+        window.location.href = url;
+      }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      const msg = err?.message || "Não foi possível abrir o checkout. Tente novamente.";
+      setFormError(msg);
+      toast({ title: "Erro", description: msg, variant: "destructive" });
     }
-    setLoading(false);
-    setIsRegister(false);
   };
 
   // ---------- Estilos ----------
