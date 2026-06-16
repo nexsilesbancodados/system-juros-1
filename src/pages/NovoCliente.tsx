@@ -1043,29 +1043,6 @@ const NovoCliente = () => {
                 ))}
               </div>
             )}
-            {frequency === "custom" && calc && calc.numParcelas > 0 && (
-              <div className="pt-3 border-t border-border space-y-2">
-                <p className="text-xs font-semibold text-foreground">Datas de cada parcela</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-auto">
-                  {Array.from({ length: calc.numParcelas }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground w-6">#{i + 1}</span>
-                      <input
-                        type="date"
-                        value={customDates[i] || ""}
-                        onChange={(e) => {
-                          const next = [...customDates];
-                          next[i] = e.target.value;
-                          setCustomDates(next);
-                        }}
-                        className={INPUT}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-muted-foreground">Datas em branco serão preenchidas automaticamente (mensal).</p>
-              </div>
-            )}
           </div>
 
           {/* Values — Metallic glow */}
