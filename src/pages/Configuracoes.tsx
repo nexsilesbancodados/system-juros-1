@@ -254,6 +254,23 @@ const Configuracoes = () => {
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
       : await supabase.from("settings").insert(payload);
 
+    // Persist sensitive secrets via dedicated edge function (cols revoked from authenticated)
+    const secretsPayload: Record<string, string> = {};
+    if (form.whatsapp_api_key && form.whatsapp_api_key.trim().length > 0) {
+      secretsPayload.whatsapp_api_key = form.whatsapp_api_key.trim();
+    }
+    if (form.hubla_webhook_token && form.hubla_webhook_token.trim().length > 0) {
+      secretsPayload.hubla_webhook_token = form.hubla_webhook_token.trim();
+    }
+    if (Object.keys(secretsPayload).length > 0) {
+      const { error: secErr } = await supabase.functions.invoke("settings-set-secret", { body: secretsPayload });
+      if (secErr) toast({ title: "Erro ao salvar segredos", description: secErr.message, variant: "destructive" });
+      else {
+        // Clear from local form so the masked placeholder reappears
+        setForm(prev => ({ ...prev, whatsapp_api_key: "", hubla_webhook_token: "" }));
+      }
+    }
+
     // Save PIX and billing message to profile
     await supabase.from("profiles").update({
       pix_key: form.pix_key.trim() || null,
