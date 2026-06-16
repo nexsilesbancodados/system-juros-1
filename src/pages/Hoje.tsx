@@ -152,26 +152,25 @@ const Hoje = () => {
         </div>
       </header>
 
-      {/* KPIs do dia */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" role="list" aria-label="Indicadores do dia">
+      {/* KPIs do dia — 3 essenciais */}
+      <div className="grid grid-cols-3 gap-3" role="list" aria-label="Indicadores do dia">
         {[
           { label: "Vencendo hoje", value: `R$ ${fmtBRL(totals.dueToday)}`, sub: `${totals.dueTodayCount} parcela${totals.dueTodayCount !== 1 ? "s" : ""}`, color: "text-primary", bg: "bg-primary/5 border-primary/15", Icon: Clock },
           { label: "Em atraso", value: `R$ ${fmtBRL(totals.overdue)}`, sub: `${totals.overdueCount} parcela${totals.overdueCount !== 1 ? "s" : ""}`, color: "text-destructive", bg: "bg-destructive/5 border-destructive/15", Icon: AlertCircle },
           { label: "Lucro hoje", value: `R$ ${fmtBRL(data?.profitToday || 0)}`, sub: "entradas registradas", color: "text-success", bg: "bg-success/5 border-success/15", Icon: TrendingUp },
-          { label: "Tarefas abertas", value: String(data?.todos.length || 0), sub: "pendentes", color: "text-amber-400", bg: "bg-amber-500/5 border-amber-500/15", Icon: ListTodo },
         ].map(k => (
           <div
             key={k.label}
             role="listitem"
             aria-label={`${k.label}: ${k.value}, ${k.sub}`}
-            className={`rounded-2xl border p-4 ${k.bg}`}
+            className={`rounded-2xl border p-3 sm:p-4 ${k.bg}`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{k.label}</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold truncate">{k.label}</p>
               <k.Icon size={14} className={k.color} aria-hidden="true" />
             </div>
-            <p className={`text-xl font-bold ${k.color}`}>{k.value}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{k.sub}</p>
+            <p className={`text-base sm:text-xl font-bold ${k.color} truncate`}>{k.value}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 hidden sm:block">{k.sub}</p>
           </div>
         ))}
       </div>
