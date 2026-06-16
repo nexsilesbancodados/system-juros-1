@@ -86,31 +86,39 @@ const WhatsAppConfig = () => {
   }, [qrCode, status, settings?.whatsapp_instance]);
 
   const fetchSettings = async () => {
-    let { data } = await supabase
-      .from("settings")
+    let { data } = await (supabase as any)
+      .from("settings_safe")
       .select("*")
       .eq("user_id", user!.id)
       .maybeSingle();
 
-    // Garante credenciais Evolution salvas antes de qualquer chamada à edge function
-    const needsCreds = !data || !data.whatsapp_api_url || !data.whatsapp_api_key;
+    // Ensure defaults exist (URL/instance via direct update; API key via edge function)
+    const needsCreds = !data || !data.whatsapp_api_url || !data.whatsapp_api_key_configured;
     if (needsCreds) {
-      const defaults = {
+      const baseDefaults = {
         user_id: user!.id,
         whatsapp_api_url: EVOLUTION_URL,
-        whatsapp_api_key: EVOLUTION_KEY,
         whatsapp_instance: data?.whatsapp_instance || `instancia-${user!.id.split("-")[0]}`,
       };
-      const { data: upserted, error: upErr } = await supabase
+      const { error: upErr } = await supabase
         .from("settings")
-        .upsert(defaults, { onConflict: "user_id" })
-        .select("*")
-        .single();
+        .upsert(baseDefaults, { onConflict: "user_id" });
       if (upErr) {
         toast({ title: "Erro ao inicializar configurações", description: upErr.message, variant: "destructive" });
         return;
       }
-      data = upserted;
+
+      // Set the API key via dedicated edge function (column is server-only)
+      if (!data?.whatsapp_api_key_configured) {
+        await supabase.functions.invoke("settings-set-secret", {
+          body: { whatsapp_api_key: EVOLUTION_KEY },
+        });
+      }
+
+      // Re-fetch the safe view
+      const { data: refreshed } = await (supabase as any)
+        .from("settings_safe").select("*").eq("user_id", user!.id).single();
+      data = refreshed;
     }
 
     setSettings(data);
@@ -165,8 +173,11 @@ const WhatsAppConfig = () => {
       
       await updateSettings({
         whatsapp_api_url: EVOLUTION_URL,
-        whatsapp_api_key: EVOLUTION_KEY,
-        whatsapp_instance: instanceName
+        whatsapp_instance: instanceName,
+      });
+      // API key is stored server-side via dedicated edge function
+      await supabase.functions.invoke("settings-set-secret", {
+        body: { whatsapp_api_key: EVOLUTION_KEY },
       });
 
       const { data, error } = await supabase.functions.invoke("evolution-api", {

@@ -39,7 +39,7 @@ const Configuracoes = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("settings").select("*").eq("user_id", user!.id).maybeSingle();
+      const { data } = await (supabase as any).from("settings_safe").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -122,7 +122,7 @@ const Configuracoes = () => {
         default_daily_interest: String(s.default_daily_interest || 0.33),
         default_frequency: s.default_frequency || "monthly",
         whatsapp_api_url: s.whatsapp_api_url || "",
-        whatsapp_api_key: s.whatsapp_api_key || "",
+        whatsapp_api_key: "", // never loaded from server; type new value to replace
         whatsapp_instance: s.whatsapp_instance || "",
         n8n_webhook_url: s.n8n_webhook_url || "",
         push_notifications_enabled: s.push_notifications_enabled || false,
@@ -157,7 +157,7 @@ const Configuracoes = () => {
         portal_contact_email: s.portal_contact_email || "",
         custom_contract_template: s.custom_contract_template || "",
         hubla_checkout_url: s.hubla_checkout_url || "",
-        hubla_webhook_token: s.hubla_webhook_token || "",
+        hubla_webhook_token: "", // never loaded from server; type new value to replace
       }));
     }
   }, [settings]);
@@ -213,7 +213,7 @@ const Configuracoes = () => {
       default_daily_interest: parseFloat(form.default_daily_interest),
       default_frequency: form.default_frequency,
       whatsapp_api_url: form.whatsapp_api_url || null,
-      whatsapp_api_key: form.whatsapp_api_key || null,
+      // whatsapp_api_key intentionally omitted — saved via edge function settings-set-secret
       whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
@@ -248,11 +248,28 @@ const Configuracoes = () => {
       portal_contact_email: form.portal_contact_email,
       custom_contract_template: form.custom_contract_template?.trim() || null,
       hubla_checkout_url: form.hubla_checkout_url ? form.hubla_checkout_url.trim() : null,
-      hubla_webhook_token: form.hubla_webhook_token ? form.hubla_webhook_token.trim() : null, // Final sync
+      // hubla_webhook_token intentionally omitted — saved via edge function settings-set-secret
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
       : await supabase.from("settings").insert(payload);
+
+    // Persist sensitive secrets via dedicated edge function (cols revoked from authenticated)
+    const secretsPayload: Record<string, string> = {};
+    if (form.whatsapp_api_key && form.whatsapp_api_key.trim().length > 0) {
+      secretsPayload.whatsapp_api_key = form.whatsapp_api_key.trim();
+    }
+    if (form.hubla_webhook_token && form.hubla_webhook_token.trim().length > 0) {
+      secretsPayload.hubla_webhook_token = form.hubla_webhook_token.trim();
+    }
+    if (Object.keys(secretsPayload).length > 0) {
+      const { error: secErr } = await supabase.functions.invoke("settings-set-secret", { body: secretsPayload });
+      if (secErr) toast({ title: "Erro ao salvar segredos", description: secErr.message, variant: "destructive" });
+      else {
+        // Clear from local form so the masked placeholder reappears
+        setForm(prev => ({ ...prev, whatsapp_api_key: "", hubla_webhook_token: "" }));
+      }
+    }
 
     // Save PIX and billing message to profile
     await supabase.from("profiles").update({
@@ -1201,7 +1218,13 @@ const Configuracoes = () => {
             </div>
             <div className="space-y-4">
               <div><label className="text-label mb-1.5 block">URL da API</label><input value={form.whatsapp_api_url} onChange={(e) => setForm({ ...form, whatsapp_api_url: e.target.value })} placeholder="https://api.exemplo.com" className={inputCls} /></div>
-              <div><label className="text-label mb-1.5 block">API Key</label><input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="••••••••" className={inputCls} /></div>
+              <div>
+                <label className="text-label mb-1.5 block">
+                  API Key {(settings as any)?.whatsapp_api_key_configured && <span className="ml-2 text-[10px] text-success font-bold">✓ Configurada</span>}
+                </label>
+                <input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder={(settings as any)?.whatsapp_api_key_configured ? "••••••••  (deixe vazio para manter)" : "Cole a chave da Evolution API"} className={inputCls} />
+                <p className="text-[10px] text-muted-foreground mt-1">Por segurança, a chave nunca é exibida. Digite uma nova para substituir.</p>
+              </div>
               <div><label className="text-label mb-1.5 block">Nome da Instância</label><input value={form.whatsapp_instance} onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })} placeholder="minha-instancia" className={inputCls} /></div>
             </div>
           </>
@@ -1697,18 +1720,21 @@ const Configuracoes = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-label">Token do Webhook Hubla (Segurança)</label>
+                  <label className="text-label">
+                    Token do Webhook Hubla (Segurança)
+                    {(settings as any)?.hubla_webhook_token_configured && <span className="ml-2 text-[10px] text-success font-bold">✓ Configurado</span>}
+                  </label>
                   <div className="relative">
                     <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input 
-                      type="text" 
+                      type="password" 
                       value={form.hubla_webhook_token} 
                       onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
-                      placeholder="Token de segurança registrado na Hubla" 
+                      placeholder={(settings as any)?.hubla_webhook_token_configured ? "••••••••  (deixe vazio para manter)" : "Token de segurança registrado na Hubla"} 
                       className={`${inputCls} pl-10`} 
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla.</p>
+                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla. Por segurança, o token nunca é exibido.</p>
                 </div>
                 
                 <div className="bg-card/50 border border-border/40 rounded-2xl p-4 space-y-3">

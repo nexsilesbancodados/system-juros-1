@@ -1818,7 +1818,189 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      settings_safe: {
+        Row: {
+          accent_color: string | null
+          border_radius: string | null
+          bot_auto_confirm_payment: boolean | null
+          bot_auto_send: boolean | null
+          bot_business_end: string | null
+          bot_business_hours_only: boolean | null
+          bot_business_start: string | null
+          bot_closing_message: string | null
+          bot_enabled: boolean | null
+          bot_escalation_rules: Json | null
+          bot_greeting_message: string | null
+          bot_max_messages_per_day: number | null
+          bot_negotiation_enabled: boolean | null
+          bot_notify_owner: boolean | null
+          bot_process_audio: boolean | null
+          bot_process_receipts: boolean | null
+          bot_retry_interval_hours: number | null
+          bot_send_audio: boolean | null
+          bot_send_hour: number | null
+          bot_send_minute: number | null
+          bot_send_pix: boolean | null
+          bot_send_receipt: boolean | null
+          bot_stop_on_payment: boolean | null
+          bot_tone: string | null
+          bot_use_ai: boolean | null
+          bot_work_days: Json | null
+          company_cnpj: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          created_at: string | null
+          custom_contract_template: string | null
+          default_daily_interest: number | null
+          default_frequency: string | null
+          default_interest_rate: number | null
+          default_late_fee: number | null
+          font_family: string | null
+          footer_text: string | null
+          hubla_checkout_url: string | null
+          hubla_webhook_token_configured: boolean | null
+          id: string | null
+          login_subtitle: string | null
+          login_title: string | null
+          n8n_webhook_url: string | null
+          portal_contact_email: string | null
+          portal_contact_phone: string | null
+          portal_logo_url: string | null
+          portal_primary_color: string | null
+          portal_subtitle: string | null
+          portal_title: string | null
+          portal_welcome_message: string | null
+          primary_color: string | null
+          push_notifications_enabled: boolean | null
+          sidebar_style: string | null
+          theme_mode: string | null
+          user_id: string | null
+          whatsapp_api_key_configured: boolean | null
+          whatsapp_api_url: string | null
+          whatsapp_instance: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          border_radius?: string | null
+          bot_auto_confirm_payment?: boolean | null
+          bot_auto_send?: boolean | null
+          bot_business_end?: string | null
+          bot_business_hours_only?: boolean | null
+          bot_business_start?: string | null
+          bot_closing_message?: string | null
+          bot_enabled?: boolean | null
+          bot_escalation_rules?: Json | null
+          bot_greeting_message?: string | null
+          bot_max_messages_per_day?: number | null
+          bot_negotiation_enabled?: boolean | null
+          bot_notify_owner?: boolean | null
+          bot_process_audio?: boolean | null
+          bot_process_receipts?: boolean | null
+          bot_retry_interval_hours?: number | null
+          bot_send_audio?: boolean | null
+          bot_send_hour?: number | null
+          bot_send_minute?: number | null
+          bot_send_pix?: boolean | null
+          bot_send_receipt?: boolean | null
+          bot_stop_on_payment?: boolean | null
+          bot_tone?: string | null
+          bot_use_ai?: boolean | null
+          bot_work_days?: Json | null
+          company_cnpj?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          custom_contract_template?: string | null
+          default_daily_interest?: number | null
+          default_frequency?: string | null
+          default_interest_rate?: number | null
+          default_late_fee?: number | null
+          font_family?: string | null
+          footer_text?: string | null
+          hubla_checkout_url?: string | null
+          hubla_webhook_token_configured?: never
+          id?: string | null
+          login_subtitle?: string | null
+          login_title?: string | null
+          n8n_webhook_url?: string | null
+          portal_contact_email?: string | null
+          portal_contact_phone?: string | null
+          portal_logo_url?: string | null
+          portal_primary_color?: string | null
+          portal_subtitle?: string | null
+          portal_title?: string | null
+          portal_welcome_message?: string | null
+          primary_color?: string | null
+          push_notifications_enabled?: boolean | null
+          sidebar_style?: string | null
+          theme_mode?: string | null
+          user_id?: string | null
+          whatsapp_api_key_configured?: never
+          whatsapp_api_url?: string | null
+          whatsapp_instance?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          border_radius?: string | null
+          bot_auto_confirm_payment?: boolean | null
+          bot_auto_send?: boolean | null
+          bot_business_end?: string | null
+          bot_business_hours_only?: boolean | null
+          bot_business_start?: string | null
+          bot_closing_message?: string | null
+          bot_enabled?: boolean | null
+          bot_escalation_rules?: Json | null
+          bot_greeting_message?: string | null
+          bot_max_messages_per_day?: number | null
+          bot_negotiation_enabled?: boolean | null
+          bot_notify_owner?: boolean | null
+          bot_process_audio?: boolean | null
+          bot_process_receipts?: boolean | null
+          bot_retry_interval_hours?: number | null
+          bot_send_audio?: boolean | null
+          bot_send_hour?: number | null
+          bot_send_minute?: number | null
+          bot_send_pix?: boolean | null
+          bot_send_receipt?: boolean | null
+          bot_stop_on_payment?: boolean | null
+          bot_tone?: string | null
+          bot_use_ai?: boolean | null
+          bot_work_days?: Json | null
+          company_cnpj?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          custom_contract_template?: string | null
+          default_daily_interest?: number | null
+          default_frequency?: string | null
+          default_interest_rate?: number | null
+          default_late_fee?: number | null
+          font_family?: string | null
+          footer_text?: string | null
+          hubla_checkout_url?: string | null
+          hubla_webhook_token_configured?: never
+          id?: string | null
+          login_subtitle?: string | null
+          login_title?: string | null
+          n8n_webhook_url?: string | null
+          portal_contact_email?: string | null
+          portal_contact_phone?: string | null
+          portal_logo_url?: string | null
+          portal_primary_color?: string | null
+          portal_subtitle?: string | null
+          portal_title?: string | null
+          portal_welcome_message?: string | null
+          primary_color?: string | null
+          push_notifications_enabled?: boolean | null
+          sidebar_style?: string | null
+          theme_mode?: string | null
+          user_id?: string | null
+          whatsapp_api_key_configured?: never
+          whatsapp_api_url?: string | null
+          whatsapp_instance?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_or_create_dm_thread: {

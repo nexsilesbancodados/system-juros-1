@@ -169,13 +169,19 @@ const CobradorExterno = () => {
     try {
       let receipt_url: string | null = null;
       if (payFile && userId) {
-        const ext = payFile.name.split(".").pop() || "bin";
-        const path = `${userId}/comprovantes/${payInstallment.id}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("uploads").upload(path, payFile, { upsert: true });
+        const savedTok = localStorage.getItem(TOKEN_KEY) || token;
+        const fd = new FormData();
+        fd.append("collector_token", savedTok);
+        fd.append("installment_id", payInstallment.id);
+        fd.append("file", payFile);
+
+        const { data: up, error: upErr } = await supabase.functions.invoke(
+          "portal-upload-comprovante",
+          { body: fd },
+        );
         if (upErr) throw upErr;
-        const { data: signed, error: sErr } = await supabase.storage.from("uploads").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-        if (sErr || !signed?.signedUrl) throw sErr ?? new Error("Falha ao gerar URL");
-        receipt_url = signed.signedUrl;
+        if (!up?.signed_url) throw new Error("Falha ao gerar URL do comprovante");
+        receipt_url = up.signed_url as string;
       }
 
       const { error } = await supabase
