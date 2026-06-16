@@ -943,6 +943,32 @@ const NovoCliente = () => {
             </div>
           )}
 
+          {/* Presets rápidos — 1 clique para os modos mais comuns */}
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={14} className="text-primary" />
+              <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Presets rápidos</h2>
+              <span className="text-[10px] text-muted-foreground">configura tudo em 1 clique</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {([
+                { id: "mensal", label: "Mensal · 12x", desc: "Parcelas mensais fixas", apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("monthly"); setNumInstallments("12"); } },
+                { id: "diario22", label: "Diário · 22 dias", desc: "Seg-Sex, 22 parcelas", apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("daily"); setDailyMode("mon-fri"); setNumInstallments("22"); } },
+                { id: "sojuros", label: "Só juros mensal", desc: "Capital no último mês", apply: () => { setLoanMode("interest_only"); setValueMode("rate"); setFrequency("monthly"); } },
+              ]).map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={p.apply}
+                  className="text-left p-3 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                >
+                  <p className="text-xs font-bold text-foreground">{p.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{p.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
 
           {/* Loan Mode */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">

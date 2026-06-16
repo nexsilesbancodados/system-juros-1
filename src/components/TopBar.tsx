@@ -97,7 +97,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
       <div className="flex-1" />
 
-      {/* Financial indicators - clickable */}
+      {/* Financial indicators — pill compacto unificado */}
       {!isMobile && (
         <div className="hidden md:flex items-center gap-1.5">
           <button
@@ -110,7 +110,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           </button>
           <button
             onClick={() => navigate("/lucros")}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10 hover:border-success/40 hover:bg-success/10 transition-all duration-200"
+            className="hidden lg:flex group items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10 hover:border-success/40 hover:bg-success/10 transition-all duration-200"
             title="Ver Lucros"
           >
             <TrendingUp size={13} className="text-success/70 group-hover:text-success transition-colors" />
@@ -119,11 +119,11 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           {(financials?.overdue ?? 0) > 0 && (
             <button
               onClick={() => navigate("/inadimplencia")}
-              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/5 border border-destructive/15 hover:border-destructive/40 hover:bg-destructive/10 transition-all duration-200"
+              className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-destructive/5 border border-destructive/15 hover:border-destructive/40 hover:bg-destructive/10 transition-all duration-200"
               title="Ver Inadimplência"
             >
               <AlertTriangle size={13} className="text-destructive/70 group-hover:text-destructive transition-colors" />
-              <span className="text-[11px] font-semibold text-destructive">{financials?.overdue} atrasada{financials!.overdue! > 1 ? "s" : ""}</span>
+              <span className="text-[11px] font-semibold text-destructive">{financials?.overdue}</span>
             </button>
           )}
         </div>
