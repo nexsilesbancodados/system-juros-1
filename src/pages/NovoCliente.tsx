@@ -1243,10 +1243,18 @@ const NovoCliente = () => {
                       <label className="block text-sm font-medium text-foreground/90 ml-1">1º Vencimento</label>
                       <button
                         type="button"
-                        onClick={() => setAutoFirstDue(!autoFirstDue)}
-                        className={`text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border transition-colors ${autoFirstDue ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-muted-foreground border-white/10"}`}
+                        onClick={() => {
+                          // Ao trocar para manual, pré-preenche com o cálculo atual pra facilitar edição
+                          if (autoFirstDue && startDate) {
+                            const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
+                            if (preview[0]) setFirstDueDate(toDateInputValue(preview[0]));
+                          }
+                          setAutoFirstDue(!autoFirstDue);
+                        }}
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 ${autoFirstDue ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/20" : "bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"}`}
+                        title="Clique para alternar entre data automática e manual"
                       >
-                        {autoFirstDue ? "Automático" : "Manual"}
+                        {autoFirstDue ? "🔒 Automático — clique para editar" : "✏️ Manual — clique para automatizar"}
                       </button>
                     </div>
                     <input
@@ -1264,10 +1272,32 @@ const NovoCliente = () => {
                       disabled={autoFirstDue}
                       className={`w-full border rounded-xl py-4 px-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all [color-scheme:dark] ${autoFirstDue ? "bg-white/[0.02] border-white/5 text-muted-foreground cursor-not-allowed" : "bg-white/5 border-white/10"}`}
                     />
-                    {autoFirstDue && (
-                      <p className="text-[10px] text-muted-foreground ml-1 italic">Calculado a partir da data de início ({freqLabel.toLowerCase()}).</p>
+                    {!autoFirstDue && (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { label: "+7d", days: 7 },
+                          { label: "+15d", days: 15 },
+                          { label: "+30d", days: 30 },
+                          { label: "+45d", days: 45 },
+                          { label: "+60d", days: 60 },
+                        ].map(o => (
+                          <button key={o.label} type="button" onClick={() => {
+                            const base = startDate ? new Date(startDate + "T12:00:00") : new Date();
+                            base.setDate(base.getDate() + o.days);
+                            setFirstDueDate(base.toISOString().split("T")[0]);
+                          }} className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors border border-amber-500/20">
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {autoFirstDue ? (
+                      <p className="text-[10px] text-muted-foreground ml-1 italic">Calculado a partir da data de início ({freqLabel.toLowerCase()}). Clique no botão acima para editar manualmente.</p>
+                    ) : (
+                      <p className="text-[10px] text-amber-400/80 ml-1 italic">Data personalizada — as próximas parcelas serão calculadas a partir desta.</p>
                     )}
                   </div>
+
                 </div>
               </div>
             {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
