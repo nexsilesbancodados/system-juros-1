@@ -930,13 +930,15 @@ const NovoCliente = () => {
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
-              <button
-                type="button"
-                onClick={() => setShowMoreModes(v => !v)}
-                className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
-              >
-                {showMoreModes ? "Menos opções" : "+ Mais modos"}
-              </button>
+              {!isNewContractOnly && (
+                <button
+                  type="button"
+                  onClick={() => setShowMoreModes(v => !v)}
+                  className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {showMoreModes ? "Menos opções" : "+ Mais modos"}
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(() => {
@@ -951,7 +953,8 @@ const NovoCliente = () => {
                   { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
                 ];
                 // Auto-mostra extras se o modo atual for um dos secundários
-                const all = (showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
+                // Cliente existente sempre vê todos os modos; novo cliente esconde os avançados por padrão
+                const all = (isNewContractOnly || showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
                 return all.map(m => (
                 <button key={m.v} onClick={() => {
                   setLoanMode(m.v);
