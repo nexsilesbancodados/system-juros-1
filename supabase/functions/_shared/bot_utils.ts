@@ -71,6 +71,7 @@ export function sanitizeAiResult(raw: any): {
     is_promise: Boolean(r.is_promise),
     promise_date: dateOk(r.promise_date),
     receipt_value: num(r.receipt_value),
+    receipt_date: dateOk(r.receipt_date),
     needs_human: Boolean(r.needs_human),
     intent: typeof r.intent === "string" ? r.intent.slice(0, 32) : "outro",
     summary: typeof r.summary === "string" ? r.summary.slice(0, 200) : "",
