@@ -581,6 +581,31 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
     }
     const result = sanitizeAiResult(parsed);
 
+    // ─── Validação de PIX e valores antes de enviar ──────────────────────
+    if (result.reply) {
+      const v = validatePixReply({
+        reply: result.reply,
+        pixKey: profile?.pix_key,
+        pixKeyType: profile?.pix_key_type,
+        installments: (installments || []) as any,
+        overdue: overdue as any,
+        dueToday: dueToday as any,
+        totalOverdue,
+        totalDueToday,
+        rolloverOptions: rolloverOptions as any,
+      });
+      if (v.fixed) {
+        result.reply = v.reply;
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          entity_type: "whatsapp_bot",
+          action: "pix_reply_corrected",
+          entity_id: client.id,
+          details: { reasons: v.reasons },
+        });
+      }
+    }
+
     if (result.reply) await botSay(result.reply);
 
     // Merge inteligente da memória (validado + dedup + limite por seção, ver _shared/memory.ts)
