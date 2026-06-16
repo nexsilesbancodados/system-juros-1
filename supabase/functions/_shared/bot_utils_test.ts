@@ -114,3 +114,158 @@ Deno.test("computeRolloverInterest: nunca devolve negativo", () => {
   const v = computeRolloverInterest({ capital: 1000, interestRate: 0, installmentAmount: 50, numInstallments: 1 });
   assert(v > 0);
 });
+
+// ─── validateReceipt ─────────────────────────────────────────────────────────
+import { validateReceipt, sha256Hex } from "./bot_utils.ts";
+
+const baseInsts = [
+  { id: "i1", amount: 250, due_date: "2026-06-10", late_fee: 0, installment_number: 1 },
+  { id: "i2", amount: 250, due_date: "2026-06-17", late_fee: 0, installment_number: 2 },
+];
+const TODAY = "2026-06-16";
+
+Deno.test("validateReceipt: confiança alta com mídia + valor exato", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "comprovante",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+  });
+  assert(r.trusted);
+  assertEquals(r.matchType, "exact");
+  assertEquals(r.matchedInstallmentId, "i1");
+  assert(r.riskScore < 50);
+});
+
+Deno.test("validateReceipt: rejeita sem evidência mínima", () => {
+  const r = validateReceipt({
+    messageType: "text", hasMedia: false, incomingText: "vou pagar amanhã",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+  });
+  assertEquals(r.trusted, false);
+  assert(r.reasons.includes("sem_evidencia_minima"));
+});
+
+Deno.test("validateReceipt: rejeita valor zero", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 0, installments: baseInsts, todayStr: TODAY,
+  });
+  assertEquals(r.trusted, false);
+  assertEquals(r.riskScore, 100);
+});
+
+Deno.test("validateReceipt: aceita tolerância de 2% (multa pequena)", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 253, installments: baseInsts, todayStr: TODAY,
+  });
+  assert(r.trusted);
+  assertEquals(r.matchType, "tolerance");
+});
+
+Deno.test("validateReceipt: aceita soma de atrasos", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "paguei tudo",
+    receiptValue: 500, installments: baseInsts, todayStr: TODAY,
+  });
+  assert(r.trusted);
+  assertEquals(r.matchType, "sum_overdue");
+});
+
+Deno.test("validateReceipt: pagamento parcial aumenta risco mas pode passar", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 100, installments: baseInsts, todayStr: TODAY, // 40% da menor parcela
+  });
+  assertEquals(r.matchType, "partial");
+  assert(r.reasons.includes("pagamento_parcial"));
+});
+
+Deno.test("validateReceipt: valor irrisório (< R$ 1) é rejeitado", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 0.5, installments: baseInsts, todayStr: TODAY,
+  });
+  assertEquals(r.trusted, false);
+  assert(r.reasons.includes("valor_irrisorio"));
+});
+
+Deno.test("validateReceipt: valor 10x maior que parcela é suspeito", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 5000, installments: baseInsts, todayStr: TODAY,
+  });
+  assertEquals(r.trusted, false);
+  assert(r.reasons.includes("valor_acima_do_razoavel"));
+});
+
+Deno.test("validateReceipt: data no futuro além de 1d é rejeitada", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+    receiptDate: "2026-06-25",
+  });
+  assertEquals(r.outOfWindow, true);
+  assert(r.reasons.some(x => x.startsWith("data_no_futuro")));
+});
+
+Deno.test("validateReceipt: data muito antiga (> 30d) é suspeita", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+    receiptDate: "2026-04-01",
+  });
+  assertEquals(r.outOfWindow, true);
+  assert(r.reasons.some(x => x.startsWith("data_muito_antiga")));
+});
+
+Deno.test("validateReceipt: hash duplicado bloqueia (anti-reuso)", () => {
+  const seen = new Set(["abc123"]);
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+    mediaHash: "abc123", seenHashes: seen,
+  });
+  assertEquals(r.trusted, false);
+  assertEquals(r.duplicate, true);
+  assertEquals(r.riskScore, 100);
+});
+
+Deno.test("validateReceipt: palavras de alerta de fraude aumentam risco", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "olha o photoshop",
+    receiptValue: 250, installments: baseInsts, todayStr: TODAY,
+  });
+  assert(r.reasons.includes("palavras_de_alerta"));
+});
+
+Deno.test("validateReceipt: combinação tóxica derruba confiança mesmo com mídia", () => {
+  const r = validateReceipt({
+    messageType: "image", hasMedia: true, incomingText: "",
+    receiptValue: 73.21, installments: baseInsts, todayStr: TODAY,
+    receiptDate: "2026-03-01",
+  });
+  assertEquals(r.trusted, false);
+  assert(r.riskScore >= 50);
+});
+
+Deno.test("sha256Hex: produz hex determinístico de 64 chars", async () => {
+  const a = await sha256Hex("hello world");
+  const b = await sha256Hex("hello world");
+  assertEquals(a, b);
+  assertEquals(a.length, 64);
+  assert(/^[0-9a-f]{64}$/.test(a));
+});
+
+Deno.test("sha256Hex: aceita base64 (data URL e raw)", async () => {
+  const dataUrl = "data:image/png;base64,SGVsbG8=";
+  const raw = "SGVsbG8=";
+  const a = await sha256Hex(dataUrl);
+  const b = await sha256Hex(raw);
+  assertEquals(a, b);
+});
+
+Deno.test("sha256Hex: bytes diferentes → hashes diferentes", async () => {
+  const a = await sha256Hex(new Uint8Array([1, 2, 3]));
+  const b = await sha256Hex(new Uint8Array([1, 2, 4]));
+  assert(a !== b);
+});
