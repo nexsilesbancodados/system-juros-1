@@ -29,7 +29,19 @@ export default defineConfig(({ mode }) => ({
         // and rarely-used features (PDF, charts, motion) load on demand.
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
-          if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+          // Mantém recharts + TODAS as suas dependências (d3-*, victory-vendor,
+          // react-smooth, internmap, delaunator, robust-predicates, etc.) num único
+          // chunk para evitar "Cannot access 'X' before initialization" causado por
+          // dependências circulares divididas em chunks diferentes.
+          if (
+            id.includes("recharts") ||
+            id.includes("victory-vendor") ||
+            id.includes("react-smooth") ||
+            id.includes("/d3-") ||
+            id.includes("internmap") ||
+            id.includes("delaunator") ||
+            id.includes("robust-predicates")
+          ) return "vendor-charts";
           if (id.includes("jspdf") || id.includes("html2pdf") || id.includes("html2canvas")) return "vendor-pdf";
           if (id.includes("framer-motion")) return "vendor-motion";
           if (id.includes("emoji-picker-react")) return "vendor-emoji";
