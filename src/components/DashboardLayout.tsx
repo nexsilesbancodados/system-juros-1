@@ -1,18 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import GlobalSearch from "@/components/GlobalSearch";
-import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import QuickPaymentModal from "@/components/QuickPaymentModal";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { OnboardingTourAuto } from "@/components/onboarding/OnboardingTour";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+// Defer heavy overlays — they're only rendered after user interaction.
+const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
+const QuickPaymentModal = lazy(() => import("@/components/QuickPaymentModal"));
+const KeyboardShortcutsHelp = lazy(() => import("@/components/KeyboardShortcutsHelp"));
+const OnboardingTourAuto = lazy(() =>
+  import("@/components/onboarding/OnboardingTour").then((m) => ({ default: m.OnboardingTourAuto }))
+);
 
 const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -106,10 +110,10 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Mesh Gradients Background */}
-      <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-[120px] -z-10 animate-pulse-slow" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-500/[0.02] rounded-full blur-[100px] -z-10" />
-      
+      {/* Static mesh gradients — no animation (animated blur is one of the heaviest paints). */}
+      <div className="pointer-events-none absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/[0.04] rounded-full blur-[80px] -z-10" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-[480px] h-[480px] bg-indigo-500/[0.03] rounded-full blur-[70px] -z-10" />
+
       {/* Desktop: sidebar */}
       {!isMobile && (
         <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
@@ -118,7 +122,6 @@ const DashboardLayout = () => {
       <div className={`transition-[margin] duration-300 ${isMobile ? "ml-0" : collapsed ? "ml-[72px]" : "ml-[260px]"}`}>
         <TopBar onSearchClick={() => setSearchOpen(true)} />
         <Breadcrumbs />
-        {/* Improvement #15: Page transition animation on route change */}
         <main className={`p-3 lg:p-6 ${isMobile ? "pb-24" : ""}`}>
           <Outlet />
         </main>
@@ -127,10 +130,12 @@ const DashboardLayout = () => {
       {/* Mobile: bottom nav */}
       {isMobile && <MobileBottomNav />}
 
-      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <QuickPaymentModal open={payOpen} onClose={() => setPayOpen(false)} />
-      <KeyboardShortcutsHelp />
-      <OnboardingTourAuto />
+      <Suspense fallback={null}>
+        {searchOpen && <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />}
+        {payOpen && <QuickPaymentModal open={payOpen} onClose={() => setPayOpen(false)} />}
+        <KeyboardShortcutsHelp />
+        <OnboardingTourAuto />
+      </Suspense>
     </div>
   );
 };
