@@ -607,15 +607,31 @@ const NovoCliente = () => {
 
   // ── Contract template modal ──
   if (showContract && calc) {
+    const effectiveRate = valueMode === "installment" && (calc as any).derivedRate !== undefined
+      ? Number((calc as any).derivedRate)
+      : parseFloat(taxaJuros);
+
+    // Pré-gera o cronograma p/ exibir no contrato (seção 4)
+    const previewInstallments = (() => {
+      try {
+        const dueDates = generateDueDates(startDate, frequency, calc.numParcelas, dailyMode, firstDueDate || undefined);
+        return dueDates.map((dd, i) => ({
+          installment_number: i + 1,
+          amount: calc.schedule?.[i] ?? calc.installmentAmount,
+          due_date: dd,
+        }));
+      } catch { return []; }
+    })();
+
     const contractData = {
       clientName: nome,
       cpfCnpj,
       phone: telefone,
       whatsapp,
       email,
-      address: rua ? `${rua}, ${numero}${complemento ? `, ${complemento}` : ""} - ${bairro}, ${cidade}/${estado} - CEP: ${cep}` : "",
+      address: (rua || cidade) ? `${rua}${numero ? `, ${numero}` : ""}${complemento ? `, ${complemento}` : ""}${bairro ? ` - ${bairro}` : ""}${cidade ? `, ${cidade}` : ""}${estado ? `/${estado}` : ""}${cep ? ` - CEP: ${cep}` : ""}` : "",
       capital: parseFloat(capital),
-      interestRate: parseFloat(taxaJuros),
+      interestRate: effectiveRate,
       totalAmount: calc.totalAmount,
       totalInterest: calc.totalInterest,
       installmentAmount: calc.installmentAmount,
@@ -628,6 +644,7 @@ const NovoCliente = () => {
       companyCnpj: settings?.company_cnpj || "",
       companyLogoUrl: settings?.company_logo_url || undefined,
       customTemplate: (settings as any)?.custom_contract_template || null,
+      installments: previewInstallments,
     };
 
     const phoneDigits = (whatsapp || telefone).replace(/\D/g, "");
