@@ -352,3 +352,113 @@ export function computeRolloverInterest(opts: {
   const diff = inst - amort;
   return diff > 0 ? +diff.toFixed(2) : +inst.toFixed(2);
 }
+
+/**
+ * Valida e corrige a resposta do bot para garantir:
+ *  1. Se mencionar PIX, a chave EXATA configurada aparece (e nenhuma outra chave).
+ *  2. Todos os valores "R$ X,XX" citados existem na lista autorizada
+ *     (parcelas reais, totais oficiais, juros de rollover).
+ * Quando há discrepância, anexa um bloco "Dados oficiais" no final
+ * com os valores corretos — nunca apaga o texto da IA.
+ */
+export interface PixReplyValidationInput {
+  reply: string;
+  pixKey?: string | null;
+  pixKeyType?: string | null;
+  installments: Array<{
+    installment_number?: number;
+    amount: number;
+    late_fee?: number | null;
+    contract_id?: string | null;
+    due_date?: string;
+  }>;
+  overdue: Array<{ amount: number; late_fee?: number | null; contract_id?: string | null; installment_number?: number }>;
+  dueToday: Array<{ amount: number; contract_id?: string | null; installment_number?: number }>;
+  totalOverdue: number;
+  totalDueToday: number;
+  rolloverOptions: Array<{ interestOnly: number; contractId?: string }>;
+}
+
+export interface PixReplyValidationResult {
+  reply: string;
+  fixed: boolean;
+  reasons: string[];
+}
+
+const PIX_KEY_LOOKS_LIKE = /\b(?:\d{11,14}|[\w.+-]+@[\w.-]+\.\w{2,}|\+?\d{10,14}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi;
+const MONEY_RE = /R\$\s*([0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{2})|[0-9]+(?:[.,][0-9]{1,2})?)/gi;
+
+function parseMoney(s: string): number {
+  const cleaned = s.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? +n.toFixed(2) : NaN;
+}
+
+function near(a: number, b: number) { return Math.abs(a - b) <= 0.02; }
+
+export function validatePixReply(input: PixReplyValidationInput): PixReplyValidationResult {
+  const reasons: string[] = [];
+  let reply = input.reply || "";
+  if (!reply.trim()) return { reply, fixed: false, reasons };
+
+  const mentionsPix = /\bpix\b|\bchave\b/i.test(reply);
+  const pixKey = (input.pixKey || "").trim();
+
+  // 1. Validação da chave PIX
+  if (mentionsPix && pixKey) {
+    const hasCorrectKey = reply.includes(pixKey);
+    if (!hasCorrectKey) {
+      // procura "chaves" estranhas no texto e remove
+      const suspicious = reply.match(PIX_KEY_LOOKS_LIKE) || [];
+      const wrong = suspicious.filter(s => s !== pixKey && s.length >= 8);
+      if (wrong.length) reasons.push(`pix_key_mismatch:${wrong.join(",").slice(0,80)}`);
+      else reasons.push("pix_key_missing");
+    }
+  }
+
+  // 2. Conjunto de valores permitidos (com tolerância)
+  const allowed: number[] = [];
+  const pushIf = (n: number) => { if (Number.isFinite(n) && n > 0) allowed.push(+n.toFixed(2)); };
+  for (const i of input.installments || []) {
+    pushIf(Number(i.amount));
+    pushIf(Number(i.amount) + Number(i.late_fee || 0));
+  }
+  for (const i of input.overdue || []) pushIf(Number(i.amount) + Number(i.late_fee || 0));
+  for (const i of input.dueToday || []) pushIf(Number(i.amount));
+  pushIf(input.totalOverdue);
+  pushIf(input.totalDueToday);
+  pushIf(input.totalOverdue + input.totalDueToday);
+  for (const r of input.rolloverOptions || []) pushIf(Number(r.interestOnly));
+
+  const moneyMatches = [...reply.matchAll(MONEY_RE)];
+  const invented: string[] = [];
+  for (const m of moneyMatches) {
+    const v = parseMoney(m[1]);
+    if (!Number.isFinite(v) || v <= 0) continue;
+    if (!allowed.some(a => near(a, v))) invented.push(m[0]);
+  }
+  if (invented.length) reasons.push(`invented_values:${invented.slice(0,5).join("|")}`);
+
+  // Se nada errado, retorna como está
+  if (!reasons.length) return { reply, fixed: false, reasons };
+
+  // 3. Anexa bloco oficial corrigido
+  const lines: string[] = ["", "—", "✅ *Dados oficiais (confira):*"];
+  if (pixKey) lines.push(`• PIX: *${pixKey}*${input.pixKeyType ? ` (${input.pixKeyType})` : ""}`);
+  if (input.totalOverdue > 0) {
+    lines.push(`• Em atraso: *R$ ${input.totalOverdue.toFixed(2)}* (${input.overdue.length} parcela${input.overdue.length === 1 ? "" : "s"})`);
+    for (const i of input.overdue.slice(0, 6)) {
+      const shortC = i.contract_id ? ` #${String(i.contract_id).slice(0,6)}` : "";
+      const v = Number(i.amount) + Number(i.late_fee || 0);
+      lines.push(`   – Parcela #${i.installment_number ?? "?"}${shortC}: R$ ${v.toFixed(2)}`);
+    }
+  }
+  if (input.totalDueToday > 0) {
+    lines.push(`• Vence hoje: *R$ ${input.totalDueToday.toFixed(2)}* (${input.dueToday.length} parcela${input.dueToday.length === 1 ? "" : "s"})`);
+  }
+  const totalNow = input.totalOverdue + input.totalDueToday;
+  if (totalNow > 0) lines.push(`• Total para quitar agora: *R$ ${totalNow.toFixed(2)}*`);
+
+  reply = reply.trimEnd() + "\n" + lines.join("\n");
+  return { reply, fixed: true, reasons };
+}
