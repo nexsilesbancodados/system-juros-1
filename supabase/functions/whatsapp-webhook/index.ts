@@ -4,7 +4,8 @@ import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts"
 import {
   extractJsonObject,
   sanitizeAiResult,
-  shouldTrustReceipt,
+  validateReceipt,
+  sha256Hex,
   isEchoOfLastReply,
   computeRolloverInterest,
 } from "../_shared/bot_utils.ts";
