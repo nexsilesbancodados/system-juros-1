@@ -91,9 +91,8 @@ export function addDays(date: Date, days: number): Date {
 
 export type BusinessDayMode = "mon-fri" | "mon-sat" | "mon-sun";
 
-/** Add N business days respecting the chosen week mode. */
+/** Add N business days respecting the chosen week mode AND skipping Brazilian national holidays. */
 export function addBusinessDays(date: Date, days: number, mode: BusinessDayMode = "mon-fri"): Date {
-  if (mode === "mon-sun") return addDays(date, days);
   const cur = new Date(date);
   let added = 0;
   while (added < days) {
@@ -101,6 +100,8 @@ export function addBusinessDays(date: Date, days: number, mode: BusinessDayMode 
     const dow = cur.getDay();
     if (mode === "mon-fri" && (dow === 0 || dow === 6)) continue;
     if (mode === "mon-sat" && dow === 0) continue;
+    // Pula feriados nacionais BR em todos os modos (inclusive mon-sun)
+    if (isBrazilianHoliday(cur)) continue;
     added++;
   }
   cur.setHours(12, 0, 0, 0);
