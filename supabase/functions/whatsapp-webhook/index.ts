@@ -487,8 +487,8 @@ ${dueToday.map(i => `- [Contrato ${contractShort(i.contract_id)}] Parcela #${i.i
 Próximas (preview):
 ${upcomingDetail || '(sem próximas pendentes)'}
 
-═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) ═══
-${rolloverOptions.map((o: any) => `- Juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
+═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) — por contrato ═══
+${rolloverOptions.map((o: any) => `- Contrato ${contractShort(o.contractId)}: juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
 
 ═══ ✅ ÚLTIMOS PAGAMENTOS (referência p/ continuidade) ═══
 ${recentPaidText || '(nenhum pagamento ainda)'}
