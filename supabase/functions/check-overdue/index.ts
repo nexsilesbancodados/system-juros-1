@@ -19,12 +19,13 @@ serve(async (req) => {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
 
-    // Get all overdue installments
-    const { data: overdue } = await supabase
-      .from("installments")
-      .select("*, clients!installments_client_id_fkey(name)")
+    // Parcelas em aberto cujo vencimento já passou (tabela correta: contract_installments)
+    const { data: overdue, error: overdueErr } = await supabase
+      .from("contract_installments")
+      .select("id, user_id, client_id, amount, due_date, status, clients(name)")
       .eq("status", "pending")
-      .lt("due_date", now.toISOString());
+      .lt("due_date", todayStr);
+    if (overdueErr) throw overdueErr;
 
     if (!overdue || overdue.length === 0) {
       return new Response(JSON.stringify({ message: "No overdue installments" }), {
