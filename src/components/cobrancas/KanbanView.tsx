@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { MessageSquare, Check, AlertTriangle, Clock, CheckCircle, CalendarDays } from "lucide-react";
-import { formatBR } from "@/lib/dateUtils";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 interface Props {
   installments: any[];
@@ -14,15 +14,16 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 
 const KanbanView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment }: Props) => {
   const columns = useMemo(() => {
     const now = Date.now();
+    const dueTs = (i: any) => (parseLocalDate(i.due_date)?.getTime() ?? new Date(i.due_date).getTime());
     const overdue = installments.filter((i) => i.status === "overdue");
     const dueSoon = installments.filter((i) => {
       if (i.status !== "pending") return false;
-      const days = (new Date(i.due_date).getTime() - now) / 86400000;
+      const days = (dueTs(i) - now) / 86400000;
       return days >= 0 && days <= 7;
     });
     const future = installments.filter((i) => {
       if (i.status !== "pending") return false;
-      const days = (new Date(i.due_date).getTime() - now) / 86400000;
+      const days = (dueTs(i) - now) / 86400000;
       return days > 7;
     });
     const paid = installments.filter((i) => i.status === "paid").slice(0, 30);

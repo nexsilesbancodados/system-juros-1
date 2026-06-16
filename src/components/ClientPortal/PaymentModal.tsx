@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generatePortalReceiptPdf } from "@/utils/portalPdf";
 import { QRCodeSVG } from "qrcode.react";
 import { generatePixPayload } from "@/utils/pixGenerator";
+import { formatBR } from "@/lib/dateUtils";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -101,8 +102,8 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
             </DialogTitle>
             <DialogDescription className="text-white/80 text-sm">
               {isPaid 
-                ? `Pago em ${new Date(installment.paid_at).toLocaleDateString("pt-BR")}`
-                : `Vencimento em ${new Date(installment.due_date).toLocaleDateString("pt-BR")}`}
+                ? `Pago em ${formatBR(installment.paid_at)}`
+                : `Vencimento em ${formatBR(installment.due_date)}`}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -120,7 +121,7 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
               <p className="text-[10px] text-muted-foreground uppercase font-semibold">Data</p>
               <div className="flex items-center gap-1.5 text-sm font-medium">
                 <Calendar size={14} className="text-muted-foreground" />
-                {new Date(installment.due_date).toLocaleDateString("pt-BR")}
+                {formatBR(installment.due_date)}
               </div>
             </div>
           </div>

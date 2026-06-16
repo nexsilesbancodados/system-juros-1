@@ -11,7 +11,7 @@ import {
   Search, Sparkles, Copy, Trash2, Users, DollarSign, TrendingUp, Filter, X,
   Image as ImageIcon, Mic, Video, File as FileIcon, MapPin, Sticker, Check, CheckCheck
 } from "lucide-react";
-import { formatBR } from "@/lib/dateUtils";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 interface Message {
   role: "user" | "assistant";
@@ -668,8 +668,8 @@ const AgenteIA = () => {
   const buildContext = () => {
     if (!dashData) return null;
     const { contracts, installments, clients } = dashData;
-    const now = new Date();
-    const overdueInstallments = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
+    const now = new Date(); now.setHours(0,0,0,0);
+    const overdueInstallments = installments.filter((i: any) => i.status === "pending" && (parseLocalDate(i.due_date) ?? new Date(i.due_date)) < now);
     const activeContracts = contracts.filter((c: any) => c.status === "active");
     const todayStr = now.toISOString().split("T")[0];
     const dueToday = installments.filter((i: any) => i.status === "pending" && i.due_date?.startsWith(todayStr));
@@ -757,10 +757,10 @@ const AgenteIA = () => {
     }
   };
 
-  const now = new Date();
-  const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now).length || 0;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const overdue = dashData?.installments.filter((i: any) => i.status === "pending" && (parseLocalDate(i.due_date) ?? new Date(i.due_date)) < now).length || 0;
   const overdueAmount = dashData?.installments
-    .filter((i: any) => i.status === "pending" && new Date(i.due_date) < now)
+    .filter((i: any) => i.status === "pending" && (parseLocalDate(i.due_date) ?? new Date(i.due_date)) < now)
     .reduce((s: number, i: any) => s + Number(i.amount), 0) || 0;
   const capitalOnStreet = dashData?.contracts
     .filter((c: any) => c.status === "active")

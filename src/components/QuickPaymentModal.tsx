@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock, SplitSquareHorizontal } from "lucide-react";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 interface Props { open: boolean; onClose: () => void; }
 
@@ -237,9 +238,10 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
               </div>
             )}
             {filtered.map((inst: any, idx: number) => {
-              const due = new Date(inst.due_date);
+              const due = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
               const isOverdue = due < today;
-              const isToday = due.toDateString() === new Date().toDateString();
+              const t0 = new Date(); t0.setHours(0,0,0,0);
+              const isToday = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime() === t0.getTime();
               const isActive = idx === activeIdx;
               const status = isOverdue ? "atrasada" : isToday ? "vence hoje" : "pendente";
               return (
@@ -264,7 +266,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{inst.clients?.name || "Cliente"}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      Parcela {inst.installment_number} · {due.toLocaleDateString("pt-BR")}
+                      Parcela {inst.installment_number} · {formatBR(inst.due_date)}
                       {isOverdue && <span className="text-destructive font-bold ml-1">· ATRASADO</span>}
                       {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
                       {Number(inst.paid_amount || 0) > 0 && (

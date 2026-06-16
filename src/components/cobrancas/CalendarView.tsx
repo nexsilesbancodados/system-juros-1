@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, MessageSquare, Check } from "lucide-react";
-import { formatBR } from "@/lib/dateUtils";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 interface Props {
   installments: any[];
@@ -32,7 +32,8 @@ const CalendarView = ({ installments, onWhatsApp, onMarkPaid, onClickInstallment
 
     const map = new Map<string, any[]>();
     installments.forEach((i: any) => {
-      const dt = new Date(i.due_date);
+      const dt = parseLocalDate(i.due_date);
+      if (!dt) return;
       const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
       const list = map.get(key) || [];
       list.push(i);

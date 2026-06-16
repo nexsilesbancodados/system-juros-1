@@ -653,7 +653,7 @@ const NovoCliente = () => {
       `Olá ${nome}, seu contrato foi gerado! 📄\n\n` +
       `• Valor: R$ ${calc.totalAmount.toFixed(2)}\n` +
       `• ${calc.numParcelas}x de R$ ${calc.installmentAmount.toFixed(2)} (${freqLabel})\n` +
-      `• Início: ${new Date(startDate).toLocaleDateString("pt-BR")}\n\n` +
+      `• Início: ${formatBR(startDate)}\n\n` +
       `Acesse seu portal para ver parcelas e pagar via PIX:\n${portalUrl}\n\n` +
       `Login: CPF + data de nascimento.`;
 

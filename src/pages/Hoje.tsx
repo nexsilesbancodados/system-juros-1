@@ -297,8 +297,9 @@ const Hoje = () => {
               </li>
             )}
             {[...(data?.overdue || []), ...(data?.dueToday || [])].slice(0, 30).map((inst: any) => {
-              const isOverdue = new Date(inst.due_date) < startOfToday();
-              const daysLate = isOverdue ? Math.floor((startOfToday().getTime() - new Date(inst.due_date).getTime()) / 86400000) : 0;
+              const dueLocal = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
+              const isOverdue = dueLocal < startOfToday();
+              const daysLate = isOverdue ? Math.floor((startOfToday().getTime() - dueLocal.getTime()) / 86400000) : 0;
               const clientName = inst.clients?.name || "Cliente";
               const amount = Number(inst.amount);
               return (
