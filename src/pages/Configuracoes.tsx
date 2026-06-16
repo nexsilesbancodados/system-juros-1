@@ -1720,18 +1720,21 @@ const Configuracoes = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-label">Token do Webhook Hubla (Segurança)</label>
+                  <label className="text-label">
+                    Token do Webhook Hubla (Segurança)
+                    {(settings as any)?.hubla_webhook_token_configured && <span className="ml-2 text-[10px] text-success font-bold">✓ Configurado</span>}
+                  </label>
                   <div className="relative">
                     <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input 
-                      type="text" 
+                      type="password" 
                       value={form.hubla_webhook_token} 
                       onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
-                      placeholder="Token de segurança registrado na Hubla" 
+                      placeholder={(settings as any)?.hubla_webhook_token_configured ? "••••••••  (deixe vazio para manter)" : "Token de segurança registrado na Hubla"} 
                       className={`${inputCls} pl-10`} 
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla.</p>
+                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla. Por segurança, o token nunca é exibido.</p>
                 </div>
                 
                 <div className="bg-card/50 border border-border/40 rounded-2xl p-4 space-y-3">
