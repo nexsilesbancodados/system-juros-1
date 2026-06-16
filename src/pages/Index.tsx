@@ -66,7 +66,7 @@ const Index = () => {
                          <div key={item.title} className="flex gap-4">
                             <div className="w-1.5 h-1.5 rounded-full bg-white/40 mt-2 flex-shrink-0" />
                             <div>
-                               <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                               <h3 className="font-bold text-white mb-1">{item.title}</h3>
                                <p className="text-sm text-white/40 leading-relaxed">{item.desc}</p>
                             </div>
                          </div>

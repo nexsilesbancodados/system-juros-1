@@ -271,11 +271,11 @@ const CobradorExterno = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowProfile(!showProfile)}
+            <button onClick={() => setShowProfile(!showProfile)} aria-label="Abrir perfil do cobrador"
               className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
               <User size={18} />
             </button>
-            <button onClick={handleLogout}
+            <button onClick={handleLogout} aria-label="Sair do portal"
               className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
               <LogOut size={18} />
             </button>
