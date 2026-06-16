@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Receipt, Wallet, MoreHorizontal,
+  LayoutDashboard, Users, Receipt, MoreHorizontal,
   BarChart3, FileSignature, TrendingUp, DollarSign, Bot,
   Calculator, Target, CheckSquare, StickyNote, Table, Database,
   QrCode, ClipboardList, Shield, Settings, Crown, Info,
-  UserCheck, FileText, X, Sparkles, Zap, MessageCircle,
+  UserCheck, FileText, X, Sparkles, MessageCircle,
+  Plus, UserPlus, Wallet as WalletIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,7 +92,14 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showMore, setShowMore] = useState(false);
+  const [showFab, setShowFab] = useState(false);
   const isSuperAdmin = isSuperAdminEmail(user?.email);
+
+  const fabActions = [
+    { label: "Novo cliente", icon: UserPlus, onClick: () => navigate("/clientes/novo") },
+    { label: "Cobrar agora", icon: WalletIcon, onClick: () => navigate("/cobrancas") },
+    { label: "Nova anotação", icon: StickyNote, onClick: () => navigate("/ferramentas/anotacoes") },
+  ];
 
   const isActive = (path: string) => {
     if (path === "__more__") return showMore;
