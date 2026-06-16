@@ -200,15 +200,16 @@ const NovoCliente = () => {
     }
   }, [existingClient]);
 
-  // Apply defaults from settings on first load
-  useState(() => {
-    if (settings) {
-      if (settings.default_interest_rate) setTaxaJuros(settings.default_interest_rate.toString());
-      if (settings.default_late_fee) setLateFeePercent(settings.default_late_fee.toString());
-      if (settings.default_daily_interest) setDailyInterestPercent(settings.default_daily_interest.toString());
-      if (settings.default_frequency) setFrequency(settings.default_frequency as Frequency);
-    }
-  });
+  // Apply defaults from settings when they load (only once, before user touches the form)
+  const defaultsAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!settings || defaultsAppliedRef.current) return;
+    if (settings.default_interest_rate) setTaxaJuros(settings.default_interest_rate.toString());
+    if (settings.default_late_fee) setLateFeePercent(settings.default_late_fee.toString());
+    if (settings.default_daily_interest) setDailyInterestPercent(settings.default_daily_interest.toString());
+    if (settings.default_frequency) setFrequency(settings.default_frequency as Frequency);
+    defaultsAppliedRef.current = true;
+  }, [settings]);
 
   // ── Draft autosave (localStorage) ──
   const DRAFT_KEY = `novo_cliente_draft_${user?.id || "anon"}`;
