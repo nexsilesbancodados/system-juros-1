@@ -402,15 +402,7 @@ serve(async (req) => {
     }
 
     // Memória de longo prazo — JSON estruturado (com fallback p/ texto legado)
-    let memoryObj: any = {};
-    const rawMem = (client.bot_memory || "").toString();
-    try { memoryObj = rawMem.trim().startsWith("{") ? JSON.parse(rawMem) : { notas_legadas: rawMem.slice(0, 1500) }; } catch { memoryObj = { notas_legadas: rawMem.slice(0, 1500) }; }
-    memoryObj.fatos ??= [];
-    memoryObj.preferencias ??= [];
-    memoryObj.motivos_atraso ??= [];
-    memoryObj.contatos_alternativos ??= [];
-    memoryObj.promessas ??= [];
-
+    const memoryObj = parseMemory(client.bot_memory);
     const memoryPretty = JSON.stringify(memoryObj, null, 2);
 
     // Promessas pendentes (audit_logs) ainda não concluídas
