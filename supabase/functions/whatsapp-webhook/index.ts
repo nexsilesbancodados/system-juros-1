@@ -8,6 +8,7 @@ import {
   sha256Hex,
   isEchoOfLastReply,
   computeRolloverInterest,
+  validatePixReply,
 } from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
