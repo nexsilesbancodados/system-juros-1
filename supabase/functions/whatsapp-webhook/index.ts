@@ -4,7 +4,8 @@ import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts"
 import {
   extractJsonObject,
   sanitizeAiResult,
-  shouldTrustReceipt,
+  validateReceipt,
+  sha256Hex,
   isEchoOfLastReply,
   computeRolloverInterest,
 } from "../_shared/bot_utils.ts";
@@ -529,6 +530,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
   "is_promise": boolean,
   "promise_date": "YYYY-MM-DD ou null",
   "receipt_value": number,
+  "receipt_date": "YYYY-MM-DD se conseguir LER do comprovante (foto/PDF), senão null",
   "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida|negociacao|atualizacao_dados|outro",
   "summary": "resumo de 1 linha do status atual",
@@ -584,25 +586,66 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
-    // Aceita comprovante só se houver mídia anexada OU texto com palavra-chave + valor.
-    // Evita baixar parcela por mensagem solta como "vou pagar amanhã".
-    const trustedReceipt = result.is_receipt && shouldTrustReceipt({
+    // ─── Validação avançada de comprovante ─────────────────────────────────
+    // Camadas: evidência mínima, sanidade do valor, competência da data, anti-reuso (hash), fraude textual.
+    let mediaHash: string | null = null;
+    const seenHashes = new Set<string>();
+    if (mediaData) {
+      try { mediaHash = await sha256Hex(mediaData); } catch (e) { console.warn("[hash] falhou:", e); }
+      // Busca hashes já utilizados para este user (últimos 90 dias) → anti-reuso
+      const { data: prevHashes } = await supabase
+        .from("audit_logs")
+        .select("details")
+        .eq("user_id", userId)
+        .eq("entity_type", "whatsapp_receipt")
+        .gte("created_at", new Date(Date.now() - 90 * 86400000).toISOString())
+        .limit(500);
+      for (const row of (prevHashes || [])) {
+        const h = (row as any)?.details?.hash;
+        if (typeof h === "string") seenHashes.add(h);
+      }
+    }
+
+    const receiptCheck = result.is_receipt ? validateReceipt({
       messageType,
       hasMedia: !!mediaData,
       incomingText,
       receiptValue: result.receipt_value,
-    });
+      receiptDate: (result as any).receipt_date || null,
+      installments: (installments || []) as any,
+      todayStr,
+      mediaHash,
+      seenHashes,
+    }) : null;
+
+    const trustedReceipt = !!receiptCheck?.trusted;
+
     if (result.is_receipt && !trustedReceipt) {
-      console.log("[receipt] IA marcou is_receipt mas falta evidência — ignorando baixa automática");
+      console.log("[receipt] rejeitado:", receiptCheck?.reasons.join(",") || "n/d", "risk=", receiptCheck?.riskScore);
+      const reasonsTxt = receiptCheck?.reasons.join(", ") || "sem evidência";
       await supabase.from("notifications").insert({
-        user_id: userId, title: "Possível pagamento",
-        message: `Cliente ${client.name} mencionou pagamento sem enviar comprovante. Confirme manualmente.`,
-        type: "warning",
+        user_id: userId,
+        title: receiptCheck?.duplicate ? "⚠️ Comprovante reutilizado" : "Possível pagamento — revisar",
+        message: `Cliente ${client.name}: ${reasonsTxt} (risco ${receiptCheck?.riskScore || 0}/100). Confirme manualmente.`,
+        type: receiptCheck?.duplicate ? "error" : "warning",
+      });
+      // Registra a tentativa (com hash, se houver) para auditoria/anti-replay
+      await supabase.from("audit_logs").insert({
+        user_id: userId, entity_type: "whatsapp_receipt", action: "rejected", entity_id: client.id,
+        details: { hash: mediaHash, reasons: receiptCheck?.reasons, risk: receiptCheck?.riskScore, value: result.receipt_value },
       });
     }
 
     if (trustedReceipt && installments?.length) {
       const receiptValue = result.receipt_value;
+      // Registra hash do comprovante aceito (anti-reuso futuro)
+      if (mediaHash) {
+        await supabase.from("audit_logs").insert({
+          user_id: userId, entity_type: "whatsapp_receipt", action: "accepted", entity_id: client.id,
+          details: { hash: mediaHash, value: receiptValue, match: receiptCheck?.matchType, installment_id: receiptCheck?.matchedInstallmentId },
+        });
+      }
+
 
       
       if (result.is_rollover) {
