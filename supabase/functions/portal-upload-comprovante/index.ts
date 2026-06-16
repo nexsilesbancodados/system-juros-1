@@ -38,12 +38,12 @@ Deno.serve(async (req) => {
     // 1) Validate collector token → resolve owner user_id
     const { data: tok } = await admin
       .from("collector_tokens")
-      .select("user_id, collector_id, revoked_at, expires_at")
+      .select("user_id, collector_id, is_active")
       .eq("token", token)
       .maybeSingle();
 
-    if (!tok || tok.revoked_at || (tok.expires_at && new Date(tok.expires_at) < new Date())) {
-      return json({ error: "Invalid or expired collector token" }, 401);
+    if (!tok || tok.is_active === false) {
+      return json({ error: "Invalid or inactive collector token" }, 401);
     }
 
     // 2) Ensure the installment belongs to that owner
