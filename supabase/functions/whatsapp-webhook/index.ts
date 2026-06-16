@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts";
+import {
+  extractJsonObject,
+  sanitizeAiResult,
+  shouldTrustReceipt,
+  isEchoOfLastReply,
+  computeRolloverInterest,
+} from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
