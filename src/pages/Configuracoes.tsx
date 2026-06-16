@@ -1218,7 +1218,13 @@ const Configuracoes = () => {
             </div>
             <div className="space-y-4">
               <div><label className="text-label mb-1.5 block">URL da API</label><input value={form.whatsapp_api_url} onChange={(e) => setForm({ ...form, whatsapp_api_url: e.target.value })} placeholder="https://api.exemplo.com" className={inputCls} /></div>
-              <div><label className="text-label mb-1.5 block">API Key</label><input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="••••••••" className={inputCls} /></div>
+              <div>
+                <label className="text-label mb-1.5 block">
+                  API Key {(settings as any)?.whatsapp_api_key_configured && <span className="ml-2 text-[10px] text-success font-bold">✓ Configurada</span>}
+                </label>
+                <input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder={(settings as any)?.whatsapp_api_key_configured ? "••••••••  (deixe vazio para manter)" : "Cole a chave da Evolution API"} className={inputCls} />
+                <p className="text-[10px] text-muted-foreground mt-1">Por segurança, a chave nunca é exibida. Digite uma nova para substituir.</p>
+              </div>
               <div><label className="text-label mb-1.5 block">Nome da Instância</label><input value={form.whatsapp_instance} onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })} placeholder="minha-instancia" className={inputCls} /></div>
             </div>
           </>
