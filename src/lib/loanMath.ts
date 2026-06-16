@@ -61,6 +61,19 @@ export const LOAN_MODE_LABEL: Record<LoanMode, string> = {
 
 const uniform = (value: number, n: number): number[] => Array.from({ length: n }, () => value);
 
+/** Distribui `total` em `n` parcelas iguais arredondadas a 2 casas, ajustando a última
+ *  para que a soma bata exatamente o total (absorve centavo residual). */
+const splitRounded = (total: number, n: number): number[] => {
+  if (n <= 0) return [];
+  if (n === 1) return [Math.round(total * 100) / 100];
+  const base = Math.round((total / n) * 100) / 100;
+  const arr = Array.from({ length: n - 1 }, () => base);
+  const sumBase = base * (n - 1);
+  const last = Math.round((total - sumBase) * 100) / 100;
+  arr.push(last);
+  return arr;
+};
+
 export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | null {
   const { capital, frequency, loanMode } = input;
   const valueMode: ValueMode = input.valueMode ?? "rate";
