@@ -1194,7 +1194,43 @@ const NovoCliente = () => {
                   <span className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">Agendamento</span>
                   <div className="flex-1 h-px bg-white/5" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {frequency === "custom" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-foreground/90 ml-1">Datas de cada parcela</label>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border bg-primary/15 text-primary border-primary/30">
+                        📅 Programado — defina cada vencimento
+                      </span>
+                    </div>
+                    {calc && calc.numParcelas > 0 ? (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-auto pr-1">
+                          {Array.from({ length: calc.numParcelas }).map((_, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-muted-foreground w-7">#{i + 1}</span>
+                              <input
+                                type="date"
+                                value={customDates[i] || ""}
+                                onChange={(e) => {
+                                  const next = [...customDates];
+                                  next[i] = e.target.value;
+                                  setCustomDates(next);
+                                }}
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 [color-scheme:dark]"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground ml-1 italic">
+                          Datas em branco serão preenchidas automaticamente (mensal). A 1ª data define o início do contrato.
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic ml-1">Defina capital e nº de parcelas para liberar as datas.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <label className="block text-sm font-medium text-foreground/90 ml-1">Data Início</label>
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
@@ -1221,7 +1257,6 @@ const NovoCliente = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          // Ao trocar para manual, pré-preenche com o cálculo atual pra facilitar edição
                           if (autoFirstDue && startDate) {
                             const preview = generateDueDates(startDate, frequency, 1, dailyMode, undefined);
                             if (preview[0]) setFirstDueDate(toDateInputValue(preview[0]));
@@ -1275,7 +1310,8 @@ const NovoCliente = () => {
                     )}
                   </div>
 
-                </div>
+                  </div>
+                )}
               </div>
             {/* Multas movidas para "Condições Avançadas" — defaults sensatos (0,33%/dia + 2%/mês) */}
 
