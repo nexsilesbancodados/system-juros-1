@@ -115,7 +115,7 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       totalAmount: total,
       totalInterest: juros,
       numInstallments: periods,
-      schedule: uniform(parcela, periods),
+      schedule: splitRounded(total, periods),
       perPeriodLabel: label,
     };
   }
@@ -143,7 +143,7 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
         totalAmount: total,
         totalInterest: juros,
         numInstallments: periods,
-        schedule: uniform(parcela, periods),
+        schedule: splitRounded(total, periods),
         perPeriodLabel: label,
       };
     }
@@ -156,7 +156,7 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       totalAmount: total,
       totalInterest: total - capital,
       numInstallments: autoPeriods,
-      schedule: uniform(payPer, autoPeriods),
+      schedule: splitRounded(total, autoPeriods),
       perPeriodLabel: label,
     };
   }
@@ -190,7 +190,7 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       totalAmount: total,
       totalInterest: total - capital,
       numInstallments: periods,
-      schedule: uniform(pmt, periods),
+      schedule: splitRounded(total, periods),
       perPeriodLabel: label,
     };
   }
