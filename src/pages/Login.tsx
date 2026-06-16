@@ -133,16 +133,17 @@ const Login = () => {
     const next: typeof errors = {};
     const eRes = emailSchema.safeParse(email);
     if (!eRes.success) next.email = eRes.error.errors[0]?.message;
-    const pSchema = mode === "register" ? passwordRegisterSchema : passwordLoginSchema;
-    const pRes = pSchema.safeParse(password);
-    if (!pRes.success) next.password = pRes.error.errors[0]?.message;
+    if (mode === "login") {
+      const pRes = passwordLoginSchema.safeParse(password);
+      if (!pRes.success) next.password = pRes.error.errors[0]?.message;
+    }
     if (mode === "register") {
       const nRes = nameSchema.safeParse(name);
       if (!nRes.success) next.name = nRes.error.errors[0]?.message;
-      if (!selectedPlan) next.plan = "Escolha um plano para continuar";
+      // No password / plan validation: account is created after payment confirmation.
     }
     setErrors(next);
-    setTouched({ email: true, password: true, name: mode === "register" });
+    setTouched({ email: true, password: mode === "login", name: mode === "register" });
     return Object.keys(next).length === 0;
   };
 
@@ -472,8 +473,15 @@ const Login = () => {
               </div>
 
               <div className="flex-1 p-7 md:p-10 glass bg-white/[0.03]">
-                <h2 className="font-display text-xl font-semibold text-white mb-1">Criar Conta</h2>
-                <p className="text-white/40 text-sm mb-6">Preencha os dados para se registar</p>
+                <h2 className="font-display text-xl font-semibold text-white mb-1">Assinar &amp; criar conta</h2>
+                <p className="text-white/40 text-sm mb-4">
+                  Pague primeiro com segurança. Sua conta é criada automaticamente após a confirmação — você recebe um e-mail para definir a senha.
+                </p>
+
+                <div className="mb-5 p-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.04] text-[11px] text-amber-100/80 leading-relaxed">
+                  <strong className="text-amber-200">Como funciona:</strong> preencha nome e e-mail →
+                  é redirecionado para o pagamento (Hubla) → recebe e-mail de boas-vindas com link para entrar.
+                </div>
 
                 {formError && (
                   <div
@@ -539,104 +547,9 @@ const Login = () => {
                       />
                     </div>
                     <FieldError msg={touched.email ? errors.email : undefined} />
-                  </div>
-
-                  <div>
-                    <label htmlFor="reg-password" className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
-                      Senha
-                    </label>
-                    <div className="relative">
-                      <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                      <input
-                        id="reg-password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="new-password"
-                        placeholder="Mínimo 6 caracteres"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (touched.password) validateField("password", e.target.value);
-                        }}
-                        onBlur={() => {
-                          setTouched((t) => ({ ...t, password: true }));
-                          validateField("password", password);
-                        }}
-                        aria-invalid={!!(touched.password && errors.password)}
-                        minLength={6}
-                        className={cls("password") + " pr-11"}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors p-1"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    {/* Força da senha */}
-                    {password && (
-                      <div className="mt-2">
-                        <div className="flex gap-1">
-                          {[0, 1, 2, 3].map((i) => (
-                            <div
-                              key={i}
-                              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                                i < passwordStrength ? strengthColor : "bg-white/10"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        {strengthLabel && (
-                          <p className="mt-1 text-[10px] text-white/40 flex items-center gap-1">
-                            {passwordStrength >= 3 && <CheckCircle2 size={11} className="text-emerald-400" />}
-                            Força: <span className="text-white/70">{strengthLabel}</span>
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    <FieldError msg={touched.password ? errors.password : undefined} />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-2 block">
-                      Escolha como começar
-                    </label>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedPlan("trial");
-                          setErrors((p) => ({ ...p, plan: undefined }));
-                        }}
-                        className={`p-3 rounded-xl border text-left transition-all ${
-                          selectedPlan === "trial"
-                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
-                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
-                        }`}
-                      >
-                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">🎁 Grátis</div>
-                        <div className="text-sm font-bold text-white">Testar 3 dias</div>
-                        <div className="text-[10px] text-white/40 mt-0.5">Sem cartão</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedPlan("paid");
-                          setErrors((p) => ({ ...p, plan: undefined }));
-                        }}
-                        className={`p-3 rounded-xl border text-left transition-all ${
-                          selectedPlan === "paid"
-                            ? "border-white/40 bg-white/[0.08] ring-2 ring-white/20"
-                            : "border-white/10 bg-white/[0.02] hover:border-white/20"
-                        }`}
-                      >
-                        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">💎 Pro</div>
-                        <div className="text-sm font-bold text-white">Assinar R$79</div>
-                        <div className="text-[10px] text-white/40 mt-0.5">Acesso total</div>
-                      </button>
-                    </div>
-                    <FieldError msg={errors.plan} />
+                    <p className="mt-1.5 text-[10px] text-white/40">
+                      Use o mesmo e-mail no checkout para que sua assinatura seja vinculada à sua conta.
+                    </p>
                   </div>
 
                   <button
@@ -647,16 +560,18 @@ const Login = () => {
                   >
                     {loading ? (
                       <>
-                        <Loader2 size={16} className="animate-spin" /> Criando conta...
+                        <Loader2 size={16} className="animate-spin" /> Abrindo checkout...
                       </>
-                    ) : selectedPlan === "paid" ? (
-                      "Criar conta e ir para o pagamento"
-                    ) : selectedPlan === "trial" ? (
-                      "Começar teste grátis"
                     ) : (
-                      "Criar conta"
+                      <>
+                        Ir para o pagamento <ArrowRight size={16} />
+                      </>
                     )}
                   </button>
+
+                  <p className="text-[10px] text-white/30 text-center leading-relaxed">
+                    Pagamento processado de forma segura pelo Hubla. Sem fidelidade — cancele quando quiser.
+                  </p>
                 </form>
               </div>
             </div>
