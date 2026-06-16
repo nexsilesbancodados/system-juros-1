@@ -8,6 +8,7 @@ import {
   sha256Hex,
   isEchoOfLastReply,
   computeRolloverInterest,
+  validatePixReply,
 } from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
@@ -579,6 +580,31 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
       parsed = { reply: rawText.slice(0, 400) || "Desculpe, tive um problema técnico. Pode repetir, por favor?" };
     }
     const result = sanitizeAiResult(parsed);
+
+    // ─── Validação de PIX e valores antes de enviar ──────────────────────
+    if (result.reply) {
+      const v = validatePixReply({
+        reply: result.reply,
+        pixKey: profile?.pix_key,
+        pixKeyType: profile?.pix_key_type,
+        installments: (installments || []) as any,
+        overdue: overdue as any,
+        dueToday: dueToday as any,
+        totalOverdue,
+        totalDueToday,
+        rolloverOptions: rolloverOptions as any,
+      });
+      if (v.fixed) {
+        result.reply = v.reply;
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          entity_type: "whatsapp_bot",
+          action: "pix_reply_corrected",
+          entity_id: client.id,
+          details: { reasons: v.reasons },
+        });
+      }
+    }
 
     if (result.reply) await botSay(result.reply);
 
