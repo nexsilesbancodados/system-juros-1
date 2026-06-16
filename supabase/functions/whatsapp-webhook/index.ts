@@ -304,10 +304,12 @@ serve(async (req) => {
       messageBuffer.delete(senderJid);
     }
 
-    // LOCK
+    // LOCK (try/finally garante liberação mesmo em erro)
     const lockHeld = jidLock.get(senderJid) || 0;
     if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
     jidLock.set(senderJid, Date.now());
+    try {
+
 
     // COMMANDS
     if (matchesAny(incomingText, STOP_WORDS)) {
