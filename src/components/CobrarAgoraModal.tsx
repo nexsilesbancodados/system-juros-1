@@ -7,6 +7,7 @@ import {
   X, CheckCircle2, Loader2, ArrowRight, ArrowLeft,
   Banknote, Smartphone, CreditCard, Building2, FileText, AlertCircle, Clock
 } from "lucide-react";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 export type CobrarInstallment = {
   id: string;
@@ -216,9 +217,10 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
                   </div>
                 )}
                 {installments.map((inst) => {
-                  const due = new Date(inst.due_date);
+                  const due = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
                   const isOverdue = due < today;
-                  const isToday = due.toDateString() === new Date().toDateString();
+                  const t0 = new Date(); t0.setHours(0,0,0,0);
+                  const isToday = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime() === t0.getTime();
                   const checked = selected.has(inst.id);
                   return (
                     <label
@@ -244,7 +246,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{inst.clients?.name || "Cliente"}</p>
                         <p className="text-[11px] text-muted-foreground">
-                          Parcela {inst.installment_number} · {due.toLocaleDateString("pt-BR")}
+                          Parcela {inst.installment_number} · {formatBR(inst.due_date)}
                           {isOverdue && <span className="text-destructive font-bold ml-1">· ATRASADO</span>}
                           {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
                         </p>

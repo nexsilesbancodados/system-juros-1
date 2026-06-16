@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
 import KanbanView from "@/components/cobrancas/KanbanView";
-import { formatBR } from "@/lib/dateUtils";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
 
@@ -80,10 +80,11 @@ const Cobrancas = () => {
         .eq("user_id", user!.id)
         .order("due_date", { ascending: true });
 
-      const now = new Date();
+      const today = new Date(); today.setHours(0,0,0,0);
       return (data || []).map((inst: any) => {
         const client = clientMap.get(inst.client_id);
-        const isOverdue = inst.status === "pending" && new Date(inst.due_date) < now;
+        const dueLocal = parseLocalDate(inst.due_date);
+        const isOverdue = inst.status === "pending" && dueLocal !== null && dueLocal < today;
         return {
           ...inst,
           status: isOverdue ? "overdue" : inst.status,
@@ -271,7 +272,8 @@ const Cobrancas = () => {
         if (!name.includes(q) && !num.includes(q) && !amt.includes(q)) return false;
       }
       if (period !== "all") {
-        const d = new Date(inst.due_date);
+        const d = parseLocalDate(inst.due_date);
+        if (!d) return false;
         if (period === "today") {
           const same = d.toDateString() === now.toDateString();
           if (!same) return false;
@@ -286,9 +288,10 @@ const Cobrancas = () => {
       return true;
     });
 
-    const overdueDays = (i: any) => Math.max(0, Math.floor((Date.now() - new Date(i.due_date).getTime()) / 86400000));
-    if (sort === "due_asc") arr = [...arr].sort((a, b) => +new Date(a.due_date) - +new Date(b.due_date));
-    else if (sort === "due_desc") arr = [...arr].sort((a, b) => +new Date(b.due_date) - +new Date(a.due_date));
+    const ts = (s: string) => (parseLocalDate(s)?.getTime() ?? 0);
+    const overdueDays = (i: any) => Math.max(0, Math.floor((Date.now() - ts(i.due_date)) / 86400000));
+    if (sort === "due_asc") arr = [...arr].sort((a, b) => ts(a.due_date) - ts(b.due_date));
+    else if (sort === "due_desc") arr = [...arr].sort((a, b) => ts(b.due_date) - ts(a.due_date));
     else if (sort === "amount_desc") arr = [...arr].sort((a, b) => Number(b.amount) - Number(a.amount));
     else if (sort === "amount_asc") arr = [...arr].sort((a, b) => Number(a.amount) - Number(b.amount));
     else if (sort === "overdue_days") arr = [...arr].sort((a, b) => overdueDays(b) - overdueDays(a));
@@ -627,9 +630,9 @@ const Cobrancas = () => {
           {filtered.map((inst: any) => {
             const isOverdue = inst.status === "overdue";
             const isPaid = inst.status === "paid";
-            const now = new Date();
-            const dueDate = new Date(inst.due_date);
-            const daysDiff = Math.floor((now.getTime() - dueDate.getTime()) / 86400000);
+            const now = new Date(); now.setHours(0,0,0,0);
+            const dueDate = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
+            const daysDiff = Math.floor((now.getTime() - new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).getTime()) / 86400000);
             const daysText = isOverdue ? `${daysDiff}d atrasada` : !isPaid ? (daysDiff < 0 ? `em ${Math.abs(daysDiff)}d` : "hoje") : "";
             const isSel = selected.has(inst.id);
 
@@ -676,7 +679,7 @@ const Cobrancas = () => {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
-                    <span className="flex items-center gap-1"><CalendarDays size={10} /> {dueDate.toLocaleDateString("pt-BR")}</span>
+                    <span className="flex items-center gap-1"><CalendarDays size={10} /> {formatBR(inst.due_date)}</span>
                     {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
                     {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
                   </div>
