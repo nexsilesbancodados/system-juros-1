@@ -29,56 +29,7 @@ const DashboardLayout = () => {
   const { toast } = useToast();
   usePushNotifications();
 
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    const key = `__sub_checked_${user.id}`;
-    if (sessionStorage.getItem(key)) return;
-
-    (async () => {
-      // Skip admins or check trial/subscription
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_admin, trial_ends_at, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const hasValidTrial = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
-
-      if (cancelled || profile?.is_admin || hasValidTrial) {
-        sessionStorage.setItem(key, "1");
-        return;
-      }
-
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("email", profile?.email || user.email!)
-        .maybeSingle();
-
-      sessionStorage.setItem(key, "1");
-
-      if (!cancelled && (!sub || sub.status !== 'active')) {
-        const { data: settings } = await supabase
-          .from("settings")
-          .select("hubla_checkout_url")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (settings?.hubla_checkout_url) {
-          toast({
-            title: "Assinatura Requerida",
-            description: "Seu teste grátis expirou. Redirecionando para o checkout...",
-            variant: "destructive",
-          });
-          setTimeout(() => {
-            window.location.href = settings.hubla_checkout_url;
-          }, 3000);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  // Subscription enforcement lives in ProtectedRoute now (single source of truth).
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
