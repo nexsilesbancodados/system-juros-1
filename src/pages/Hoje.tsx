@@ -11,7 +11,7 @@ import {
   UserPlus, FileText, Wallet, Cake, CalendarDays, Flame, History, DollarSign
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
-import { formatBR } from "@/lib/dateUtils";
+import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
@@ -19,14 +19,15 @@ const startOfMonth = () => { const d = new Date(); d.setDate(1); d.setHours(0,0,
 const endOfMonth = () => { const d = new Date(); d.setMonth(d.getMonth()+1, 0); d.setHours(23,59,59,999); return d; };
 const inDays = (n: number) => { const d = startOfToday(); d.setDate(d.getDate()+n); return d; };
 const fmtBRL = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtTime = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+const fmtTime = (iso: string) => formatBR(iso, { day: "2-digit", month: "short" });
 const fmtDayLabel = (iso: string) => {
-  const d = new Date(iso);
+  const d = parseLocalDate(iso);
+  if (!d) return "";
   const today = startOfToday();
-  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+  const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - today.getTime()) / 86400000);
   if (diff === 0) return "Hoje";
   if (diff === 1) return "Amanhã";
-  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+  return formatBR(d, { weekday: "short", day: "2-digit", month: "2-digit" });
 };
 
 const Hoje = () => {
