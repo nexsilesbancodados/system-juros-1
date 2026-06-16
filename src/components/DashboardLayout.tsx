@@ -3,12 +3,10 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
 // Defer heavy overlays — they're only rendered after user interaction.
 const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
@@ -24,9 +22,7 @@ const DashboardLayout = () => {
   const [payOpen, setPayOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   usePushNotifications();
 
   // Subscription enforcement lives in ProtectedRoute now (single source of truth).
