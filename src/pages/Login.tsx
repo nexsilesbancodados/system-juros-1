@@ -279,7 +279,7 @@ const Login = () => {
           />
         </div>
         <h1 className="font-display text-xl md:text-2xl tracking-[0.3em] md:tracking-[0.35em] mt-4 text-gradient-gold text-center">
-          {brandTitle}
+          {brandTitle} — Gestão de Empréstimos
         </h1>
         <p className="text-white/40 text-[10px] md:text-xs mt-1.5 tracking-wider text-center">{brandSubtitle}</p>
       </div>

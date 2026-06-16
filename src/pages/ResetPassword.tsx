@@ -337,7 +337,7 @@ const ResetPassword = () => {
 
       <div className="relative z-10 flex flex-col items-center mb-8 animate-fade-in">
         <img src={logoSrc} alt={brandTitle} width={72} height={72} className="rounded-full ring-2 ring-white/20" />
-        <h1 className="font-display text-xl tracking-[0.35em] mt-4 text-gradient-gold">{brandTitle}</h1>
+        <h1 className="font-display text-xl tracking-[0.35em] mt-4 text-gradient-gold">{brandTitle} — Redefinir Senha</h1>
       </div>
 
       <div className="relative z-10 w-full max-w-md animate-scale-in">

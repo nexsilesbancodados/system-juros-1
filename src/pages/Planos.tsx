@@ -99,7 +99,7 @@ const Planos = () => {
               <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center mb-4">
                 <b.icon size={18} className="text-amber-400" />
               </div>
-              <h3 className="font-display font-bold text-lg mb-2">{b.title}</h3>
+              <h2 className="font-display font-bold text-lg mb-2">{b.title}</h2>
               <p className="text-sm text-white/50 leading-relaxed">{b.desc}</p>
             </motion.div>
           ))}
