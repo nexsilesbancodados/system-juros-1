@@ -324,16 +324,37 @@ serve(async (req) => {
       if (resp?.ok) mediaData = (await resp.json()).base64;
     }
 
-    // ENRICH DATA
-    const { data: activeContracts } = await supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode, frequency, interest_rate").eq("client_id", client.id).eq("status", "active");
-    const { data: installments } = await supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number, contract_id").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true });
-    const { data: interactionLogs } = await supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(10);
-    const { data: allPaid } = await supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "paid");
+    // ENRICH DATA (contexto rico p/ a IA)
+    const [
+      { data: activeContracts },
+      { data: installments },
+      { data: interactionLogs },
+      { data: allPaid },
+      { data: recentPaid },
+      { data: humanNotes },
+      { data: openPromises },
+      { data: messageTemplates },
+    ] = await Promise.all([
+      supabase.from("contracts").select("id, capital, total_amount, start_date, status, loan_mode, frequency, interest_rate, num_installments").eq("client_id", client.id).eq("status", "active"),
+      supabase.from("contract_installments").select("id, amount, due_date, status, late_fee, installment_number, contract_id").eq("client_id", client.id).in("status", ["pending", "overdue"]).order("due_date", { ascending: true }),
+      supabase.from("audit_logs").select("action, created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").order("created_at", { ascending: false }).limit(10),
+      supabase.from("contract_installments").select("id").eq("client_id", client.id).eq("status", "paid"),
+      supabase.from("contract_installments").select("amount, paid_amount, paid_at, installment_number, payment_method").eq("client_id", client.id).eq("status", "paid").order("paid_at", { ascending: false }).limit(5),
+      supabase.from("whatsapp_notes").select("content, created_by, created_at").eq("client_id", client.id).order("created_at", { ascending: false }).limit(8),
+      supabase.from("audit_logs").select("created_at, details").eq("entity_id", client.id).eq("entity_type", "whatsapp_bot").eq("action", "promise_to_pay").order("created_at", { ascending: false }).limit(5),
+      supabase.from("message_templates").select("name, content").eq("user_id", userId).limit(8),
+    ]);
+
     const paidCount = allPaid?.length || 0;
 
     const now = new Date();
     const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000); // UTC-3
     const todayStr = brDate.toISOString().split('T')[0];
+
+    const daysBetween = (a: string, b: string) => {
+      const da = new Date(a + "T12:00:00"); const db = new Date(b + "T12:00:00");
+      return Math.round((db.getTime() - da.getTime()) / 86400000);
+    };
 
     const overdue = (installments || []).filter(i => {
       const dueDate = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
@@ -343,11 +364,15 @@ serve(async (req) => {
       const dueDate = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
       return dueDate === todayStr;
     });
-    
+    const upcoming = (installments || []).filter(i => {
+      const dueDate = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
+      return dueDate > todayStr;
+    }).slice(0, 3);
+
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
     const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
 
-    // Calculate rollover/interest only options
+    // Renovação (pagar só juros)
     const rolloverOptions = (activeContracts || []).map(c => {
       const inst = installments?.find(i => i.contract_id === c.id);
       if (!inst) return null;
@@ -360,6 +385,7 @@ serve(async (req) => {
       };
     }).filter(Boolean);
 
+    // Histórico de conversa (mais largo)
     const conversationHistory: any[] = [];
     if (convoId) {
       const { data: msgHistory } = await supabase
@@ -367,68 +393,142 @@ serve(async (req) => {
         .select("direction, content, message_type, metadata, created_at")
         .eq("conversation_id", convoId)
         .order("created_at", { ascending: false })
-        .limit(40);
+        .limit(80);
       (msgHistory || []).reverse().forEach(h => {
         const txt = h.content || h.metadata?.transcript || `[${h.message_type}]`;
         conversationHistory.push({ role: h.direction === "in" ? "user" : "assistant", content: txt });
       });
     }
 
-    // Memória de longo prazo persistida (fatos consolidados sobre o cliente)
-    const longTermMemory = (client.bot_memory || "").toString().slice(0, 2000);
+    // Memória de longo prazo — JSON estruturado (com fallback p/ texto legado)
+    let memoryObj: any = {};
+    const rawMem = (client.bot_memory || "").toString();
+    try { memoryObj = rawMem.trim().startsWith("{") ? JSON.parse(rawMem) : { notas_legadas: rawMem.slice(0, 1500) }; } catch { memoryObj = { notas_legadas: rawMem.slice(0, 1500) }; }
+    memoryObj.fatos ??= [];
+    memoryObj.preferencias ??= [];
+    memoryObj.motivos_atraso ??= [];
+    memoryObj.contatos_alternativos ??= [];
+    memoryObj.promessas ??= [];
 
-    const systemPrompt = `Você é o Atendente Virtual Inteligente da "${settings.company_name || 'nossa empresa'}". Seu objetivo é RECUPERAR VALORES de forma estratégica, empática e CONTEXTUAL.
+    const memoryPretty = JSON.stringify(memoryObj, null, 2);
 
-═══ PERFIL DO CLIENTE ═══
+    // Promessas pendentes (audit_logs) ainda não concluídas
+    const pendingPromises = (openPromises || []).map(p => ({
+      date: p.details?.promise_date,
+      created_at: p.created_at,
+      message: p.details?.message,
+    })).filter(p => p.date && p.date >= todayStr);
+
+    // Notas humanas e templates como referência
+    const humanNotesText = (humanNotes || []).map(n => `- [${n.created_by || 'humano'} em ${(n.created_at || '').slice(0,10)}] ${n.content}`).join("\n").slice(0, 1500);
+    const recentPaidText = (recentPaid || []).map(p => `- Parcela #${p.installment_number}: R$ ${Number(p.paid_amount || p.amount).toFixed(2)} em ${(p.paid_at || '').slice(0,10)}${p.payment_method ? ` (${p.payment_method})` : ''}`).join("\n");
+    const templatesText = (messageTemplates || []).map(t => `• ${t.name}: ${t.content.slice(0, 120)}`).join("\n").slice(0, 800);
+
+    const overdueDetail = overdue.map(i => {
+      const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
+      const days = daysBetween(d, todayStr);
+      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (${days}d em atraso, desde ${d}${i.late_fee ? `, multa R$ ${Number(i.late_fee).toFixed(2)}` : ''})`;
+    }).join('\n');
+
+    const upcomingDetail = upcoming.map(i => {
+      const d = typeof i.due_date === 'string' ? i.due_date.split('T')[0] : i.due_date;
+      return `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (vence em ${d})`;
+    }).join('\n');
+
+    const addr: any = client.address || {};
+    const addressLine = (typeof addr === "object" && (addr.street || addr.city))
+      ? `${addr.street || ''}${addr.number ? ', ' + addr.number : ''}${addr.city ? ' - ' + addr.city : ''}${addr.state ? '/' + addr.state : ''}`.trim()
+      : (typeof addr === "string" ? addr : "");
+
+    const systemPrompt = `Você é o Atendente Virtual Inteligente da "${settings.company_name || 'nossa empresa'}". Sua missão: RECUPERAR VALORES e ATENDER com excelência — sempre empático, contextual e PRECISO. NUNCA invente fatos.
+
+═══ 👤 PERFIL DO CLIENTE ═══
 Nome: ${client.name}
+CPF: ${client.cpf_cnpj || 'n/d'}
+Nascimento: ${client.birth_date || 'n/d'}
+Telefone: ${client.phone || senderPhone} | WhatsApp: ${client.whatsapp || senderPhone}
+E-mail: ${client.email || 'n/d'}
+Endereço: ${addressLine || 'n/d'}
+Profissão: ${client.occupation || 'n/d'} | Renda mensal: ${client.monthly_income ? `R$ ${Number(client.monthly_income).toFixed(2)}` : 'n/d'}
 Status: ${client.status || 'Ativo'}
-Score de Crédito: ${client.credit_score || 50}/100
-Parcelas Pagas no Histórico: ${paidCount}
-Contratos Ativos: ${activeContracts?.length || 0}
-${activeContracts?.map(c => `- R$ ${Number(c.capital).toFixed(2)} (${c.loan_mode || 'Normal'}, ${c.frequency})`).join('\n')}
+Score: ${client.credit_score ?? 50}/100 — ${(client.credit_score ?? 50) > 80 ? 'Excelente pagador (seja flexível)' : (client.credit_score ?? 50) < 40 ? 'Risco alto (seja firme)' : 'Padrão'}
+Parcelas pagas no histórico: ${paidCount}
+Notas internas do cliente (cadastro): ${client.notes || '(nenhuma)'}
 
-═══ 🧠 MEMÓRIA DE LONGO PRAZO (fatos consolidados de conversas anteriores) ═══
-${longTermMemory || "(sem memória prévia — primeira interação relevante)"}
+═══ 📂 CONTRATOS ATIVOS (${activeContracts?.length || 0}) ═══
+${(activeContracts || []).map(c => `- Contrato ${c.id.slice(0,8)}: Capital R$ ${Number(c.capital).toFixed(2)} | ${c.num_installments || '?'}x | ${c.loan_mode || 'normal'} | ${c.frequency} | taxa ${c.interest_rate}% | início ${c.start_date}`).join('\n') || '(nenhum)'}
 
-⚠️ USE essa memória para personalizar o atendimento. Cite fatos relevantes naturalmente ("como combinamos da última vez...", "lembro que você mencionou..."), NUNCA invente fatos.
+═══ 💰 SITUAÇÃO FINANCEIRA — HOJE ${brDate.toLocaleDateString('pt-BR')} ═══
+📅 Vence HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcela(s))
+⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcela(s))
+💯 TOTAL p/ quitar pendências AGORA: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
 
-═══ SITUAÇÃO FINANCEIRA (ATUALIZADO) ═══
-📅 VENCE HOJE: R$ ${totalDueToday.toFixed(2)} (${dueToday.length} parcelas)
-⚠️ EM ATRASO: R$ ${totalOverdue.toFixed(2)} (${overdue.length} parcelas)
-💰 TOTAL PARA QUITAR PENDÊNCIAS: R$ ${(totalDueToday + totalOverdue).toFixed(2)}
-⚖️ COMPORTAMENTO: ${client.credit_score > 80 ? 'Excelente pagador. Seja flexível.' : client.credit_score < 40 ? 'Risco alto. Seja firme e direto.' : 'Padrão.'}
+Detalhe ATRASADAS:
+${overdueDetail || '(sem atrasos)'}
 
-DETALHAMENTO:
-${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCE HOJE)`).join('\n')}
-${overdue.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)} (VENCIDA DESDE ${i.due_date})`).join('\n')}
+Detalhe VENCE HOJE:
+${dueToday.map(i => `- Parcela #${i.installment_number}: R$ ${Number(i.amount).toFixed(2)}`).join('\n') || '(nenhuma)'}
 
-═══ OPÇÕES DE RENOVAÇÃO (PAGAR SÓ JUROS) ═══
-${rolloverOptions.map(o => `- Pagar APENAS OS JUROS de R$ ${o.interestOnly.toFixed(2)}. O valor principal continua para a próxima data (${o.frequency}).`).join('\n')}
+Próximas (preview):
+${upcomingDetail || '(sem próximas pendentes)'}
 
-═══ ESTRATÉGIA DE ATENDIMENTO ═══
-1. CONTEXTO É TUDO: Antes de responder, releia o histórico recente E a memória de longo prazo. NUNCA repita uma pergunta já respondida. NUNCA peça dado que já está no perfil.
-2. TOM: Profissional, prestativo, humano. Emojis com moderação.
-3. CONTINUIDADE: Se há promessa registrada na memória, faça follow-up natural ("você havia combinado pagar dia X, conseguiu?").
-4. COMPROVANTES: Sempre peça e valide o valor.
-5. ESCALONAMENTO: Pedido explícito de humano → needs_human=true.
-6. MEMÓRIA: Ao final, ATUALIZE a memória consolidada com fatos novos relevantes (preferências, histórico, promessas, motivos de atraso, contatos, etc.) — máx 1500 chars, em tópicos curtos. Mantenha fatos antigos relevantes, remova só o que ficou obsoleto.
+═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) ═══
+${rolloverOptions.map(o => `- Juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
 
-Data Atual: ${brDate.toLocaleDateString('pt-BR')}
-CHAVE PIX: ${profile?.pix_key || "Solicitar ao gerente"} (${profile?.pix_key_type || "PIX"})
+═══ ✅ ÚLTIMOS PAGAMENTOS (referência p/ continuidade) ═══
+${recentPaidText || '(nenhum pagamento ainda)'}
 
-Responda em JSON puro:
+═══ 📝 NOTAS HUMANAS (do operador/CRM sobre este cliente) ═══
+${humanNotesText || '(nenhuma)'}
+
+═══ 🤝 PROMESSAS PENDENTES (assumidas pelo cliente) ═══
+${pendingPromises.length ? pendingPromises.map(p => `- Promete pagar até ${p.date} ${p.message ? `("${String(p.message).slice(0,120)}")` : ''}`).join('\n') : '(nenhuma)'}
+
+═══ 🧠 MEMÓRIA DE LONGO PRAZO (fatos consolidados — JSON) ═══
+${memoryPretty}
+
+═══ ✍️ TEMPLATES DA EMPRESA (use como inspiração de tom/estilo) ═══
+${templatesText || '(sem templates cadastrados)'}
+
+═══ ⚙️ CONFIGURAÇÕES DA EMPRESA ═══
+Multa por atraso: ${settings.default_late_fee || 0}%
+Juros diários após vencimento: ${settings.default_daily_interest || 0}%/dia
+Horário comercial: ${settings.bot_business_start || '08:00'}–${settings.bot_business_end || '18:00'}
+PIX: ${profile?.pix_key || '(sem chave cadastrada)'} ${profile?.pix_key_type ? `(${profile.pix_key_type})` : ''}
+Recebedor: ${profile?.name || settings.company_name}
+
+═══ 🎯 ESTRATÉGIA DE ATENDIMENTO ═══
+1. CONTEXTO ABSOLUTO: Releia o histórico recente, memória, notas humanas e promessas ANTES de responder. NUNCA repita pergunta já respondida. NUNCA peça dado já no perfil.
+2. CONTINUIDADE: Se houver promessa pendente, faça follow-up natural ("você havia combinado pagar até DD/MM, conseguiu?"). Se houve pagamento recente, agradeça pelo nome.
+3. TOM: Profissional, empático, humano, brasileiro coloquial. Emojis com moderação (1–2 por mensagem).
+4. PRECISÃO DE VALORES: Sempre cite valor exato, número da parcela e data. Nunca arredonde sem dizer.
+5. NEGOCIAÇÃO: Para score >80 ofereça flexibilidade (descontos pequenos na multa, parcelar atraso). Para score <40 seja firme, mas humano.
+6. COMPROVANTE: Quando o cliente enviar comprovante (imagem/PDF), extraia valor e data. Confirme o pagamento explicitamente antes de marcar (is_receipt=true).
+7. RENOVAÇÃO: Oferte só quando o cliente disser que não tem o total — apresente "pagar só os juros" como alívio temporário.
+8. ESCALONAMENTO: Pedido explícito de humano, reclamação séria, ou ofensas → needs_human=true.
+9. FORA DE ESCOPO: Se perguntarem algo que não está no contexto (ex: contrato de outro cliente), diga que não tem acesso.
+10. MEMÓRIA: Atualize SEM perder fatos antigos. Adicione novos fatos aos arrays existentes. Remova só o que ficou OBSOLETO (ex: promessa já cumprida).
+
+Responda APENAS em JSON puro (sem markdown, sem cercas):
 {
-  "thought": "análise lógica considerando memória + histórico + situação",
-  "reply": "sua resposta ao cliente (em português)",
+  "thought": "análise curta cruzando memória + histórico + situação atual",
+  "reply": "sua resposta ao cliente em PT-BR",
   "is_receipt": boolean,
   "is_rollover": boolean,
   "is_promise": boolean,
-  "promise_date": "YYYY-MM-DD",
+  "promise_date": "YYYY-MM-DD ou null",
   "receipt_value": number,
   "needs_human": boolean,
-  "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida",
-  "summary": "resumo do status",
-  "memory_update": "memória consolidada atualizada (substitui a anterior) — fatos em tópicos curtos, máx 1500 chars. Se não houver nada novo relevante, retorne a memória anterior inalterada."
+  "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida|negociacao|atualizacao_dados|outro",
+  "summary": "resumo de 1 linha do status atual",
+  "memory_update": {
+    "fatos": ["fatos relevantes consolidados, máx 12"],
+    "preferencias": ["ex: prefere pagar pela manhã, prefere PIX, prefere WhatsApp"],
+    "motivos_atraso": ["ex: desemprego desde MM/AAAA, problema de saúde"],
+    "contatos_alternativos": ["ex: esposa Maria 9999-9999"],
+    "promessas": [{"data":"YYYY-MM-DD","valor":0,"contexto":"o que prometeu"}],
+    "ultima_interacao": "${todayStr}"
+  }
 }`;
 
     const anthMessages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
@@ -443,7 +543,7 @@ Responda em JSON puro:
     const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 1000, temperature: 0.5, system: systemPrompt, messages: anthMessages }),
+      body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 1500, temperature: 0.5, system: systemPrompt, messages: anthMessages }),
     });
 
     if (!aiResp.ok) throw new Error(await aiResp.text());
@@ -452,12 +552,26 @@ Responda em JSON puro:
 
     if (result.reply) await botSay(result.reply);
 
-    // Persiste memória de longo prazo atualizada pelo modelo
-    if (typeof result.memory_update === "string" && result.memory_update.trim()) {
-      const newMem = result.memory_update.trim().slice(0, 2000);
-      if (newMem !== longTermMemory) {
-        await supabase.from("clients").update({ bot_memory: newMem }).eq("id", client.id);
-      }
+    // Merge inteligente da memória (não substitui — funde e deduplica)
+    if (result.memory_update && typeof result.memory_update === "object") {
+      const dedupArr = (a: any[] = [], b: any[] = []) => {
+        const seen = new Set<string>();
+        return [...a, ...b].filter(x => {
+          const k = typeof x === "string" ? x.toLowerCase().trim() : JSON.stringify(x);
+          if (seen.has(k)) return false; seen.add(k); return true;
+        }).slice(-20); // mantém últimos 20 únicos por seção
+      };
+      const merged = {
+        fatos: dedupArr(memoryObj.fatos, result.memory_update.fatos),
+        preferencias: dedupArr(memoryObj.preferencias, result.memory_update.preferencias),
+        motivos_atraso: dedupArr(memoryObj.motivos_atraso, result.memory_update.motivos_atraso),
+        contatos_alternativos: dedupArr(memoryObj.contatos_alternativos, result.memory_update.contatos_alternativos),
+        promessas: dedupArr(memoryObj.promessas, result.memory_update.promessas),
+        ultima_interacao: result.memory_update.ultima_interacao || todayStr,
+        notas_legadas: memoryObj.notas_legadas, // preserva legado
+      };
+      const serialized = JSON.stringify(merged).slice(0, 6000);
+      await supabase.from("clients").update({ bot_memory: serialized }).eq("id", client.id);
     }
 
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
