@@ -46,6 +46,7 @@ export function sanitizeAiResult(raw: any): {
   is_promise: boolean;
   promise_date: string | null;
   receipt_value: number;
+  receipt_date: string | null;
   needs_human: boolean;
   intent: string;
   summary: string;
