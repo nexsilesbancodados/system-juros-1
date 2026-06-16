@@ -261,6 +261,11 @@ serve(async (req) => {
 
     const botSay = async (text: string) => {
       if (!text || !apiUrl || !apiKey) return;
+      if (isEchoOfLastReply(lastBotReply, senderJid, text)) {
+        console.log("[anti-eco] resposta idêntica suprimida para", senderJid);
+        return;
+      }
+      lastBotReply.set(senderJid, { text, ts: Date.now() });
       await sendText(apiUrl, apiKey, instanceName, senderJid, text);
       if (convoId) {
         await logMessage(supabase, { conversationId: convoId, userId, direction: "out", sender: "bot", messageType: "text", content: text });
