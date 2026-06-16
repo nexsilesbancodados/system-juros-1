@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts";
+import {
+  extractJsonObject,
+  sanitizeAiResult,
+  shouldTrustReceipt,
+  isEchoOfLastReply,
+  computeRolloverInterest,
+} from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -254,6 +261,11 @@ serve(async (req) => {
 
     const botSay = async (text: string) => {
       if (!text || !apiUrl || !apiKey) return;
+      if (isEchoOfLastReply(lastBotReply, senderJid, text)) {
+        console.log("[anti-eco] resposta idêntica suprimida para", senderJid);
+        return;
+      }
+      lastBotReply.set(senderJid, { text, ts: Date.now() });
       await sendText(apiUrl, apiKey, instanceName, senderJid, text);
       if (convoId) {
         await logMessage(supabase, { conversationId: convoId, userId, direction: "out", sender: "bot", messageType: "text", content: text });
@@ -292,10 +304,12 @@ serve(async (req) => {
       messageBuffer.delete(senderJid);
     }
 
-    // LOCK
+    // LOCK (try/finally garante liberação mesmo em erro)
     const lockHeld = jidLock.get(senderJid) || 0;
     if (lockHeld && Date.now() - lockHeld < LOCK_TTL_MS) return new Response(JSON.stringify({ status: "locked" }), { headers: corsHeaders });
     jidLock.set(senderJid, Date.now());
+    try {
+
 
     // COMMANDS
     if (matchesAny(incomingText, STOP_WORDS)) {
@@ -373,16 +387,20 @@ serve(async (req) => {
     const totalOverdue = overdue.reduce((s, i) => s + Number(i.amount) + (Number(i.late_fee) || 0), 0);
     const totalDueToday = dueToday.reduce((s, i) => s + Number(i.amount), 0);
 
-    // Renovação (pagar só juros)
+    // Renovação (pagar só juros) — usa cálculo estável (capital × taxa)
     const rolloverOptions = (activeContracts || []).map(c => {
       const inst = installments?.find(i => i.contract_id === c.id);
       if (!inst) return null;
-      const interestOnly = Number(inst.amount) - Number(c.capital);
       return {
         contractId: c.id,
-        interestOnly: interestOnly > 0 ? interestOnly : (Number(c.capital) * (Number(c.interest_rate) / 100)),
+        interestOnly: computeRolloverInterest({
+          capital: Number(c.capital),
+          interestRate: Number(c.interest_rate),
+          installmentAmount: Number(inst.amount),
+          numInstallments: Number(c.num_installments),
+        }),
         totalAmount: Number(inst.amount),
-        frequency: c.frequency
+        frequency: c.frequency,
       };
     }).filter(Boolean);
 
@@ -466,7 +484,7 @@ Próximas (preview):
 ${upcomingDetail || '(sem próximas pendentes)'}
 
 ═══ 🔄 OPÇÕES DE RENOVAÇÃO (pagar só juros) ═══
-${rolloverOptions.map(o => `- Juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
+${rolloverOptions.map((o: any) => `- Juros de R$ ${o.interestOnly.toFixed(2)} → empurra o principal p/ próximo ciclo (${o.frequency})`).join('\n') || '(n/d)'}
 
 ═══ ✅ ÚLTIMOS PAGAMENTOS (referência p/ continuidade) ═══
 ${recentPaidText || '(nenhum pagamento ainda)'}
@@ -541,7 +559,13 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     if (!aiResp.ok) throw new Error(await aiResp.text());
     const aiData = await aiResp.json();
-    const result = JSON.parse(aiData.content[0].text.match(/\{[\s\S]*\}/)[0]);
+    const rawText = aiData?.content?.[0]?.text ?? "";
+    let parsed = extractJsonObject(rawText);
+    if (!parsed) {
+      console.warn("[ai] resposta sem JSON válido, devolvendo fallback:", rawText.slice(0, 200));
+      parsed = { reply: rawText.slice(0, 400) || "Desculpe, tive um problema técnico. Pode repetir, por favor?" };
+    }
+    const result = sanitizeAiResult(parsed);
 
     if (result.reply) await botSay(result.reply);
 
@@ -560,8 +584,26 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
 
     await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "replied", entity_id: client.id, details: { intent: result.intent, thought: result.thought, reply: result.reply } });
 
-    if (result.is_receipt && installments?.length) {
-      const receiptValue = Number(result.receipt_value);
+    // Aceita comprovante só se houver mídia anexada OU texto com palavra-chave + valor.
+    // Evita baixar parcela por mensagem solta como "vou pagar amanhã".
+    const trustedReceipt = result.is_receipt && shouldTrustReceipt({
+      messageType,
+      hasMedia: !!mediaData,
+      incomingText,
+      receiptValue: result.receipt_value,
+    });
+    if (result.is_receipt && !trustedReceipt) {
+      console.log("[receipt] IA marcou is_receipt mas falta evidência — ignorando baixa automática");
+      await supabase.from("notifications").insert({
+        user_id: userId, title: "Possível pagamento",
+        message: `Cliente ${client.name} mencionou pagamento sem enviar comprovante. Confirme manualmente.`,
+        type: "warning",
+      });
+    }
+
+    if (trustedReceipt && installments?.length) {
+      const receiptValue = result.receipt_value;
+
       
       if (result.is_rollover) {
         // Lógica de Renovação (Pagar apenas Juros)
@@ -647,11 +689,13 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
       }
     }
 
-    jidLock.delete(senderJid);
-    return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
+      return new Response(JSON.stringify({ status: "success" }), { headers: corsHeaders });
+    } finally {
+      jidLock.delete(senderJid);
+    }
 
   } catch (err) {
     console.error("Webhook Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), { status: 500, headers: corsHeaders });
   }
 });
