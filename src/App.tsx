@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import OfflineIndicator from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SuspenseWatchdog from "./components/SuspenseWatchdog";
 import { ConfirmProvider } from "./components/ConfirmProvider";
 
 import Index from "./pages/Index";
@@ -81,15 +82,17 @@ const queryClient = new QueryClient({
 });
 
 const PageLoader = () => (
-  <div className="min-h-[60vh] p-6 space-y-4 animate-pulse">
-    <div className="h-7 w-48 rounded-lg bg-muted/40" />
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-24 rounded-2xl bg-muted/30 border border-border/20" />
-      ))}
+  <SuspenseWatchdog>
+    <div className="min-h-[60vh] p-6 space-y-4 animate-pulse">
+      <div className="h-7 w-48 rounded-lg bg-muted/40" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-2xl bg-muted/30 border border-border/20" />
+        ))}
+      </div>
+      <div className="h-[320px] rounded-2xl bg-muted/20 border border-border/20" />
     </div>
-    <div className="h-[320px] rounded-2xl bg-muted/20 border border-border/20" />
-  </div>
+  </SuspenseWatchdog>
 );
 
 const App = () => (
