@@ -52,6 +52,7 @@ const defaults: WhiteLabelConfig = {
   footerText: "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS",
   borderRadius: "16",
   fontFamily: "default",
+  modulesEnabled: DEFAULT_MODULES,
 };
 
 const WhiteLabelContext = createContext<WhiteLabelContextType>({
