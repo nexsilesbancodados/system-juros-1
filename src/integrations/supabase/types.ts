@@ -1917,6 +1917,7 @@ export type Database = {
           id: string | null
           login_subtitle: string | null
           login_title: string | null
+          modules_enabled: Json | null
           n8n_webhook_url: string | null
           portal_contact_email: string | null
           portal_contact_phone: string | null
@@ -1978,6 +1979,7 @@ export type Database = {
           id?: string | null
           login_subtitle?: string | null
           login_title?: string | null
+          modules_enabled?: Json | null
           n8n_webhook_url?: string | null
           portal_contact_email?: string | null
           portal_contact_phone?: string | null
@@ -2039,6 +2041,7 @@ export type Database = {
           id?: string | null
           login_subtitle?: string | null
           login_title?: string | null
+          modules_enabled?: Json | null
           n8n_webhook_url?: string | null
           portal_contact_email?: string | null
           portal_contact_phone?: string | null
