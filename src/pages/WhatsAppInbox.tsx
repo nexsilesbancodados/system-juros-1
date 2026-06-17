@@ -487,12 +487,17 @@ export default function WhatsAppInbox() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-medium truncate">{c.contact_name || c.phone}</span>
-                        {c.needs_human && (
+                        {c.bot_status === "handoff" && (
+                          <Badge variant="destructive" className="text-[9px] py-0 h-4 px-1.5 animate-pulse">
+                            🚨 humano
+                          </Badge>
+                        )}
+                        {c.bot_status !== "handoff" && c.needs_human && (
                           <Badge variant="destructive" className="text-[9px] py-0 h-4 px-1.5">
                             <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />humano
                           </Badge>
                         )}
-                        {c.bot_paused && !c.blocked && (
+                        {c.bot_paused && c.bot_status !== "handoff" && !c.blocked && (
                           <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5">bot off</Badge>
                         )}
                         {c.blocked && (
