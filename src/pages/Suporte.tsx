@@ -173,6 +173,8 @@ const Suporte = () => {
       sender_name: profile?.name || "Usuário",
       message: newMessage.trim(),
     });
+    // Triagem IA em background — não bloqueia UX
+    supabase.functions.invoke("support-triage", { body: { ticket_id: ticket.id } }).catch(() => {});
     toast({ title: "Ticket aberto!", description: "Você receberá uma resposta em breve." });
     setNewOpen(false);
     setNewSubject("");
