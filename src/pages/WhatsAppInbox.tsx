@@ -563,11 +563,13 @@ export default function WhatsAppInbox() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Button size="sm" variant={selected.bot_paused ? "default" : "outline"}
+                  <Button size="sm" variant={selected.bot_status === "handoff" ? "destructive" : (selected.bot_paused ? "default" : "outline")}
                     onClick={toggleBot} className="gap-1.5 h-8" title="Ctrl+P">
-                    {selected.bot_paused
-                      ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
-                      : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
+                    {selected.bot_status === "handoff"
+                      ? (<><Play className="h-3.5 w-3.5" />Reassumir bot</>)
+                      : selected.bot_paused
+                        ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
+                        : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
                   </Button>
                   <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
                     <PopoverTrigger asChild>
