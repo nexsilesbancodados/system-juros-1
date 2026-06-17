@@ -1,0 +1,1 @@
+ALTER VIEW public.settings_safe SET (security_invoker = true);
