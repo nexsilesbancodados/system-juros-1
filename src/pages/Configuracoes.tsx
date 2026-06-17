@@ -567,7 +567,33 @@ const Configuracoes = () => {
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
 
                 <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
-                <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar e login</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar, login e título do navegador</p>
+              </div>
+
+              {/* Favicon */}
+              <div className="flex items-center gap-4 pt-2 border-t border-border/20">
+                <div className="w-14 h-14 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {form.favicon_url ? (
+                    <img src={form.favicon_url} alt="Favicon" className="w-full h-full object-cover" />
+                  ) : (
+                    <Image size={18} className="text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Favicon (ícone da aba)</p>
+                  <input ref={faviconInputRef} type="file" accept="image/*" onChange={handleUploadFavicon} className="hidden" />
+                  <div className="flex gap-2">
+                    <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                      <Upload size={12} /> {uploadingFavicon ? "Enviando..." : "Enviar favicon"}
+                    </button>
+                    {form.favicon_url && (
+                      <button onClick={() => setForm({ ...form, favicon_url: "" })}
+                        className="text-[10px] text-destructive hover:underline">Remover</button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Recomendado: PNG quadrado 64×64 ou 128×128</p>
+                </div>
               </div>
             </div>
 
