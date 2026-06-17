@@ -310,88 +310,194 @@ const Configuracoes = () => {
 
   const inputCls = "w-full px-4 py-2.5 rounded-xl bg-background/50 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none";
 
-  const tabs = [
-    { id: "marca", label: "Marca", icon: Palette },
-    { id: "empresa", label: "Empresa", icon: Building },
-    { id: "pix", label: "PIX", icon: CreditCard },
-    { id: "bot", label: "Bot Cobranças", icon: Bot },
-    { id: "padroes", label: "Padrões", icon: Percent },
-    { id: "templates", label: "Templates", icon: MessageSquare },
-    { id: "portal", label: "Portal Cliente", icon: LayoutDashboard },
-    { id: "contrato", label: "Contrato", icon: FileText },
-    ...(profile?.is_admin ? [{ id: "pagamentos", label: "Checkout Hubla", icon: CreditCard } as any] : []),
+  // === NOVA NAVEGAÇÃO POR GRUPOS (mais fácil de configurar) ===
+  type Item = { id: string; label: string; icon: any; keywords?: string; adminOnly?: boolean };
+  type Group = { id: string; label: string; items: Item[]; advanced?: boolean };
+
+  const groups: Group[] = [
+    {
+      id: "essencial",
+      label: "Essencial",
+      items: [
+        { id: "empresa", label: "Empresa & Dados", icon: Building, keywords: "cnpj nome empresa razão" },
+        { id: "pix", label: "Chave PIX", icon: CreditCard, keywords: "pix chave pagamento recebimento" },
+        { id: "padroes", label: "Padrões de Empréstimo", icon: Percent, keywords: "juros multa taxa frequência padrão" },
+      ],
+    },
+    {
+      id: "aparencia",
+      label: "Aparência",
+      items: [
+        { id: "marca", label: "Marca, Cores & Tema", icon: Palette, keywords: "white label logo cor tema dark light primária" },
+        { id: "portal", label: "Portal do Cliente", icon: LayoutDashboard, keywords: "portal cliente cpf branding" },
+        { id: "contrato", label: "Modelo de Contrato", icon: FileText, keywords: "contrato pdf template documento" },
+      ],
+    },
+    {
+      id: "cobranca",
+      label: "Cobrança Automática",
+      items: [
+        { id: "bot", label: "Bot de Cobranças", icon: Bot, keywords: "bot ia automático mensagem cobrança horário" },
+        { id: "templates", label: "Templates de Mensagem", icon: MessageSquare, keywords: "template mensagem padrão" },
+        { id: "mensagem", label: "Mensagem Padrão", icon: Send, keywords: "mensagem padrão saudação assinatura" },
+      ],
+    },
+    {
+      id: "integracoes",
+      label: "Integrações",
+      items: [
+        { id: "whatsapp", label: "WhatsApp (Evolution)", icon: MessageSquare, keywords: "whatsapp evolution instance api" },
+        { id: "notificacoes", label: "Notificações Push", icon: Bell, keywords: "push notificação alerta" },
+        { id: "pwa", label: "Aplicativo Mobile", icon: Zap, keywords: "pwa android ios mobile app instalar" },
+        { id: "ia-voz", label: "IA de Voz", icon: Volume2, keywords: "voz áudio tts ia" },
+      ],
+    },
+    {
+      id: "avancado",
+      label: "Avançado",
+      advanced: true,
+      items: [
+        { id: "webhooks", label: "Webhooks / N8N", icon: Webhook, keywords: "webhook n8n integração http", adminOnly: true },
+        { id: "pagamentos", label: "Checkout Hubla", icon: CreditCard, keywords: "hubla checkout pagamento assinatura", adminOnly: true },
+        { id: "admin_global", label: "Admin Global", icon: Shield, keywords: "admin global sistema", adminOnly: true },
+      ],
+    },
   ];
+
+  const [search, setSearch] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const visibleGroups = groups
+    .map(g => ({
+      ...g,
+      items: g.items.filter(i => {
+        if (i.adminOnly && !profile?.is_admin) return false;
+        if (!search.trim()) return true;
+        const q = search.toLowerCase();
+        return i.label.toLowerCase().includes(q) || (i.keywords || "").toLowerCase().includes(q);
+      }),
+    }))
+    .filter(g => g.items.length > 0 && (!g.advanced || showAdvanced || search.trim()));
+
+  // Garante que a aba ativa exista; se busca esconder, vai para a primeira disponível
+  useEffect(() => {
+    const allIds = visibleGroups.flatMap(g => g.items.map(i => i.id));
+    if (allIds.length && !allIds.includes(tab)) setTab(allIds[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, showAdvanced, profile?.is_admin]);
 
   const configSteps = [
     { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
     { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
     { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
+    { label: "WhatsApp", done: !!form.whatsapp_instance, tab: "whatsapp" },
   ];
   const completedSteps = configSteps.filter(s => s.done).length;
   const progressPercent = (completedSteps / configSteps.length) * 100;
 
+  const activeItem = groups.flatMap(g => g.items).find(i => i.id === tab);
+
   return (
-    <div className="space-y-5 max-w-3xl mx-auto pb-20">
-      {progressPercent < 100 && (
-        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-5 mb-6 animate-fade-in relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-3 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
-                <Sparkles size={18} className="text-primary animate-pulse" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Complete sua Configuração</h3>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{completedSteps} de {configSteps.length} etapas concluídas</p>
-              </div>
-            </div>
-            <span className="text-lg font-bold text-primary">{Math.round(progressPercent)}%</span>
+    <div className="max-w-6xl mx-auto pb-20">
+      {/* Header sticky */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 mb-4 bg-background/80 backdrop-blur-xl border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Settings size={18} className="text-primary" />
           </div>
-          <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden mb-4 relative z-10">
-            <div className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.4)]" style={{ width: `${progressPercent}%` }} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-bold text-foreground truncate">Configurações</h1>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {activeItem ? activeItem.label : "Personalize o sistema"}
+              {progressPercent < 100 && ` • ${completedSteps}/${configSteps.length} configurações essenciais`}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2 relative z-10">
-            {configSteps.map(step => (
-              <button 
-                key={step.label} 
-                onClick={() => setTab(step.tab)}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${step.done ? "bg-success/10 text-success border border-success/20" : "bg-card border border-border/50 text-muted-foreground hover:border-primary/40"}`}
-              >
-                {step.done ? "✓ " : ""}{step.label}
-              </button>
-            ))}
-          </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
-        </div>
-      )}
-      <div className="page-hero animate-fade-in">
-        <div className="page-hero-content flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="page-hero-icon">
-              <Settings size={22} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-shimmer">Configurações</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Personalize a identidade, automações e preferências do sistema</p>
-            </div>
+          <div className="hidden md:block relative">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar configuração..."
+              className="w-64 pl-8 pr-3 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
+            />
+            <Settings size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
           </div>
           <button onClick={handleSave} disabled={saving}
-            className={saved ? "btn-premium bg-success !shadow-none" : "btn-premium"}>
-            {saved ? <><Check size={16} /> Salvo!</> : saving ? "Salvando..." : <><Save size={16} /> Salvar</>}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
+              saved ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            }`}>
+            {saved ? <><Check size={15} /> Salvo</> : saving ? "Salvando..." : <><Save size={15} /> Salvar</>}
           </button>
         </div>
+
+        {/* Mobile search */}
+        <div className="md:hidden relative mt-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar configuração..."
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
+          />
+          <Settings size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+        </div>
+
+        {/* Progress bar fina */}
+        {progressPercent < 100 && (
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex-1 h-1.5 bg-muted/40 rounded-full overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-700" style={{ width: `${progressPercent}%` }} />
+            </div>
+            <span className="text-[10px] font-semibold text-primary tabular-nums">{Math.round(progressPercent)}%</span>
+          </div>
+        )}
       </div>
 
-      {/* Tabs */}
-      <div className="pill-tabs animate-fade-in overflow-x-auto">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`pill-tab gap-1.5 whitespace-nowrap ${tab === t.id ? "pill-tab-active" : "pill-tab-inactive"}`}>
-            <t.icon size={14} /> {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="grid md:grid-cols-[240px_1fr] gap-5">
+        {/* Sidebar nav */}
+        <aside className="md:sticky md:top-32 md:self-start space-y-4 md:max-h-[calc(100vh-9rem)] md:overflow-y-auto pr-1">
+          {visibleGroups.map(group => (
+            <div key={group.id}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60 px-3 mb-1.5">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const active = tab === item.id;
+                  const done = configSteps.find(s => s.tab === item.id)?.done;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setTab(item.id)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition group ${
+                        active
+                          ? "bg-primary/12 text-foreground font-semibold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                      }`}
+                    >
+                      <Icon size={15} className={active ? "text-primary" : ""} />
+                      <span className="flex-1 text-left truncate">{item.label}</span>
+                      {done && <Check size={12} className="text-success shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
-      <div className="rounded-2xl border border-border/30 bg-card/30 backdrop-blur-md p-8 space-y-8 animate-fade-in shadow-2xl">
+          {!search.trim() && (
+            <button
+              onClick={() => setShowAdvanced(v => !v)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-muted-foreground hover:text-foreground transition rounded-lg hover:bg-accent/20"
+            >
+              <Shield size={12} />
+              {showAdvanced ? "Ocultar avançado" : "Mostrar avançado"}
+            </button>
+          )}
+        </aside>
+
+        {/* Conteúdo */}
+        <div className="rounded-2xl border border-border/30 bg-card/30 backdrop-blur-md p-6 md:p-8 space-y-8 animate-fade-in shadow-xl min-w-0">
+
         {tab === "marca" && (
           <>
             <div className="flex items-center gap-2.5">
@@ -1762,9 +1868,11 @@ const Configuracoes = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
 };
+
 
 export default Configuracoes;
