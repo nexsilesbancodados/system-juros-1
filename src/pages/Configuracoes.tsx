@@ -1868,9 +1868,11 @@ const Configuracoes = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
 };
+
 
 export default Configuracoes;
