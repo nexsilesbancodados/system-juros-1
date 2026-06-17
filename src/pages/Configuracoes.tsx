@@ -60,7 +60,7 @@ const Configuracoes = () => {
     sidebar_style: "default", login_title: "", login_subtitle: "",
     footer_text: "", border_radius: "16", font_family: "default",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
-    whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
+    whatsapp_api_url: "", whatsapp_api_key: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
     pix_key: "", pix_key_type: "cpf", billing_message: "",
     // Bot de cobranças
@@ -123,7 +123,6 @@ const Configuracoes = () => {
         default_frequency: s.default_frequency || "monthly",
         whatsapp_api_url: s.whatsapp_api_url || "",
         whatsapp_api_key: "", // never loaded from server; type new value to replace
-        whatsapp_instance: s.whatsapp_instance || "",
         n8n_webhook_url: s.n8n_webhook_url || "",
         push_notifications_enabled: s.push_notifications_enabled || false,
         // Bot
@@ -214,7 +213,6 @@ const Configuracoes = () => {
       default_frequency: form.default_frequency,
       whatsapp_api_url: form.whatsapp_api_url || null,
       // whatsapp_api_key intentionally omitted — saved via edge function settings-set-secret
-      whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
       // Bot settings
@@ -390,7 +388,7 @@ const Configuracoes = () => {
     { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
     { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
     { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
-    { label: "WhatsApp", done: !!form.whatsapp_instance, tab: "whatsapp" },
+    { label: "WhatsApp", done: !!form.whatsapp_api_url, tab: "whatsapp" },
   ];
   const completedSteps = configSteps.filter(s => s.done).length;
   const progressPercent = (completedSteps / configSteps.length) * 100;
@@ -1331,7 +1329,6 @@ const Configuracoes = () => {
                 <input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder={(settings as any)?.whatsapp_api_key_configured ? "••••••••  (deixe vazio para manter)" : "Cole a chave da Evolution API"} className={inputCls} />
                 <p className="text-[10px] text-muted-foreground mt-1">Por segurança, a chave nunca é exibida. Digite uma nova para substituir.</p>
               </div>
-              <div><label className="text-label mb-1.5 block">Nome da Instância</label><input value={form.whatsapp_instance} onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })} placeholder="minha-instancia" className={inputCls} /></div>
             </div>
           </>
         )}
