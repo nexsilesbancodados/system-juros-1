@@ -1429,6 +1429,10 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          ai_category: string | null
+          ai_severity: string | null
+          ai_suggested_reply: string | null
+          ai_triaged_at: string | null
           category: string
           created_at: string
           id: string
@@ -1442,6 +1446,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_category?: string | null
+          ai_severity?: string | null
+          ai_suggested_reply?: string | null
+          ai_triaged_at?: string | null
           category?: string
           created_at?: string
           id?: string
@@ -1455,6 +1463,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_category?: string | null
+          ai_severity?: string | null
+          ai_suggested_reply?: string | null
+          ai_triaged_at?: string | null
           category?: string
           created_at?: string
           id?: string
