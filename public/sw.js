@@ -2,13 +2,13 @@
 // - NetworkFirst para navegações HTML, com fallback /offline.html
 // - StaleWhileRevalidate para JS/CSS/imagens
 // - Nunca cacheia Supabase, APIs ou rotas internas (~oauth)
-const VERSION = "sj-v5";
+const VERSION = "sj-v6";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const HTML_CACHE = `${VERSION}-html`;
 const OFFLINE_URL = "/offline.html";
 
-const PRECACHE = [OFFLINE_URL, "/favicon.webp", "/manifest.json"];
+const PRECACHE = [OFFLINE_URL, "/favicon.webp"];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -40,6 +40,7 @@ self.addEventListener("fetch", (event) => {
 
   // Denylist: oauth and api endpoints always go to network
   if (url.pathname.startsWith("/~oauth") || url.pathname.startsWith("/api/")) return;
+  if (url.pathname === "/manifest.json") return;
 
   // HTML navigations → NetworkFirst with offline fallback
   if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
