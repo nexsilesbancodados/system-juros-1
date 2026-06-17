@@ -265,6 +265,45 @@ const SupportInbox = () => {
             </div>
           </div>
 
+          {(activeTicket.ai_triaged_at || activeTicket.ai_suggested_reply) && (
+            <div className="px-5 py-4 border-b border-border/40 bg-gradient-to-br from-primary/5 to-purple-500/5">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-primary" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Triagem IA</span>
+                {activeTicket.ai_category && (
+                  <Badge variant="outline" className="text-[10px] capitalize bg-primary/10 border-primary/30">
+                    {activeTicket.ai_category}
+                  </Badge>
+                )}
+                {activeTicket.ai_severity && (
+                  <Badge variant="outline" className={`text-[10px] uppercase ${
+                    activeTicket.ai_severity === "high" ? "bg-red-500/10 text-red-400 border-red-500/30" :
+                    activeTicket.ai_severity === "med" ? "bg-amber-500/10 text-amber-400 border-amber-500/30" :
+                    "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  }`}>
+                    {activeTicket.ai_severity === "high" ? "Alta" : activeTicket.ai_severity === "med" ? "Média" : "Baixa"}
+                  </Badge>
+                )}
+              </div>
+              {activeTicket.ai_suggested_reply && (
+                <>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap mb-2 italic">
+                    "{activeTicket.ai_suggested_reply}"
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => { setReply(activeTicket.ai_suggested_reply || ""); setShowInternalNotes(false); }}
+                  >
+                    <Wand2 size={12} /> Usar sugestão
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+
           <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
             {messages.map((m) => {
               const isAdmin = m.sender_role === "admin";
