@@ -1,20 +1,29 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { useEffect, useRef } from "react";
 
 interface Props {
   children: ReactNode;
   fallback?: (error: Error, reset: () => void) => ReactNode;
+  resetKey?: string;
 }
 
 interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryInner extends Component<Props, State> {
   state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
     return { error };
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -65,5 +74,21 @@ class ErrorBoundary extends Component<Props, State> {
     );
   }
 }
+
+// Wrapper para auto-resetar quando o usuário troca de rota,
+// evitando ficar "preso" na tela de erro ao navegar pelo menu.
+const ErrorBoundary = ({ children, fallback }: Omit<Props, "resetKey">) => {
+  let pathname = "static";
+  try {
+    // useLocation só funciona dentro do BrowserRouter; protegido por try/catch
+    // pra não quebrar se alguém usar fora do Router.
+    pathname = useLocation().pathname;
+  } catch {}
+  return (
+    <ErrorBoundaryInner resetKey={pathname} fallback={fallback}>
+      {children}
+    </ErrorBoundaryInner>
+  );
+};
 
 export default ErrorBoundary;
