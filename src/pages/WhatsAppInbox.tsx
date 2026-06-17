@@ -33,6 +33,7 @@ interface Conversation {
   last_message_preview: string | null; last_message_from: string | null;
   unread_count: number; bot_paused: boolean; needs_human: boolean;
   blocked: boolean; tags: string[] | null; last_intent: string | null;
+  bot_status?: string | null; human_takeover_at?: string | null; human_takeover_reason?: string | null;
 }
 
 interface Message {
@@ -220,7 +221,7 @@ export default function WhatsAppInbox() {
     const q = search.trim().toLowerCase();
     return conversations.filter(c => {
       if (filter === "unread" && c.unread_count <= 0) return false;
-      if (filter === "needs_human" && !c.needs_human) return false;
+      if (filter === "needs_human" && c.bot_status !== "handoff" && !c.needs_human) return false;
       if (filter === "bot" && c.bot_paused) return false;
       if (filter === "blocked" && !c.blocked) return false;
       if (!q) return true;
@@ -267,9 +268,19 @@ export default function WhatsAppInbox() {
   const toggleBot = async () => {
     if (!selected) return;
     const next = !selected.bot_paused;
-    const { error } = await supabase.from("whatsapp_conversations").update({ bot_paused: next }).eq("id", selected.id);
+    const patch: any = { bot_paused: next };
+    // Ao reativar, limpa qualquer handoff pendente
+    if (!next) {
+      patch.bot_status = "active";
+      patch.needs_human = false;
+      patch.human_takeover_at = null;
+      patch.human_takeover_reason = null;
+    } else {
+      patch.bot_status = "paused";
+    }
+    const { error } = await supabase.from("whatsapp_conversations").update(patch).eq("id", selected.id);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: next ? "Bot pausado" : "Bot reativado" });
+    toast({ title: next ? "Bot pausado" : "Bot reativado — handoff limpo" });
   };
 
   const toggleBlock = async () => {
@@ -476,12 +487,17 @@ export default function WhatsAppInbox() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-medium truncate">{c.contact_name || c.phone}</span>
-                        {c.needs_human && (
+                        {c.bot_status === "handoff" && (
+                          <Badge variant="destructive" className="text-[9px] py-0 h-4 px-1.5 animate-pulse">
+                            🚨 humano
+                          </Badge>
+                        )}
+                        {c.bot_status !== "handoff" && c.needs_human && (
                           <Badge variant="destructive" className="text-[9px] py-0 h-4 px-1.5">
                             <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />humano
                           </Badge>
                         )}
-                        {c.bot_paused && !c.blocked && (
+                        {c.bot_paused && c.bot_status !== "handoff" && !c.blocked && (
                           <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5">bot off</Badge>
                         )}
                         {c.blocked && (
@@ -537,7 +553,10 @@ export default function WhatsAppInbox() {
                   <h3 className="font-semibold truncate">{selected.contact_name || selected.phone}</h3>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                     <span>{selected.phone}</span>
-                    {selected.needs_human && <span className="text-destructive font-medium">• precisa de atendimento</span>}
+                    {selected.bot_status === "handoff" && (
+                      <span className="text-destructive font-medium">🚨 aguardando atendente humano{selected.human_takeover_reason ? ` — ${selected.human_takeover_reason}` : ""}</span>
+                    )}
+                    {selected.bot_status !== "handoff" && selected.needs_human && <span className="text-destructive font-medium">• precisa de atendimento</span>}
                     {(selected.tags || []).map(t => (
                       <span key={t} className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 rounded-full">
                         #{t}
@@ -547,11 +566,13 @@ export default function WhatsAppInbox() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Button size="sm" variant={selected.bot_paused ? "default" : "outline"}
+                  <Button size="sm" variant={selected.bot_status === "handoff" ? "destructive" : (selected.bot_paused ? "default" : "outline")}
                     onClick={toggleBot} className="gap-1.5 h-8" title="Ctrl+P">
-                    {selected.bot_paused
-                      ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
-                      : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
+                    {selected.bot_status === "handoff"
+                      ? (<><Play className="h-3.5 w-3.5" />Reassumir bot</>)
+                      : selected.bot_paused
+                        ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
+                        : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
                   </Button>
                   <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
                     <PopoverTrigger asChild>

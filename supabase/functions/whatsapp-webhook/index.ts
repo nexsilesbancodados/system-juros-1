@@ -170,6 +170,37 @@ async function logMessage(supabase: any, params: {
   });
 }
 
+async function logBotAction(supabase: any, params: {
+  userId: string; clientId?: string | null; conversationId?: string | null;
+  toolName: string; toolInput?: any; toolOutput?: any;
+  success?: boolean; errorMessage?: string | null;
+}) {
+  try {
+    await supabase.from("bot_actions_log").insert({
+      user_id: params.userId,
+      client_id: params.clientId ?? null,
+      conversation_id: params.conversationId ?? null,
+      tool_name: params.toolName,
+      tool_input: params.toolInput ?? {},
+      tool_output: params.toolOutput ?? {},
+      success: params.success ?? true,
+      error_message: params.errorMessage ?? null,
+    });
+  } catch (e) {
+    console.warn("[bot_actions_log] insert failed:", e);
+  }
+}
+
+async function escalateToHuman(supabase: any, convoId: string, reason: string) {
+  await supabase.from("whatsapp_conversations").update({
+    bot_paused: true,
+    bot_status: "handoff",
+    needs_human: true,
+    human_takeover_at: new Date().toISOString(),
+    human_takeover_reason: reason,
+  }).eq("id", convoId);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -316,13 +347,16 @@ serve(async (req) => {
     // COMMANDS
     if (matchesAny(incomingText, STOP_WORDS)) {
       await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "paused", entity_id: client.id, details: { reason: "client_stop" } });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "pause_bot", toolInput: { reason: "client_stop_command" } });
       await botSay("🤖 Bot pausado. Um atendente humano falará com você em breve.");
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      await supabase.from("whatsapp_conversations").update({ bot_paused: true, bot_status: "paused" }).eq("id", convoId);
       return new Response(JSON.stringify({ status: "stopped" }), { headers: corsHeaders });
     }
     if (matchesAny(incomingText, HUMAN_WORDS)) {
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "escalate_to_human", toolInput: { reason: "client_requested_human" } });
       await botSay("👤 Chamando um atendente humano...");
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      await escalateToHuman(supabase, convoId!, "Cliente pediu atendente humano");
+      await supabase.from("notifications").insert({ user_id: userId, title: "🚨 Atendimento humano solicitado", message: `${client.name} pediu para falar com um humano.`, type: "warning" });
       return new Response(JSON.stringify({ status: "human" }), { headers: corsHeaders });
     }
     if (matchesAny(incomingText, PIX_WORDS) && profile?.pix_key) {
@@ -714,6 +748,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           message: `Cliente ${client.name} pagou juros de R$ ${receiptValue.toFixed(2)}. Dívida renovada para ${nextDate.toLocaleDateString('pt-BR')}.`,
           type: "info"
         });
+        await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "renew_contract_interest_only", toolInput: { contract_id: target.contract_id, installment_id: target.id, valor: receiptValue, nova_data: nextDate.toISOString() } });
       } else {
         // Pagamento Normal (Amortização/Liquidação)
         let target = installments.find(i => Number(i.amount) === receiptValue);
@@ -732,6 +767,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
           type: "success"
         });
+        await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "mark_installment_paid", toolInput: { installment_id: target.id, valor: receiptValue, parcela: target.installment_number } });
       }
 
       // Se não houver mais parcelas atrasadas, volta o cliente para 'active'
@@ -742,8 +778,9 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
     }
 
     if (result.needs_human) {
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
-      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
+      await escalateToHuman(supabase, convoId!, result.summary || "IA detectou necessidade de humano");
+      await supabase.from("notifications").insert({ user_id: userId, title: "🚨 Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "escalate_to_human", toolInput: { reason: result.summary || "ai_detected" } });
     }
 
     if (result.is_promise && result.promise_date) {
@@ -755,6 +792,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
       await supabase.from("whatsapp_notes").insert({
         user_id: userId, client_id: client.id, content: `Promessa de pagamento para: ${result.promise_date}`, created_by: 'bot'
       });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "register_payment_promise", toolInput: { data: result.promise_date, contexto: incomingText.slice(0,200) } });
     }
 
     // Aumento de Score por bom comportamento (pagou em dia ou renovou)
