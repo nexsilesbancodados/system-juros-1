@@ -164,6 +164,7 @@ const Configuracoes = () => {
         custom_contract_template: s.custom_contract_template || "",
         hubla_checkout_url: s.hubla_checkout_url || "",
         hubla_webhook_token: "", // never loaded from server; type new value to replace
+        modules_enabled: { ...DEFAULT_MODULES, ...(s.modules_enabled || {}) },
       }));
     }
   }, [settings]);
