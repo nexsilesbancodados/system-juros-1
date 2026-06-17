@@ -268,9 +268,19 @@ export default function WhatsAppInbox() {
   const toggleBot = async () => {
     if (!selected) return;
     const next = !selected.bot_paused;
-    const { error } = await supabase.from("whatsapp_conversations").update({ bot_paused: next }).eq("id", selected.id);
+    const patch: any = { bot_paused: next };
+    // Ao reativar, limpa qualquer handoff pendente
+    if (!next) {
+      patch.bot_status = "active";
+      patch.needs_human = false;
+      patch.human_takeover_at = null;
+      patch.human_takeover_reason = null;
+    } else {
+      patch.bot_status = "paused";
+    }
+    const { error } = await supabase.from("whatsapp_conversations").update(patch).eq("id", selected.id);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: next ? "Bot pausado" : "Bot reativado" });
+    toast({ title: next ? "Bot pausado" : "Bot reativado — handoff limpo" });
   };
 
   const toggleBlock = async () => {
