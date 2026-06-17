@@ -106,6 +106,45 @@ export type Database = {
           },
         ]
       }
+      bot_actions_log: {
+        Row: {
+          client_id: string | null
+          conversation_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          success: boolean
+          tool_input: Json
+          tool_name: string
+          tool_output: Json
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          success?: boolean
+          tool_input?: Json
+          tool_name: string
+          tool_output?: Json
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          success?: boolean
+          tool_input?: Json
+          tool_name?: string
+          tool_output?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_channel_members: {
         Row: {
           channel_id: string
@@ -1602,10 +1641,13 @@ export type Database = {
         Row: {
           blocked: boolean
           bot_paused: boolean
+          bot_status: string
           client_id: string | null
           contact_name: string | null
           created_at: string
           followup_sent_at: string | null
+          human_takeover_at: string | null
+          human_takeover_reason: string | null
           id: string
           instance: string | null
           jid: string
@@ -1624,10 +1666,13 @@ export type Database = {
         Insert: {
           blocked?: boolean
           bot_paused?: boolean
+          bot_status?: string
           client_id?: string | null
           contact_name?: string | null
           created_at?: string
           followup_sent_at?: string | null
+          human_takeover_at?: string | null
+          human_takeover_reason?: string | null
           id?: string
           instance?: string | null
           jid: string
@@ -1646,10 +1691,13 @@ export type Database = {
         Update: {
           blocked?: boolean
           bot_paused?: boolean
+          bot_status?: string
           client_id?: string | null
           contact_name?: string | null
           created_at?: string
           followup_sent_at?: string | null
+          human_takeover_at?: string | null
+          human_takeover_reason?: string | null
           id?: string
           instance?: string | null
           jid?: string
