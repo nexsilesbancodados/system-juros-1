@@ -1678,13 +1678,36 @@ const Configuracoes = () => {
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl border border-border bg-info/5 flex items-start gap-3">
-              <Info size={16} className="text-info shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-info uppercase">Dica do Especialista</p>
-                <p className="text-xs text-info/80 leading-relaxed">
-                  A logo utilizada no portal é a mesma definida na aba <strong>Marca</strong> por padrão. Caso queira uma logo diferente especificamente para o portal, você poderá configurar em breve.
-                </p>
+            <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-3">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Image size={12} className="text-primary" /> Logo Exclusiva do Portal (opcional)
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {form.portal_logo_url ? (
+                    <img src={form.portal_logo_url} alt="Logo Portal" className="w-full h-full object-cover" />
+                  ) : form.company_logo_url ? (
+                    <img src={form.company_logo_url} alt="Logo padrão" className="w-full h-full object-cover opacity-50" />
+                  ) : (
+                    <Image size={20} className="text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <input ref={portalLogoInputRef} type="file" accept="image/*" onChange={handleUploadPortalLogo} className="hidden" />
+                  <div className="flex gap-2">
+                    <button onClick={() => portalLogoInputRef.current?.click()} disabled={uploadingPortalLogo}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                      <Upload size={12} /> {uploadingPortalLogo ? "Enviando..." : "Enviar logo do portal"}
+                    </button>
+                    {form.portal_logo_url && (
+                      <button onClick={() => setForm({ ...form, portal_logo_url: "" })}
+                        className="text-[10px] text-destructive hover:underline self-center">Remover</button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Se vazio, o portal usará a logo definida na aba <strong>Marca</strong>.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
