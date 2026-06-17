@@ -27,6 +27,10 @@ type Ticket = {
   unread_by_user: boolean;
   unread_by_admin: boolean;
   created_at: string;
+  ai_category?: string | null;
+  ai_severity?: string | null;
+  ai_suggested_reply?: string | null;
+  ai_triaged_at?: string | null;
 };
 
 type TicketMessage = {
