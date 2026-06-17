@@ -123,7 +123,6 @@ const Configuracoes = () => {
         default_frequency: s.default_frequency || "monthly",
         whatsapp_api_url: s.whatsapp_api_url || "",
         whatsapp_api_key: "", // never loaded from server; type new value to replace
-        whatsapp_instance: s.whatsapp_instance || "",
         n8n_webhook_url: s.n8n_webhook_url || "",
         push_notifications_enabled: s.push_notifications_enabled || false,
         // Bot
