@@ -274,6 +274,7 @@ const Configuracoes = () => {
       custom_contract_template: form.custom_contract_template?.trim() || null,
       hubla_checkout_url: form.hubla_checkout_url ? form.hubla_checkout_url.trim() : null,
       // hubla_webhook_token intentionally omitted — saved via edge function settings-set-secret
+      modules_enabled: form.modules_enabled,
     };
     const { error } = settings
       ? await supabase.from("settings").update(payload).eq("user_id", user.id)
