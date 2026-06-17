@@ -34,7 +34,11 @@ const Configuracoes = () => {
   const [saved, setSaved] = useState(false);
   const [tab, setTab] = useState("marca");
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+  const portalLogoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadingPortalLogo, setUploadingPortalLogo] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
@@ -173,23 +177,41 @@ const Configuracoes = () => {
     }
   }, [profile]);
 
-  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadingLogo(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/logos/logo.${ext}`;
+  const uploadImage = async (
+    file: File,
+    folder: string,
+    field: "company_logo_url" | "favicon_url" | "portal_logo_url",
+    setBusy: (b: boolean) => void,
+    label: string
+  ) => {
+    if (!user) return;
+    setBusy(true);
+    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    const path = `${user.id}/${folder}/${field}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     } else {
       const url = await getSignedUploadUrl(path);
       if (url) {
-        setForm({ ...form, company_logo_url: url });
-        toast({ title: "✓ Logo enviado!" });
+        setForm((f) => ({ ...f, [field]: url }));
+        toast({ title: `✓ ${label} enviado!` });
       }
     }
-    setUploadingLogo(false);
+    setBusy(false);
+  };
+
+  const handleUploadLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "logos", "company_logo_url", setUploadingLogo, "Logo");
+  };
+  const handleUploadFavicon = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "favicons", "favicon_url", setUploadingFavicon, "Favicon");
+  };
+  const handleUploadPortalLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "logos", "portal_logo_url", setUploadingPortalLogo, "Logo do Portal");
   };
 
   const handleSave = async () => {
