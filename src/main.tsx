@@ -5,13 +5,20 @@ import "./index.css";
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Splash hide: remove o splash do index.html após o React montar
-requestAnimationFrame(() => {
+const hideSplash = () => {
+  const externalHide = (window as any).__SJ_HIDE_SPLASH__;
+  if (typeof externalHide === "function") {
+    externalHide();
+    return;
+  }
   const splash = document.getElementById("app-splash");
   if (splash) {
     splash.style.opacity = "0";
     setTimeout(() => splash.remove(), 350);
   }
-});
+};
+
+requestAnimationFrame(hideSplash);
 
 // Service Worker: NUNCA registra em iframes ou hosts de preview Lovable
 const isInIframe = (() => {
