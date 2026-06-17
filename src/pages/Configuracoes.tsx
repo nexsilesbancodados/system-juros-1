@@ -388,7 +388,7 @@ const Configuracoes = () => {
     { label: "Marca e Logo", done: !!form.company_logo_url, tab: "marca" },
     { label: "Dados da Empresa", done: !!form.company_name, tab: "empresa" },
     { label: "Chave PIX", done: !!form.pix_key, tab: "pix" },
-    { label: "WhatsApp", done: !!form.whatsapp_instance, tab: "whatsapp" },
+    { label: "WhatsApp", done: !!form.whatsapp_api_url, tab: "whatsapp" },
   ];
   const completedSteps = configSteps.filter(s => s.done).length;
   const progressPercent = (completedSteps / configSteps.length) * 100;
