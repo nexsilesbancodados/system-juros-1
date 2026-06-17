@@ -15,12 +15,15 @@ import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { isSuperAdminEmail } from "@/lib/admin";
 import { useChatUnread } from "@/hooks/useChatUnread";
 
+import type { ModuleKey } from "@/contexts/WhiteLabelContext";
+
 interface MenuItem {
   label: string;
   icon: LucideIcon;
   path: string;
   badge?: number;
   highlight?: boolean;
+  module?: ModuleKey;
 }
 
 interface MenuSection {
@@ -36,8 +39,8 @@ const sections: MenuSection[] = [
     items: [
       { label: "Hoje", icon: Sparkles, path: "/hoje", highlight: true },
       { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
-      { label: "Análises", icon: BarChart3, path: "/analises" },
-      { label: "Relatórios", icon: FileText, path: "/relatorios" },
+      { label: "Análises", icon: BarChart3, path: "/analises", module: "analises" },
+      { label: "Relatórios", icon: FileText, path: "/relatorios", module: "relatorios" },
     ],
   },
   {
@@ -45,17 +48,17 @@ const sections: MenuSection[] = [
     items: [
       { label: "Clientes", icon: Users, path: "/clientes" },
       { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
-      { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia" },
-      { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
-      { label: "Portais", icon: QrCode, path: "/qrcode" },
+      { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia", module: "inadimplencia" },
+      { label: "Cobradores", icon: UserCheck, path: "/cobradores", module: "cobradores" },
+      { label: "Portais", icon: QrCode, path: "/qrcode", module: "portais" },
     ],
   },
   {
     title: "Financeiro",
     items: [
       { label: "Carteira", icon: Wallet, path: "/carteira" },
-      { label: "Lucros", icon: TrendingUp, path: "/lucros" },
-      { label: "Gastos", icon: DollarSign, path: "/gastos" },
+      { label: "Lucros", icon: TrendingUp, path: "/lucros", module: "lucros" },
+      { label: "Gastos", icon: DollarSign, path: "/gastos", module: "gastos" },
     ],
   },
   {
@@ -64,8 +67,8 @@ const sections: MenuSection[] = [
     defaultOpen: true,
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
-      { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
-      { label: "Chat interno", icon: MessageCircle, path: "/chat" },
+      { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox", module: "comunicacao_inbox" },
+      { label: "Chat interno", icon: MessageCircle, path: "/chat", module: "chat_interno" },
     ],
   },
   {
@@ -73,12 +76,12 @@ const sections: MenuSection[] = [
     collapsible: true,
     defaultOpen: false,
     items: [
-      { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
-      { label: "Metas", icon: Target, path: "/ferramentas/metas" },
-      { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
-      { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
-      { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
-      { label: "Puxada de Dados", icon: Database, path: "/puxada-dados" },
+      { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador", module: "simulador" },
+      { label: "Metas", icon: Target, path: "/ferramentas/metas", module: "metas" },
+      { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas", module: "tarefas" },
+      { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes", module: "anotacoes" },
+      { label: "Planilha", icon: Table, path: "/ferramentas/planilha", module: "planilha" },
+      { label: "Puxada de Dados", icon: Database, path: "/puxada-dados", module: "puxada_dados" },
     ],
   },
   {
@@ -110,15 +113,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const isSuperAdmin = isSuperAdminEmail(user?.email);
   const chatUnread = useChatUnread();
 
+  const modules = config.modulesEnabled;
+
   const visibleSections = useMemo(() =>
     sections.map((s) => ({
       ...s,
       items: s.items.filter((i) => {
         if (i.path === "/admin") return isSuperAdmin;
         if (["/auditoria", "/historico"].includes(i.path)) return profile?.is_admin;
+        if (i.module && modules && modules[i.module] === false) return false;
         return true;
       }),
-    })), [isSuperAdmin, profile?.is_admin]);
+    })).filter(s => s.items.length > 0), [isSuperAdmin, profile?.is_admin, modules]);
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");

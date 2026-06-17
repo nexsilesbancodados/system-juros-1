@@ -2,6 +2,19 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export type ModuleKey =
+  | "analises" | "relatorios" | "inadimplencia" | "cobradores" | "portais"
+  | "lucros" | "gastos" | "comunicacao_inbox" | "chat_interno"
+  | "simulador" | "metas" | "tarefas" | "anotacoes" | "planilha" | "puxada_dados"
+  | "penhores" | "veiculos" | "alugueis" | "estoque";
+
+export const DEFAULT_MODULES: Record<ModuleKey, boolean> = {
+  analises: true, relatorios: true, inadimplencia: true, cobradores: true, portais: true,
+  lucros: true, gastos: true, comunicacao_inbox: true, chat_interno: true,
+  simulador: true, metas: true, tarefas: true, anotacoes: true, planilha: true, puxada_dados: true,
+  penhores: false, veiculos: false, alugueis: false, estoque: false,
+};
+
 interface WhiteLabelConfig {
   companyName: string;
   companyLogo: string | null;
@@ -15,6 +28,7 @@ interface WhiteLabelConfig {
   footerText: string;
   borderRadius: string;
   fontFamily: string;
+  modulesEnabled: Record<ModuleKey, boolean>;
 }
 
 interface WhiteLabelContextType {
@@ -38,6 +52,7 @@ const defaults: WhiteLabelConfig = {
   footerText: "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS",
   borderRadius: "16",
   fontFamily: "default",
+  modulesEnabled: DEFAULT_MODULES,
 };
 
 const WhiteLabelContext = createContext<WhiteLabelContextType>({
@@ -199,9 +214,9 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    const { data } = await (supabase as any)
+      const { data } = await (supabase as any)
       .from("settings_safe")
-      .select("company_name, company_logo_url, favicon_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family")
+      .select("company_name, company_logo_url, favicon_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family, modules_enabled")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -220,6 +235,7 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
         footerText: s.footer_text || defaults.footerText,
         borderRadius: s.border_radius || defaults.borderRadius,
         fontFamily: s.font_family || defaults.fontFamily,
+        modulesEnabled: { ...DEFAULT_MODULES, ...(s.modules_enabled || {}) },
       };
       setConfig(newConfig);
       applyConfig(newConfig);
