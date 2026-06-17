@@ -170,6 +170,37 @@ async function logMessage(supabase: any, params: {
   });
 }
 
+async function logBotAction(supabase: any, params: {
+  userId: string; clientId?: string | null; conversationId?: string | null;
+  toolName: string; toolInput?: any; toolOutput?: any;
+  success?: boolean; errorMessage?: string | null;
+}) {
+  try {
+    await supabase.from("bot_actions_log").insert({
+      user_id: params.userId,
+      client_id: params.clientId ?? null,
+      conversation_id: params.conversationId ?? null,
+      tool_name: params.toolName,
+      tool_input: params.toolInput ?? {},
+      tool_output: params.toolOutput ?? {},
+      success: params.success ?? true,
+      error_message: params.errorMessage ?? null,
+    });
+  } catch (e) {
+    console.warn("[bot_actions_log] insert failed:", e);
+  }
+}
+
+async function escalateToHuman(supabase: any, convoId: string, reason: string) {
+  await supabase.from("whatsapp_conversations").update({
+    bot_paused: true,
+    bot_status: "handoff",
+    needs_human: true,
+    human_takeover_at: new Date().toISOString(),
+    human_takeover_reason: reason,
+  }).eq("id", convoId);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
