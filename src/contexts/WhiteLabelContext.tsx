@@ -235,6 +235,7 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
         footerText: s.footer_text || defaults.footerText,
         borderRadius: s.border_radius || defaults.borderRadius,
         fontFamily: s.font_family || defaults.fontFamily,
+        modulesEnabled: { ...DEFAULT_MODULES, ...(s.modules_enabled || {}) },
       };
       setConfig(newConfig);
       applyConfig(newConfig);
