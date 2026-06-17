@@ -553,7 +553,10 @@ export default function WhatsAppInbox() {
                   <h3 className="font-semibold truncate">{selected.contact_name || selected.phone}</h3>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                     <span>{selected.phone}</span>
-                    {selected.needs_human && <span className="text-destructive font-medium">• precisa de atendimento</span>}
+                    {selected.bot_status === "handoff" && (
+                      <span className="text-destructive font-medium">🚨 aguardando atendente humano{selected.human_takeover_reason ? ` — ${selected.human_takeover_reason}` : ""}</span>
+                    )}
+                    {selected.bot_status !== "handoff" && selected.needs_human && <span className="text-destructive font-medium">• precisa de atendimento</span>}
                     {(selected.tags || []).map(t => (
                       <span key={t} className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 rounded-full">
                         #{t}
