@@ -352,9 +352,10 @@ const Configuracoes = () => {
     },
     {
       id: "aparencia",
-      label: "Aparência",
+      label: "Aparência & Módulos",
       items: [
         { id: "marca", label: "Marca, Cores & Tema", icon: Palette, keywords: "white label logo cor tema dark light primária" },
+        { id: "modulos", label: "Módulos Ativos", icon: Package, keywords: "modulos ativos ligar desligar penhores veiculos metas tarefas" },
         { id: "portal", label: "Portal do Cliente", icon: LayoutDashboard, keywords: "portal cliente cpf branding" },
         { id: "contrato", label: "Modelo de Contrato", icon: FileText, keywords: "contrato pdf template documento" },
       ],
