@@ -60,7 +60,7 @@ const Configuracoes = () => {
     sidebar_style: "default", login_title: "", login_subtitle: "",
     footer_text: "", border_radius: "16", font_family: "default",
     default_interest_rate: "10", default_late_fee: "2", default_daily_interest: "0.33", default_frequency: "monthly",
-    whatsapp_api_url: "", whatsapp_api_key: "", whatsapp_instance: "",
+    whatsapp_api_url: "", whatsapp_api_key: "",
     n8n_webhook_url: "", push_notifications_enabled: false,
     pix_key: "", pix_key_type: "cpf", billing_message: "",
     // Bot de cobranças
