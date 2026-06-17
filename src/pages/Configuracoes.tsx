@@ -34,7 +34,11 @@ const Configuracoes = () => {
   const [saved, setSaved] = useState(false);
   const [tab, setTab] = useState("marca");
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+  const portalLogoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadingPortalLogo, setUploadingPortalLogo] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["settings", user?.id],
@@ -55,7 +59,7 @@ const Configuracoes = () => {
   });
 
   const [form, setForm] = useState({
-    company_name: "", company_cnpj: "", company_logo_url: "",
+    company_name: "", company_cnpj: "", company_logo_url: "", favicon_url: "",
     primary_color: "#4a86c8", accent_color: "#6ba3d6", theme_mode: "dark",
     sidebar_style: "default", login_title: "", login_subtitle: "",
     footer_text: "", border_radius: "16", font_family: "default",
@@ -108,6 +112,7 @@ const Configuracoes = () => {
         company_name: s.company_name || "",
         company_cnpj: s.company_cnpj || "",
         company_logo_url: s.company_logo_url || "",
+        favicon_url: s.favicon_url || "",
         primary_color: s.primary_color || "#4a86c8",
         accent_color: s.accent_color || "#6ba3d6",
         theme_mode: s.theme_mode || "dark",
@@ -172,23 +177,41 @@ const Configuracoes = () => {
     }
   }, [profile]);
 
-  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadingLogo(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/logos/logo.${ext}`;
+  const uploadImage = async (
+    file: File,
+    folder: string,
+    field: "company_logo_url" | "favicon_url" | "portal_logo_url",
+    setBusy: (b: boolean) => void,
+    label: string
+  ) => {
+    if (!user) return;
+    setBusy(true);
+    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    const path = `${user.id}/${folder}/${field}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     } else {
       const url = await getSignedUploadUrl(path);
       if (url) {
-        setForm({ ...form, company_logo_url: url });
-        toast({ title: "✓ Logo enviado!" });
+        setForm((f) => ({ ...f, [field]: url }));
+        toast({ title: `✓ ${label} enviado!` });
       }
     }
-    setUploadingLogo(false);
+    setBusy(false);
+  };
+
+  const handleUploadLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "logos", "company_logo_url", setUploadingLogo, "Logo");
+  };
+  const handleUploadFavicon = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "favicons", "favicon_url", setUploadingFavicon, "Favicon");
+  };
+  const handleUploadPortalLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "logos", "portal_logo_url", setUploadingPortalLogo, "Logo do Portal");
   };
 
   const handleSave = async () => {
@@ -198,6 +221,7 @@ const Configuracoes = () => {
       user_id: user.id,
       company_name: form.company_name || null, company_cnpj: form.company_cnpj || null,
       company_logo_url: form.company_logo_url || null,
+      favicon_url: form.favicon_url || null,
       primary_color: form.primary_color,
       accent_color: form.accent_color,
       theme_mode: form.theme_mode,
@@ -543,7 +567,33 @@ const Configuracoes = () => {
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
 
                 <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
-                <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar e login</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar, login e título do navegador</p>
+              </div>
+
+              {/* Favicon */}
+              <div className="flex items-center gap-4 pt-2 border-t border-border/20">
+                <div className="w-14 h-14 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {form.favicon_url ? (
+                    <img src={form.favicon_url} alt="Favicon" className="w-full h-full object-cover" />
+                  ) : (
+                    <Image size={18} className="text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Favicon (ícone da aba)</p>
+                  <input ref={faviconInputRef} type="file" accept="image/*" onChange={handleUploadFavicon} className="hidden" />
+                  <div className="flex gap-2">
+                    <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                      <Upload size={12} /> {uploadingFavicon ? "Enviando..." : "Enviar favicon"}
+                    </button>
+                    {form.favicon_url && (
+                      <button onClick={() => setForm({ ...form, favicon_url: "" })}
+                        className="text-[10px] text-destructive hover:underline">Remover</button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Recomendado: PNG quadrado 64×64 ou 128×128</p>
+                </div>
               </div>
             </div>
 
@@ -1628,13 +1678,36 @@ const Configuracoes = () => {
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl border border-border bg-info/5 flex items-start gap-3">
-              <Info size={16} className="text-info shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-info uppercase">Dica do Especialista</p>
-                <p className="text-xs text-info/80 leading-relaxed">
-                  A logo utilizada no portal é a mesma definida na aba <strong>Marca</strong> por padrão. Caso queira uma logo diferente especificamente para o portal, você poderá configurar em breve.
-                </p>
+            <div className="p-4 rounded-2xl border border-border bg-accent/5 space-y-3">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Image size={12} className="text-primary" /> Logo Exclusiva do Portal (opcional)
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0">
+                  {form.portal_logo_url ? (
+                    <img src={form.portal_logo_url} alt="Logo Portal" className="w-full h-full object-cover" />
+                  ) : form.company_logo_url ? (
+                    <img src={form.company_logo_url} alt="Logo padrão" className="w-full h-full object-cover opacity-50" />
+                  ) : (
+                    <Image size={20} className="text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <input ref={portalLogoInputRef} type="file" accept="image/*" onChange={handleUploadPortalLogo} className="hidden" />
+                  <div className="flex gap-2">
+                    <button onClick={() => portalLogoInputRef.current?.click()} disabled={uploadingPortalLogo}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent/30 transition-colors disabled:opacity-50">
+                      <Upload size={12} /> {uploadingPortalLogo ? "Enviando..." : "Enviar logo do portal"}
+                    </button>
+                    {form.portal_logo_url && (
+                      <button onClick={() => setForm({ ...form, portal_logo_url: "" })}
+                        className="text-[10px] text-destructive hover:underline self-center">Remover</button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Se vazio, o portal usará a logo definida na aba <strong>Marca</strong>.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -1156,6 +1156,7 @@ export type Database = {
           default_frequency: string | null
           default_interest_rate: number | null
           default_late_fee: number | null
+          favicon_url: string | null
           font_family: string | null
           footer_text: string | null
           hubla_checkout_url: string | null
@@ -1216,6 +1217,7 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          favicon_url?: string | null
           font_family?: string | null
           footer_text?: string | null
           hubla_checkout_url?: string | null
@@ -1276,6 +1278,7 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          favicon_url?: string | null
           font_family?: string | null
           footer_text?: string | null
           hubla_checkout_url?: string | null
@@ -1903,6 +1906,7 @@ export type Database = {
           default_frequency: string | null
           default_interest_rate: number | null
           default_late_fee: number | null
+          favicon_url: string | null
           font_family: string | null
           footer_text: string | null
           hubla_checkout_url: string | null
@@ -1963,6 +1967,7 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          favicon_url?: string | null
           font_family?: string | null
           footer_text?: string | null
           hubla_checkout_url?: string | null
@@ -2023,6 +2028,7 @@ export type Database = {
           default_frequency?: string | null
           default_interest_rate?: number | null
           default_late_fee?: number | null
+          favicon_url?: string | null
           font_family?: string | null
           footer_text?: string | null
           hubla_checkout_url?: string | null

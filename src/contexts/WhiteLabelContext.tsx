@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface WhiteLabelConfig {
   companyName: string;
   companyLogo: string | null;
+  faviconUrl: string | null;
   primaryColor: string;
   accentColor: string;
   themeMode: "light" | "dark" | "system";
@@ -27,6 +28,7 @@ interface WhiteLabelContextType {
 const defaults: WhiteLabelConfig = {
   companyName: "SYSTEM JUROS",
   companyLogo: null,
+  faviconUrl: null,
   primaryColor: "#4a86c8",
   accentColor: "#6ba3d6",
   themeMode: "dark",
@@ -115,7 +117,6 @@ function applyConfig(config: WhiteLabelConfig) {
   const root = document.documentElement;
   const { primaryColor: primary, accentColor: accent } = config;
 
-  // Colors
   const pHSL = hexToHSL(primary);
   const { h, s } = hexToHSLValues(primary);
   root.style.setProperty("--primary", pHSL);
@@ -127,13 +128,36 @@ function applyConfig(config: WhiteLabelConfig) {
   root.style.setProperty("--gradient-button", `linear-gradient(135deg, ${primary}, ${accent}, ${primary})`);
   root.style.setProperty("--shadow-glow", `0 0 20px ${primary}33, 0 0 60px ${primary}15`);
 
-  // Border radius
   const br = config.borderRadius || "16";
   root.style.setProperty("--radius", `${br}px`);
 
-  // Font family
   const font = FONT_MAP[config.fontFamily] || FONT_MAP.default;
   root.style.setProperty("--font-body", font);
+
+  // Browser tab title (skip public landing)
+  if (typeof document !== "undefined" && config.companyName) {
+    const path = window.location.pathname;
+    const isLanding = path === "/" || path.startsWith("/landing");
+    if (!isLanding) document.title = config.companyName;
+  }
+
+  // Favicon
+  if (typeof document !== "undefined" && config.faviconUrl) {
+    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = config.faviconUrl;
+    let apple = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
+    if (!apple) {
+      apple = document.createElement("link");
+      apple.rel = "apple-touch-icon";
+      document.head.appendChild(apple);
+    }
+    apple.href = config.faviconUrl;
+  }
 }
 
 function applyThemeMode(mode: "light" | "dark") {
@@ -175,17 +199,18 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    const { data } = await supabase
-      .from("settings")
-      .select("company_name, company_logo_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family")
+    const { data } = await (supabase as any)
+      .from("settings_safe")
+      .select("company_name, company_logo_url, favicon_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       const s = data as any;
       const newConfig: WhiteLabelConfig = {
         companyName: s.company_name || defaults.companyName,
         companyLogo: s.company_logo_url || null,
+        faviconUrl: s.favicon_url || null,
         primaryColor: s.primary_color || defaults.primaryColor,
         accentColor: s.accent_color || defaults.accentColor,
         themeMode: (s.theme_mode || defaults.themeMode) as WhiteLabelConfig["themeMode"],
