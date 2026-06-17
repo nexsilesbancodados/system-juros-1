@@ -748,6 +748,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           message: `Cliente ${client.name} pagou juros de R$ ${receiptValue.toFixed(2)}. Dívida renovada para ${nextDate.toLocaleDateString('pt-BR')}.`,
           type: "info"
         });
+        await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "renew_contract_interest_only", toolInput: { contract_id: target.contract_id, installment_id: target.id, valor: receiptValue, nova_data: nextDate.toISOString() } });
       } else {
         // Pagamento Normal (Amortização/Liquidação)
         let target = installments.find(i => Number(i.amount) === receiptValue);
@@ -766,6 +767,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           message: `Cliente ${client.name} pagou R$ ${receiptValue.toFixed(2)}. Parcela #${target.installment_number} baixada.`,
           type: "success"
         });
+        await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "mark_installment_paid", toolInput: { installment_id: target.id, valor: receiptValue, parcela: target.installment_number } });
       }
 
       // Se não houver mais parcelas atrasadas, volta o cliente para 'active'
@@ -776,8 +778,9 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
     }
 
     if (result.needs_human) {
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
-      await supabase.from("notifications").insert({ user_id: userId, title: "Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
+      await escalateToHuman(supabase, convoId!, result.summary || "IA detectou necessidade de humano");
+      await supabase.from("notifications").insert({ user_id: userId, title: "🚨 Intervenção Humana", message: `Cliente ${client.name} solicita atendimento humano ou negociação.`, type: "warning" });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "escalate_to_human", toolInput: { reason: result.summary || "ai_detected" } });
     }
 
     if (result.is_promise && result.promise_date) {
@@ -789,6 +792,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
       await supabase.from("whatsapp_notes").insert({
         user_id: userId, client_id: client.id, content: `Promessa de pagamento para: ${result.promise_date}`, created_by: 'bot'
       });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "register_payment_promise", toolInput: { data: result.promise_date, contexto: incomingText.slice(0,200) } });
     }
 
     // Aumento de Score por bom comportamento (pagou em dia ou renovou)
