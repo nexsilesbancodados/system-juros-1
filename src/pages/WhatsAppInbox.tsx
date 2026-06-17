@@ -221,7 +221,7 @@ export default function WhatsAppInbox() {
     const q = search.trim().toLowerCase();
     return conversations.filter(c => {
       if (filter === "unread" && c.unread_count <= 0) return false;
-      if (filter === "needs_human" && !c.needs_human) return false;
+      if (filter === "needs_human" && c.bot_status !== "handoff" && !c.needs_human) return false;
       if (filter === "bot" && c.bot_paused) return false;
       if (filter === "blocked" && !c.blocked) return false;
       if (!q) return true;
