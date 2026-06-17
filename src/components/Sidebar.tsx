@@ -113,15 +113,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const isSuperAdmin = isSuperAdminEmail(user?.email);
   const chatUnread = useChatUnread();
 
+  const modules = config.modulesEnabled;
+
   const visibleSections = useMemo(() =>
     sections.map((s) => ({
       ...s,
       items: s.items.filter((i) => {
         if (i.path === "/admin") return isSuperAdmin;
         if (["/auditoria", "/historico"].includes(i.path)) return profile?.is_admin;
+        if (i.module && modules && modules[i.module] === false) return false;
         return true;
       }),
-    })), [isSuperAdmin, profile?.is_admin]);
+    })).filter(s => s.items.length > 0), [isSuperAdmin, profile?.is_admin, modules]);
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
