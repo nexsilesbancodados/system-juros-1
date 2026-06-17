@@ -13,6 +13,20 @@ interface State {
   error: Error | null;
 }
 
+const CHUNK_LOAD_PATTERNS = [
+  "Failed to fetch dynamically imported module",
+  "Importing a module script failed",
+  "error loading dynamically imported module",
+  "ChunkLoadError",
+  "Loading chunk",
+];
+
+function isChunkLoadError(error: Error | null): boolean {
+  if (!error) return false;
+  const msg = `${error.name} ${error.message}`;
+  return CHUNK_LOAD_PATTERNS.some((p) => msg.includes(p));
+}
+
 class ErrorBoundaryInner extends Component<Props, State> {
   state: State = { error: null };
 
@@ -29,6 +43,17 @@ class ErrorBoundaryInner extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // eslint-disable-next-line no-console
     console.error("[ErrorBoundary]", error, info.componentStack);
+
+    // Stale-deploy recovery: if a code-split chunk hash 404s after a redeploy,
+    // force a one-time hard reload so the browser picks up the new index.html.
+    if (isChunkLoadError(error)) {
+      const KEY = "__chunk_reload_at";
+      const last = Number(sessionStorage.getItem(KEY) || "0");
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        window.location.reload();
+      }
+    }
   }
 
   reset = () => this.setState({ error: null });
