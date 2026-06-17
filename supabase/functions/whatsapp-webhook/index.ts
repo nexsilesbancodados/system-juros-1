@@ -347,13 +347,16 @@ serve(async (req) => {
     // COMMANDS
     if (matchesAny(incomingText, STOP_WORDS)) {
       await supabase.from("audit_logs").insert({ user_id: userId, entity_type: "whatsapp_bot", action: "paused", entity_id: client.id, details: { reason: "client_stop" } });
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "pause_bot", toolInput: { reason: "client_stop_command" } });
       await botSay("🤖 Bot pausado. Um atendente humano falará com você em breve.");
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      await supabase.from("whatsapp_conversations").update({ bot_paused: true, bot_status: "paused" }).eq("id", convoId);
       return new Response(JSON.stringify({ status: "stopped" }), { headers: corsHeaders });
     }
     if (matchesAny(incomingText, HUMAN_WORDS)) {
+      await logBotAction(supabase, { userId, clientId: client.id, conversationId: convoId, toolName: "escalate_to_human", toolInput: { reason: "client_requested_human" } });
       await botSay("👤 Chamando um atendente humano...");
-      await supabase.from("whatsapp_conversations").update({ bot_paused: true }).eq("id", convoId);
+      await escalateToHuman(supabase, convoId!, "Cliente pediu atendente humano");
+      await supabase.from("notifications").insert({ user_id: userId, title: "🚨 Atendimento humano solicitado", message: `${client.name} pediu para falar com um humano.`, type: "warning" });
       return new Response(JSON.stringify({ status: "human" }), { headers: corsHeaders });
     }
     if (matchesAny(incomingText, PIX_WORDS) && profile?.pix_key) {
