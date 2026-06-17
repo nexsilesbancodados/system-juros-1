@@ -33,6 +33,7 @@ interface Conversation {
   last_message_preview: string | null; last_message_from: string | null;
   unread_count: number; bot_paused: boolean; needs_human: boolean;
   blocked: boolean; tags: string[] | null; last_intent: string | null;
+  bot_status?: string | null; human_takeover_at?: string | null; human_takeover_reason?: string | null;
 }
 
 interface Message {
