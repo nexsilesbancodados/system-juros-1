@@ -214,9 +214,9 @@ export const WhiteLabelProvider = ({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    const { data } = await (supabase as any)
+      const { data } = await (supabase as any)
       .from("settings_safe")
-      .select("company_name, company_logo_url, favicon_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family")
+      .select("company_name, company_logo_url, favicon_url, primary_color, accent_color, theme_mode, sidebar_style, login_title, login_subtitle, footer_text, border_radius, font_family, modules_enabled")
       .eq("user_id", user.id)
       .maybeSingle();
 
