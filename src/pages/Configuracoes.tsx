@@ -103,6 +103,7 @@ const Configuracoes = () => {
     custom_contract_template: "",
     hubla_checkout_url: "",
     hubla_webhook_token: "",
+    modules_enabled: { ...DEFAULT_MODULES } as Record<ModuleKey, boolean>,
   });
 
   useEffect(() => {
