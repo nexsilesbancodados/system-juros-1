@@ -213,7 +213,6 @@ const Configuracoes = () => {
       default_frequency: form.default_frequency,
       whatsapp_api_url: form.whatsapp_api_url || null,
       // whatsapp_api_key intentionally omitted — saved via edge function settings-set-secret
-      whatsapp_instance: form.whatsapp_instance || null,
       n8n_webhook_url: form.n8n_webhook_url || null,
       push_notifications_enabled: form.push_notifications_enabled,
       // Bot settings
