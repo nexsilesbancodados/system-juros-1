@@ -86,6 +86,23 @@ export default function WhatsAppInbox() {
   const [metrics, setMetrics] = useState({
     total: 0, today: 0, needsHuman: 0, botReplies7d: 0, humanReplies7d: 0,
   });
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [botActions, setBotActions] = useState<Array<{ id: string; tool_name: string; tool_input: any; tool_output: any; success: boolean; created_at: string }>>([]);
+  const [actionsLoading, setActionsLoading] = useState(false);
+
+  const openBotActions = async () => {
+    if (!selected) return;
+    setActionsOpen(true);
+    setActionsLoading(true);
+    const { data } = await supabase
+      .from("bot_actions_log")
+      .select("id, tool_name, tool_input, tool_output, success, created_at")
+      .eq("conversation_id", selected.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setBotActions((data || []) as any);
+    setActionsLoading(false);
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
