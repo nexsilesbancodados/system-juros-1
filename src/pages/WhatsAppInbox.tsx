@@ -20,7 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   Bot, Pause, Play, Search, Send, User, MessageCircle, Loader2,
   AlertTriangle, Ban, FileText, Wallet, CheckCircle2, MoreVertical, Sparkles,
-  Tag as TagIcon, StickyNote, Clock, Paperclip, Download, BarChart3, Wand2, X,
+  Tag as TagIcon, StickyNote, Clock, Paperclip, Download, BarChart3, Wand2, X, Activity,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
