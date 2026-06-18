@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
+import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 
 type PortalInstallment = {
   id: string;
@@ -447,6 +448,13 @@ const PortalCliente = () => {
                 ))}
               </div>
             </div>
+
+            {portalData.client.cpf_cnpj && (
+              <div className="space-y-3 pt-4">
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Assistente</h2>
+                <NegotiationTab clientId={portalData.client.id} cpf={portalData.client.cpf_cnpj} />
+              </div>
+            )}
 
             {(branding.portal_contact_phone || branding.portal_contact_email) && (
               <div className="glass-card flex flex-wrap items-center justify-center gap-4 p-4 text-sm">

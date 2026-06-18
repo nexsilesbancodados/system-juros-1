@@ -20,7 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   Bot, Pause, Play, Search, Send, User, MessageCircle, Loader2,
   AlertTriangle, Ban, FileText, Wallet, CheckCircle2, MoreVertical, Sparkles,
-  Tag as TagIcon, StickyNote, Clock, Paperclip, Download, BarChart3, Wand2, X,
+  Tag as TagIcon, StickyNote, Clock, Paperclip, Download, BarChart3, Wand2, X, Activity,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -86,6 +86,23 @@ export default function WhatsAppInbox() {
   const [metrics, setMetrics] = useState({
     total: 0, today: 0, needsHuman: 0, botReplies7d: 0, humanReplies7d: 0,
   });
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [botActions, setBotActions] = useState<Array<{ id: string; tool_name: string; tool_input: any; tool_output: any; success: boolean; created_at: string }>>([]);
+  const [actionsLoading, setActionsLoading] = useState(false);
+
+  const openBotActions = async () => {
+    if (!selected) return;
+    setActionsOpen(true);
+    setActionsLoading(true);
+    const { data } = await supabase
+      .from("bot_actions_log")
+      .select("id, tool_name, tool_input, tool_output, success, created_at")
+      .eq("conversation_id", selected.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setBotActions((data || []) as any);
+    setActionsLoading(false);
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -574,6 +591,9 @@ export default function WhatsAppInbox() {
                         ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
                         : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
                   </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Ações do bot" onClick={openBotActions}>
+                    <Activity className="h-4 w-4" />
+                  </Button>
                   <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
                     <PopoverTrigger asChild>
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Tags">
@@ -866,6 +886,49 @@ export default function WhatsAppInbox() {
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Activity className="h-4 w-4" /> Ações do bot</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 pr-3">
+            {actionsLoading ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">Carregando…</div>
+            ) : botActions.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">Nenhuma ação registrada para esta conversa.</div>
+            ) : (
+              <div className="space-y-2">
+                {botActions.map((a) => (
+                  <div key={a.id} className="border border-border rounded-lg p-3 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={a.success ? "default" : "destructive"} className="text-[10px]">
+                          {a.success ? "OK" : "Falhou"}
+                        </Badge>
+                        <span className="font-mono font-semibold">{a.tool_name}</span>
+                      </div>
+                      <span className="text-muted-foreground text-[10px]">
+                        {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    </div>
+                    {a.tool_input && Object.keys(a.tool_input).length > 0 && (
+                      <pre className="bg-muted/40 rounded p-2 overflow-x-auto text-[10px] leading-relaxed">
+                        {JSON.stringify(a.tool_input, null, 2)}
+                      </pre>
+                    )}
+                    {a.tool_output && (
+                      <pre className="bg-muted/20 rounded p-2 overflow-x-auto text-[10px] leading-relaxed text-muted-foreground">
+                        {typeof a.tool_output === "string" ? a.tool_output : JSON.stringify(a.tool_output, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
