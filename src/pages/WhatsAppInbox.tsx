@@ -591,6 +591,9 @@ export default function WhatsAppInbox() {
                         ? (<><Play className="h-3.5 w-3.5" />Reativar</>)
                         : (<><Pause className="h-3.5 w-3.5" />Pausar</>)}
                   </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Ações do bot" onClick={openBotActions}>
+                    <Activity className="h-4 w-4" />
+                  </Button>
                   <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
                     <PopoverTrigger asChild>
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Tags">
