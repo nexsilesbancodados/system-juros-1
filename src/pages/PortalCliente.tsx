@@ -274,20 +274,33 @@ const PortalCliente = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Data de Nascimento</label>
-                <input
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-border bg-input px-4 py-4 text-center text-lg text-foreground outline-none transition-colors [color-scheme:dark] focus:border-primary focus:ring-2 focus:ring-primary/30"
-                />
+                <label className="ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Senha</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••"
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-xl border border-border bg-input px-4 py-4 pr-16 text-center text-lg tracking-widest text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary"
+                  >
+                    {showPassword ? "Ocultar" : "Ver"}
+                  </button>
+                </div>
+                <p className="ml-1 text-[10px] text-muted-foreground">Senha padrão: <span className="font-mono font-bold text-foreground">123456</span></p>
               </div>
 
               <Button type="submit" disabled={loading} className="w-full rounded-xl py-7 text-lg font-bold shadow-premium">
                 {loading ? <Clock className="mr-2 animate-spin" /> : <ArrowRight className="mr-2" />}
                 {loading ? "Verificando..." : "Entrar no Portal"}
               </Button>
+
             </form>
 
             {(branding.portal_contact_phone || branding.portal_contact_email) && (
