@@ -2110,6 +2110,7 @@ export type Database = {
         Args: { _birth_date: string; _cpf: string }
         Returns: Json
       }
+      portal_client_login_cpf: { Args: { _cpf: string }; Returns: Json }
       portal_client_login_password: {
         Args: { _cpf: string; _password: string }
         Returns: Json
