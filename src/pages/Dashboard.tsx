@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
