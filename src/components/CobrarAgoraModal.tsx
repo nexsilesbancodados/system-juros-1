@@ -210,7 +210,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
                 </span>
               </div>
 
-              <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/20" role="list">
+              <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-border/20" role="list">
                 {installments.length === 0 && (
                   <div className="py-10 text-center text-xs text-muted-foreground">
                     Nenhuma cobrança pendente neste grupo
