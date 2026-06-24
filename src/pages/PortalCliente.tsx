@@ -89,23 +89,24 @@ const SESSION_KEY = "portal-cliente-session";
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
-  const [birthDate, setBirthDate] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
-  // Auto re-login from saved CPF/birth on mount
+  // Auto re-login from saved CPF/password on mount
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
-      const { cpf: c, birth_date: b } = JSON.parse(saved);
-      if (c && b) {
+      const { cpf: c, password: p } = JSON.parse(saved);
+      if (c && p) {
         setCpf(c);
-        setBirthDate(b);
-        void doLogin(c, b, true);
+        setPassword(p);
+        void doLogin(c, p, true);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,8 +123,8 @@ const PortalCliente = () => {
         { event: "*", schema: "public", table: "contract_installments", filter: `client_id=eq.${clientId}` },
         () => {
           const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
-          if (cleanCpf && portalData.client.birth_date) {
-            void doLogin(cleanCpf, portalData.client.birth_date, true);
+          if (cleanCpf) {
+            void doLogin(cleanCpf, "123456", true);
           }
         },
       )
@@ -163,12 +164,12 @@ const PortalCliente = () => {
     };
   }, [portalData]);
 
-  const doLogin = async (cleanCpf: string, birth: string, silent = false) => {
+  const doLogin = async (cleanCpf: string, pwd: string, silent = false) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("portal_client_login" as never, {
+      const { data, error } = await supabase.rpc("portal_client_login_password" as never, {
         _cpf: cleanCpf,
-        _birth_date: birth,
+        _password: pwd,
       } as never);
 
       if (error) {
@@ -178,13 +179,13 @@ const PortalCliente = () => {
       }
 
       if (!data) {
-        if (!silent) toast({ title: "Acesso negado", description: "CPF ou data de nascimento não conferem.", variant: "destructive" });
+        if (!silent) toast({ title: "Acesso negado", description: "CPF ou senha inválidos.", variant: "destructive" });
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, birth_date: birth }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, password: pwd }));
       if (!silent) toast({ title: "Acesso autorizado!" });
     } catch (err) {
       if (!silent) toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
@@ -196,19 +197,20 @@ const PortalCliente = () => {
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11 || !birthDate) {
-      toast({ title: "Informe CPF e data de nascimento válidos", variant: "destructive" });
+    if (cleanCpf.length !== 11 || !password) {
+      toast({ title: "Informe CPF e senha", variant: "destructive" });
       return;
     }
-    await doLogin(cleanCpf, birthDate);
+    await doLogin(cleanCpf, password);
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
     setPortalData(null);
     setCpf("");
-    setBirthDate("");
+    setPassword("");
   };
+
 
   const openPayment = (inst: PortalInstallment) => {
     setSelectedInstallment(inst);
