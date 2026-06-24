@@ -362,11 +362,13 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); handleSignOut(); }}
-              className="p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Sair"
+              aria-label="Sair da conta"
             >
               <LogOut size={13} />
             </button>
+
           </div>
         ) : (
           <>
