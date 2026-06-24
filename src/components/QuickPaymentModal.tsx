@@ -239,9 +239,9 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-pay-title"
-        className="fixed top-[8%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in"
+        className="fixed inset-x-0 top-[5vh] mx-auto w-[calc(100vw-1rem)] sm:w-full max-w-2xl z-[61] px-0 sm:px-4 animate-scale-in"
       >
-        <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
             <Receipt size={16} className="text-primary" />
             <div className="flex-1">
