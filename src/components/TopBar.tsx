@@ -68,19 +68,19 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <header className="h-14 border-b border-border/30 bg-card/60 glass-strong flex items-center justify-between px-3 lg:px-6 gap-3">
+    <header className="h-14 border-b border-border/30 bg-card/60 glass-strong flex items-center justify-between px-3 lg:px-6 gap-2">
       {isMobile ? (
-        <button onClick={() => navigate("/perfil")} className="flex items-center gap-2.5 micro-bounce">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
+        <button onClick={() => navigate("/perfil")} className="flex items-center gap-2 micro-bounce min-w-0 max-w-[60%]">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shrink-0">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
             ) : (
-              <User size={18} className="text-primary" />
+              <User size={16} className="text-primary" />
             )}
           </div>
-          <div className="text-left">
-            <p className="text-[11px] text-muted-foreground font-medium">Olá,</p>
-            <p className="text-sm font-bold text-foreground leading-tight">{profile?.name?.split(" ")[0] || "Usuário"}</p>
+          <div className="text-left min-w-0">
+            <p className="text-[10px] text-muted-foreground font-medium leading-none">Olá,</p>
+            <p className="text-[13px] font-bold text-foreground leading-tight truncate">{profile?.name?.split(" ")[0] || "Usuário"}</p>
           </div>
         </button>
       ) : (
@@ -94,6 +94,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-background/60 font-mono ml-4 text-muted-foreground/50 border border-border/30">⌘K</kbd>
         </button>
       )}
+
 
       <div className="flex-1" />
 
@@ -179,9 +180,9 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
       )}
 
       {/* Action buttons */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5 shrink-0">
         {isMobile && (
-          <button onClick={onSearchClick} aria-label="Buscar" className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground">
+          <button onClick={onSearchClick} aria-label="Buscar" className="p-2 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground">
             <Search size={18} />
           </button>
         )}
