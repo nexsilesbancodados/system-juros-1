@@ -163,11 +163,11 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
         role="dialog"
         aria-modal="true"
         aria-labelledby="cobrar-agora-title"
-        className="fixed top-[8%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in"
+        className="fixed inset-x-0 top-[5vh] mx-auto w-[calc(100vw-1rem)] sm:w-full max-w-2xl z-[61] px-0 sm:px-4 animate-scale-in"
       >
-        <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border sticky top-0 bg-card/95 backdrop-blur z-10 shrink-0">
             <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
               <CheckCircle2 size={15} />
             </div>
@@ -210,7 +210,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
                 </span>
               </div>
 
-              <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/20" role="list">
+              <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-border/20" role="list">
                 {installments.length === 0 && (
                   <div className="py-10 text-center text-xs text-muted-foreground">
                     Nenhuma cobrança pendente neste grupo
@@ -263,7 +263,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
 
           {/* STEP 2: method */}
           {step === 2 && (
-            <div className="px-4 py-4 space-y-3">
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3">
               <div role="radiogroup" aria-label="Forma de pagamento" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {METHODS.map((m) => {
                   const Icon = m.icon;
@@ -298,7 +298,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
           )}
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-between gap-3">
+          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-between gap-3 sticky bottom-0 shrink-0">
             <div className="min-w-0">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
               <p className="text-base font-bold text-foreground">R$ {fmtBRL(total)}</p>

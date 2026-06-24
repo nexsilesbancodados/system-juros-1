@@ -153,7 +153,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`
-          group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+          group relative w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[13px] font-medium
           transition-colors duration-200
           ${active
             ? "bg-primary/15 text-foreground"
@@ -163,7 +163,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         `}
       >
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-6 rounded-r-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.5)]" />
         )}
 
         <div className={`relative shrink-0 ${active ? "text-primary" : ""}`}>
