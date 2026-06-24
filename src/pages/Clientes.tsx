@@ -332,7 +332,7 @@ const Clientes = () => {
               <Users size={22} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-display text-4xl md:text-5xl text-foreground tracking-tight">Clientes</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Clientes</h1>
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie seus clientes e contratos.</p>
             </div>
           </div>

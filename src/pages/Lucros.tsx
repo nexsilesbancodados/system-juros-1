@@ -251,7 +251,7 @@ const Lucros = () => {
               <TrendingUp size={22} className="text-success" />
             </div>
             <div>
-              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Lucros</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Lucros</h1>
               <p className="text-muted-foreground text-sm mt-1">Registre e acompanhe seus lucros</p>
             </div>
           </div>

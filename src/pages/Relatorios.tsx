@@ -266,7 +266,7 @@ const Relatorios = () => {
               <BarChart3 size={28} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-display text-4xl font-bold tracking-tighter text-foreground">Relatórios BI</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Relatórios BI</h1>
               <p className="text-muted-foreground text-sm font-medium opacity-70">Business Intelligence & Análise de Performance</p>
             </div>
           </div>

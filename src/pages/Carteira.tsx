@@ -191,7 +191,7 @@ const Carteira = () => {
               <Banknote size={22} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Carteira</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Carteira</h1>
               <p className="text-muted-foreground text-sm mt-1">Visão geral do seu saldo e movimentações.</p>
             </div>
           </div>

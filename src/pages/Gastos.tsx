@@ -189,7 +189,7 @@ const Gastos = () => {
               <TrendingDown size={22} className="text-destructive" />
             </div>
             <div>
-              <h1 className="text-headline text-2xl md:text-3xl text-foreground">Gastos</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Gastos</h1>
               <p className="text-muted-foreground text-sm mt-1">Controle suas despesas por categoria</p>
             </div>
           </div>
