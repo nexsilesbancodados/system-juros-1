@@ -263,7 +263,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
 
           {/* STEP 2: method */}
           {step === 2 && (
-            <div className="px-4 py-4 space-y-3">
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3">
               <div role="radiogroup" aria-label="Forma de pagamento" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {METHODS.map((m) => {
                   const Icon = m.icon;
