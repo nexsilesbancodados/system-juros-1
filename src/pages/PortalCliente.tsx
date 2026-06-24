@@ -89,28 +89,26 @@ const SESSION_KEY = "portal-cliente-session";
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
-  // Auto re-login from saved CPF/password on mount
+  // Auto re-login from saved CPF on mount
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
-      const { cpf: c, password: p } = JSON.parse(saved);
-      if (c && p) {
+      const { cpf: c } = JSON.parse(saved);
+      if (c) {
         setCpf(c);
-        setPassword(p);
-        void doLogin(c, p, true);
+        void doLogin(c, true);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // Realtime: when any installment of this client changes, refetch
   useEffect(() => {
