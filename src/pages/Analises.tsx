@@ -285,7 +285,7 @@ const Analises = () => {
               <BarChart3 size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-shimmer">Análises & BI</h1>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Análises & BI</h1>
               <p className="text-muted-foreground text-sm mt-0.5">Gestão de portfólio e inteligência preditiva</p>
             </div>
           </div>
