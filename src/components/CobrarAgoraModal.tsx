@@ -298,7 +298,7 @@ const CobrarAgoraModal = ({ open, onClose, title = "Cobrar agora", installments 
           )}
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-between gap-3">
+          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-between gap-3 sticky bottom-0 shrink-0">
             <div className="min-w-0">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
               <p className="text-base font-bold text-foreground">R$ {fmtBRL(total)}</p>
