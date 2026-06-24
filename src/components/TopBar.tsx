@@ -181,53 +181,105 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
       {/* Action buttons */}
       <div className="flex items-center gap-0.5">
         {isMobile && (
-          <button onClick={onSearchClick} className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground">
+          <button onClick={onSearchClick} aria-label="Buscar" className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground">
             <Search size={18} />
           </button>
         )}
 
-        {profile?.is_admin && (
-          <button
-            onClick={() => navigate("/configuracoes")}
-            className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground/60 hover:text-foreground hover:rotate-45"
-            style={{ transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
-            title="Configurações"
-          >
-            <Settings size={17} />
-          </button>
-        )}
-
-        <button
-          onClick={toggleTheme}
-          className="p-2.5 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground/60 hover:text-foreground"
-          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-        >
-          {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-        </button>
-
         <NotificationsBell />
 
-        {!isMobile && (
-          <>
-            <button
-              onClick={() => navigate("/perfil")}
-              className="relative w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40 transition-all duration-200 ml-1 micro-bounce"
-            >
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                profile?.name?.charAt(0)?.toUpperCase() || "U"
-              )}
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-background" />
-            </button>
-            <button onClick={handleSignOut} className="p-2.5 rounded-full hover:bg-destructive/10 transition-all duration-200 text-muted-foreground/60 hover:text-destructive" title="Sair">
-              <LogOut size={17} />
-            </button>
-          </>
-        )}
+        {!isMobile && <UserMenu profile={profile} theme={theme} toggleTheme={toggleTheme} onSignOut={handleSignOut} navigate={navigate} isAdmin={!!profile?.is_admin} />}
       </div>
     </header>
   );
 };
+
+interface UserMenuProps {
+  profile: any;
+  theme: string;
+  toggleTheme: () => void;
+  onSignOut: () => void;
+  navigate: (path: string) => void;
+  isAdmin: boolean;
+}
+
+const UserMenu = ({ profile, theme, toggleTheme, onSignOut, navigate, isAdmin }: UserMenuProps) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  const go = (path: string) => { setOpen(false); navigate(path); };
+
+  return (
+    <div ref={ref} className="relative ml-1">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Menu do usuário"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="relative w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40 transition-all duration-200 micro-bounce"
+      >
+        {profile?.avatar_url ? (
+          <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+        ) : (
+          profile?.name?.charAt(0)?.toUpperCase() || "U"
+        )}
+        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-background" />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-2 w-64 rounded-xl border border-border bg-card shadow-2xl overflow-hidden z-50 animate-scale-in origin-top-right" role="menu">
+          <div className="px-3 py-3 border-b border-border/40 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shrink-0">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <User size={18} className="text-primary" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-foreground truncate">{profile?.name || "Usuário"}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{profile?.email || ""}</p>
+            </div>
+          </div>
+
+          <button onClick={() => go("/perfil")} role="menuitem" className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-[12px] text-foreground">
+            <User size={14} className="text-muted-foreground" /> Meu perfil
+          </button>
+          {isAdmin && (
+            <button onClick={() => go("/configuracoes")} role="menuitem" className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-[12px] text-foreground">
+              <Settings size={14} className="text-muted-foreground" /> Configurações
+            </button>
+          )}
+          <button onClick={toggleTheme} role="menuitem" className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-[12px] text-foreground">
+            <span className="flex items-center gap-2.5">
+              {theme === "dark" ? <Sun size={14} className="text-muted-foreground" /> : <Moon size={14} className="text-muted-foreground" />}
+              {theme === "dark" ? "Modo claro" : "Modo escuro"}
+            </span>
+          </button>
+          <div className="border-t border-border/40">
+            <button onClick={onSignOut} role="menuitem" className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-destructive/10 transition-colors text-[12px] text-destructive font-semibold">
+              <LogOut size={14} /> Sair
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export default TopBar;
