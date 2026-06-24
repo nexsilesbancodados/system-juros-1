@@ -220,12 +220,14 @@ const Hoje = () => {
       </a>
 
       {/* Header compacto */}
-      <header className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-card/60 to-card px-4 py-3 flex items-center justify-between gap-3">
+      <header className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-card/60 to-card px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5">
-            <Sunrise size={11} aria-hidden="true" /> {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5 truncate">
+            <Sunrise size={11} aria-hidden="true" />
+            <span className="hidden sm:inline">{new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</span>
+            <span className="sm:hidden">{new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}</span>
           </p>
-          <h1 id="hoje-title" className="text-lg sm:text-xl font-bold text-foreground leading-tight truncate">
+          <h1 id="hoje-title" className="text-base sm:text-xl font-bold text-foreground leading-tight truncate">
             {greeting} <span aria-hidden="true">👋</span>
           </h1>
           <p className="text-[11px] text-muted-foreground" aria-live="polite">
@@ -236,25 +238,27 @@ const Hoje = () => {
         </div>
         <button
           onClick={() => navigate("/clientes/novo")}
-          className="shrink-0 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+          className="shrink-0 px-2.5 sm:px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+          aria-label="Novo cliente"
         >
           <Plus size={13} /> <span className="hidden sm:inline">Novo cliente</span>
         </button>
       </header>
 
       {/* Ações rápidas */}
-      <nav aria-label="Ações rápidas" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <nav aria-label="Ações rápidas" className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
         {quickActions.map(a => (
           <button
             key={a.label}
             onClick={() => navigate(a.to)}
-            className={`group rounded-xl border bg-gradient-to-br ${a.color} px-3 py-2.5 flex items-center gap-2 hover:scale-[1.01] transition-transform`}
+            className={`group rounded-xl border bg-gradient-to-br ${a.color} px-2.5 sm:px-3 py-2 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.01] transition-transform`}
           >
-            <a.Icon size={16} className="shrink-0" />
-            <span className="text-xs font-bold text-foreground truncate text-left">{a.label}</span>
+            <a.Icon size={15} className="shrink-0" />
+            <span className="text-[11px] sm:text-xs font-bold text-foreground truncate text-left">{a.label}</span>
           </button>
         ))}
       </nav>
+
 
       {/* KPIs compactos: 4 colunas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2" role="list" aria-label="Indicadores">
