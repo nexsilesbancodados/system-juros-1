@@ -35,12 +35,11 @@ interface MenuSection {
 
 const sections: MenuSection[] = [
   {
-    title: "Visão Geral",
+    title: "Início",
     items: [
       { label: "Hoje", icon: Sparkles, path: "/hoje", highlight: true },
       { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
       { label: "Análises", icon: BarChart3, path: "/analises", module: "analises" },
-      { label: "Relatórios", icon: FileText, path: "/relatorios", module: "relatorios" },
     ],
   },
   {
@@ -49,16 +48,15 @@ const sections: MenuSection[] = [
       { label: "Clientes", icon: Users, path: "/clientes" },
       { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
       { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia", module: "inadimplencia" },
-      { label: "Cobradores", icon: UserCheck, path: "/cobradores", module: "cobradores" },
-      { label: "Portais", icon: QrCode, path: "/qrcode", module: "portais" },
+      { label: "Carteira", icon: Wallet, path: "/carteira" },
     ],
   },
   {
     title: "Financeiro",
     items: [
-      { label: "Carteira", icon: Wallet, path: "/carteira" },
       { label: "Lucros", icon: TrendingUp, path: "/lucros", module: "lucros" },
       { label: "Gastos", icon: DollarSign, path: "/gastos", module: "gastos" },
+      { label: "Relatórios", icon: FileText, path: "/relatorios", module: "relatorios" },
     ],
   },
   {
@@ -69,6 +67,15 @@ const sections: MenuSection[] = [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox", module: "comunicacao_inbox" },
       { label: "Chat interno", icon: MessageCircle, path: "/chat", module: "chat_interno" },
+    ],
+  },
+  {
+    title: "Equipe & Portais",
+    collapsible: true,
+    defaultOpen: false,
+    items: [
+      { label: "Cobradores", icon: UserCheck, path: "/cobradores", module: "cobradores" },
+      { label: "Portais", icon: QrCode, path: "/qrcode", module: "portais" },
     ],
   },
   {
@@ -97,6 +104,7 @@ const sections: MenuSection[] = [
     ],
   },
 ];
+
 
 interface SidebarProps {
   collapsed?: boolean;
