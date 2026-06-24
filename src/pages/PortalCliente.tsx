@@ -122,7 +122,8 @@ const PortalCliente = () => {
         () => {
           const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
           if (cleanCpf) {
-            void doLogin(cleanCpf, "123456", true);
+            void doLogin(cleanCpf, true);
+
           }
         },
       )
