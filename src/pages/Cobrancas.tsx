@@ -490,23 +490,21 @@ const Cobrancas = () => {
                 )}
               </button>
             ))}
-            <span className="mx-1 w-px h-5 bg-border/40" />
-            {([
-              { v: "all", label: "Tudo" },
-              { v: "today", label: "Hoje" },
-              { v: "7d", label: "7d" },
-              { v: "30d", label: "30d" },
-              { v: "future", label: "Futuras" },
-            ] as const).map(b => (
-              <button
-                key={b.v}
-                onClick={() => setPeriod(b.v)}
-                className={`pill-tab ${period === b.v ? "pill-tab-active" : "pill-tab-inactive"}`}
-              >
-                {b.label}
-              </button>
-            ))}
+            {period !== "all" && (
+              <>
+                <span className="mx-1 w-px h-5 bg-border/40" />
+                <button
+                  onClick={() => setPeriod("all")}
+                  className="pill-tab pill-tab-active"
+                  title="Período ativo — clique para limpar"
+                >
+                  {period === "today" ? "Hoje" : period === "7d" ? "7 dias" : period === "30d" ? "30 dias" : "Futuras"}
+                  <X size={10} />
+                </button>
+              </>
+            )}
           </div>
+
 
           <button
             onClick={toggleSelectAll}
