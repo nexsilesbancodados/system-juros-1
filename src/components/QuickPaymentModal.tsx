@@ -300,7 +300,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
             )}
           </div>
 
-          <div className="max-h-[50vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {isLoading && (
               <div className="py-12 text-center"><Loader2 size={20} className="mx-auto animate-spin text-muted-foreground" /></div>
             )}
