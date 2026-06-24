@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import eagleLogo from "@/assets/eagle-logo.webp";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
@@ -330,58 +331,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* ─── Quick Stats Strip ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
-        {[
-          { label: "Contratos Ativos", value: metrics.contratosAtivos, icon: FileSignature, color: "text-success", bg: "bg-success/8" },
-          { label: "Em Atraso", value: metrics.contratosAtraso, icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8" },
-          { label: "Total Clientes", value: metrics.totalClientes, icon: Users, color: "text-primary", bg: "bg-primary/8" },
-          { label: "Parcelas Atrasadas", value: metrics.overdueCount, icon: Clock, color: "text-warning", bg: "bg-warning/8" },
-        ].map((item, i) => (
-          <div
-            key={item.label}
-            className="rounded-2xl border border-border/10 bg-card/20 backdrop-blur-sm p-4 flex items-center gap-3 micro-press animate-fade-in hover:bg-card/40 transition-colors"
-            style={{ animationDelay: `${(i + 4) * 60}ms` }}
-          >
-            <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
-              <item.icon size={17} className={item.color} />
-            </div>
-            <div className="min-w-0">
-              <p className={`text-headline text-xl ${item.color}`}>{item.value}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{item.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ─── Weekly Activity Bar ─── */}
-      <div className="rounded-3xl border border-border/20 bg-card/30 backdrop-blur-md p-6 animate-fade-in shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <BarChart3 size={14} className="text-primary" />
-            </div>
-            <h2 className="text-headline text-sm text-foreground">Atividade Semanal</h2>
-          </div>
-          <span className="text-[10px] text-muted-foreground">Pagamentos recebidos</span>
-        </div>
-        <div className="flex items-end gap-2.5 h-16">
-          {metrics.weeklyActivity.map((w: any, i: number) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-              <div
-                className={`w-full rounded-lg transition-all duration-700 ${w.count > 0 ? 'bg-gradient-to-t from-primary/40 to-primary/70' : 'bg-muted/30'}`}
-                style={{
-                  height: `${Math.max(4, (w.count / metrics.maxActivity) * 48)}px`,
-                  animationDelay: `${i * 80}ms`
-                }}
-              />
-              <span className="text-[9px] text-muted-foreground font-medium">{w.day}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── Urgency Cards ─── */}
+      {/* ─── Urgency Cards (sempre visíveis) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
           {
@@ -444,180 +394,224 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* ─── Period Comparison ─── */}
-      <PeriodComparison installments={data?.installments || []} />
+      {/* ─── Tabs: Visão Geral / Análises / Listas ─── */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-3 rounded-2xl">
+          <TabsTrigger value="overview" className="rounded-xl text-xs">Visão geral</TabsTrigger>
+          <TabsTrigger value="analytics" className="rounded-xl text-xs">Análises</TabsTrigger>
+          <TabsTrigger value="lists" className="rounded-xl text-xs">Listas</TabsTrigger>
+        </TabsList>
 
-      {/* ─── Interactive Charts ─── */}
-      <DashboardCharts
-        contracts={metrics.contracts}
-        installments={data?.installments || []}
-        profits={data?.profits || []}
-      />
-
-      {/* ─── Two-Column Detail ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Overdue List */}
-        <div className="premium-card overflow-hidden animate-fade-in">
-          <div className="flex items-center justify-between px-5 py-4 sticky-header">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-2xl bg-destructive/10 flex items-center justify-center">
-                <AlertCircle size={15} className="text-destructive" />
-              </div>
-              <h2 className="text-headline text-sm text-foreground">Parcelas Atrasadas</h2>
-              {metrics.overdueCount > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">{metrics.overdueCount}</span>
-              )}
-            </div>
-            <button
-              onClick={() => navigate("/cobrancas")}
-              className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-semibold micro-bounce uppercase tracking-wider transition-colors"
-            >
-              Ver todas <ArrowRight size={10} />
-            </button>
-          </div>
-          <div className="border-t border-border/40">
-            {metrics.overdueList.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Sparkles size={24} className="text-success/40" />
+        {/* ─── TAB: Visão geral ─── */}
+        <TabsContent value="overview" className="space-y-6 mt-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
+            {[
+              { label: "Contratos Ativos", value: metrics.contratosAtivos, icon: FileSignature, color: "text-success", bg: "bg-success/8" },
+              { label: "Em Atraso", value: metrics.contratosAtraso, icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8" },
+              { label: "Total Clientes", value: metrics.totalClientes, icon: Users, color: "text-primary", bg: "bg-primary/8" },
+              { label: "Parcelas Atrasadas", value: metrics.overdueCount, icon: Clock, color: "text-warning", bg: "bg-warning/8" },
+            ].map((item, i) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-border/10 bg-card/20 backdrop-blur-sm p-4 flex items-center gap-3 micro-press animate-fade-in hover:bg-card/40 transition-colors"
+                style={{ animationDelay: `${(i + 4) * 60}ms` }}
+              >
+                <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
+                  <item.icon size={17} className={item.color} />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">Tudo em dia!</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Nenhuma parcela atrasada</p>
+                <div className="min-w-0">
+                  <p className={`text-headline text-xl ${item.color}`}>{item.value}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{item.label}</p>
+                </div>
               </div>
-            ) : (
-              <div className="divide-y divide-border/30">
-                {metrics.overdueList.slice(0, 5).map((item: any) => (
+            ))}
+          </div>
+
+          {/* Weekly Activity */}
+          <div className="rounded-3xl border border-border/20 bg-card/30 backdrop-blur-md p-6 animate-fade-in shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <BarChart3 size={14} className="text-primary" />
+                </div>
+                <h2 className="text-headline text-sm text-foreground">Atividade Semanal</h2>
+              </div>
+              <span className="text-[10px] text-muted-foreground">Pagamentos recebidos</span>
+            </div>
+            <div className="flex items-end gap-2.5 h-16">
+              {metrics.weeklyActivity.map((w: any, i: number) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                   <div
-                    key={item.id}
-                    className="data-row cursor-pointer micro-bounce"
-                    onClick={() => navigate(`/clientes/${item.clientId || item.client_id}`)}
-                  >
-                    <div className="num-badge bg-destructive/10 text-destructive">
-                      {item.installment_number}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{item.clientName}</p>
-                      <p className="text-xs text-muted-foreground">R$ {fmt(Number(item.amount))}</p>
-                    </div>
-                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold rounded-lg px-2 badge-pulse">
-                      {item.daysOverdue}d
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Payments */}
-        <div className="premium-card overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
-          <div className="flex items-center justify-between px-5 py-4 sticky-header">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-2xl bg-success/10 flex items-center justify-center">
-                <Activity size={15} className="text-success" />
-              </div>
-              <h2 className="text-headline text-sm text-foreground">Pagamentos Recentes</h2>
+                    className={`w-full rounded-lg transition-all duration-700 ${w.count > 0 ? 'bg-gradient-to-t from-primary/40 to-primary/70' : 'bg-muted/30'}`}
+                    style={{
+                      height: `${Math.max(4, (w.count / metrics.maxActivity) * 48)}px`,
+                      animationDelay: `${i * 80}ms`
+                    }}
+                  />
+                  <span className="text-[9px] text-muted-foreground font-medium">{w.day}</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="border-t border-border/40">
-            {metrics.recentPayments.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <DollarSign size={24} className="text-muted-foreground/30" />
+
+          {/* Goals */}
+          {metrics.goals.length > 0 && (
+            <div className="premium-card overflow-hidden animate-fade-in">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Target size={15} className="text-primary" />
+                  </div>
+                  <h2 className="text-headline text-sm text-foreground">Metas</h2>
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">Sem pagamentos</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Nenhum pagamento registrado ainda</p>
+                <button
+                  onClick={() => navigate("/ferramentas/metas")}
+                  className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-semibold micro-bounce uppercase tracking-wider transition-colors"
+                >
+                  Gerenciar <ArrowRight size={10} />
+                </button>
               </div>
-            ) : (
-              <div className="divide-y divide-border/30">
-                {metrics.recentPayments.map((item: any) => {
-                  const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
+              <div className="border-t border-border/40 p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                {metrics.goals.slice(0, 4).map((g: any) => {
+                  const pct = Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100);
                   return (
-                    <div key={item.id} className="data-row">
-                      <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0 group-hover:bg-success/15 transition-colors">
-                        <ArrowUpRight size={15} className="text-success" />
+                    <div key={g.id} className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground truncate mr-2">{g.description}</p>
+                        <span className="text-xs font-bold text-primary shrink-0">{pct.toFixed(0)}%</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{contract?.clients?.name || "—"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Parcela {item.installment_number} · {item.paid_at ? formatBR(item.paid_at) : "—"}
-                        </p>
+                      <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{ width: `${pct}%`, background: "var(--gradient-gold)" }}
+                        />
                       </div>
-                      <span className="text-sm font-bold text-success whitespace-nowrap">
-                        +R$ {fmt(Number(item.paid_amount || item.amount))}
-                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        R$ {fmt(Number(g.current_amount))} / R$ {fmt(Number(g.target_amount))}
+                      </p>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Quick Actions ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "500ms" }}>
-        {[
-          { label: "Novo Contrato", icon: FileSignature, color: "text-primary", bg: "bg-primary/8", path: "/clientes/novo" },
-          { label: "Novo Cliente", icon: Users, color: "text-success", bg: "bg-success/8", path: "/clientes/novo" },
-          { label: "Cobranças", icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/8", path: "/cobrancas" },
-          { label: "Relatórios", icon: PieChart, color: "text-info", bg: "bg-info/8", path: "/relatorios" },
-        ].map((action, i) => (
-          <button
-            key={action.label + i}
-            onClick={() => navigate(action.path)}
-            className="premium-card p-4 flex items-center gap-3 text-left group"
-          >
-            <div className={`w-10 h-10 rounded-2xl ${action.bg} flex items-center justify-center shrink-0`}>
-              <action.icon size={18} className={action.color} />
             </div>
-            <span className="text-sm font-medium text-foreground">{action.label}</span>
-            <ChevronRight size={14} className="text-muted-foreground/30 ml-auto group-hover:text-muted-foreground transition-colors" />
-          </button>
-        ))}
-      </div>
+          )}
+        </TabsContent>
 
-      {/* ─── Goals ─── */}
-      {metrics.goals.length > 0 && (
-        <div className="premium-card overflow-hidden animate-fade-in">
-          <div className="flex items-center justify-between px-5 py-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Target size={15} className="text-primary" />
-              </div>
-              <h2 className="text-headline text-sm text-foreground">Metas</h2>
-            </div>
-            <button
-              onClick={() => navigate("/ferramentas/metas")}
-              className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-semibold micro-bounce uppercase tracking-wider transition-colors"
-            >
-              Gerenciar <ArrowRight size={10} />
-            </button>
-          </div>
-          <div className="border-t border-border/40 p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-            {metrics.goals.slice(0, 4).map((g: any) => {
-              const pct = Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100);
-              return (
-                <div key={g.id} className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-foreground truncate mr-2">{g.description}</p>
-                    <span className="text-xs font-bold text-primary shrink-0">{pct.toFixed(0)}%</span>
+        {/* ─── TAB: Análises ─── */}
+        <TabsContent value="analytics" className="space-y-6 mt-6">
+          <PeriodComparison installments={data?.installments || []} />
+          <DashboardCharts
+            contracts={metrics.contracts}
+            installments={data?.installments || []}
+            profits={data?.profits || []}
+          />
+        </TabsContent>
+
+        {/* ─── TAB: Listas ─── */}
+        <TabsContent value="lists" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Overdue List */}
+            <div className="premium-card overflow-hidden animate-fade-in">
+              <div className="flex items-center justify-between px-5 py-4 sticky-header">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                    <AlertCircle size={15} className="text-destructive" />
                   </div>
-                  <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700 ease-out"
-                      style={{ width: `${pct}%`, background: "var(--gradient-gold)" }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    R$ {fmt(Number(g.current_amount))} / R$ {fmt(Number(g.target_amount))}
-                  </p>
+                  <h2 className="text-headline text-sm text-foreground">Parcelas Atrasadas</h2>
+                  {metrics.overdueCount > 0 && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">{metrics.overdueCount}</span>
+                  )}
                 </div>
-              );
-            })}
+                <button
+                  onClick={() => navigate("/cobrancas")}
+                  className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-semibold micro-bounce uppercase tracking-wider transition-colors"
+                >
+                  Ver todas <ArrowRight size={10} />
+                </button>
+              </div>
+              <div className="border-t border-border/40">
+                {metrics.overdueList.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <Sparkles size={24} className="text-success/40" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Tudo em dia!</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Nenhuma parcela atrasada</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/30">
+                    {metrics.overdueList.slice(0, 5).map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="data-row cursor-pointer micro-bounce"
+                        onClick={() => navigate(`/clientes/${item.clientId || item.client_id}`)}
+                      >
+                        <div className="num-badge bg-destructive/10 text-destructive">
+                          {item.installment_number}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{item.clientName}</p>
+                          <p className="text-xs text-muted-foreground">R$ {fmt(Number(item.amount))}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold rounded-lg px-2 badge-pulse">
+                          {item.daysOverdue}d
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Payments */}
+            <div className="premium-card overflow-hidden animate-fade-in" style={{ animationDelay: "100ms" }}>
+              <div className="flex items-center justify-between px-5 py-4 sticky-header">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-2xl bg-success/10 flex items-center justify-center">
+                    <Activity size={15} className="text-success" />
+                  </div>
+                  <h2 className="text-headline text-sm text-foreground">Pagamentos Recentes</h2>
+                </div>
+              </div>
+              <div className="border-t border-border/40">
+                {metrics.recentPayments.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <DollarSign size={24} className="text-muted-foreground/30" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Sem pagamentos</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Nenhum pagamento registrado ainda</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/30">
+                    {metrics.recentPayments.map((item: any) => {
+                      const contract = metrics.contracts.find((c: any) => c.id === item.contract_id);
+                      return (
+                        <div key={item.id} className="data-row">
+                          <div className="w-9 h-9 rounded-2xl bg-success/10 flex items-center justify-center shrink-0 group-hover:bg-success/15 transition-colors">
+                            <ArrowUpRight size={15} className="text-success" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{contract?.clients?.name || "—"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Parcela {item.installment_number} · {item.paid_at ? formatBR(item.paid_at) : "—"}
+                            </p>
+                          </div>
+                          <span className="text-sm font-bold text-success whitespace-nowrap">
+                            +R$ {fmt(Number(item.paid_amount || item.amount))}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
+
     </div>
   );
 };
