@@ -42,50 +42,68 @@ const mobileIconColor: Record<string, string> = {
 
 const mainTabs = [
   { label: "Hoje", icon: Sparkles, path: "/hoje" },
-  { label: "Clientes", icon: Users, path: "/clientes" },
   { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
+  { label: "Clientes", icon: Users, path: "/clientes" },
   { label: "Painel", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Mais", icon: MoreHorizontal, path: "__more__" },
 ];
 
 const moreGroups = [
   {
-    title: "Análise & Gestão",
+    title: "Análise",
     items: [
       { label: "Análises", icon: BarChart3, path: "/analises" },
       { label: "Relatórios", icon: FileText, path: "/relatorios" },
-      { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
-      { label: "Lucros", icon: TrendingUp, path: "/lucros" },
-      { label: "Gastos", icon: DollarSign, path: "/gastos" },
       { label: "Inadimplência", icon: FileSignature, path: "/inadimplencia" },
     ],
   },
   {
-    title: "Inteligência",
+    title: "Financeiro",
+    items: [
+      { label: "Carteira", icon: WalletIcon, path: "/carteira" },
+      { label: "Lucros", icon: TrendingUp, path: "/lucros" },
+      { label: "Gastos", icon: DollarSign, path: "/gastos" },
+    ],
+  },
+  {
+    title: "Comunicação",
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao" },
+      { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
+      { label: "Chat interno", icon: MessageCircle, path: "/chat" },
+    ],
+  },
+  {
+    title: "Equipe & Portais",
+    items: [
+      { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
+      { label: "Portais", icon: QrCode, path: "/qrcode" },
+    ],
+  },
+  {
+    title: "Ferramentas",
+    items: [
       { label: "Simulador", icon: Calculator, path: "/ferramentas/simulador" },
       { label: "Metas", icon: Target, path: "/ferramentas/metas" },
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
       { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
+      { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
+      { label: "Puxada Dados", icon: Database, path: "/puxada-dados" },
     ],
   },
   {
-    title: "Ferramentas & Sistema",
+    title: "Sistema",
     items: [
-      { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
-      { label: "Puxada Dados", icon: Database, path: "/puxada-dados" },
-      { label: "Portais", icon: QrCode, path: "/qrcode" },
-      { label: "Chat", icon: MessageCircle, path: "/chat" },
+      { label: "Configurações", icon: Settings, path: "/configuracoes" },
+      { label: "Suporte", icon: Sparkles, path: "/suporte" },
       { label: "Histórico", icon: ClipboardList, path: "/historico" },
       { label: "Auditoria", icon: Shield, path: "/auditoria" },
-      { label: "Config.", icon: Settings, path: "/configuracoes" },
       { label: "Admin", icon: Crown, path: "/admin" },
-      { label: "Suporte", icon: Sparkles, path: "/suporte" },
       { label: "Sobre", icon: Info, path: "/sobre" },
     ],
   },
 ];
+
 
 const MobileBottomNav = () => {
   const location = useLocation();
