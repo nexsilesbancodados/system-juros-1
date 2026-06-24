@@ -3,12 +3,22 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock, SplitSquareHorizontal } from "lucide-react";
+import { Search, X, CheckCircle2, Loader2, Receipt, AlertCircle, Clock, SplitSquareHorizontal, CheckSquare, Square, Banknote } from "lucide-react";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 
 interface Props { open: boolean; onClose: () => void; }
 
 const fmtBRL = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+type PaymentMethod = "pix" | "cash" | "card" | "transfer" | "boleto";
+
+const METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "pix", label: "PIX" },
+  { value: "cash", label: "Dinheiro" },
+  { value: "card", label: "Cartão" },
+  { value: "transfer", label: "Transferência" },
+  { value: "boleto", label: "Boleto" },
+];
 
 const QuickPaymentModal = ({ open, onClose }: Props) => {
   const { user } = useAuth();
@@ -18,6 +28,9 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [partialFor, setPartialFor] = useState<string | null>(null);
   const [partialValue, setPartialValue] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [method, setMethod] = useState<PaymentMethod>("pix");
+  const [bulkSaving, setBulkSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -26,6 +39,8 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     if (open) {
       setQuery("");
       setActiveIdx(0);
+      setSelected(new Set());
+      setPartialFor(null);
       setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [open]);
@@ -57,19 +72,47 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
 
   useEffect(() => { setActiveIdx(0); }, [query]);
 
-  // Scroll active row into view
   useEffect(() => {
     itemRefs.current[activeIdx]?.scrollIntoView({ block: "nearest" });
   }, [activeIdx]);
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    const allIds = filtered.map((i: any) => i.id);
+    const allSelected = allIds.every((id: string) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) allIds.forEach((id: string) => next.delete(id));
+      else allIds.forEach((id: string) => next.add(id));
+      return next;
+    });
+  };
+
+  const selectedInstallments = useMemo(
+    () => (installments || []).filter((i: any) => selected.has(i.id)),
+    [installments, selected]
+  );
+  const selectedTotal = useMemo(
+    () => selectedInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0),
+    [selectedInstallments]
+  );
+
   const handlePay = async (id: string, amount: number) => {
     setSaving(id);
     const { error } = await supabase.from("contract_installments")
-      .update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount })
+      .update({ status: "paid", paid_at: new Date().toISOString(), paid_amount: amount, payment_method: method })
       .eq("id", id);
     setSaving(null);
     if (error) { toast.error("Erro ao registrar pagamento"); return; }
-    toast.success("Pagamento registrado", {
+    setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    toast.success(`Pagamento registrado · ${METHODS.find(m => m.value === method)?.label}`, {
       action: {
         label: "Desfazer",
         onClick: async () => {
@@ -80,6 +123,40 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
         }
       }
     });
+    qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+    qc.invalidateQueries({ queryKey: ["hoje"] });
+  };
+
+  const handleBulkPay = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const items = (installments || []).filter((i: any) => selected.has(i.id));
+    setBulkSaving(true);
+    const nowIso = new Date().toISOString();
+    const updates = await Promise.all(items.map((i: any) =>
+      supabase.from("contract_installments")
+        .update({ status: "paid", paid_at: nowIso, paid_amount: Number(i.amount), payment_method: method })
+        .eq("id", i.id)
+    ));
+    setBulkSaving(false);
+    const failed = updates.filter((r) => r.error).length;
+    if (failed > 0) { toast.error(`${failed} pagamento(s) falharam`); }
+    if (failed < items.length) {
+      toast.success(`${items.length - failed} parcela(s) quitadas · ${METHODS.find(m => m.value === method)?.label}`, {
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            await Promise.all(items.map((i: any) =>
+              supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", i.id)
+            ));
+            qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
+            qc.invalidateQueries({ queryKey: ["hoje"] });
+            toast.success("Desfeito");
+          }
+        }
+      });
+    }
+    setSelected(new Set());
     qc.invalidateQueries({ queryKey: ["quick-pay-installments"] });
     qc.invalidateQueries({ queryKey: ["hoje"] });
   };
@@ -97,7 +174,7 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     const newRemaining = +(remaining - paidNow).toFixed(2);
     const accumulated = +(Number(inst.paid_amount || 0) + paidNow).toFixed(2);
     const { error } = await supabase.from("contract_installments")
-      .update({ amount: newRemaining, paid_amount: accumulated })
+      .update({ amount: newRemaining, paid_amount: accumulated, payment_method: method })
       .eq("id", inst.id);
     setSaving(null);
     if (error) { toast.error("Erro ao registrar pagamento parcial"); return; }
@@ -119,7 +196,6 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
     qc.invalidateQueries({ queryKey: ["hoje"] });
   };
 
-  // Keyboard navigation: Esc closes, ArrowUp/Down navigate, Enter pays active
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -130,29 +206,26 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === " " && filtered[activeIdx] && document.activeElement === inputRef.current) {
+        e.preventDefault();
+        toggleSelect(filtered[activeIdx].id);
       } else if (e.key === "Enter" && filtered[activeIdx] && document.activeElement === inputRef.current) {
         e.preventDefault();
-        const inst = filtered[activeIdx];
-        handlePay(inst.id, Number(inst.amount));
-      } else if (e.key === "Tab") {
-        // Simple focus trap within dialog
-        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
-          'button, input, [href], [tabindex]:not([tabindex="-1"])'
-        );
-        if (!focusables || focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (selected.size > 0) handleBulkPay();
+        else {
+          const inst = filtered[activeIdx];
+          handlePay(inst.id, Number(inst.amount));
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, filtered, activeIdx, onClose]);
+  }, [open, filtered, activeIdx, onClose, selected, method]);
 
   if (!open) return null;
 
   const today = new Date(); today.setHours(0,0,0,0);
+  const allVisibleSelected = filtered.length > 0 && filtered.every((i: any) => selected.has(i.id));
 
   return (
     <>
@@ -166,73 +239,74 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-pay-title"
-        aria-describedby="quick-pay-desc"
-        className="fixed top-[10%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in"
+        className="fixed top-[8%] left-1/2 -translate-x-1/2 w-full max-w-xl z-[61] px-4 animate-scale-in"
       >
         <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
-            <Receipt size={16} className="text-primary" aria-hidden="true" />
+            <Receipt size={16} className="text-primary" />
             <div className="flex-1">
               <h2 id="quick-pay-title" className="text-xs font-bold text-foreground">Registrar pagamento</h2>
-              <p id="quick-pay-desc" className="text-[10px] text-muted-foreground">
-                Busque por nome ou CPF · ↑↓ navega · Enter paga · Esc fecha
+              <p className="text-[10px] text-muted-foreground">
+                Espaço marca · Enter paga · ↑↓ navega · Esc fecha
               </p>
             </div>
-            <kbd className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-mono" aria-hidden="true">ESC</kbd>
-            <button
-              onClick={onClose}
-              aria-label="Fechar modal de pagamento"
-              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={14} aria-hidden="true" />
+            <button onClick={onClose} aria-label="Fechar" className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground">
+              <X size={14} />
             </button>
           </div>
 
-          <div className="px-4 py-3 border-b border-border/30">
-            <label htmlFor="quick-pay-search" className="sr-only">Buscar parcela por nome do cliente ou CPF</label>
+          {/* Payment method + search */}
+          <div className="px-4 py-3 border-b border-border/30 space-y-2">
+            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+              <Banknote size={12} className="text-muted-foreground shrink-0 mr-1" />
+              {METHODS.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => setMethod(m.value)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-colors ${
+                    method === m.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <input
                 ref={inputRef}
-                id="quick-pay-search"
                 type="search"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="quick-pay-list"
-                aria-activedescendant={filtered[activeIdx] ? `qpay-item-${filtered[activeIdx].id}` : undefined}
-                aria-autocomplete="list"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Nome do cliente ou CPF..."
                 className="w-full h-10 pl-9 pr-9 rounded-xl bg-muted/30 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               />
               {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  aria-label="Limpar busca"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <X size={12} aria-hidden="true" />
+                <button onClick={() => setQuery("")} aria-label="Limpar busca" className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground">
+                  <X size={12} />
                 </button>
               )}
             </div>
+            {filtered.length > 0 && (
+              <button
+                onClick={selectAllVisible}
+                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+              >
+                {allVisibleSelected ? <CheckSquare size={12} /> : <Square size={12} />}
+                {allVisibleSelected ? "Desmarcar todas" : "Selecionar todas visíveis"}
+              </button>
+            )}
           </div>
 
-          <div
-            id="quick-pay-list"
-            role="listbox"
-            aria-label="Parcelas pendentes"
-            className="max-h-[55vh] overflow-y-auto"
-          >
+          <div className="max-h-[50vh] overflow-y-auto">
             {isLoading && (
-              <div className="py-12 text-center" role="status" aria-live="polite">
-                <Loader2 size={20} className="mx-auto animate-spin text-muted-foreground" aria-hidden="true" />
-                <span className="sr-only">Carregando parcelas</span>
-              </div>
+              <div className="py-12 text-center"><Loader2 size={20} className="mx-auto animate-spin text-muted-foreground" /></div>
             )}
             {!isLoading && filtered.length === 0 && (
-              <div className="py-12 text-center" role="status">
-                <CheckCircle2 size={28} className="mx-auto text-success/50 mb-2" aria-hidden="true" />
+              <div className="py-12 text-center">
+                <CheckCircle2 size={28} className="mx-auto text-success/50 mb-2" />
                 <p className="text-sm text-foreground font-semibold">Nada pendente</p>
                 <p className="text-[11px] text-muted-foreground">{query ? "Nenhuma parcela encontrada" : "Todas as parcelas estão pagas"}</p>
               </div>
@@ -243,76 +317,68 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
               const t0 = new Date(); t0.setHours(0,0,0,0);
               const isToday = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime() === t0.getTime();
               const isActive = idx === activeIdx;
-              const status = isOverdue ? "atrasada" : isToday ? "vence hoje" : "pendente";
+              const isSelected = selected.has(inst.id);
               return (
                 <div key={inst.id}>
                 <div
                   ref={(el) => (itemRefs.current[idx] = el)}
-                  id={`qpay-item-${inst.id}`}
-                  role="option"
-                  aria-selected={isActive}
                   onMouseEnter={() => setActiveIdx(idx)}
                   className={`px-4 py-3 flex items-center gap-3 border-b border-border/20 transition-colors ${
-                    isActive ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-accent/20"
+                    isSelected ? "bg-primary/10" : isActive ? "bg-accent/30 ring-1 ring-primary/20" : "hover:bg-accent/20"
                   }`}
                 >
+                  <button
+                    onClick={() => toggleSelect(inst.id)}
+                    aria-label={isSelected ? "Desmarcar parcela" : "Marcar parcela"}
+                    className="shrink-0 text-primary hover:scale-110 transition-transform"
+                  >
+                    {isSelected ? <CheckSquare size={18} /> : <Square size={18} className="text-muted-foreground" />}
+                  </button>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     isOverdue ? "bg-destructive/10 text-destructive" :
                     isToday ? "bg-primary/10 text-primary" :
                     "bg-muted text-muted-foreground"
-                  }`} aria-hidden="true">
+                  }`}>
                     {isOverdue ? <AlertCircle size={14} /> : <Clock size={14} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{inst.clients?.name || "Cliente"}</p>
                     <p className="text-[11px] text-muted-foreground">
                       Parcela {inst.installment_number} · {formatBR(inst.due_date)}
-                      {inst.contract_id && (
-                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.contract_id}`}>
-                          #{String(inst.contract_id).slice(0, 6)}
-                          {inst.contracts?.capital ? ` · R$ ${fmtBRL(Number(inst.contracts.capital))}` : ""}
-                        </span>
-                      )}
                       {isOverdue && <span className="text-destructive font-bold ml-1">· ATRASADO</span>}
                       {isToday && <span className="text-primary font-bold ml-1">· HOJE</span>}
                       {Number(inst.paid_amount || 0) > 0 && (
-                        <span className="text-warning font-bold ml-1">· PARCIAL pago R$ {fmtBRL(Number(inst.paid_amount))}</span>
+                        <span className="text-warning font-bold ml-1">· PARCIAL R$ {fmtBRL(Number(inst.paid_amount))}</span>
                       )}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-foreground shrink-0" aria-label={`Valor R$ ${fmtBRL(Number(inst.amount))}`}>
+                  <p className="text-sm font-bold text-foreground shrink-0">
                     R$ {fmtBRL(Number(inst.amount))}
                   </p>
                   <button
                     onClick={() => { setPartialFor(partialFor === inst.id ? null : inst.id); setPartialValue(""); }}
-                    aria-label="Pagamento parcial"
                     title="Pagamento parcial"
                     className="px-2 py-1.5 rounded-lg bg-muted text-foreground text-[11px] font-bold hover:bg-accent transition-colors flex items-center gap-1 shrink-0"
                   >
-                    <SplitSquareHorizontal size={11} aria-hidden="true" />
+                    <SplitSquareHorizontal size={11} />
                     Parcial
                   </button>
                   <button
                     onClick={() => handlePay(inst.id, Number(inst.amount))}
                     disabled={saving === inst.id}
-                    aria-label={`Pagar parcela ${inst.installment_number} de ${inst.clients?.name || "cliente"}, ${status}, R$ ${fmtBRL(Number(inst.amount))}`}
-                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1 shrink-0"
                   >
-                    {saving === inst.id ? <Loader2 size={11} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={11} aria-hidden="true" />}
+                    {saving === inst.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
                     Pagar
                   </button>
                 </div>
                 {partialFor === inst.id && (
-                  <div className="px-4 py-2 bg-muted/30 border-b border-border/20 flex items-center gap-2">
+                  <div className="px-4 py-2 bg-muted/30 border-b border-border/20 flex items-center gap-2 flex-wrap">
                     <span className="text-[11px] text-muted-foreground">Valor pago agora:</span>
                     <div className="relative flex-1 max-w-[160px]">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={Number(inst.amount)}
-                        autoFocus
+                        type="number" step="0.01" min="0" max={Number(inst.amount)} autoFocus
                         value={partialValue}
                         onChange={(e) => setPartialValue(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePartial(inst); } }}
@@ -321,20 +387,13 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
                       />
                     </div>
                     <span className="text-[10px] text-muted-foreground">de R$ {fmtBRL(Number(inst.amount))}</span>
-                    <button
-                      onClick={() => handlePartial(inst)}
-                      disabled={saving === inst.id}
-                      className="ml-auto px-3 py-1.5 rounded-md bg-success text-success-foreground text-[11px] font-bold hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
-                    >
+                    <button onClick={() => handlePartial(inst)} disabled={saving === inst.id}
+                      className="ml-auto px-3 py-1.5 rounded-md bg-success text-success-foreground text-[11px] font-bold hover:opacity-90 disabled:opacity-50 flex items-center gap-1">
                       {saving === inst.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
                       Confirmar
                     </button>
-                    <button
-                      onClick={() => { setPartialFor(null); setPartialValue(""); }}
-                      className="px-2 py-1.5 rounded-md hover:bg-accent text-muted-foreground text-[11px]"
-                    >
-                      Cancelar
-                    </button>
+                    <button onClick={() => { setPartialFor(null); setPartialValue(""); }}
+                      className="px-2 py-1.5 rounded-md hover:bg-accent text-muted-foreground text-[11px]">Cancelar</button>
                   </div>
                 )}
                 </div>
@@ -342,13 +401,41 @@ const QuickPaymentModal = ({ open, onClose }: Props) => {
             })}
           </div>
 
-          <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground/80 flex items-center justify-between">
-            <span>
-              <kbd className="px-1 py-0.5 rounded bg-muted font-mono">↑↓</kbd> navegar ·
-              <kbd className="px-1 py-0.5 rounded bg-muted font-mono ml-1">Enter</kbd> pagar
-            </span>
-            <span aria-live="polite">{filtered.length} parcela{filtered.length !== 1 ? "s" : ""}</span>
-          </div>
+          {/* Bulk action bar */}
+          {selected.size > 0 ? (
+            <div className="px-4 py-3 border-t border-border bg-primary/5 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-foreground">
+                  {selected.size} parcela{selected.size !== 1 ? "s" : ""} selecionada{selected.size !== 1 ? "s" : ""}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Total: <span className="font-bold text-foreground">R$ {fmtBRL(selectedTotal)}</span> · via {METHODS.find(m => m.value === method)?.label}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="px-3 py-2 rounded-lg text-[11px] font-semibold text-muted-foreground hover:bg-accent"
+              >
+                Limpar
+              </button>
+              <button
+                onClick={handleBulkPay}
+                disabled={bulkSaving}
+                className="px-4 py-2 rounded-lg bg-success text-success-foreground text-xs font-bold hover:opacity-90 disabled:opacity-50 flex items-center gap-2 shadow-md"
+              >
+                {bulkSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                Quitar tudo
+              </button>
+            </div>
+          ) : (
+            <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground/80 flex items-center justify-between">
+              <span>
+                <kbd className="px-1 py-0.5 rounded bg-muted font-mono">␣</kbd> marca ·
+                <kbd className="px-1 py-0.5 rounded bg-muted font-mono ml-1">Enter</kbd> paga
+              </span>
+              <span>{filtered.length} parcela{filtered.length !== 1 ? "s" : ""}</span>
+            </div>
+          )}
         </div>
       </div>
     </>
