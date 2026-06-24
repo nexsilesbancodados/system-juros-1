@@ -163,12 +163,11 @@ const PortalCliente = () => {
     };
   }, [portalData]);
 
-  const doLogin = async (cleanCpf: string, pwd: string, silent = false) => {
+  const doLogin = async (cleanCpf: string, silent = false) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("portal_client_login_password" as never, {
+      const { data, error } = await supabase.rpc("portal_client_login_cpf" as never, {
         _cpf: cleanCpf,
-        _password: pwd,
       } as never);
 
       if (error) {
@@ -178,13 +177,13 @@ const PortalCliente = () => {
       }
 
       if (!data) {
-        if (!silent) toast({ title: "Acesso negado", description: "CPF ou senha inválidos.", variant: "destructive" });
+        if (!silent) toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, password: pwd }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf }));
       if (!silent) toast({ title: "Acesso autorizado!" });
     } catch (err) {
       if (!silent) toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
@@ -196,19 +195,19 @@ const PortalCliente = () => {
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11 || !password) {
-      toast({ title: "Informe CPF e senha", variant: "destructive" });
+    if (cleanCpf.length !== 11) {
+      toast({ title: "Informe um CPF válido", variant: "destructive" });
       return;
     }
-    await doLogin(cleanCpf, password);
+    await doLogin(cleanCpf);
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
     setPortalData(null);
     setCpf("");
-    setPassword("");
   };
+
 
 
   const openPayment = (inst: PortalInstallment) => {
