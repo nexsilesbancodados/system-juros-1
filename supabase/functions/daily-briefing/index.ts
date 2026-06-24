@@ -62,7 +62,25 @@ Deno.serve(async (req) => {
 
 Nome do usuário: ${profile?.name?.split(" ")[0] || "Operador"}`;
 
-    let briefing;
+    const firstName = profile?.name?.split(" ")[0] || "Operador";
+    const hour = today.getHours();
+    const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+    const fallbackBriefing = {
+      greeting: `${greet}, ${firstName}`,
+      summary: overdue.length > 0
+        ? `Você tem ${overdue.length} parcela(s) em atraso somando R$ ${overdueAmount.toFixed(2)}. Foco em recuperar hoje.`
+        : dueToday.length > 0
+        ? `${dueToday.length} parcela(s) vencem hoje (R$ ${dueTodayAmount.toFixed(2)}). Acompanhe os pagamentos.`
+        : `Nenhuma parcela atrasada. Próximos 7 dias: ${next7.length} parcela(s) (R$ ${next7Amount.toFixed(2)}).`,
+      priorities: [
+        overdue.length > 0 ? `Cobrar ${overdue.length} atrasos (prioridade: ${topOverdue[0]?.name || "—"})` : "Manter régua de comunicação ativa",
+        dueToday.length > 0 ? `Confirmar ${dueToday.length} vencimentos de hoje` : `Planejar próximos ${next7.length} vencimentos`,
+        "Revisar clientes inadimplentes na aba Cobranças",
+      ],
+      tone: (overdue.length > 0 ? "alerta" : dueToday.length > 0 ? "neutro" : "positivo") as "positivo" | "neutro" | "alerta",
+    };
+
+    let briefing = fallbackBriefing;
     try {
       briefing = await callAnthropicJSON({
         system: "Você é um assistente executivo de cobranças. Gere um briefing curto, motivador e prático em português brasileiro. Seja direto. Use 'você'. NÃO use markdown nem emojis em excesso (no máximo 1). Responda APENAS com JSON válido no formato: {\"greeting\": string, \"summary\": string, \"priorities\": string[2-3], \"tone\": \"positivo\"|\"neutro\"|\"alerta\"}",
@@ -71,8 +89,7 @@ Nome do usuário: ${profile?.name?.split(" ")[0] || "Operador"}`;
         temperature: 0.7,
       });
     } catch (err) {
-      console.error("Anthropic error", err);
-      return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.error("Anthropic error, using fallback:", err);
     }
 
     return new Response(JSON.stringify({
