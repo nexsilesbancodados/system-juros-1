@@ -476,7 +476,9 @@ const PortalCliente = () => {
         installment={selectedInstallment}
         ownerProfile={portalData?.owner || {}}
         clientData={portalData?.client || {}}
+        contactPhone={portalData?.branding?.portal_contact_phone || portalData?.client?.whatsapp || portalData?.client?.phone || null}
       />
+
     </main>
   );
 };
