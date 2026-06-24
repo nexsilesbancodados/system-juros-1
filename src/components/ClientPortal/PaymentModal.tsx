@@ -66,19 +66,27 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleNotifyPaid = () => {
+    const phone = (contactPhone || "").replace(/\D/g, "");
+    if (!phone) {
+      toast({ title: "Sem WhatsApp do credor", description: "Entre em contato pelos canais informados.", variant: "destructive" });
+      return;
+    }
+    const valor = Number(installment.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const venc = formatBR(installment.due_date);
+    const nome = clientData?.name || "Cliente";
+    const msg = `Olá! Sou *${nome}* e acabei de efetuar o pagamento da parcela #${installment.installment_number} no valor de *${valor}* (venc. ${venc}). Segue o comprovante a seguir 👇`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   const handleDownloadReceipt = async () => {
     setIsDownloading(true);
     try {
-      // Tenta gerar localmente primeiro para ser instantâneo
-      const { data: { user } } = await supabase.auth.getUser(); // Apenas para contexto se houver
-      
       const client = {
         name: clientData?.name || "Cliente",
         cpf_cnpj: clientData?.cpf_cnpj || "000.000.000-00"
       };
-      
       generatePortalReceiptPdf(client, installment, ownerProfile);
-      
       toast({ title: "Recibo gerado!", description: "O download do PDF foi iniciado." });
     } catch (err) {
       toast({ title: "Erro", description: "Não foi possível gerar o recibo agora.", variant: "destructive" });
@@ -86,6 +94,7 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
       setIsDownloading(false);
     }
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
