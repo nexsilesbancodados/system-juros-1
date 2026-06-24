@@ -22,7 +22,9 @@ interface PaymentModalProps {
   installment: any;
   ownerProfile: any;
   clientData: any;
+  contactPhone?: string | null;
 }
+
 
 export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, clientData }: PaymentModalProps) => {
   const { toast } = useToast();
