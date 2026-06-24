@@ -204,10 +204,11 @@ const Hoje = () => {
 
   const quickActions = [
     { label: "Novo cliente", Icon: UserPlus, to: "/clientes/novo", color: "from-primary/20 to-primary/5 text-primary border-primary/20" },
-    { label: "Novo empréstimo", Icon: FileText, to: "/contratos/novo", color: "from-amber-500/20 to-amber-500/5 text-amber-400 border-amber-500/20" },
-    { label: "Lançar despesa", Icon: Wallet, to: "/despesas", color: "from-destructive/20 to-destructive/5 text-destructive border-destructive/20" },
-    { label: "Lançar pagamento", Icon: DollarSign, to: "/cobrancas", color: "from-success/20 to-success/5 text-success border-success/20" },
+    { label: "Registrar pagamento", Icon: DollarSign, to: "/cobrancas", color: "from-success/20 to-success/5 text-success border-success/20" },
+    { label: "Lançar gasto", Icon: Wallet, to: "/gastos", color: "from-destructive/20 to-destructive/5 text-destructive border-destructive/20" },
+    { label: "Lançar lucro", Icon: TrendingUp, to: "/lucros", color: "from-amber-500/20 to-amber-500/5 text-amber-400 border-amber-500/20" },
   ];
+
 
   return (
     <section className="space-y-4" aria-labelledby="hoje-title">
