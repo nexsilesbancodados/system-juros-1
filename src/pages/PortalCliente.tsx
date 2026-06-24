@@ -89,28 +89,26 @@ const SESSION_KEY = "portal-cliente-session";
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
-  // Auto re-login from saved CPF/password on mount
+  // Auto re-login from saved CPF on mount
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
-      const { cpf: c, password: p } = JSON.parse(saved);
-      if (c && p) {
+      const { cpf: c } = JSON.parse(saved);
+      if (c) {
         setCpf(c);
-        setPassword(p);
-        void doLogin(c, p, true);
+        void doLogin(c, true);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // Realtime: when any installment of this client changes, refetch
   useEffect(() => {
@@ -124,7 +122,8 @@ const PortalCliente = () => {
         () => {
           const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
           if (cleanCpf) {
-            void doLogin(cleanCpf, "123456", true);
+            void doLogin(cleanCpf, true);
+
           }
         },
       )
@@ -164,12 +163,11 @@ const PortalCliente = () => {
     };
   }, [portalData]);
 
-  const doLogin = async (cleanCpf: string, pwd: string, silent = false) => {
+  const doLogin = async (cleanCpf: string, silent = false) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("portal_client_login_password" as never, {
+      const { data, error } = await supabase.rpc("portal_client_login_cpf" as never, {
         _cpf: cleanCpf,
-        _password: pwd,
       } as never);
 
       if (error) {
@@ -179,13 +177,13 @@ const PortalCliente = () => {
       }
 
       if (!data) {
-        if (!silent) toast({ title: "Acesso negado", description: "CPF ou senha inválidos.", variant: "destructive" });
+        if (!silent) toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, password: pwd }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf }));
       if (!silent) toast({ title: "Acesso autorizado!" });
     } catch (err) {
       if (!silent) toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
@@ -197,19 +195,19 @@ const PortalCliente = () => {
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11 || !password) {
-      toast({ title: "Informe CPF e senha", variant: "destructive" });
+    if (cleanCpf.length !== 11) {
+      toast({ title: "Informe um CPF válido", variant: "destructive" });
       return;
     }
-    await doLogin(cleanCpf, password);
+    await doLogin(cleanCpf);
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
     setPortalData(null);
     setCpf("");
-    setPassword("");
   };
+
 
 
   const openPayment = (inst: PortalInstallment) => {
@@ -273,28 +271,10 @@ const PortalCliente = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Senha</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••"
-                    required
-                    autoComplete="current-password"
-                    className="w-full rounded-xl border border-border bg-input px-4 py-4 pr-16 text-center text-lg tracking-widest text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary"
-                  >
-                    {showPassword ? "Ocultar" : "Ver"}
-                  </button>
-                </div>
-                <p className="ml-1 text-[10px] text-muted-foreground">Senha padrão: <span className="font-mono font-bold text-foreground">123456</span></p>
-              </div>
+              <p className="ml-1 text-center text-[11px] text-muted-foreground">
+                Acesse informando apenas seu CPF.
+              </p>
+
 
               <Button type="submit" disabled={loading} className="w-full rounded-xl py-7 text-lg font-bold shadow-premium">
                 {loading ? <Clock className="mr-2 animate-spin" /> : <ArrowRight className="mr-2" />}
