@@ -184,11 +184,31 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                   </div>
                 </div>
               </div>
-              
+
+              <Button
+                onClick={handleCopyPix}
+                disabled={!pixPayload && !ownerProfile?.pix_key}
+                className="w-full rounded-xl py-6 text-base font-bold shadow-lg gap-2"
+              >
+                {copied ? <Check size={18} /> : <Copy size={18} />}
+                {copied ? "Código copiado!" : "Copiar código PIX"}
+              </Button>
+
+              {contactPhone && (
+                <Button
+                  onClick={handleNotifyPaid}
+                  variant="outline"
+                  className="w-full rounded-xl py-6 text-base font-semibold gap-2 border-success/40 text-success hover:bg-success/10 hover:text-success"
+                >
+                  <MessageCircle size={18} />
+                  Já paguei — avisar credor no WhatsApp
+                </Button>
+              )}
+
               <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                 <Info size={14} className="text-primary shrink-0" />
                 <p className="text-[10px] text-primary/80 leading-snug">
-                  Após realizar o pagamento, o sistema pode levar até 24h para processar a baixa automática se usar chave manual.
+                  Após o pagamento, envie o comprovante ao credor para a baixa ser confirmada mais rápido.
                 </p>
               </div>
             </div>
@@ -204,27 +224,14 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="rounded-xl gap-2 h-11" onClick={handleDownloadReceipt} disabled={isDownloading}>
-                  {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  Recibo
-                </Button>
-                <Button variant="outline" className="rounded-xl gap-2 h-11">
-                  <Share2 size={16} />
-                  Compartilhar
-                </Button>
-              </div>
+              <Button onClick={handleDownloadReceipt} disabled={isDownloading} className="w-full rounded-xl py-6 text-base font-bold gap-2">
+                {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                Baixar recibo em PDF
+              </Button>
             </div>
           )}
         </div>
 
-        {!isPaid && (
-          <DialogFooter className="p-4 bg-accent/20 border-t border-border sm:justify-center">
-            <Button className="w-full rounded-xl py-6 font-bold shadow-lg" onClick={() => onOpenChange(false)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        )}
       </DialogContent>
     </Dialog>
   );
