@@ -423,7 +423,7 @@ const Hoje = () => {
                 <span className="w-5 h-5 rounded-full bg-destructive/15 text-destructive text-xs font-bold flex items-center justify-center shrink-0">{idx+1}</span>
                 <button onClick={() => navigate(`/clientes/${d.id}`)} className="flex-1 min-w-0 text-left">
                   <p className="text-xs font-semibold text-foreground truncate">{d.name}</p>
-                  <p className="text-xs text-muted-foreground">{d.count} parc · R$ {fmtBRL(d.total)}</p>
+                  <p className="text-xs text-muted-foreground">{d.count} parcelas · R$ {fmtBRL(d.total)}</p>
                 </button>
                 <button
                   onClick={() => sendWhats(d.whatsapp || d.phone, d.name, `Olá ${d.name}, identificamos parcelas em atraso totalizando R$ ${fmtBRL(d.total)}. Podemos regularizar?`)}
