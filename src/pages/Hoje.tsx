@@ -222,7 +222,7 @@ const Hoje = () => {
       {/* Header compacto */}
       <header className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-card/60 to-card px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5 truncate">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5 truncate">
             <Sunrise size={11} aria-hidden="true" />
             <span className="hidden sm:inline">{new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</span>
             <span className="sm:hidden">{new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}</span>
@@ -230,7 +230,7 @@ const Hoje = () => {
           <h1 id="hoje-title" className="text-base sm:text-xl font-bold text-foreground leading-tight truncate">
             {greeting} <span aria-hidden="true">👋</span>
           </h1>
-          <p className="text-[11px] text-muted-foreground" aria-live="polite">
+          <p className="text-xs text-muted-foreground" aria-live="polite">
             {totals.dueTodayCount === 0 && totals.overdueCount === 0
               ? "Sem cobranças pendentes hoje."
               : `${totals.dueTodayCount} hoje · ${totals.overdueCount} em atraso`}
@@ -254,7 +254,7 @@ const Hoje = () => {
             className={`group rounded-xl border bg-gradient-to-br ${a.color} px-2.5 sm:px-3 py-2 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 hover:scale-[1.01] transition-transform`}
           >
             <a.Icon size={15} className="shrink-0" />
-            <span className="text-[11px] sm:text-xs font-bold text-foreground truncate text-left">{a.label}</span>
+            <span className="text-xs sm:text-xs font-bold text-foreground truncate text-left">{a.label}</span>
           </button>
         ))}
       </nav>
@@ -263,18 +263,18 @@ const Hoje = () => {
       {/* KPIs compactos: 4 colunas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2" role="list" aria-label="Indicadores">
         {[
-          { label: "Vencendo hoje", value: `R$ ${fmtBRL(totals.dueToday)}`, sub: `${totals.dueTodayCount} parc.`, color: "text-primary", bg: "bg-primary/5 border-primary/15", Icon: Clock },
-          { label: "Em atraso", value: `R$ ${fmtBRL(totals.overdue)}`, sub: `${totals.overdueCount} parc.`, color: "text-destructive", bg: "bg-destructive/5 border-destructive/15", Icon: AlertCircle },
+          { label: "Vencendo hoje", value: `R$ ${fmtBRL(totals.dueToday)}`, sub: `${totals.dueTodayCount} parcelas`, color: "text-primary", bg: "bg-primary/5 border-primary/15", Icon: Clock },
+          { label: "Em atraso", value: `R$ ${fmtBRL(totals.overdue)}`, sub: `${totals.overdueCount} parcelas`, color: "text-destructive", bg: "bg-destructive/5 border-destructive/15", Icon: AlertCircle },
           { label: "Lucro hoje", value: `R$ ${fmtBRL(data?.profitToday || 0)}`, sub: "registrado", color: "text-success", bg: "bg-success/5 border-success/15", Icon: TrendingUp },
           { label: "A receber no mês", value: `R$ ${fmtBRL(data?.aReceberMonth || 0)}`, sub: "pendente", color: "text-amber-400", bg: "bg-amber-500/5 border-amber-500/15", Icon: CalendarDays },
         ].map(k => (
           <div key={k.label} role="listitem" className={`rounded-xl border px-3 py-2 ${k.bg}`}>
             <div className="flex items-center justify-between mb-0.5">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold truncate">{k.label}</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold truncate">{k.label}</p>
               <k.Icon size={12} className={k.color} aria-hidden="true" />
             </div>
             <p className={`text-sm sm:text-base font-bold ${k.color} truncate`}>{k.value}</p>
-            <p className="text-[9px] text-muted-foreground truncate">{k.sub}</p>
+            <p className="text-xs text-muted-foreground truncate">{k.sub}</p>
           </div>
         ))}
       </div>
@@ -287,10 +287,10 @@ const Hoje = () => {
           className="lg:col-span-2 rounded-2xl border border-border/40 bg-card/60 overflow-hidden"
         >
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 id="hoje-cobrancas-title" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 id="hoje-cobrancas-title" className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Receipt size={12} className="text-primary" /> Cobranças prioritárias
             </h2>
-            <button onClick={() => navigate("/cobrancas")} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+            <button onClick={() => navigate("/cobrancas")} className="text-xs text-primary hover:underline flex items-center gap-1">
               Ver todas <ArrowRight size={10} />
             </button>
           </div>
@@ -313,13 +313,13 @@ const Hoje = () => {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <p className="text-xs font-semibold text-foreground truncate">{clientName}</p>
                       {isOverdue && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-bold">{daysLate}d</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-bold">{daysLate}d</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       Parc {inst.installment_number} · {fmtTime(inst.due_date)}
                       {inst.contract_id && (
-                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[9px]" title={`Contrato ${inst.contract_id}`}>
+                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-xs" title={`Contrato ${inst.contract_id}`}>
                           #{String(inst.contract_id).slice(0, 6)}
                         </span>
                       )}
@@ -337,7 +337,7 @@ const Hoje = () => {
                     <button
                       onClick={() => markPaid(inst.id, amount)}
                       disabled={savingId === inst.id}
-                      className="min-h-8 px-2 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1"
+                      className="min-h-8 px-2 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1"
                     >
                       {savingId === inst.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
                       <span className="hidden sm:inline">Pagar</span>
@@ -352,14 +352,14 @@ const Hoje = () => {
         <aside className="space-y-3" aria-label="Tarefas e alertas">
           <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
             <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-              <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <ListTodo size={12} className="text-amber-400" /> Tarefas
               </h2>
-              <button onClick={() => navigate("/ferramentas/tarefas")} className="text-[10px] text-primary hover:underline">Ver tudo</button>
+              <button onClick={() => navigate("/ferramentas/tarefas")} className="text-xs text-primary hover:underline">Ver tudo</button>
             </div>
             <ul className="divide-y divide-border/20 max-h-48 overflow-y-auto">
               {data?.todos.length === 0 && (
-                <li className="px-3 py-5 text-[11px] text-muted-foreground text-center list-none">Nenhuma tarefa</li>
+                <li className="px-3 py-5 text-xs text-muted-foreground text-center list-none">Nenhuma tarefa</li>
               )}
               {data?.todos.map((t: any) => (
                 <li key={t.id}>
@@ -368,7 +368,7 @@ const Hoje = () => {
                     className="w-full px-3 py-2 flex items-start gap-2 hover:bg-accent/20 transition-colors text-left"
                   >
                     <div className="w-3.5 h-3.5 mt-0.5 rounded border-2 border-border shrink-0" />
-                    <p className="text-[11px] text-foreground flex-1 leading-snug">{t.task}</p>
+                    <p className="text-xs text-foreground flex-1 leading-snug">{t.task}</p>
                   </button>
                 </li>
               ))}
@@ -378,18 +378,18 @@ const Hoje = () => {
           {data?.promises && data.promises.length > 0 && (
             <section className="rounded-2xl border border-primary/20 bg-primary/5 overflow-hidden">
               <div className="px-3 py-2 border-b border-primary/20">
-                <h2 className="text-xs font-bold text-primary flex items-center gap-1.5">
+                <h2 className="text-sm font-bold text-primary flex items-center gap-1.5">
                   <Sparkles size={12} /> Promessas IA
                 </h2>
               </div>
               <ul className="divide-y divide-primary/10">
                 {data.promises.map((p: any) => (
                   <li key={p.id} className="px-3 py-2">
-                    <p className="text-[11px] font-bold text-foreground">{p.client}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-1 italic">"{p.msg}"</p>
+                    <p className="text-xs font-bold text-foreground">{p.client}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1 italic">"{p.msg}"</p>
                     <div className="mt-0.5 flex items-center gap-1">
                       <Clock size={9} className="text-primary" />
-                      <span className="text-[10px] font-bold text-primary">{p.date ? formatBR(p.date) : '??'}</span>
+                      <span className="text-xs font-bold text-primary">{p.date ? formatBR(p.date) : '??'}</span>
                     </div>
                   </li>
                 ))}
@@ -410,20 +410,20 @@ const Hoje = () => {
         {/* Top 5 devedores */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Flame size={12} className="text-destructive" /> Top devedores
             </h2>
           </div>
           <ul className="divide-y divide-border/20 max-h-72 overflow-y-auto">
             {(data?.topDebtors || []).length === 0 && (
-              <li className="px-3 py-5 text-[11px] text-muted-foreground text-center list-none">Sem atrasos 🎉</li>
+              <li className="px-3 py-5 text-xs text-muted-foreground text-center list-none">Sem atrasos 🎉</li>
             )}
             {(data?.topDebtors || []).map((d, idx) => (
               <li key={d.id} className="px-3 py-2 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-destructive/15 text-destructive text-[10px] font-bold flex items-center justify-center shrink-0">{idx+1}</span>
+                <span className="w-5 h-5 rounded-full bg-destructive/15 text-destructive text-xs font-bold flex items-center justify-center shrink-0">{idx+1}</span>
                 <button onClick={() => navigate(`/clientes/${d.id}`)} className="flex-1 min-w-0 text-left">
-                  <p className="text-[11px] font-semibold text-foreground truncate">{d.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{d.count} parc · R$ {fmtBRL(d.total)}</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{d.name}</p>
+                  <p className="text-xs text-muted-foreground">{d.count} parcelas · R$ {fmtBRL(d.total)}</p>
                 </button>
                 <button
                   onClick={() => sendWhats(d.whatsapp || d.phone, d.name, `Olá ${d.name}, identificamos parcelas em atraso totalizando R$ ${fmtBRL(d.total)}. Podemos regularizar?`)}
@@ -439,22 +439,22 @@ const Hoje = () => {
         {/* Agenda 7 dias */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <CalendarDays size={12} className="text-primary" /> Agenda 7 dias
             </h2>
-            <button onClick={() => navigate("/cobrancas")} className="text-[10px] text-primary hover:underline">Ver</button>
+            <button onClick={() => navigate("/cobrancas")} className="text-xs text-primary hover:underline">Ver</button>
           </div>
           <ul className="divide-y divide-border/20 max-h-72 overflow-y-auto">
             {(data?.agenda || []).length === 0 && (
-              <li className="px-3 py-5 text-[11px] text-muted-foreground text-center list-none">Sem vencimentos</li>
+              <li className="px-3 py-5 text-xs text-muted-foreground text-center list-none">Sem vencimentos</li>
             )}
             {(data?.agenda || []).map(d => (
               <li key={d.date} className="px-3 py-2 flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-foreground capitalize">{fmtDayLabel(d.date)}</p>
-                  <p className="text-[10px] text-muted-foreground">{d.items.length} parcela{d.items.length !== 1 ? "s" : ""}</p>
+                  <p className="text-xs font-bold text-foreground capitalize">{fmtDayLabel(d.date)}</p>
+                  <p className="text-xs text-muted-foreground">{d.items.length} parcela{d.items.length !== 1 ? "s" : ""}</p>
                 </div>
-                <p className="text-[11px] font-bold text-primary shrink-0">R$ {fmtBRL(d.total)}</p>
+                <p className="text-xs font-bold text-primary shrink-0">R$ {fmtBRL(d.total)}</p>
               </li>
             ))}
           </ul>
@@ -463,20 +463,20 @@ const Hoje = () => {
         {/* Aniversariantes */}
         <section className="rounded-2xl border border-pink-500/20 bg-pink-500/5 overflow-hidden">
           <div className="px-3 py-2 border-b border-pink-500/20 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-pink-400 flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-pink-400 flex items-center gap-1.5">
               <Cake size={12} /> Aniversariantes
             </h2>
           </div>
           <ul className="divide-y divide-pink-500/10 max-h-72 overflow-y-auto">
             {(data?.birthdays || []).length === 0 && (
-              <li className="px-3 py-5 text-[11px] text-muted-foreground text-center list-none">Ninguém faz aniversário hoje</li>
+              <li className="px-3 py-5 text-xs text-muted-foreground text-center list-none">Ninguém faz aniversário hoje</li>
             )}
             {(data?.birthdays || []).map((c: any) => (
               <li key={c.id} className="px-3 py-2 flex items-center gap-2">
                 <span className="text-base" aria-hidden>🎂</span>
                 <button onClick={() => navigate(`/clientes/${c.id}`)} className="flex-1 min-w-0 text-left">
-                  <p className="text-[11px] font-semibold text-foreground truncate">{c.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatBR(c.birth_date)}</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatBR(c.birth_date)}</p>
                 </button>
                 <button
                   onClick={() => sendWhats(c.whatsapp || c.phone, c.name, `Feliz aniversário, ${c.name}! 🎉 Tudo de bom para você hoje.`)}
@@ -492,33 +492,33 @@ const Hoje = () => {
         {/* Resumo financeiro + últimos pagamentos */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <History size={12} className="text-success" /> Resumo do mês
             </h2>
-            <button onClick={() => navigate("/financeiro")} className="text-[10px] text-primary hover:underline">Ver</button>
+            <button onClick={() => navigate("/financeiro")} className="text-xs text-primary hover:underline">Ver</button>
           </div>
           <div className="px-3 py-2 grid grid-cols-2 gap-2 border-b border-border/20">
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Lucro</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Lucro</p>
               <p className="text-sm font-bold text-success">R$ {fmtBRL(data?.profitMonth || 0)}</p>
             </div>
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">A receber</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">A receber</p>
               <p className="text-sm font-bold text-amber-400">R$ {fmtBRL(data?.aReceberMonth || 0)}</p>
             </div>
           </div>
           <ul className="divide-y divide-border/20 flex-1 overflow-y-auto">
-            <li className="px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-muted-foreground font-bold list-none">Últimos pagamentos</li>
+            <li className="px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-muted-foreground font-bold list-none">Últimos pagamentos</li>
             {(data?.paidRecent || []).length === 0 && (
-              <li className="px-3 py-3 text-[11px] text-muted-foreground text-center list-none">Nenhum recebimento</li>
+              <li className="px-3 py-3 text-xs text-muted-foreground text-center list-none">Nenhum recebimento</li>
             )}
             {(data?.paidRecent || []).map((p: any) => (
               <li key={p.id} className="px-3 py-1.5 flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-foreground truncate">{p.clients?.name || "Cliente"}</p>
-                  <p className="text-[10px] text-muted-foreground">{fmtTime(p.paid_at)}</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{p.clients?.name || "Cliente"}</p>
+                  <p className="text-xs text-muted-foreground">{fmtTime(p.paid_at)}</p>
                 </div>
-                <p className="text-[11px] font-bold text-success shrink-0">+ R$ {fmtBRL(Number(p.paid_amount || 0))}</p>
+                <p className="text-xs font-bold text-success shrink-0">+ R$ {fmtBRL(Number(p.paid_amount || 0))}</p>
               </li>
             ))}
           </ul>
