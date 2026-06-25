@@ -287,7 +287,7 @@ const Hoje = () => {
           className="lg:col-span-2 rounded-2xl border border-border/40 bg-card/60 overflow-hidden"
         >
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 id="hoje-cobrancas-title" className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 id="hoje-cobrancas-title" className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Receipt size={12} className="text-primary" /> Cobranças prioritárias
             </h2>
             <button onClick={() => navigate("/cobrancas")} className="text-xs text-primary hover:underline flex items-center gap-1">
@@ -352,7 +352,7 @@ const Hoje = () => {
         <aside className="space-y-3" aria-label="Tarefas e alertas">
           <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
             <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-              <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <ListTodo size={12} className="text-amber-400" /> Tarefas
               </h2>
               <button onClick={() => navigate("/ferramentas/tarefas")} className="text-xs text-primary hover:underline">Ver tudo</button>
@@ -378,7 +378,7 @@ const Hoje = () => {
           {data?.promises && data.promises.length > 0 && (
             <section className="rounded-2xl border border-primary/20 bg-primary/5 overflow-hidden">
               <div className="px-3 py-2 border-b border-primary/20">
-                <h2 className="text-xs font-bold text-primary flex items-center gap-1.5">
+                <h2 className="text-sm font-bold text-primary flex items-center gap-1.5">
                   <Sparkles size={12} /> Promessas IA
                 </h2>
               </div>
@@ -410,7 +410,7 @@ const Hoje = () => {
         {/* Top 5 devedores */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Flame size={12} className="text-destructive" /> Top devedores
             </h2>
           </div>
@@ -439,7 +439,7 @@ const Hoje = () => {
         {/* Agenda 7 dias */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <CalendarDays size={12} className="text-primary" /> Agenda 7 dias
             </h2>
             <button onClick={() => navigate("/cobrancas")} className="text-xs text-primary hover:underline">Ver</button>
@@ -463,7 +463,7 @@ const Hoje = () => {
         {/* Aniversariantes */}
         <section className="rounded-2xl border border-pink-500/20 bg-pink-500/5 overflow-hidden">
           <div className="px-3 py-2 border-b border-pink-500/20 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-pink-400 flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-pink-400 flex items-center gap-1.5">
               <Cake size={12} /> Aniversariantes
             </h2>
           </div>
@@ -492,7 +492,7 @@ const Hoje = () => {
         {/* Resumo financeiro + últimos pagamentos */}
         <section className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <History size={12} className="text-success" /> Resumo do mês
             </h2>
             <button onClick={() => navigate("/financeiro")} className="text-xs text-primary hover:underline">Ver</button>
