@@ -263,8 +263,8 @@ const Hoje = () => {
       {/* KPIs compactos: 4 colunas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2" role="list" aria-label="Indicadores">
         {[
-          { label: "Vencendo hoje", value: `R$ ${fmtBRL(totals.dueToday)}`, sub: `${totals.dueTodayCount} parc.`, color: "text-primary", bg: "bg-primary/5 border-primary/15", Icon: Clock },
-          { label: "Em atraso", value: `R$ ${fmtBRL(totals.overdue)}`, sub: `${totals.overdueCount} parc.`, color: "text-destructive", bg: "bg-destructive/5 border-destructive/15", Icon: AlertCircle },
+          { label: "Vencendo hoje", value: `R$ ${fmtBRL(totals.dueToday)}`, sub: `${totals.dueTodayCount} parcelas`, color: "text-primary", bg: "bg-primary/5 border-primary/15", Icon: Clock },
+          { label: "Em atraso", value: `R$ ${fmtBRL(totals.overdue)}`, sub: `${totals.overdueCount} parcelas`, color: "text-destructive", bg: "bg-destructive/5 border-destructive/15", Icon: AlertCircle },
           { label: "Lucro hoje", value: `R$ ${fmtBRL(data?.profitToday || 0)}`, sub: "registrado", color: "text-success", bg: "bg-success/5 border-success/15", Icon: TrendingUp },
           { label: "A receber no mês", value: `R$ ${fmtBRL(data?.aReceberMonth || 0)}`, sub: "pendente", color: "text-amber-400", bg: "bg-amber-500/5 border-amber-500/15", Icon: CalendarDays },
         ].map(k => (
