@@ -14,7 +14,18 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PredictiveAnalytics } from "@/components/analises/PredictiveAnalytics";
+
+type DetailColumn = { label: string; key: string; align?: "left" | "right"; format?: (v: any, row: any) => string };
+type DetailPayload = {
+  title: string;
+  criteria: string;
+  total?: string;
+  count?: number;
+  columns: DetailColumn[];
+  rows: any[];
+} | null;
 
 type PresetKey = "hoje" | "ontem" | "7d" | "30d" | "mes" | "3m" | "6m" | "12m" | "custom";
 
