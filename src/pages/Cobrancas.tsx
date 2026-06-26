@@ -244,33 +244,44 @@ const Cobrancas = () => {
     });
   };
 
-  const buildMessage = (inst: any) => {
+  const buildMessage = (inst: any, opts: { includePix?: boolean } = {}) => {
     const portalUrl = `${window.location.origin}/portal-cliente`;
     const total = inst.contracts?.num_installments || inst.total_installments || "";
     const parcelaInfo = total ? `${inst.installment_number} de ${total}` : `${inst.installment_number}`;
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
-    return billingTemplate
+    let base = billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
       .replace(/\{portal\}|\[Portal\]/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
+    const pix = (profile as any)?.pix_key;
+    if (opts.includePix && pix && !/PIX/i.test(base)) {
+      base += `\n\n💸 Pague via PIX:\nChave: ${pix}\nValor: R$ ${Number(inst.amount).toFixed(2)}`;
+    }
+    return base;
   };
 
-  const handleWhatsApp = (inst: any) => {
+  const handleWhatsApp = (inst: any, opts: { withPix?: boolean } = {}) => {
     if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
     const phone = inst.client_phone.replace(/\D/g, "");
-    const message = buildMessage(inst);
+    const withPix = opts.withPix ?? !!(profile as any)?.pix_key;
+    const message = buildMessage(inst, { includePix: withPix });
+    if (withPix && (profile as any)?.pix_key) {
+      navigator.clipboard?.writeText((profile as any).pix_key).catch(() => {});
+    }
     window.open(`https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`, "_blank");
+    logAttempt(inst, "whatsapp", message);
   };
 
   const handleEmail = (inst: any) => {
     if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
     const totalSub = inst.contracts?.num_installments;
     const subject = `Cobrança - Parcela ${inst.installment_number}${totalSub ? ` de ${totalSub}` : ""}`;
-    const body = buildMessage(inst);
+    const body = buildMessage(inst, { includePix: true });
     window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+    logAttempt(inst, "email", body);
   };
 
   const handleSMS = (inst: any) => {
@@ -278,6 +289,7 @@ const Cobrancas = () => {
     const phone = inst.client_phone.replace(/\D/g, "");
     const message = buildMessage(inst);
     window.open(`sms:${phone.startsWith("55") ? "+" + phone : "+55" + phone}?body=${encodeURIComponent(message)}`, "_blank");
+    logAttempt(inst, "sms", message);
   };
 
   const toggleSelect = (id: string) => {
