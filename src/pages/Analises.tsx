@@ -192,8 +192,6 @@ const Analises = () => {
   const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState<Date>(new Date());
   const [detail, setDetail] = useState<DetailPayload>(null);
-  const open = (key: string) => setDetail((m as any)?.details?.[key] || null);
-  const openFreq = (key: string) => setDetail((m as any)?.freqDetails?.[key] || null);
 
   const handlePreset = (key: PresetKey) => {
     setActivePreset(key);
