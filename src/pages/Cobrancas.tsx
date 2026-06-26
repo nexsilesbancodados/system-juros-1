@@ -391,7 +391,7 @@ const Cobrancas = () => {
     else if (sort === "amount_asc") arr = [...arr].sort((a, b) => Number(a.amount) - Number(b.amount));
     else if (sort === "overdue_days") arr = [...arr].sort((a, b) => overdueDays(b) - overdueDays(a));
     return arr;
-  }, [installments, filter, period, sort, dSearch, focoDia]);
+  }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
