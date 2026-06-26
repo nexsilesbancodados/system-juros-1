@@ -62,6 +62,8 @@ const Cobrancas = () => {
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
+  const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
+  const [historyFor, setHistoryFor] = useState<{ installmentId: string; clientName: string } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard "/" focus
