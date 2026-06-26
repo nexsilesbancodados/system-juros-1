@@ -58,6 +58,9 @@ const Cobrancas = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [view, setView] = useState<"list" | "calendar">("list");
   const [cobrarAteOpen, setCobrarAteOpen] = useState(false);
+  const [bulkPreview, setBulkPreview] = useState<null | { groups: { clientId: string; clientName: string; phone: string; message: string; items: any[] }[]; skipped: number; totalItems: number }>(null);
+  const [bulkSending, setBulkSending] = useState(false);
+  const [previewEditIdx, setPreviewEditIdx] = useState<number | null>(null);
   const todayISO = new Date().toISOString().slice(0, 10);
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
