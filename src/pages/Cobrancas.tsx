@@ -579,9 +579,6 @@ const Cobrancas = () => {
             <button onClick={() => handleBulk("email")} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 flex items-center gap-1.5">
               <Mail size={13} /> E-mail
             </button>
-            <button onClick={() => handleBulk("sms")} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-warning/15 hover:bg-warning/25 text-warning border border-warning/30 flex items-center gap-1.5">
-              <Send size={13} /> SMS
-            </button>
             <button onClick={() => setBulkPayOpen(true)} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-foreground text-background hover:opacity-90 flex items-center gap-1.5">
               <Zap size={13} /> Marcar como pagas
             </button>
