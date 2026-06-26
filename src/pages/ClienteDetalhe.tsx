@@ -1279,12 +1279,26 @@ const ClienteDetalhe = () => {
           </button>
           {contracts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum contrato</p>
-          ) : contracts.map((c: any) => (
+          ) : contracts.map((c: any) => {
+            const cInsts = installments.filter((i: any) => i.contract_id === c.id);
+            const total = cInsts.length;
+            const paid = cInsts.filter((i: any) => i.status === "paid").length;
+            const overdue = cInsts.filter((i: any) => i.status === "overdue").length;
+            const isPaid = total > 0 && paid === total;
+            const status = isPaid
+              ? { label: "Quitado", cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" }
+              : overdue > 0
+              ? { label: `${overdue} em atraso`, cls: "bg-destructive/15 text-destructive border-destructive/30" }
+              : { label: `${paid}/${total} pagas`, cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+            return (
             <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-                  <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
-                  <p className="text-xs text-muted-foreground">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${status.cls}`}>{status.label}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
                 </div>
                 <div className="text-right cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
                   <p className="text-xs text-muted-foreground">{formatBR(c.start_date)}</p>
