@@ -1436,6 +1436,20 @@ const ClienteDetalhe = () => {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
+                    onClick={(e) => { e.stopPropagation(); exportContractPDF(c); }}
+                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    title="Exportar contrato em PDF"
+                  >
+                    <Download size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); sendContractWhatsApp(c); }}
+                    className="p-2 rounded-lg hover:bg-emerald-500/10 text-emerald-500/80 hover:text-emerald-500 transition-colors shrink-0"
+                    title="Enviar contrato por WhatsApp"
+                  >
+                    <MessageSquare size={14} />
+                  </button>
+                  <button
                     onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
                     className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
                     title="Editar empréstimo"
