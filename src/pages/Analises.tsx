@@ -370,6 +370,13 @@ const Analises = () => {
     const contractTag = (cid: string) => cid ? `#${String(cid).slice(0, 6)}` : "—";
     const daysLate = (due: string) => Math.max(0, Math.floor((now.getTime() - new Date(due).getTime()) / 86400000));
 
+    const decorateInst = (i: any) => ({ ...i, _client: clientName(i.client_id), _contract: contractTag(i.contract_id), _days: daysLate(i.due_date), _paid: Number(i.paid_amount || i.amount || 0) });
+    const decorateContract = (c: any) => {
+      const total = Number(c.total_amount || 0);
+      const cap = Number(c.capital || 0);
+      return { ...c, _client: clientName(c.client_id), _contract: contractTag(c.id), _total: total, _lucro: Math.max(0, total - cap) };
+    };
+
     const instCols: DetailColumn[] = [
       { label: "Cliente", key: "_client" },
       { label: "Contrato", key: "_contract" },
@@ -401,12 +408,6 @@ const Analises = () => {
       { label: "Parcelas", key: "num_installments", align: "right" },
       { label: "Criado", key: "created_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
     ];
-    const decorateInst = (i: any) => ({ ...i, _client: clientName(i.client_id), _contract: contractTag(i.contract_id), _days: daysLate(i.due_date), _paid: Number(i.paid_amount || i.amount || 0) });
-    const decorateContract = (c: any) => {
-      const total = Number(c.total_amount || 0);
-      const cap = Number(c.capital || 0);
-      return { ...c, _client: clientName(c.client_id), _contract: contractTag(c.id), _total: total, _lucro: Math.max(0, total - cap) };
-    };
 
     const overdueRows = overdueAll.map(decorateInst).sort((a: any, b: any) => b._days - a._days);
     const paidRows = paidInRange.map(decorateInst).sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime());
