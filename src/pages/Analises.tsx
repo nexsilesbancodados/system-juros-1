@@ -26,11 +26,14 @@ const tooltipStyle = {
   color: "hsl(var(--foreground))",
 };
 
-type PresetKey = "7d" | "30d" | "3m" | "6m" | "12m" | "custom";
+type PresetKey = "hoje" | "ontem" | "7d" | "30d" | "mes" | "3m" | "6m" | "12m" | "custom";
 
 const presets: { key: PresetKey; label: string }[] = [
+  { key: "hoje", label: "Hoje" },
+  { key: "ontem", label: "Ontem" },
   { key: "7d", label: "7 dias" },
   { key: "30d", label: "30 dias" },
+  { key: "mes", label: "Este mês" },
   { key: "3m", label: "3 meses" },
   { key: "6m", label: "6 meses" },
   { key: "12m", label: "12 meses" },
@@ -40,8 +43,11 @@ const presets: { key: PresetKey; label: string }[] = [
 function getPresetRange(key: PresetKey): { from: Date; to: Date } {
   const now = new Date();
   switch (key) {
+    case "hoje": return { from: startOfDay(now), to: endOfDay(now) };
+    case "ontem": { const y = subDays(now, 1); return { from: startOfDay(y), to: endOfDay(y) }; }
     case "7d": return { from: subDays(now, 7), to: now };
     case "30d": return { from: subDays(now, 30), to: now };
+    case "mes": return { from: startOfMonth(now), to: endOfMonth(now) };
     case "3m": return { from: subMonths(now, 3), to: now };
     case "6m": return { from: subMonths(now, 6), to: now };
     case "12m": return { from: subMonths(now, 12), to: now };
