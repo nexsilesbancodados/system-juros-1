@@ -320,10 +320,7 @@ const Cobrancas = () => {
     const pixBlock = pix
       ? `\n\n💸 *Pague via PIX*\nChave (${pixType || "PIX"}): *${pix}*\nValor total: *R$ ${fmt(total)}*\n_(a chave já foi copiada para sua área de transferência)_`
       : "";
-    return `Olá ${clientName}, tudo bem? 👋\n\nIdentifiquei ${items.length} parcela${items.length > 1 ? "s" : ""} pendente${items.length > 1 ? "s" : ""} totalizando *R$ ${fmt(total)}*:\n\n${lines}${pixBlock}\n\nQualquer dúvida estou à disposição. Obrigado! 🙏\n\nPortal: ${portalUrl}`;
-  };
-
-  const handleBulk = (channel: "whatsapp" | "email" | "sms") => {
+  const handleBulk = (channel: "whatsapp" | "email") => {
     let items = getSelectedItems().filter((i: any) => i.status !== "paid");
     if (!items.length) {
       const overdue = filtered.filter((i: any) => i.status === "overdue");
@@ -363,20 +360,17 @@ const Cobrancas = () => {
 
     let opened = 0, skipped = 0;
     items.forEach((inst: any, idx: number) => {
-      const hasContact = channel === "email" ? !!inst.client_email : !!inst.client_phone;
-      if (!hasContact) { skipped++; return; }
-      setTimeout(() => {
-        if (channel === "email") handleEmail(inst);
-        else handleSMS(inst);
-      }, idx * 350);
+      if (!inst.client_email) { skipped++; return; }
+      setTimeout(() => handleEmail(inst), idx * 350);
       opened++;
     });
     toast({
-      title: `Enviando ${opened} cobrança(s) por ${channel === "email" ? "E-mail" : "SMS"}`,
+      title: `Enviando ${opened} cobrança(s) por E-mail`,
       description: skipped > 0 ? `${skipped} cliente(s) sem contato e foram ignorados.` : undefined,
     });
     setSelected(new Set());
   };
+
 
   const confirmBulkPreview = async () => {
     if (!bulkPreview) return;
