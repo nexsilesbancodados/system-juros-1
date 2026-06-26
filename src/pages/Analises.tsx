@@ -218,7 +218,63 @@ const Analises = () => {
     const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
     const totalCapital = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
     const totalReceived = filteredPaidInstallments.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
+    const totalLent = filteredContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
     const inadRate = filteredInstallments.length > 0 ? (overdue / filteredInstallments.length) * 100 : 0;
+
+    // Overdue (sempre — saldo atual, não filtrado por range)
+    const overdueAllNow = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
+    const overdueAllNowAmount = overdueAllNow.reduce((s: number, i: any) => s + Number(i.amount), 0);
+
+    // Lucro estimado (juros) recebidos no período = paid_amount - principal proporcional
+    const lucroPeriodo = filteredPaidInstallments.reduce((s: number, i: any) => {
+      const c = contracts.find((c: any) => c.id === i.contract_id);
+      if (!c || !c.num_installments) return s + 0;
+      const principalParcela = Number(c.capital) / Number(c.num_installments);
+      const recebido = Number(i.paid_amount || i.amount);
+      return s + Math.max(0, recebido - principalParcela);
+    }, 0);
+
+    // Contratos quitados no período (todas parcelas pagas e última paga no range)
+    const contratosQuitados = contracts.filter((c: any) => {
+      const insts = installments.filter((i: any) => i.contract_id === c.id);
+      if (insts.length === 0) return false;
+      if (insts.some((i: any) => i.status !== "paid")) return false;
+      const lastPaid = insts
+        .map((i: any) => i.paid_at ? new Date(i.paid_at).getTime() : 0)
+        .reduce((a: number, b: number) => Math.max(a, b), 0);
+      return lastPaid >= rangeStart.getTime() && lastPaid <= rangeEnd.getTime();
+    }).length;
+
+    // Novos clientes no período
+    const novosClientes = clients.filter((c: any) => {
+      if (!c.created_at) return false;
+      const d = new Date(c.created_at);
+      return d >= rangeStart && d <= rangeEnd;
+    }).length;
+
+    // Ticket médio dos contratos do período
+    const ticketMedio = filteredContracts.length > 0 ? totalLent / filteredContracts.length : 0;
+
+    // Taxa de cobrança no período: pagas / (pagas + vencidas no range)
+    const pagasRange = filteredInstallments.filter((i: any) => i.status === "paid").length;
+    const vencidasRange = filteredInstallments.filter((i: any) => new Date(i.due_date) <= now).length;
+    const taxaCobranca = vencidasRange > 0 ? (pagasRange / vencidasRange) * 100 : 0;
+
+    // Comparação com período anterior equivalente
+    const rangeMs = rangeEnd.getTime() - rangeStart.getTime();
+    const prevStart = new Date(rangeStart.getTime() - rangeMs - 1);
+    const prevEnd = new Date(rangeStart.getTime() - 1);
+    const prevLent = contracts
+      .filter((c: any) => { const d = new Date(c.created_at); return d >= prevStart && d <= prevEnd; })
+      .reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const prevReceived = installments
+      .filter((i: any) => {
+        if (i.status !== "paid" || !i.paid_at) return false;
+        const d = new Date(i.paid_at);
+        return d >= prevStart && d <= prevEnd;
+      })
+      .reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
+    const delta = (cur: number, prev: number) => prev === 0 ? (cur > 0 ? 100 : 0) : ((cur - prev) / prev) * 100;
 
     // 7. Ranking dos piores pagadores (top 10 por valor em atraso)
     const overdueByClient = new Map<string, { name: string; amount: number; count: number; maxDays: number }>();
@@ -259,7 +315,14 @@ const Analises = () => {
     return {
       monthlyRevenue, installmentPie, scoreDistribution, aging, defaultRate, loanFrequency,
       worstPayers, forecast: weeks,
-      stats: { totalCapital, totalReceived, inadRate, totalContracts: filteredContracts.length, totalClients: clients.length, overdue },
+      stats: {
+        totalCapital, totalReceived, totalLent, inadRate,
+        totalContracts: filteredContracts.length, totalClients: clients.length, overdue,
+        overdueAllNowAmount, overdueAllNowCount: overdueAllNow.length,
+        lucroPeriodo, contratosQuitados, novosClientes, ticketMedio, taxaCobranca,
+        deltaLent: delta(totalLent, prevLent),
+        deltaReceived: delta(totalReceived, prevReceived),
+      },
     };
   }, [data, dateFrom, dateTo]);
 
