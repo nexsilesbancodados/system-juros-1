@@ -691,6 +691,47 @@ const Cobrancas = () => {
       {/* Métricas de cobranças automáticas */}
       <CollectionMetrics />
 
+      {/* Reminder schedule card */}
+      {reminderSettings && (
+        <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${reminderSettings.bot_auto_send ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+              <Bell size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">Lembrete automático diário</p>
+              <p className="text-[11px] text-muted-foreground">
+                {reminderSettings.bot_auto_send
+                  ? `Disparo todo dia às ${String(reminderSettings.bot_send_hour).padStart(2,"0")}:${String(reminderSettings.bot_send_minute).padStart(2,"0")} para parcelas vencidas`
+                  : "Desligado — ative para enviar cobranças automáticas todo dia"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="time"
+              value={`${String(reminderSettings.bot_send_hour ?? 9).padStart(2,"0")}:${String(reminderSettings.bot_send_minute ?? 0).padStart(2,"0")}`}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(":").map(Number);
+                saveReminderTime(h || 0, m || 0, reminderSettings.bot_auto_send);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            />
+            <button
+              onClick={() => saveReminderTime(reminderSettings.bot_send_hour ?? 9, reminderSettings.bot_send_minute ?? 0, !reminderSettings.bot_auto_send)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                reminderSettings.bot_auto_send
+                  ? "bg-success text-success-foreground hover:opacity-90"
+                  : "bg-muted text-foreground hover:bg-accent"
+              }`}
+            >
+              <Send size={12} /> {reminderSettings.bot_auto_send ? "Ativo" : "Ativar"}
+            </button>
+          </div>
+        </div>
+      )}
+
+
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
 
