@@ -286,13 +286,16 @@ const Analises = () => {
 
     // ─── Capital emprestado (histórico) — independente do período
     const totalLentHistory = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
-    const paidPrincipalAll = installments
-      .filter((i: any) => i.status === "paid")
-      .reduce((s: number, i: any) => {
-        const c = contracts.find((c: any) => c.id === i.contract_id);
-        if (!c?.num_installments) return s;
-        return s + Number(c.capital || 0) / Number(c.num_installments);
-      }, 0);
+    // Contratos encerrados (quitados/cancelados) devolvem 100% do capital para a carteira
+    const CLOSED_STATUSES = new Set(["completed", "paid", "closed", "finished", "quitado", "cancelled", "canceled"]);
+    const closedContractIds = new Set(contracts.filter((c: any) => CLOSED_STATUSES.has(String(c.status || "").toLowerCase())).map((c: any) => c.id));
+    const paidPrincipalAll = contracts.reduce((s: number, c: any) => {
+      const cap = Number(c.capital || 0);
+      if (closedContractIds.has(c.id)) return s + cap; // contrato encerrado → capital volta inteiro
+      if (!c.num_installments) return s;
+      const paidCount = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
+      return s + (cap / Number(c.num_installments)) * paidCount;
+    }, 0);
     const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
     const totalProfitExpectedAll = contracts.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
 
