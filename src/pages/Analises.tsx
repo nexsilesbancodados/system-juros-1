@@ -383,7 +383,7 @@ const Analises = () => {
     // ─── Helpers para construir detalhes
     const clientName = (cid: string) => clients.find((c: any) => c.id === cid)?.name || "—";
     const contractTag = (cid: string) => cid ? `#${String(cid).slice(0, 6)}` : "—";
-    const daysLate = (due: string) => Math.max(0, Math.floor((now.getTime() - new Date(due).getTime()) / 86400000));
+    const daysLate = (due: string) => Math.max(0, Math.floor((startOfDay(now).getTime() - startOfDay(parseDueLocal(due)).getTime()) / 86400000));
 
     const decorateInst = (i: any) => ({ ...i, _client: clientName(i.client_id), _contract: contractTag(i.contract_id), _days: daysLate(i.due_date), _paid: Number(i.paid_amount || i.amount || 0) });
     const decorateContract = (c: any) => {
