@@ -283,6 +283,23 @@ const Analises = () => {
       return last >= rangeStart.getTime() && last <= rangeEnd.getTime();
     }).length;
 
+    // ─── Capital emprestado (histórico) — independente do período
+    const totalLentHistory = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const paidPrincipalAll = installments
+      .filter((i: any) => i.status === "paid")
+      .reduce((s: number, i: any) => {
+        const c = contracts.find((c: any) => c.id === i.contract_id);
+        if (!c?.num_installments) return s;
+        return s + Number(c.capital || 0) / Number(c.num_installments);
+      }, 0);
+    const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
+    const historyRows = contracts.map((c: any) => {
+      const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
+      const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
+      const remainingCapital = Math.max(0, Number(c.capital || 0) - paidInsts * principalPer);
+      return { ...decorateContract(c), _remainingCapital: remainingCapital };
+    }).sort((a: any, b: any) => b._remainingCapital - a._remainingCapital);
+
     // ─── Cobrança / inadimplência
     const dueAlready = dueInRange.filter((i: any) => new Date(i.due_date) <= now);
     const pagasNoPrazo = dueAlready.filter((i: any) => i.status === "paid").length;
