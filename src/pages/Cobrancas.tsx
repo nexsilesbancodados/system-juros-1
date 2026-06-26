@@ -1273,7 +1273,46 @@ const Cobrancas = () => {
           </div>
         );
       })()}
+
+      {/* History modal */}
+      {historyFor && (() => {
+        const list = attempts.filter((a: any) => a.installment_id === historyFor.installmentId);
+        return (
+          <div className="modal-backdrop" onClick={() => setHistoryFor(null)}>
+            <div className="modal-content max-w-md p-0" onClick={e => e.stopPropagation()}>
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center"><History size={16} className="text-primary" /></div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Histórico de cobranças</h3>
+                    <p className="text-[11px] text-muted-foreground">{historyFor.clientName}</p>
+                  </div>
+                </div>
+                <button onClick={() => setHistoryFor(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={14} /></button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Nenhuma tentativa registrada ainda.</p>
+                ) : list.map((a: any) => (
+                  <div key={a.id} className="rounded-xl border border-border bg-card/50 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                        {a.channel === "whatsapp" ? "💬 WhatsApp" : a.channel === "email" ? "✉️ E-mail" : a.channel === "pix_copy" ? "🔑 PIX copiado" : a.channel === "sms" ? "📱 SMS" : "✍️ Manual"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">há {relTime(a.created_at)}</span>
+                    </div>
+                    {a.message_preview && (
+                      <p className="text-[11px] text-muted-foreground whitespace-pre-wrap line-clamp-3">{a.message_preview}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
+
   );
 };
 
