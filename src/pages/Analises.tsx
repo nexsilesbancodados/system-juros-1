@@ -502,14 +502,14 @@ const Analises = () => {
 
     return {
       // empréstimos
-      totalLent, newContracts, ticketMedio, novosClientes,
+      totalLent, newContracts, ticketMedio, novosClientes, totalProfitExpected,
       // recebimentos
       totalReceived, paidCount, lucroPeriodo, multas,
       // atraso
       overdueAmount, overdueCount: overdueAll.length, overdueClients, aging, sumAmt,
       // carteira
       capitalAtivo, aReceberTotal, activeCount: activeContracts.length, totalClients: clients.length,
-      totalLentHistory, outstandingCapital,
+      totalLentHistory, outstandingCapital, totalProfitExpectedAll,
       quitados, quitadosNoPeriodo,
       // cobrança
       taxaCobranca, inadRate,
