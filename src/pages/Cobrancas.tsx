@@ -320,6 +320,9 @@ const Cobrancas = () => {
     const pixBlock = pix
       ? `\n\n💸 *Pague via PIX*\nChave (${pixType || "PIX"}): *${pix}*\nValor total: *R$ ${fmt(total)}*\n_(a chave já foi copiada para sua área de transferência)_`
       : "";
+    return `Olá ${clientName}, tudo bem? 👋\n\nIdentifiquei ${items.length} parcela${items.length > 1 ? "s" : ""} pendente${items.length > 1 ? "s" : ""} totalizando *R$ ${fmt(total)}*:\n\n${lines}${pixBlock}\n\nQualquer dúvida estou à disposição. Obrigado! 🙏\n\nPortal: ${portalUrl}`;
+  };
+
   const handleBulk = (channel: "whatsapp" | "email") => {
     let items = getSelectedItems().filter((i: any) => i.status !== "paid");
     if (!items.length) {
