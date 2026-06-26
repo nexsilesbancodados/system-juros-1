@@ -527,6 +527,7 @@ const Analises = () => {
       deltaReceived: delta(totalReceived, prevReceived),
       deltaPaidCount: delta(paidCount, prevPaidCount),
       deltaContracts: delta(newContracts, prevContracts),
+      deltaProfit: delta(totalProfitExpected, prevProfit),
       // listas
       worstPayers,
       freqLabels, freqCount,
