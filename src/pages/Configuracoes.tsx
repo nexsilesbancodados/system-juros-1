@@ -383,6 +383,20 @@ const Configuracoes = () => {
 
   const [search, setSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Atalho Ctrl+K / Cmd+K para focar a busca
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const visibleGroups = groups
     .map(g => ({
