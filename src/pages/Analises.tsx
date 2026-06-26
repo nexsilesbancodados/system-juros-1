@@ -660,8 +660,8 @@ const Analises = () => {
           {/* ─── EMPRÉSTIMOS ─── */}
           <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Total emprestado", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true }} />
-              <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro total dos contratos", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Emprestado no período", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true, hint: "capital dos contratos criados no período" }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro previsto (período)", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true, hint: "total − capital dos contratos do período" }} />
               <StatCard onClick={() => setDetail(m.details.newContracts)} s={{ label: "Novos contratos", value: fmtNum(m.newContracts), tone: "default", icon: FileSignature, delta: m.deltaContracts, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.ticketMedio)} s={{ label: "Ticket médio", value: fmtBRL(m.ticketMedio), tone: "default", icon: Target }} />
               <StatCard onClick={() => setDetail(m.details.novosClientes)} s={{ label: "Novos clientes", value: fmtNum(m.novosClientes), tone: "default", icon: Users }} />
@@ -673,7 +673,7 @@ const Analises = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalReceived)} s={{ label: "Total recebido", value: fmtBRL(m.totalReceived), tone: "success", icon: Wallet, delta: m.deltaReceived, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.paidCount)} s={{ label: "Parcelas pagas", value: fmtNum(m.paidCount), tone: "success", icon: CheckCircle2, delta: m.deltaPaidCount, positiveIsGood: true }} />
-              <StatCard onClick={() => setDetail(m.details.lucro)} s={{ label: "Lucro (juros)", value: fmtBRL(m.lucroPeriodo), tone: "success", icon: PiggyBank }} />
+              <StatCard onClick={() => setDetail(m.details.lucro)} s={{ label: "Lucro realizado (juros)", value: fmtBRL(m.lucroPeriodo), tone: "success", icon: PiggyBank, hint: "juros efetivamente recebidos" }} />
               <StatCard onClick={() => setDetail(m.details.multas)} s={{ label: "Multas recebidas", value: fmtBRL(m.multas), tone: "default", icon: Receipt }} />
             </div>
           </Section>
@@ -709,19 +709,18 @@ const Analises = () => {
           </Section>
 
           {/* ─── CAPITAL EMPRESTADO ─── */}
-          <Section title="Capital emprestado" subtitle="Quanto já saiu, quanto ainda está em aberto e o lucro esperado">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (desde sempre)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s)` }} />
-              <StatCard onClick={() => setDetail(m.details.totalProfitExpectedAll)} s={{ label: "Lucro total esperado", value: fmtBRL(m.totalProfitExpectedAll), tone: "success", icon: PiggyBank, hint: "soma do lucro previsto de todos os contratos" }} />
-              <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Ainda tenho emprestado", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "saldo de capital não recuperado" }} />
+          <Section title="Capital emprestado" subtitle="Quanto já saiu, quanto ainda está na rua e o lucro esperado">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (histórico)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s) — soma do capital de TODOS os contratos` }} />
+              <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Capital na rua (agora)", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "capital histórico − principal já recuperado" }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpectedAll)} s={{ label: "Lucro previsto (histórico)", value: fmtBRL(m.totalProfitExpectedAll), tone: "success", icon: PiggyBank, hint: "total dos contratos − capital, todos os contratos" }} />
             </div>
           </Section>
 
           {/* ─── CARTEIRA ─── */}
           <Section title="Carteira atual" subtitle="Visão geral do negócio agora">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard onClick={() => setDetail(m.details.capitalAtivo)} s={{ label: "Capital ativo na rua", value: fmtBRL(m.capitalAtivo), tone: "info", icon: Wallet }} />
-              <StatCard onClick={() => setDetail(m.details.aReceber)} s={{ label: "A receber (total)", value: fmtBRL(m.aReceberTotal), tone: "default", icon: HandCoins }} />
+              <StatCard onClick={() => setDetail(m.details.aReceber)} s={{ label: "A receber (todas pendentes)", value: fmtBRL(m.aReceberTotal), tone: "default", icon: HandCoins, hint: "inclui atrasadas + futuras" }} />
               <StatCard onClick={() => setDetail(m.details.activeContracts)} s={{ label: "Contratos ativos", value: fmtNum(m.activeCount), tone: "default", icon: FileSignature }} />
               <StatCard onClick={() => setDetail(m.details.totalClients)} s={{ label: "Total de clientes", value: fmtNum(m.totalClients), tone: "default", icon: Users }} />
               <StatCard onClick={() => setDetail(m.details.quitados)} s={{ label: "Contratos quitados (total)", value: fmtNum(m.quitados), tone: "success", icon: CheckCircle2 }} />
