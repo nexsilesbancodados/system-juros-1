@@ -359,6 +359,7 @@ const Cobrancas = () => {
         if (bucket === "1-7" && (days < 1 || days > 7)) return false;
         if (bucket === "8-30" && (days < 8 || days > 30)) return false;
         if (bucket === "30+" && days <= 30) return false;
+      }
       if (q) {
         const name = (inst.client_name || "").toLowerCase();
         const num = `${inst.installment_number}`;
