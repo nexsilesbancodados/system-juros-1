@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
-  CalendarDays, Mail, CheckSquare, Square, List, Copy,
+  CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
   Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -309,6 +309,49 @@ const Cobrancas = () => {
     return arr;
   }, [installments, filter, period, sort, dSearch, focoDia]);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
+    filtered.forEach((inst: any) => {
+      if (!map.has(inst.client_id)) {
+        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, minDue: inst.due_date });
+      }
+      const g = map.get(inst.client_id)!;
+      g.items.push(inst);
+      if (inst.status !== "paid") g.total += Number(inst.amount);
+      if (inst.due_date < g.minDue) g.minDue = inst.due_date;
+    });
+    const groups = Array.from(map.values());
+    const key = (g: any) => {
+      if (sort === "amount_desc") return -g.total;
+      if (sort === "amount_asc") return g.total;
+      if (sort === "overdue_days") {
+        const maxDays = Math.max(...g.items.map((i: any) => {
+          const d = parseLocalDate(i.due_date);
+          return d ? Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000)) : 0;
+        }));
+        return -maxDays;
+      }
+      const t = parseLocalDate(g.minDue)?.getTime() ?? 0;
+      return sort === "due_desc" ? -t : t;
+    };
+    groups.sort((a, b) => key(a) - key(b));
+    groups.forEach((g: any) => {
+      g.items.sort((a: any, b: any) => {
+        if (sort === "amount_desc") return Number(b.amount) - Number(a.amount);
+        if (sort === "amount_asc") return Number(a.amount) - Number(b.amount);
+        if (sort === "overdue_days") {
+          const da = parseLocalDate(a.due_date) ? Math.max(0, Math.floor((Date.now() - parseLocalDate(a.due_date)!.getTime()) / 86400000)) : 0;
+          const db = parseLocalDate(b.due_date) ? Math.max(0, Math.floor((Date.now() - parseLocalDate(b.due_date)!.getTime()) / 86400000)) : 0;
+          return db - da;
+        }
+        const ta = parseLocalDate(a.due_date)?.getTime() ?? 0;
+        const tb = parseLocalDate(b.due_date)?.getTime() ?? 0;
+        return sort === "due_desc" ? tb - ta : ta - tb;
+      });
+    });
+    return groups;
+  }, [filtered, sort]);
+
   const stats = useMemo(() => {
     const pending = installments.filter((i: any) => i.status === "pending");
     const overdue = installments.filter((i: any) => i.status === "overdue");
@@ -357,6 +400,139 @@ const Cobrancas = () => {
     }
   };
 
+  const renderRow = (inst: any) => {
+    const isOverdue = inst.status === "overdue";
+    const isPaid = inst.status === "paid";
+    const now = new Date(); now.setHours(0,0,0,0);
+    const dueDate = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
+    const daysDiff = Math.floor((now.getTime() - new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).getTime()) / 86400000);
+    const daysText = isOverdue ? `${daysDiff}d atrasada` : !isPaid ? (daysDiff < 0 ? `em ${Math.abs(daysDiff)}d` : "hoje") : "";
+    const isSel = selected.has(inst.id);
+
+    return (
+      <div
+        key={inst.id}
+        className={`rounded-2xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm cursor-pointer ${
+          isSel ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20" :
+          isOverdue ? "border-destructive/20 bg-gradient-to-r from-destructive/5 to-transparent danger-glow" :
+          isPaid ? "border-success/15 bg-success/3 success-glow" :
+          "border-border bg-card"
+        }`}
+        onClick={() => navigate(`/clientes/${inst.client_id}`)}
+      >
+        {!isPaid && (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleSelect(inst.id); }}
+            className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
+            title="Selecionar"
+          >
+            {isSel
+              ? <CheckSquare size={18} className="text-primary" />
+              : <Square size={18} className="text-muted-foreground" />}
+          </button>
+        )}
+        <div className={`num-badge w-10 h-10 rounded-xl ${
+          isOverdue ? "bg-destructive/10 text-destructive" :
+          isPaid ? "bg-success/10 text-success" :
+          "bg-muted text-muted-foreground"
+        }`}>
+          {inst.installment_number}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className="text-sm font-medium text-foreground truncate">{inst.client_name}</p>
+            <Badge variant="outline" className={`text-[9px] shrink-0 ${
+              isOverdue ? "bg-destructive/10 text-destructive border-destructive/20 badge-pulse" :
+              isPaid ? "bg-success/10 text-success border-success/20" :
+              "bg-muted text-muted-foreground"
+            }`}>
+              {isOverdue ? "Atrasada" : isPaid ? "Paga" : "Pendente"}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
+            <span className="flex items-center gap-1"><CalendarDays size={10} /> {formatBR(inst.due_date)}</span>
+            {inst.contract_id && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.client_id}`}>
+                #{String(inst.contract_id).slice(0, 6)}
+                {inst.contracts?.capital ? ` · R$ ${fmt(Number(inst.contracts.capital))}` : ""}
+              </span>
+            )}
+            {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
+            {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {!isPaid && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleWhatsApp(inst); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-all active:scale-95 focus-ring"
+                title="Cobrar via WhatsApp"
+              >
+                <MessageSquare size={14} />
+                <span className="hidden md:inline">WhatsApp</span>
+              </button>
+              {(profile as any)?.pix_key && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); copyPix(inst); }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                  title="Copiar chave PIX"
+                >
+                  <Copy size={14} />
+                  <span className="hidden lg:inline">PIX</span>
+                </button>
+              )}
+              {inst.client_email && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                  title="Cobrar via E-mail"
+                >
+                  <Mail size={14} />
+                  <span className="hidden lg:inline">E-mail</span>
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmPayId(inst.id); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
+                title="Marcar como paga"
+              >
+                <Check size={14} />
+                <span className="hidden sm:inline">Paga</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const handleWhatsAppGroup = (group: any) => {
+    const phone = group.items[0]?.client_phone;
+    if (!phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
+    const clean = phone.replace(/\D/g, "");
+    const num = clean.startsWith("55") ? clean : `55${clean}`;
+    const unpaid = group.items.filter((i: any) => i.status !== "paid");
+    const lines = unpaid.map((i: any) => `- Parcela #${i.installment_number} · R$ ${fmt(Number(i.amount))} (venc. ${formatBR(i.due_date)})`).join("\n");
+    const total = unpaid.reduce((s: number, i: any) => s + Number(i.amount), 0);
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const msg = `Olá ${group.client_name}, tudo bem?\n\nIdentificamos ${unpaid.length} parcelas pendentes totalizando R$ ${fmt(total)}:\n${lines}\n\nVocê pode regularizar via PIX ou pelo portal: ${portalUrl}`;
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  const toggleGroupSelect = (group: any) => {
+    const ids = group.items.filter((i: any) => i.status !== "paid").map((i: any) => i.id);
+    const allSelected = ids.length > 0 && ids.every((id: string) => selected.has(id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id: string) => next.delete(id));
+      else ids.forEach((id: string) => next.add(id));
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-5 pb-24">
@@ -632,112 +808,44 @@ const Cobrancas = () => {
         />
       ) : (
         <div className="space-y-2 stagger-fade-in">
-          {filtered.map((inst: any) => {
-            const isOverdue = inst.status === "overdue";
-            const isPaid = inst.status === "paid";
-            const now = new Date(); now.setHours(0,0,0,0);
-            const dueDate = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
-            const daysDiff = Math.floor((now.getTime() - new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).getTime()) / 86400000);
-            const daysText = isOverdue ? `${daysDiff}d atrasada` : !isPaid ? (daysDiff < 0 ? `em ${Math.abs(daysDiff)}d` : "hoje") : "";
-            const isSel = selected.has(inst.id);
-
+          {grouped.map((group: any) => {
+            const groupSelectable = group.items.filter((i: any) => i.status !== "paid");
+            const groupSelectedCount = groupSelectable.filter((i: any) => selected.has(i.id)).length;
+            const allSelected = groupSelectable.length > 0 && groupSelectedCount === groupSelectable.length;
+            const someSelected = groupSelectedCount > 0 && !allSelected;
+            const hasUnpaid = groupSelectable.length > 0;
+            const unpaidCount = groupSelectable.length;
             return (
-              <div
-                key={inst.id}
-                className={`rounded-2xl border p-4 flex items-center gap-3 transition-all hover:shadow-sm cursor-pointer ${
-                  isSel ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20" :
-                  isOverdue ? "border-destructive/20 bg-gradient-to-r from-destructive/5 to-transparent danger-glow" :
-                  isPaid ? "border-success/15 bg-success/3 success-glow" :
-                  "border-border bg-card"
-                }`}
-                onClick={() => navigate(`/clientes/${inst.client_id}`)}
-              >
-                {!isPaid && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleSelect(inst.id); }}
-                    className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
-                    title="Selecionar"
-                  >
-                    {isSel
-                      ? <CheckSquare size={18} className="text-primary" />
-                      : <Square size={18} className="text-muted-foreground" />}
-                  </button>
+              <div key={group.client_id} className="space-y-1">
+                {group.items.length > 1 && hasUnpaid && (
+                  <div className="flex items-center justify-between gap-2 px-1 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
+                        className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
+                        title="Selecionar todas"
+                      >
+                        {allSelected
+                          ? <CheckSquare size={18} className="text-primary" />
+                          : someSelected
+                            ? <MinusSquare size={18} className="text-primary" />
+                            : <Square size={18} className="text-muted-foreground" />}
+                      </button>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{group.client_name}</p>
+                        <p className="text-xs text-muted-foreground">{unpaidCount} parcelas pendentes · Total R$ {fmt(group.total)}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleWhatsAppGroup(group); }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-all focus-ring"
+                      title="Cobrar todas via WhatsApp"
+                    >
+                      <MessageSquare size={12} /> Cobrar tudo
+                    </button>
+                  </div>
                 )}
-                <div className={`num-badge w-10 h-10 rounded-xl ${
-                  isOverdue ? "bg-destructive/10 text-destructive" :
-                  isPaid ? "bg-success/10 text-success" :
-                  "bg-muted text-muted-foreground"
-                }`}>
-                  {inst.installment_number}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-medium text-foreground truncate">{inst.client_name}</p>
-                    <Badge variant="outline" className={`text-[9px] shrink-0 ${
-                      isOverdue ? "bg-destructive/10 text-destructive border-destructive/20 badge-pulse" :
-                      isPaid ? "bg-success/10 text-success border-success/20" :
-                      "bg-muted text-muted-foreground"
-                    }`}>
-                      {isOverdue ? "Atrasada" : isPaid ? "Paga" : "Pendente"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                    <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
-                    <span className="flex items-center gap-1"><CalendarDays size={10} /> {formatBR(inst.due_date)}</span>
-                    {inst.contract_id && (
-                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.contract_id}`}>
-                        #{String(inst.contract_id).slice(0, 6)}
-                        {inst.contracts?.capital ? ` · R$ ${fmt(Number(inst.contracts.capital))}` : ""}
-                      </span>
-                    )}
-                    {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
-                    {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {!isPaid && (
-                    <>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleWhatsApp(inst); }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-all active:scale-95 focus-ring"
-                        title="Cobrar via WhatsApp"
-                      >
-                        <MessageSquare size={14} />
-                        <span className="hidden md:inline">WhatsApp</span>
-                      </button>
-                      {(profile as any)?.pix_key && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); copyPix(inst); }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
-                          title="Copiar chave PIX"
-                        >
-                          <Copy size={14} />
-                          <span className="hidden lg:inline">PIX</span>
-                        </button>
-                      )}
-                      {inst.client_email && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
-                          title="Cobrar via E-mail"
-                        >
-                          <Mail size={14} />
-                          <span className="hidden lg:inline">E-mail</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmPayId(inst.id); }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
-                        title="Marcar como paga"
-                      >
-                        <Check size={14} />
-                        <span className="hidden sm:inline">Paga</span>
-                      </button>
-                    </>
-                  )}
-                </div>
+                {group.items.map((inst: any) => renderRow(inst))}
               </div>
             );
           })}
