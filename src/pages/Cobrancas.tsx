@@ -396,14 +396,14 @@ const Cobrancas = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
 
         {[
-          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const },
-          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const },
-          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const },
-          { label: "Inadimplência", value: `${stats.inadimplencia.toFixed(1)}%`, sub: `${stats.total} parcelas`, icon: TrendingUp, color: "text-foreground", bg: "bg-muted/30", border: "", filterKey: "all" as const },
+          { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
+          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
+          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
+          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
         ].map((s: any) => (
           <button
             key={s.label}
-            onClick={() => setFilter(s.filterKey)}
+            onClick={s.onClick}
             className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
               filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
             }`}
@@ -420,39 +420,12 @@ const Cobrancas = () => {
         ))}
       </div>
 
-      {/* Overdue Summary by Client */}
-      {overdueByClient.length > 0 && filter !== "paid" && (
-        <div className="bg-destructive/5 border border-destructive/15 rounded-2xl p-4 animate-fade-in">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-destructive" />
-              <span className="text-xs font-semibold text-destructive uppercase tracking-wider">Top inadimplentes</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">{overdueByClient.length} cliente(s)</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {overdueByClient.slice(0, 8).map(([clientId, info]) => (
-              <button
-                key={clientId}
-                onClick={() => navigate(`/clientes/${clientId}`)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-xs cursor-pointer hover:bg-accent/30 hover:border-destructive/30 transition-colors"
-              >
-                <span className="font-medium text-foreground">{info.name}</span>
-                <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive text-[10px] font-bold">{info.count}x</span>
-                <span className="text-muted-foreground">R$ {fmt(info.total)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* View switcher */}
       <div className="flex items-center gap-2 animate-fade-in">
         <div className="pill-tabs">
           {([
             { key: "list", label: "Lista", icon: List },
             { key: "calendar", label: "Calendário", icon: CalendarIcon },
-            { key: "kanban", label: "Kanban", icon: LayoutGrid },
           ] as const).map((v) => (
             <button
               key={v.key}
@@ -464,6 +437,7 @@ const Cobrancas = () => {
           ))}
         </div>
       </div>
+
 
       {/* Search + Filters + select all */}
       <div className="space-y-3 animate-fade-in">
