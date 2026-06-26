@@ -326,19 +326,30 @@ const Cobrancas = () => {
     return getSelectedItems().reduce((s: number, i: any) => s + Number(i.amount), 0);
   }, [selected, installments]);
 
-  const overdueByClient = useMemo(() => {
-    const map = new Map<string, { name: string; count: number; total: number }>();
-    installments.filter((i: any) => i.status === "overdue").forEach((i: any) => {
-      const existing = map.get(i.client_id) || { name: i.client_name || "—", count: 0, total: 0 };
-      existing.count++;
-      existing.total += Number(i.amount);
-      map.set(i.client_id, existing);
+  const dueTodayStats = useMemo(() => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const items = installments.filter((i: any) => {
+      if (i.status === "paid") return false;
+      const d = parseLocalDate(i.due_date);
+      return d && d.toDateString() === today.toDateString();
     });
-    return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
+    return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); };
+
+  const copyPix = async (inst: any) => {
+    const pix = (profile as any)?.pix_key;
+    if (!pix) { toast({ title: "PIX não configurado", description: "Adicione sua chave PIX nas Configurações.", variant: "destructive" }); return; }
+    try {
+      await navigator.clipboard.writeText(pix);
+      toast({ title: "✓ PIX copiado", description: `R$ ${fmt(Number(inst.amount))} · ${inst.client_name}` });
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
+
 
   return (
     <div className="space-y-5 pb-24">
