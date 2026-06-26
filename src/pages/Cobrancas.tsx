@@ -44,11 +44,12 @@ const Cobrancas = () => {
   const [bulkPayOpen, setBulkPayOpen] = useState(false);
   const [bulkPaying, setBulkPaying] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [view, setView] = useState<"list" | "calendar" | "kanban">("list");
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [cobrarAteOpen, setCobrarAteOpen] = useState(false);
   const todayISO = new Date().toISOString().slice(0, 10);
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
+  const [focoDia, setFocoDia] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard "/" focus
