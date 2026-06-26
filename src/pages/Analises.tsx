@@ -603,44 +603,49 @@ const Analises = () => {
           {/* ─── EMPRÉSTIMOS ─── */}
           <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard s={{ label: "Total emprestado", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true }} />
-              <StatCard s={{ label: "Novos contratos", value: fmtNum(m.newContracts), tone: "default", icon: FileSignature, delta: m.deltaContracts, positiveIsGood: true }} />
-              <StatCard s={{ label: "Ticket médio", value: fmtBRL(m.ticketMedio), tone: "default", icon: Target }} />
-              <StatCard s={{ label: "Novos clientes", value: fmtNum(m.novosClientes), tone: "default", icon: Users }} />
+              <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Total emprestado", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.newContracts)} s={{ label: "Novos contratos", value: fmtNum(m.newContracts), tone: "default", icon: FileSignature, delta: m.deltaContracts, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.ticketMedio)} s={{ label: "Ticket médio", value: fmtBRL(m.ticketMedio), tone: "default", icon: Target }} />
+              <StatCard onClick={() => setDetail(m.details.novosClientes)} s={{ label: "Novos clientes", value: fmtNum(m.novosClientes), tone: "default", icon: Users }} />
             </div>
           </Section>
 
           {/* ─── RECEBIMENTOS ─── */}
           <Section title="Recebimentos no período" subtitle="Quanto entrou no caixa">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard s={{ label: "Total recebido", value: fmtBRL(m.totalReceived), tone: "success", icon: Wallet, delta: m.deltaReceived, positiveIsGood: true }} />
-              <StatCard s={{ label: "Parcelas pagas", value: fmtNum(m.paidCount), tone: "success", icon: CheckCircle2, delta: m.deltaPaidCount, positiveIsGood: true }} />
-              <StatCard s={{ label: "Lucro (juros)", value: fmtBRL(m.lucroPeriodo), tone: "success", icon: PiggyBank }} />
-              <StatCard s={{ label: "Multas recebidas", value: fmtBRL(m.multas), tone: "default", icon: Receipt }} />
+              <StatCard onClick={() => setDetail(m.details.totalReceived)} s={{ label: "Total recebido", value: fmtBRL(m.totalReceived), tone: "success", icon: Wallet, delta: m.deltaReceived, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.paidCount)} s={{ label: "Parcelas pagas", value: fmtNum(m.paidCount), tone: "success", icon: CheckCircle2, delta: m.deltaPaidCount, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.lucro)} s={{ label: "Lucro (juros)", value: fmtBRL(m.lucroPeriodo), tone: "success", icon: PiggyBank }} />
+              <StatCard onClick={() => setDetail(m.details.multas)} s={{ label: "Multas recebidas", value: fmtBRL(m.multas), tone: "default", icon: Receipt }} />
             </div>
           </Section>
 
           {/* ─── ATRASO (snapshot atual) ─── */}
           <Section title="Inadimplência (saldo atual)" subtitle="Independente do período selecionado">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard s={{ label: "Total em atraso", value: fmtBRL(m.overdueAmount), tone: "danger", icon: AlertTriangle, hint: `${m.overdueCount} parcela(s)` }} />
-              <StatCard s={{ label: "Clientes inadimplentes", value: fmtNum(m.overdueClients), tone: "danger", icon: Users }} />
-              <StatCard s={{ label: "Taxa de inadimplência", value: fmtPct(m.inadRate), tone: "warning", icon: TrendingDown }} />
-              <StatCard s={{ label: "Taxa de cobrança", value: fmtPct(m.taxaCobranca), tone: "info", icon: TrendingUp, hint: "pagas no prazo / vencidas no período" }} />
+              <StatCard onClick={() => setDetail(m.details.overdue)} s={{ label: "Total em atraso", value: fmtBRL(m.overdueAmount), tone: "danger", icon: AlertTriangle, hint: `${m.overdueCount} parcela(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.overdueClients)} s={{ label: "Clientes inadimplentes", value: fmtNum(m.overdueClients), tone: "danger", icon: Users }} />
+              <StatCard onClick={() => setDetail(m.details.inadRate)} s={{ label: "Taxa de inadimplência", value: fmtPct(m.inadRate), tone: "warning", icon: TrendingDown }} />
+              <StatCard onClick={() => setDetail(m.details.taxaCobranca)} s={{ label: "Taxa de cobrança", value: fmtPct(m.taxaCobranca), tone: "info", icon: TrendingUp, hint: "pagas no prazo / vencidas no período" }} />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {[
-                { label: "1-7 dias",   data: m.aging.a },
-                { label: "8-15 dias",  data: m.aging.b },
-                { label: "16-30 dias", data: m.aging.c },
-                { label: "31-60 dias", data: m.aging.d },
-                { label: "60+ dias",   data: m.aging.e },
+                { label: "1-7 dias",   data: m.aging.a, key: "agingA" },
+                { label: "8-15 dias",  data: m.aging.b, key: "agingB" },
+                { label: "16-30 dias", data: m.aging.c, key: "agingC" },
+                { label: "31-60 dias", data: m.aging.d, key: "agingD" },
+                { label: "60+ dias",   data: m.aging.e, key: "agingE" },
               ].map((b) => (
-                <div key={b.label} className="glass-card rounded-2xl p-3">
+                <button
+                  type="button"
+                  key={b.label}
+                  onClick={() => setDetail((m.details as any)[b.key])}
+                  className="glass-card rounded-2xl p-3 text-left hover:border-primary/40 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{b.label}</p>
                   <p className="text-lg font-bold text-destructive mt-1 tabular-nums">{fmtBRL(m.sumAmt(b.data))}</p>
                   <p className="text-[11px] text-muted-foreground">{b.data.length} parcela(s)</p>
-                </div>
+                </button>
               ))}
             </div>
           </Section>
@@ -648,22 +653,22 @@ const Analises = () => {
           {/* ─── CARTEIRA ─── */}
           <Section title="Carteira atual" subtitle="Visão geral do negócio agora">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard s={{ label: "Capital ativo na rua", value: fmtBRL(m.capitalAtivo), tone: "info", icon: Wallet }} />
-              <StatCard s={{ label: "A receber (total)", value: fmtBRL(m.aReceberTotal), tone: "default", icon: HandCoins }} />
-              <StatCard s={{ label: "Contratos ativos", value: fmtNum(m.activeCount), tone: "default", icon: FileSignature }} />
-              <StatCard s={{ label: "Total de clientes", value: fmtNum(m.totalClients), tone: "default", icon: Users }} />
-              <StatCard s={{ label: "Contratos quitados (total)", value: fmtNum(m.quitados), tone: "success", icon: CheckCircle2 }} />
-              <StatCard s={{ label: "Quitados no período", value: fmtNum(m.quitadosNoPeriodo), tone: "success", icon: CheckCircle2 }} />
-              <StatCard s={{ label: "Vence hoje", value: fmtBRL(m.dueTodayAmount), tone: "warning", icon: Clock, hint: `${m.dueTodayCount} parcela(s)` }} />
-              <StatCard s={{ label: "Vence amanhã", value: fmtBRL(m.dueTomorrowAmount), tone: "warning", icon: Clock, hint: `${m.dueTomorrowCount} parcela(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.capitalAtivo)} s={{ label: "Capital ativo na rua", value: fmtBRL(m.capitalAtivo), tone: "info", icon: Wallet }} />
+              <StatCard onClick={() => setDetail(m.details.aReceber)} s={{ label: "A receber (total)", value: fmtBRL(m.aReceberTotal), tone: "default", icon: HandCoins }} />
+              <StatCard onClick={() => setDetail(m.details.activeContracts)} s={{ label: "Contratos ativos", value: fmtNum(m.activeCount), tone: "default", icon: FileSignature }} />
+              <StatCard onClick={() => setDetail(m.details.totalClients)} s={{ label: "Total de clientes", value: fmtNum(m.totalClients), tone: "default", icon: Users }} />
+              <StatCard onClick={() => setDetail(m.details.quitados)} s={{ label: "Contratos quitados (total)", value: fmtNum(m.quitados), tone: "success", icon: CheckCircle2 }} />
+              <StatCard onClick={() => setDetail(m.details.quitadosPeriodo)} s={{ label: "Quitados no período", value: fmtNum(m.quitadosNoPeriodo), tone: "success", icon: CheckCircle2 }} />
+              <StatCard onClick={() => setDetail(m.details.dueToday)} s={{ label: "Vence hoje", value: fmtBRL(m.dueTodayAmount), tone: "warning", icon: Clock, hint: `${m.dueTodayCount} parcela(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.dueTomorrow)} s={{ label: "Vence amanhã", value: fmtBRL(m.dueTomorrowAmount), tone: "warning", icon: Clock, hint: `${m.dueTomorrowCount} parcela(s)` }} />
             </div>
           </Section>
 
           {/* ─── PREVISÃO ─── */}
           <Section title="Previsão de recebimento" subtitle="Parcelas pendentes que ainda vão vencer">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard s={{ label: "Próximos 7 dias", value: fmtBRL(m.forecast7Amount), tone: "info", icon: Clock, hint: `${m.upcoming7Count} parcela(s)` }} />
-              <StatCard s={{ label: "Próximos 30 dias", value: fmtBRL(m.forecastAmount), tone: "info", icon: Clock, hint: `${m.upcomingCount} parcela(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.forecast7)} s={{ label: "Próximos 7 dias", value: fmtBRL(m.forecast7Amount), tone: "info", icon: Clock, hint: `${m.upcoming7Count} parcela(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.forecast30)} s={{ label: "Próximos 30 dias", value: fmtBRL(m.forecastAmount), tone: "info", icon: Clock, hint: `${m.upcomingCount} parcela(s)` }} />
             </div>
           </Section>
 
@@ -671,7 +676,7 @@ const Analises = () => {
           <Section title="Frequência dos novos contratos" subtitle="Apenas dentro do período selecionado">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {Object.entries(m.freqLabels).map(([key, label]) => (
-                <StatCard key={key} s={{ label, value: fmtNum(m.freqCount[key] || 0), tone: "default" }} />
+                <StatCard key={key} onClick={() => setDetail(m.freqDetails[key])} s={{ label, value: fmtNum(m.freqCount[key] || 0), tone: "default" }} />
               ))}
             </div>
           </Section>
@@ -703,6 +708,8 @@ const Analises = () => {
           </Section>
         </TabsContent>
       </Tabs>
+
+      <DetailModal payload={detail} onClose={() => setDetail(null)} />
     </div>
   );
 };
