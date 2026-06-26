@@ -356,11 +356,20 @@ const Cobrancas = () => {
           </div>
           {stats.overdue > 0 && selected.size === 0 && (
             <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
+              title="Selecionar uma data e ver tudo a cobrar até ela"
+            >
+              <CalendarIcon size={14} className="text-primary" /> Cobrar até…
+            </button>
+            {stats.overdue > 0 && selected.size === 0 && (
               <button onClick={() => handleBulk("whatsapp")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
                 <MessageSquare size={14} /> Cobrar atrasadas ({stats.overdue})
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
