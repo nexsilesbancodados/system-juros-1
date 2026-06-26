@@ -295,12 +295,6 @@ const Analises = () => {
       }, 0);
     const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
     const totalProfitExpectedAll = contracts.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
-    const historyRows = contracts.map((c: any) => {
-      const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
-      const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
-      const remainingCapital = Math.max(0, Number(c.capital || 0) - paidInsts * principalPer);
-      return { ...decorateContract(c), _remainingCapital: remainingCapital };
-    }).sort((a: any, b: any) => b._remainingCapital - a._remainingCapital);
 
     // ─── Cobrança / inadimplência
     const dueAlready = dueInRange.filter((i: any) => new Date(i.due_date) <= now);
@@ -408,6 +402,13 @@ const Analises = () => {
       { label: "Parcelas", key: "num_installments", align: "right" },
       { label: "Criado", key: "created_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
     ];
+
+    const historyRows = contracts.map((c: any) => {
+      const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
+      const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
+      const remainingCapital = Math.max(0, Number(c.capital || 0) - paidInsts * principalPer);
+      return { ...decorateContract(c), _remainingCapital: remainingCapital };
+    }).sort((a: any, b: any) => b._remainingCapital - a._remainingCapital);
 
     const overdueRows = overdueAll.map(decorateInst).sort((a: any, b: any) => b._days - a._days);
     const paidRows = paidInRange.map(decorateInst).sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime());
