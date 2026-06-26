@@ -504,6 +504,7 @@ const Analises = () => {
       overdueAmount, overdueCount: overdueAll.length, overdueClients, aging, sumAmt,
       // carteira
       capitalAtivo, aReceberTotal, activeCount: activeContracts.length, totalClients: clients.length,
+      totalLentHistory, outstandingCapital,
       quitados, quitadosNoPeriodo,
       // cobrança
       taxaCobranca, inadRate,
