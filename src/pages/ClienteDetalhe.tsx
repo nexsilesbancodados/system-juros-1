@@ -630,6 +630,136 @@ const ClienteDetalhe = () => {
     toast({ title: "PDF gerado!" });
   };
 
+  const buildContractPDF = (c: any) => {
+    const doc = new jsPDF();
+    const now = new Date();
+    const cInsts = installments.filter((i: any) => i.contract_id === c.id);
+    const paid = cInsts.filter((i: any) => i.status === "paid").length;
+    const overdue = cInsts.filter((i: any) => i.status === "overdue").length;
+    const totalPaidVal = cInsts.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+    const totalContract = Number(c.total_amount || Number(c.installment_amount) * Number(c.num_installments));
+    const remaining = Math.max(0, totalContract - totalPaidVal);
+
+    doc.setFillColor(20, 20, 25); doc.rect(0, 0, 210, 38, "F");
+    doc.setTextColor(255, 255, 255); doc.setFontSize(18); doc.setFont("helvetica", "bold");
+    doc.text("CONTRATO DE EMPRÉSTIMO", 14, 16);
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.text(`Emitido em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR")}`, 14, 24);
+    doc.text(`Contrato #${String(c.id).slice(0, 8)}  |  Início: ${formatBR(c.start_date)}`, 14, 31);
+
+    let y = 46;
+    doc.setTextColor(40, 40, 40); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+    doc.text("Dados do Cliente", 14, y); y += 2;
+    autoTable(doc, {
+      startY: y,
+      body: [
+        ["Nome", client?.name || "—"],
+        ["CPF/CNPJ", client?.cpf_cnpj || "—"],
+        ["Telefone", client?.phone || client?.whatsapp || "—"],
+        ["E-mail", client?.email || "—"],
+      ],
+      theme: "grid", bodyStyles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 50, fontStyle: "bold" }, 1: { cellWidth: 132 } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Resumo do Contrato", 14, y); y += 2;
+    autoTable(doc, {
+      startY: y,
+      body: [
+        ["Capital emprestado", `R$ ${fmt(Number(c.capital))}`],
+        ["Modalidade", LOAN_MODE_LABEL[(c.loan_mode || "installments") as LoanMode] || c.loan_mode],
+        ["Frequência", FREQ[c.frequency] || c.frequency],
+        ["Parcelas", `${c.num_installments}x R$ ${fmt(Number(c.installment_amount))}`],
+        ["Taxa de juros", `${Number(c.interest_rate || 0)}%`],
+        ["Multa de atraso", `${Number(c.late_fee_percent || 0)}%`],
+        ["Juros diário", `${Number(c.daily_interest_percent || 0)}%`],
+        ["Total do contrato", `R$ ${fmt(totalContract)}`],
+        ["Lucro previsto", `R$ ${fmt(Number(c.total_interest || 0))}`],
+        ["Pago", `R$ ${fmt(totalPaidVal)} (${paid}/${cInsts.length})`],
+        ["Em atraso", `${overdue} parcela(s)`],
+        ["Saldo restante", `R$ ${fmt(remaining)}`],
+      ],
+      theme: "grid", bodyStyles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 1: { cellWidth: 112, halign: "right" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    if (cInsts.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Parcelas", 14, y); y += 2;
+      autoTable(doc, {
+        startY: y,
+        head: [["Nº", "Valor", "Vencimento", "Pago em", "Status"]],
+        body: cInsts.map((i: any) => [
+          String(i.installment_number),
+          `R$ ${fmt(Number(i.amount))}`,
+          formatBR(i.due_date),
+          i.paid_at ? formatBR(i.paid_at) : "—",
+          i.status === "paid" ? "Pago" : i.status === "overdue" ? "Atrasada" : "Pendente",
+        ]),
+        theme: "grid", headStyles: { fillColor: [20, 20, 25], fontSize: 9 }, bodyStyles: { fontSize: 8.5 },
+        margin: { left: 14, right: 14 },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 4) {
+            if (data.cell.raw === "Atrasada") data.cell.styles.textColor = [220, 50, 50];
+            else if (data.cell.raw === "Pago") data.cell.styles.textColor = [34, 139, 34];
+          }
+        },
+      });
+    }
+
+    if (c.notes) {
+      y = (doc as any).lastAutoTable.finalY + 8;
+      if (y > 260) { doc.addPage(); y = 20; }
+      doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("Observações", 14, y); y += 6;
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(60);
+      doc.text(doc.splitTextToSize(String(c.notes), 182), 14, y);
+    }
+
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) { doc.setPage(p); doc.setFontSize(7); doc.setTextColor(140); doc.text(`Página ${p}/${pages}`, 105, 290, { align: "center" }); }
+
+    return { doc, fileName: `contrato_${(client?.name || "cliente").replace(/\s+/g, "_")}_${String(c.id).slice(0, 6)}.pdf` };
+  };
+
+  const exportContractPDF = (c: any) => {
+    const { doc, fileName } = buildContractPDF(c);
+    doc.save(fileName);
+    toast({ title: "PDF do contrato gerado!" });
+  };
+
+  const sendContractWhatsApp = async (c: any) => {
+    const phone = getPhone();
+    if (!phone) { toast({ title: "Cliente sem telefone", variant: "destructive" }); return; }
+    const { doc, fileName } = buildContractPDF(c);
+    const blob = doc.output("blob");
+    const file = new File([blob], fileName, { type: "application/pdf" });
+
+    const nav: any = navigator;
+    const canShareFile = typeof nav.canShare === "function" && nav.canShare({ files: [file] });
+    const totalContract = Number(c.total_amount || Number(c.installment_amount) * Number(c.num_installments));
+    const msgText = `Olá ${client?.name || ""}, segue o contrato:\n\n• Capital: R$ ${fmt(Number(c.capital))}\n• Parcelas: ${c.num_installments}x R$ ${fmt(Number(c.installment_amount))}\n• Total: R$ ${fmt(totalContract)}\n• Início: ${formatBR(c.start_date)}\n\nPDF em anexo.`;
+
+    if (canShareFile) {
+      try {
+        await nav.share({ files: [file], title: "Contrato", text: msgText });
+        toast({ title: "Contrato compartilhado!" });
+        return;
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+      }
+    }
+
+    // Fallback: baixa o PDF e abre o WhatsApp para o usuário anexar manualmente
+    doc.save(fileName);
+    const msg = encodeURIComponent(`${msgText}\n\n(O PDF foi baixado no seu dispositivo — anexe-o na conversa)`);
+    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+    toast({ title: "PDF baixado", description: "Anexe-o no WhatsApp que abriu." });
+  };
+
   const toggleStatus = async () => {
     const s = client?.status === "Ativo" ? "Inativo" : "Ativo";
     const key = ["client-detail", id];
