@@ -342,6 +342,133 @@ const Analises = () => {
       freqCount[f] = (freqCount[f] || 0) + 1;
     });
 
+    // ─── Helpers para construir detalhes
+    const clientName = (cid: string) => clients.find((c: any) => c.id === cid)?.name || "—";
+    const contractTag = (cid: string) => cid ? `#${String(cid).slice(0, 6)}` : "—";
+    const daysLate = (due: string) => Math.max(0, Math.floor((now.getTime() - new Date(due).getTime()) / 86400000));
+
+    const instCols: DetailColumn[] = [
+      { label: "Cliente", key: "_client" },
+      { label: "Contrato", key: "_contract" },
+      { label: "Parcela", key: "installment_number", align: "right" },
+      { label: "Vencimento", key: "due_date", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
+      { label: "Valor", key: "amount", align: "right", format: (v) => fmtBRL(Number(v || 0)) },
+      { label: "Status", key: "status" },
+    ];
+    const overdueCols: DetailColumn[] = [
+      { label: "Cliente", key: "_client" },
+      { label: "Contrato", key: "_contract" },
+      { label: "Vencimento", key: "due_date", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
+      { label: "Atraso", key: "_days", align: "right", format: (v) => `${v}d` },
+      { label: "Valor", key: "amount", align: "right", format: (v) => fmtBRL(Number(v || 0)) },
+    ];
+    const paidCols: DetailColumn[] = [
+      { label: "Cliente", key: "_client" },
+      { label: "Contrato", key: "_contract" },
+      { label: "Pago em", key: "paid_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
+      { label: "Vencimento", key: "due_date", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
+      { label: "Valor", key: "_paid", align: "right", format: (v) => fmtBRL(Number(v || 0)) },
+    ];
+    const contractCols: DetailColumn[] = [
+      { label: "Cliente", key: "_client" },
+      { label: "Contrato", key: "_contract" },
+      { label: "Capital", key: "capital", align: "right", format: (v) => fmtBRL(Number(v || 0)) },
+      { label: "Parcelas", key: "num_installments", align: "right" },
+      { label: "Criado", key: "created_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" },
+    ];
+    const decorateInst = (i: any) => ({ ...i, _client: clientName(i.client_id), _contract: contractTag(i.contract_id), _days: daysLate(i.due_date), _paid: Number(i.paid_amount || i.amount || 0) });
+    const decorateContract = (c: any) => ({ ...c, _client: clientName(c.client_id), _contract: contractTag(c.id) });
+
+    const overdueRows = overdueAll.map(decorateInst).sort((a: any, b: any) => b._days - a._days);
+    const paidRows = paidInRange.map(decorateInst).sort((a: any, b: any) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime());
+    const contractsRows = contractsInRange.map(decorateContract).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const activeRows = activeContracts.map(decorateContract);
+    const pendingRows = installments.filter((i: any) => i.status === "pending").map(decorateInst).sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    const dueTodayRows = dueToday.map(decorateInst);
+    const dueTomorrowRows = dueTomorrow.map(decorateInst);
+    const upcomingRows = upcoming.map(decorateInst).sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    const upcoming7Rows = upcoming7.map(decorateInst).sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    const newClientsRows = clients.filter((c: any) => c.created_at && inRange(new Date(c.created_at)))
+      .map((c: any) => ({ ...c, _created: c.created_at }))
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const quitadosRows = contracts.filter((c: any) => {
+      const insts = installments.filter((i: any) => i.contract_id === c.id);
+      return insts.length > 0 && insts.every((i: any) => i.status === "paid");
+    }).map(decorateContract);
+    const quitadosPeriodoRows = contracts.filter((c: any) => {
+      const insts = installments.filter((i: any) => i.contract_id === c.id);
+      if (insts.length === 0 || insts.some((i: any) => i.status !== "paid")) return false;
+      const last = insts.map((i: any) => i.paid_at ? new Date(i.paid_at).getTime() : 0).reduce((a, b) => Math.max(a, b), 0);
+      return last >= rangeStart.getTime() && last <= rangeEnd.getTime();
+    }).map(decorateContract);
+
+    const overdueByClientRows = Array.from(overdueByClient.entries()).map(([cid, v]) => ({
+      _client: v.name, _contract: contractTag(cid), count: v.count, maxDays: v.maxDays, amount: v.amount,
+    })).sort((a: any, b: any) => b.amount - a.amount);
+
+    const lucroRows = paidInRange.map((i: any) => {
+      const c = contracts.find((c: any) => c.id === i.contract_id);
+      const principal = c?.num_installments ? Number(c.capital) / Number(c.num_installments) : 0;
+      const lucro = Math.max(0, Number(i.paid_amount || i.amount) - principal);
+      return { ...decorateInst(i), _lucro: lucro };
+    }).filter((r: any) => r._lucro > 0).sort((a: any, b: any) => b._lucro - a._lucro);
+
+    const multasRows = paidInRange.filter((i: any) => Number(i.late_fee || 0) > 0)
+      .map((i: any) => ({ ...decorateInst(i), _fee: Number(i.late_fee || 0) }))
+      .sort((a: any, b: any) => b._fee - a._fee);
+
+    const agingCols = overdueCols;
+    const makeAging = (arr: any[], label: string) => ({
+      title: `Em atraso · ${label}`,
+      criteria: `Parcelas pendentes cuja data de vencimento caiu na faixa "${label}" em relação a hoje.`,
+      total: fmtBRL(sumAmt(arr)),
+      count: arr.length,
+      columns: agingCols,
+      rows: arr.map(decorateInst).sort((a: any, b: any) => b._days - a._days),
+    });
+
+    const details: Record<string, DetailPayload> = {
+      totalLent: { title: "Total emprestado no período", criteria: `Soma do capital dos contratos criados entre ${format(dateFrom, "dd/MM/yy")} e ${format(dateTo, "dd/MM/yy")}.`, total: fmtBRL(totalLent), count: contractsRows.length, columns: contractCols, rows: contractsRows },
+      newContracts: { title: "Novos contratos no período", criteria: "Contratos cuja data de criação está dentro do período selecionado.", count: contractsRows.length, columns: contractCols, rows: contractsRows },
+      ticketMedio: { title: "Ticket médio", criteria: "Total emprestado ÷ nº de contratos no período.", total: fmtBRL(ticketMedio), count: contractsRows.length, columns: contractCols, rows: contractsRows },
+      novosClientes: { title: "Novos clientes no período", criteria: "Clientes cuja data de cadastro caiu dentro do período selecionado.", count: newClientsRows.length, columns: [{ label: "Cliente", key: "name" }, { label: "Cadastro", key: "_created", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" }, { label: "Status", key: "status" }], rows: newClientsRows },
+      totalReceived: { title: "Total recebido no período", criteria: "Soma do valor pago das parcelas com status \"pago\" e data de pagamento dentro do período.", total: fmtBRL(totalReceived), count: paidRows.length, columns: paidCols, rows: paidRows },
+      paidCount: { title: "Parcelas pagas no período", criteria: "Parcelas marcadas como pagas cuja data de pagamento caiu no período.", count: paidRows.length, columns: paidCols, rows: paidRows },
+      lucro: { title: "Lucro (juros) recebido", criteria: "Para cada parcela paga, calcula valor pago − (capital ÷ nº parcelas). Considera só valores positivos.", total: fmtBRL(lucroPeriodo), count: lucroRows.length, columns: [...paidCols, { label: "Juros", key: "_lucro", align: "right", format: (v) => fmtBRL(Number(v || 0)) }], rows: lucroRows },
+      multas: { title: "Multas recebidas", criteria: "Soma do campo late_fee das parcelas pagas no período.", total: fmtBRL(multas), count: multasRows.length, columns: [...paidCols, { label: "Multa", key: "_fee", align: "right", format: (v) => fmtBRL(Number(v || 0)) }], rows: multasRows },
+      overdue: { title: "Parcelas em atraso (agora)", criteria: "Todas as parcelas pendentes cujo vencimento já passou — independente do período selecionado.", total: fmtBRL(overdueAmount), count: overdueRows.length, columns: overdueCols, rows: overdueRows },
+      overdueClients: { title: "Clientes inadimplentes (agora)", criteria: "Clientes com pelo menos uma parcela em atraso. Total agrupado por cliente.", count: overdueByClientRows.length, columns: [{ label: "Cliente", key: "_client" }, { label: "Parcelas", key: "count", align: "right" }, { label: "Maior atraso", key: "maxDays", align: "right", format: (v) => `${v}d` }, { label: "Valor", key: "amount", align: "right", format: (v) => fmtBRL(Number(v || 0)) }], rows: overdueByClientRows },
+      inadRate: { title: "Taxa de inadimplência", criteria: "Parcelas em atraso ÷ total de parcelas no sistema.", total: fmtPct(inadRate), count: overdueRows.length, columns: overdueCols, rows: overdueRows },
+      taxaCobranca: { title: "Taxa de cobrança", criteria: "Parcelas pagas no prazo ÷ parcelas que venceram dentro do período (até hoje).", total: fmtPct(taxaCobranca), count: dueAlready.length, columns: instCols, rows: dueAlready.map(decorateInst) },
+      agingA: makeAging(aging.a, "1-7 dias"),
+      agingB: makeAging(aging.b, "8-15 dias"),
+      agingC: makeAging(aging.c, "16-30 dias"),
+      agingD: makeAging(aging.d, "31-60 dias"),
+      agingE: makeAging(aging.e, "60+ dias"),
+      capitalAtivo: { title: "Capital ativo na rua", criteria: "Soma do capital dos contratos com status \"ativo\" ou \"em atraso\".", total: fmtBRL(capitalAtivo), count: activeRows.length, columns: contractCols, rows: activeRows },
+      aReceber: { title: "A receber (total)", criteria: "Soma do valor de todas as parcelas com status \"pendente\".", total: fmtBRL(aReceberTotal), count: pendingRows.length, columns: instCols, rows: pendingRows },
+      activeContracts: { title: "Contratos ativos", criteria: "Contratos com status \"ativo\" ou \"em atraso\".", count: activeRows.length, columns: contractCols, rows: activeRows },
+      totalClients: { title: "Total de clientes", criteria: "Todos os clientes cadastrados (independente de status).", count: clients.length, columns: [{ label: "Cliente", key: "name" }, { label: "Cadastro", key: "created_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" }, { label: "Status", key: "status" }], rows: clients },
+      quitados: { title: "Contratos quitados (geral)", criteria: "Contratos cujas parcelas estão todas com status \"pago\".", count: quitadosRows.length, columns: contractCols, rows: quitadosRows },
+      quitadosPeriodo: { title: "Contratos quitados no período", criteria: "Contratos cuja última parcela foi paga dentro do período selecionado.", count: quitadosPeriodoRows.length, columns: contractCols, rows: quitadosPeriodoRows },
+      dueToday: { title: "Vence hoje", criteria: "Parcelas pendentes com data de vencimento igual a hoje.", total: fmtBRL(dueTodayRows.reduce((s: number, i: any) => s + Number(i.amount || 0), 0)), count: dueTodayRows.length, columns: instCols, rows: dueTodayRows },
+      dueTomorrow: { title: "Vence amanhã", criteria: "Parcelas pendentes com data de vencimento igual a amanhã.", total: fmtBRL(dueTomorrowRows.reduce((s: number, i: any) => s + Number(i.amount || 0), 0)), count: dueTomorrowRows.length, columns: instCols, rows: dueTomorrowRows },
+      forecast7: { title: "Previsão · próximos 7 dias", criteria: "Parcelas pendentes com vencimento nos próximos 7 dias.", total: fmtBRL(forecast7Amount), count: upcoming7Rows.length, columns: instCols, rows: upcoming7Rows },
+      forecast30: { title: "Previsão · próximos 30 dias", criteria: "Parcelas pendentes com vencimento nos próximos 30 dias.", total: fmtBRL(forecastAmount), count: upcomingRows.length, columns: instCols, rows: upcomingRows },
+    };
+
+    const freqDetails: Record<string, DetailPayload> = {};
+    Object.keys(freqLabels).forEach((key) => {
+      const rows = contractsInRange.filter((c: any) => (c.frequency || "monthly") === key).map(decorateContract);
+      freqDetails[key] = {
+        title: `Contratos ${freqLabels[key].toLowerCase()} no período`,
+        criteria: `Contratos criados no período com frequência "${freqLabels[key]}".`,
+        count: rows.length,
+        columns: contractCols,
+        rows,
+      };
+    });
+
     return {
       // empréstimos
       totalLent, newContracts, ticketMedio, novosClientes,
@@ -368,6 +495,8 @@ const Analises = () => {
       // listas
       worstPayers,
       freqLabels, freqCount,
+      // detalhes
+      details, freqDetails,
     };
   }, [data, dateFrom, dateTo]);
 
