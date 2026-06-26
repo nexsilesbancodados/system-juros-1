@@ -757,10 +757,7 @@ const Configuracoes = () => {
                 {[
                   { value: "default", label: "Space Grotesk", sample: "Aa 123" },
                   { value: "inter", label: "Inter", sample: "Aa 123" },
-                  { value: "roboto", label: "Roboto", sample: "Aa 123" },
                   { value: "poppins", label: "Poppins", sample: "Aa 123" },
-                  { value: "montserrat", label: "Montserrat", sample: "Aa 123" },
-                  { value: "nunito", label: "Nunito", sample: "Aa 123" },
                 ].map(font => (
                   <button
                     key={font.value}
