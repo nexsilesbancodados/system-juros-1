@@ -269,6 +269,13 @@ const Cobrancas = () => {
 
     let arr = installments.filter((inst: any) => {
       if (filter !== "all" && inst.status !== filter) return false;
+      if (focoDia) {
+        if (inst.status === "paid") return false;
+        const d = parseLocalDate(inst.due_date);
+        if (!d) return false;
+        // Focar do dia = atrasadas + vence hoje
+        if (d > now) return false;
+      }
       if (q) {
         const name = (inst.client_name || "").toLowerCase();
         const num = `${inst.installment_number}`;
@@ -300,7 +307,7 @@ const Cobrancas = () => {
     else if (sort === "amount_asc") arr = [...arr].sort((a, b) => Number(a.amount) - Number(b.amount));
     else if (sort === "overdue_days") arr = [...arr].sort((a, b) => overdueDays(b) - overdueDays(a));
     return arr;
-  }, [installments, filter, period, sort, dSearch]);
+  }, [installments, filter, period, sort, dSearch, focoDia]);
 
   const stats = useMemo(() => {
     const pending = installments.filter((i: any) => i.status === "pending");
