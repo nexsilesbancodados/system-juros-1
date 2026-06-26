@@ -308,26 +308,77 @@ const Cobrancas = () => {
 
   const getSelectedItems = () => installments.filter((i: any) => selected.has(i.id));
 
+  const buildBulkWhatsAppMessage = (clientName: string, items: any[]) => {
+    const portalUrl = `${window.location.origin}/portal-cliente`;
+    const pix = (profile as any)?.pix_key;
+    const pixType = (profile as any)?.pix_key_type;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const lines = items.map((i: any) => {
+      const d = parseLocalDate(i.due_date);
+      const days = d ? Math.floor((today.getTime() - d.getTime()) / 86400000) : 0;
+      const tag = days > 0 ? ` ⚠️ ${days}d atrasada` : days === 0 ? " 📌 vence hoje" : "";
+      const contractTag = i.contract_id ? ` (contrato #${String(i.contract_id).slice(0, 6)})` : "";
+      return `• Parcela #${i.installment_number}${contractTag} — R$ ${fmt(Number(i.amount))} — venc. ${formatBR(i.due_date)}${tag}`;
+    }).join("\n");
+    const total = items.reduce((s: number, i: any) => s + Number(i.amount), 0);
+    const pixBlock = pix
+      ? `\n\n💸 *Pague via PIX*\nChave (${pixType || "PIX"}): *${pix}*\nValor total: *R$ ${fmt(total)}*\n_(a chave já foi copiada para sua área de transferência)_`
+      : "";
+    return `Olá ${clientName}, tudo bem? 👋\n\nIdentifiquei ${items.length} parcela${items.length > 1 ? "s" : ""} pendente${items.length > 1 ? "s" : ""} totalizando *R$ ${fmt(total)}*:\n\n${lines}${pixBlock}\n\nQualquer dúvida estou à disposição. Obrigado! 🙏\n\nPortal: ${portalUrl}`;
+  };
+
   const handleBulk = (channel: "whatsapp" | "email" | "sms") => {
-    let items = getSelectedItems();
+    let items = getSelectedItems().filter((i: any) => i.status !== "paid");
     if (!items.length) {
       const overdue = filtered.filter((i: any) => i.status === "overdue");
       if (!overdue.length) { toast({ title: "Selecione parcelas ou tenha atrasadas" }); return; }
       items = overdue;
     }
+
+    if (channel === "whatsapp") {
+      // Agrupar por cliente para enviar UMA mensagem consolidada com PIX
+      const byClient = new Map<string, any[]>();
+      items.forEach((i: any) => {
+        if (!byClient.has(i.client_id)) byClient.set(i.client_id, []);
+        byClient.get(i.client_id)!.push(i);
+      });
+      let opened = 0, skipped = 0;
+      const pix = (profile as any)?.pix_key;
+      if (pix) navigator.clipboard?.writeText(pix).catch(() => {});
+      let idx = 0;
+      byClient.forEach((clientItems) => {
+        const first = clientItems[0];
+        if (!first.client_phone) { skipped++; return; }
+        const phone = first.client_phone.replace(/\D/g, "");
+        const num = phone.startsWith("55") ? phone : `55${phone}`;
+        const msg = buildBulkWhatsAppMessage(first.client_name, clientItems);
+        setTimeout(() => {
+          window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+          clientItems.forEach((i: any) => logAttempt(i, "whatsapp", msg));
+        }, idx * 400);
+        idx++;
+        opened++;
+      });
+      toast({
+        title: `📲 ${opened} cliente(s) sendo cobrado(s) via WhatsApp`,
+        description: `${items.length} parcela(s) consolidada(s). ${pix ? "Chave PIX copiada. " : ""}${skipped > 0 ? `${skipped} sem telefone.` : ""}`.trim(),
+      });
+      setSelected(new Set());
+      return;
+    }
+
     let opened = 0, skipped = 0;
     items.forEach((inst: any, idx: number) => {
       const hasContact = channel === "email" ? !!inst.client_email : !!inst.client_phone;
       if (!hasContact) { skipped++; return; }
       setTimeout(() => {
-        if (channel === "whatsapp") handleWhatsApp(inst);
-        else if (channel === "email") handleEmail(inst);
+        if (channel === "email") handleEmail(inst);
         else handleSMS(inst);
       }, idx * 350);
       opened++;
     });
     toast({
-      title: `Enviando ${opened} cobrança(s) por ${channel === "whatsapp" ? "WhatsApp" : channel === "email" ? "E-mail" : "SMS"}`,
+      title: `Enviando ${opened} cobrança(s) por ${channel === "email" ? "E-mail" : "SMS"}`,
       description: skipped > 0 ? `${skipped} cliente(s) sem contato e foram ignorados.` : undefined,
     });
     setSelected(new Set());
