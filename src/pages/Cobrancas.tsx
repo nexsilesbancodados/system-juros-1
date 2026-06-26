@@ -707,6 +707,16 @@ const Cobrancas = () => {
                         <MessageSquare size={14} />
                         <span className="hidden md:inline">WhatsApp</span>
                       </button>
+                      {(profile as any)?.pix_key && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyPix(inst); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                          title="Copiar chave PIX"
+                        >
+                          <Copy size={14} />
+                          <span className="hidden lg:inline">PIX</span>
+                        </button>
+                      )}
                       {inst.client_email && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
