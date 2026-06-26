@@ -241,6 +241,8 @@ const Analises = () => {
     const newContracts = contractsInRange.length;
     const ticketMedio = newContracts > 0 ? totalLent / newContracts : 0;
     const novosClientes = clients.filter((c: any) => c.created_at && inRange(new Date(c.created_at))).length;
+    const totalProfitExpected = contractsInRange.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
+
 
     // ─── Recebimentos no período
     const totalReceived = paidInRange.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
