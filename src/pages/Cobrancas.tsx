@@ -287,13 +287,6 @@ const Cobrancas = () => {
     logAttempt(inst, "email", body);
   };
 
-  const handleSMS = (inst: any) => {
-    if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
-    const phone = inst.client_phone.replace(/\D/g, "");
-    const message = buildMessage(inst);
-    window.open(`sms:${phone.startsWith("55") ? "+" + phone : "+55" + phone}?body=${encodeURIComponent(message)}`, "_blank");
-    logAttempt(inst, "sms", message);
-  };
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
