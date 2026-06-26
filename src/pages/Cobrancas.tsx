@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
-  CalendarDays, Mail, CheckSquare, Square, List, Copy,
+  CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
   Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
