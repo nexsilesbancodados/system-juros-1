@@ -150,7 +150,7 @@ const Cobrancas = () => {
     enabled: !!user,
   });
 
-  const logAttempt = async (inst: any, channel: "whatsapp" | "email" | "sms" | "pix_copy" | "manual", preview?: string) => {
+  const logAttempt = async (inst: any, channel: "whatsapp" | "email" | "pix_copy" | "manual", preview?: string) => {
     if (!user) return;
     try {
       await supabase.from("collection_attempts").insert({
