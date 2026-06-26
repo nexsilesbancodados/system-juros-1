@@ -470,8 +470,8 @@ const Cobrancas = () => {
     return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); setBucket("all"); };
 
   const copyPix = async (inst: any) => {
     const pix = (profile as any)?.pix_key;
@@ -479,9 +479,19 @@ const Cobrancas = () => {
     try {
       await navigator.clipboard.writeText(pix);
       toast({ title: "✓ PIX copiado", description: `R$ ${fmt(Number(inst.amount))} · ${inst.client_name}` });
+      logAttempt(inst, "pix_copy", pix);
     } catch {
       toast({ title: "Erro ao copiar", variant: "destructive" });
     }
+  };
+
+  const saveReminderTime = async (hour: number, minute: number, auto: boolean) => {
+    if (!user) return;
+    await supabase.from("settings").update({
+      bot_send_hour: hour, bot_send_minute: minute, bot_auto_send: auto,
+    }).eq("user_id", user.id);
+    await refetchSettings();
+    toast({ title: "✓ Lembretes atualizados" });
   };
 
   const renderRow = (inst: any) => {
