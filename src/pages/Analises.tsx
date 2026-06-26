@@ -339,6 +339,9 @@ const Analises = () => {
       .reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
     const prevPaidCount = installments.filter((i: any) => i.status === "paid" && i.paid_at && new Date(i.paid_at) >= prevStart && new Date(i.paid_at) <= prevEnd).length;
     const prevContracts = contracts.filter((c: any) => { const d = new Date(c.created_at); return d >= prevStart && d <= prevEnd; }).length;
+    const prevProfit = contracts
+      .filter((c: any) => { const d = new Date(c.created_at); return d >= prevStart && d <= prevEnd; })
+      .reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
     const delta = (cur: number, prev: number) => prev === 0 ? (cur > 0 ? 100 : 0) : ((cur - prev) / prev) * 100;
 
     // ─── Top piores pagadores
