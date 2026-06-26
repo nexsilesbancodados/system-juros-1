@@ -441,21 +441,50 @@ const Analises = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Stats principais do período (com comparação vs período anterior) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Emprestado no período", value: `R$ ${fmt(charts.stats.totalLent)}`, delta: charts.stats.deltaLent, positiveIsGood: true },
+          { label: "Recebido no período", value: `R$ ${fmt(charts.stats.totalReceived)}`, delta: charts.stats.deltaReceived, positiveIsGood: true },
+          { label: "Lucro (juros) recebido", value: `R$ ${fmt(charts.stats.lucroPeriodo)}` },
+          { label: "Em atraso (atual)", value: `R$ ${fmt(charts.stats.overdueAllNowAmount)}`, hint: `${charts.stats.overdueAllNowCount} parcela(s)`, danger: charts.stats.overdueAllNowAmount > 0 },
+        ].map((s: any) => {
+          const showDelta = typeof s.delta === "number" && isFinite(s.delta);
+          const up = showDelta && s.delta >= 0;
+          const good = showDelta && (s.positiveIsGood ? up : !up);
+          return (
+            <div key={s.label} className={cn("glass-card rounded-2xl p-4", s.danger && "border-destructive/30")}>
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <p className={cn("text-xl font-bold mt-1", s.danger ? "text-destructive" : "text-foreground")}>{s.value}</p>
+              {showDelta ? (
+                <p className={cn("text-[11px] mt-1 font-semibold", good ? "text-success" : "text-destructive")}>
+                  {up ? "▲" : "▼"} {Math.abs(s.delta).toFixed(1)}% vs período anterior
+                </p>
+              ) : s.hint ? (
+                <p className="text-[11px] text-muted-foreground mt-1">{s.hint}</p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Stats secundários */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {[
           { label: "Capital Ativo", value: `R$ ${fmt(charts.stats.totalCapital)}` },
-          { label: "Total Recebido", value: `R$ ${fmt(charts.stats.totalReceived)}` },
-          { label: "Inadimplência", value: `${charts.stats.inadRate.toFixed(1)}%` },
-          { label: "Contratos", value: charts.stats.totalContracts },
-          { label: "Clientes", value: charts.stats.totalClients },
+          { label: "Ticket médio", value: `R$ ${fmt(charts.stats.ticketMedio)}` },
+          { label: "Taxa de cobrança", value: `${charts.stats.taxaCobranca.toFixed(1)}%` },
+          { label: "Novos contratos", value: charts.stats.totalContracts },
+          { label: "Contratos quitados", value: charts.stats.contratosQuitados },
+          { label: "Novos clientes", value: charts.stats.novosClientes },
         ].map((s) => (
-          <div key={s.label} className="glass-card rounded-2xl p-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className="text-xl font-bold text-foreground mt-1">{s.value}</p>
+          <div key={s.label} className="glass-card rounded-2xl p-3">
+            <p className="text-[11px] text-muted-foreground">{s.label}</p>
+            <p className="text-base font-bold text-foreground mt-1">{s.value}</p>
           </div>
         ))}
       </div>
+
 
       {/* Row 1: Revenue + Default Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
