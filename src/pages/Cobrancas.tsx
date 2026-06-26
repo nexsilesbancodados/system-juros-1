@@ -350,6 +350,15 @@ const Cobrancas = () => {
         // Focar do dia = atrasadas + vence hoje
         if (d > now) return false;
       }
+      if (bucket !== "all") {
+        if (inst.status === "paid") return false;
+        const d = parseLocalDate(inst.due_date);
+        if (!d) return false;
+        const days = Math.floor((now.getTime() - d.getTime()) / 86400000);
+        if (bucket === "today" && days !== 0) return false;
+        if (bucket === "1-7" && (days < 1 || days > 7)) return false;
+        if (bucket === "8-30" && (days < 8 || days > 30)) return false;
+        if (bucket === "30+" && days <= 30) return false;
       if (q) {
         const name = (inst.client_name || "").toLowerCase();
         const num = `${inst.installment_number}`;
