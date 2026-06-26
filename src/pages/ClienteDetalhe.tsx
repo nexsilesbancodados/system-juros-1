@@ -1322,7 +1322,8 @@ const ClienteDetalhe = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
