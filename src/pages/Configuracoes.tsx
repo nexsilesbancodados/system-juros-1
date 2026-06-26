@@ -360,7 +360,6 @@ const Configuracoes = () => {
       items: [
         { id: "bot", label: "Bot de Cobranças", icon: Bot, keywords: "bot ia automático mensagem cobrança horário" },
         { id: "templates", label: "Templates de Mensagem", icon: MessageSquare, keywords: "template mensagem padrão" },
-        { id: "mensagem", label: "Mensagem Padrão", icon: Send, keywords: "mensagem padrão saudação assinatura" },
       ],
     },
     {
@@ -368,9 +367,7 @@ const Configuracoes = () => {
       label: "Integrações",
       items: [
         { id: "whatsapp", label: "WhatsApp (Evolution)", icon: MessageSquare, keywords: "whatsapp evolution instance api" },
-        { id: "notificacoes", label: "Notificações Push", icon: Bell, keywords: "push notificação alerta" },
         { id: "pwa", label: "Aplicativo Mobile", icon: Zap, keywords: "pwa android ios mobile app instalar" },
-        { id: "ia-voz", label: "IA de Voz", icon: Volume2, keywords: "voz áudio tts ia" },
       ],
     },
     {
@@ -379,7 +376,6 @@ const Configuracoes = () => {
       advanced: true,
       items: [
         { id: "webhooks", label: "Webhooks / N8N", icon: Webhook, keywords: "webhook n8n integração http", adminOnly: true },
-        { id: "pagamentos", label: "Checkout Hubla", icon: CreditCard, keywords: "hubla checkout pagamento assinatura", adminOnly: true },
         { id: "admin_global", label: "Admin Global", icon: Shield, keywords: "admin global sistema", adminOnly: true },
       ],
     },
