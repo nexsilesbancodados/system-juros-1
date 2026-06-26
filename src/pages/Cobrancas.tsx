@@ -385,6 +385,27 @@ const Cobrancas = () => {
     setSelected(new Set());
   };
 
+  const confirmBulkPreview = async () => {
+    if (!bulkPreview) return;
+    setBulkSending(true);
+    const pix = (profile as any)?.pix_key;
+    if (pix) navigator.clipboard?.writeText(pix).catch(() => {});
+    bulkPreview.groups.forEach((g, idx) => {
+      setTimeout(() => {
+        window.open(`https://wa.me/${g.phone}?text=${encodeURIComponent(g.message)}`, "_blank");
+        g.items.forEach((i: any) => logAttempt(i, "whatsapp", g.message));
+      }, idx * 400);
+    });
+    toast({
+      title: `📲 ${bulkPreview.groups.length} cliente(s) sendo cobrado(s) via WhatsApp`,
+      description: `${bulkPreview.totalItems} parcela(s) consolidada(s). ${pix ? "Chave PIX copiada. " : ""}${bulkPreview.skipped > 0 ? `${bulkPreview.skipped} sem telefone.` : ""}`.trim(),
+    });
+    setSelected(new Set());
+    setBulkPreview(null);
+    setPreviewEditIdx(null);
+    setBulkSending(false);
+  };
+
   // Filtering + sorting
   const filtered = useMemo(() => {
     const q = dSearch.trim().toLowerCase();
