@@ -345,28 +345,26 @@ const Cobrancas = () => {
         if (!byClient.has(i.client_id)) byClient.set(i.client_id, []);
         byClient.get(i.client_id)!.push(i);
       });
-      let opened = 0, skipped = 0;
-      const pix = (profile as any)?.pix_key;
-      if (pix) navigator.clipboard?.writeText(pix).catch(() => {});
-      let idx = 0;
-      byClient.forEach((clientItems) => {
+      const groups: { clientId: string; clientName: string; phone: string; message: string; items: any[] }[] = [];
+      let skipped = 0;
+      byClient.forEach((clientItems, clientId) => {
         const first = clientItems[0];
         if (!first.client_phone) { skipped++; return; }
         const phone = first.client_phone.replace(/\D/g, "");
         const num = phone.startsWith("55") ? phone : `55${phone}`;
-        const msg = buildBulkWhatsAppMessage(first.client_name, clientItems);
-        setTimeout(() => {
-          window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
-          clientItems.forEach((i: any) => logAttempt(i, "whatsapp", msg));
-        }, idx * 400);
-        idx++;
-        opened++;
+        groups.push({
+          clientId,
+          clientName: first.client_name,
+          phone: num,
+          message: buildBulkWhatsAppMessage(first.client_name, clientItems),
+          items: clientItems,
+        });
       });
-      toast({
-        title: `📲 ${opened} cliente(s) sendo cobrado(s) via WhatsApp`,
-        description: `${items.length} parcela(s) consolidada(s). ${pix ? "Chave PIX copiada. " : ""}${skipped > 0 ? `${skipped} sem telefone.` : ""}`.trim(),
-      });
-      setSelected(new Set());
+      if (!groups.length) {
+        toast({ title: "Nenhum cliente com telefone válido", description: `${skipped} parcela(s) sem contato.` });
+        return;
+      }
+      setBulkPreview({ groups, skipped, totalItems: items.length });
       return;
     }
 
