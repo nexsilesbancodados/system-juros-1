@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
-  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
+  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame,
+  History, Bell, Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,17 @@ import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+const relTime = (iso: string) => {
+  const d = new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - d);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h`;
+  const days = Math.floor(h / 24);
+  return `${days}d`;
+};
 
 type StatusFilter = "all" | "pending" | "overdue" | "paid";
 type PeriodFilter = "all" | "today" | "7d" | "30d" | "future";
