@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
-  DollarSign, Send, CalendarDays, Mail, CheckSquare, Square, List, LayoutGrid,
-  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, TrendingUp, Zap
+  CalendarDays, Mail, CheckSquare, Square, List, Copy,
+  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
-import KanbanView from "@/components/cobrancas/KanbanView";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
