@@ -456,6 +456,7 @@ const Analises = () => {
 
     const details: Record<string, DetailPayload> = {
       totalLent: { title: "Total emprestado no período", criteria: `Soma do capital dos contratos criados entre ${format(dateFrom, "dd/MM/yy")} e ${format(dateTo, "dd/MM/yy")}.`, total: fmtBRL(totalLent), count: contractsRows.length, columns: contractCols, rows: contractsRows },
+      totalProfitExpected: { title: "Lucro total dos contratos no período", criteria: `Soma do lucro previsto (total do contrato − capital) dos contratos criados entre ${format(dateFrom, "dd/MM/yy")} e ${format(dateTo, "dd/MM/yy")}.`, total: fmtBRL(totalProfitExpected), count: contractsRows.length, columns: contractCols, rows: contractsRows },
       newContracts: { title: "Novos contratos no período", criteria: "Contratos cuja data de criação está dentro do período selecionado.", count: contractsRows.length, columns: contractCols, rows: contractsRows },
       ticketMedio: { title: "Ticket médio", criteria: "Total emprestado ÷ nº de contratos no período.", total: fmtBRL(ticketMedio), count: contractsRows.length, columns: contractCols, rows: contractsRows },
       novosClientes: { title: "Novos clientes no período", criteria: "Clientes cuja data de cadastro caiu dentro do período selecionado.", count: newClientsRows.length, columns: [{ label: "Cliente", key: "name" }, { label: "Cadastro", key: "_created", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" }, { label: "Status", key: "status" }], rows: newClientsRows },
