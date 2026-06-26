@@ -405,7 +405,7 @@ const Cobrancas = () => {
     setPreviewEditIdx(null);
     // Refresh installments so the new "cobrado" status from the DB trigger shows up
     setTimeout(() => {
-      qc.invalidateQueries({ queryKey: ["cobr-installments-with-clients", user?.id] });
+      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
     }, 800);
     setBulkSending(false);
   };
