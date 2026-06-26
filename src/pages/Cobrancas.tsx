@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
-  DollarSign, Send, CalendarDays, Mail, CheckSquare, Square, List, LayoutGrid,
-  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, TrendingUp, Zap
+  CalendarDays, Mail, CheckSquare, Square, List, Copy,
+  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import CalendarView from "@/components/cobrancas/CalendarView";
-import KanbanView from "@/components/cobrancas/KanbanView";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
@@ -45,11 +44,12 @@ const Cobrancas = () => {
   const [bulkPayOpen, setBulkPayOpen] = useState(false);
   const [bulkPaying, setBulkPaying] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [view, setView] = useState<"list" | "calendar" | "kanban">("list");
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [cobrarAteOpen, setCobrarAteOpen] = useState(false);
   const todayISO = new Date().toISOString().slice(0, 10);
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
+  const [focoDia, setFocoDia] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard "/" focus
@@ -269,6 +269,13 @@ const Cobrancas = () => {
 
     let arr = installments.filter((inst: any) => {
       if (filter !== "all" && inst.status !== filter) return false;
+      if (focoDia) {
+        if (inst.status === "paid") return false;
+        const d = parseLocalDate(inst.due_date);
+        if (!d) return false;
+        // Focar do dia = atrasadas + vence hoje
+        if (d > now) return false;
+      }
       if (q) {
         const name = (inst.client_name || "").toLowerCase();
         const num = `${inst.installment_number}`;
@@ -300,7 +307,7 @@ const Cobrancas = () => {
     else if (sort === "amount_asc") arr = [...arr].sort((a, b) => Number(a.amount) - Number(b.amount));
     else if (sort === "overdue_days") arr = [...arr].sort((a, b) => overdueDays(b) - overdueDays(a));
     return arr;
-  }, [installments, filter, period, sort, dSearch]);
+  }, [installments, filter, period, sort, dSearch, focoDia]);
 
   const stats = useMemo(() => {
     const pending = installments.filter((i: any) => i.status === "pending");
@@ -326,19 +333,30 @@ const Cobrancas = () => {
     return getSelectedItems().reduce((s: number, i: any) => s + Number(i.amount), 0);
   }, [selected, installments]);
 
-  const overdueByClient = useMemo(() => {
-    const map = new Map<string, { name: string; count: number; total: number }>();
-    installments.filter((i: any) => i.status === "overdue").forEach((i: any) => {
-      const existing = map.get(i.client_id) || { name: i.client_name || "—", count: 0, total: 0 };
-      existing.count++;
-      existing.total += Number(i.amount);
-      map.set(i.client_id, existing);
+  const dueTodayStats = useMemo(() => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const items = installments.filter((i: any) => {
+      if (i.status === "paid") return false;
+      const d = parseLocalDate(i.due_date);
+      return d && d.toDateString() === today.toDateString();
     });
-    return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
+    return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); };
+
+  const copyPix = async (inst: any) => {
+    const pix = (profile as any)?.pix_key;
+    if (!pix) { toast({ title: "PIX não configurado", description: "Adicione sua chave PIX nas Configurações.", variant: "destructive" }); return; }
+    try {
+      await navigator.clipboard.writeText(pix);
+      toast({ title: "✓ PIX copiado", description: `R$ ${fmt(Number(inst.amount))} · ${inst.client_name}` });
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
+
 
   return (
     <div className="space-y-5 pb-24">
@@ -355,6 +373,21 @@ const Cobrancas = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
+                focoDia
+                  ? "bg-destructive/15 border-destructive/40 text-destructive"
+                  : "bg-card border-border text-foreground hover:bg-accent"
+              }`}
+              title="Mostra apenas atrasadas + vencendo hoje"
+            >
+              <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
+              {focoDia ? "Foco do dia ativo" : "Foco do dia"}
+              {(stats.overdue + dueTodayStats.count) > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-background/40">{stats.overdue + dueTodayStats.count}</span>
+              )}
+            </button>
             <button
               onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
@@ -378,14 +411,14 @@ const Cobrancas = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
 
         {[
-          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const },
-          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const },
-          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const },
-          { label: "Inadimplência", value: `${stats.inadimplencia.toFixed(1)}%`, sub: `${stats.total} parcelas`, icon: TrendingUp, color: "text-foreground", bg: "bg-muted/30", border: "", filterKey: "all" as const },
+          { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
+          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
+          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
+          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
         ].map((s: any) => (
           <button
             key={s.label}
-            onClick={() => setFilter(s.filterKey)}
+            onClick={s.onClick}
             className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
               filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
             }`}
@@ -402,39 +435,12 @@ const Cobrancas = () => {
         ))}
       </div>
 
-      {/* Overdue Summary by Client */}
-      {overdueByClient.length > 0 && filter !== "paid" && (
-        <div className="bg-destructive/5 border border-destructive/15 rounded-2xl p-4 animate-fade-in">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-destructive" />
-              <span className="text-xs font-semibold text-destructive uppercase tracking-wider">Top inadimplentes</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">{overdueByClient.length} cliente(s)</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {overdueByClient.slice(0, 8).map(([clientId, info]) => (
-              <button
-                key={clientId}
-                onClick={() => navigate(`/clientes/${clientId}`)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-xs cursor-pointer hover:bg-accent/30 hover:border-destructive/30 transition-colors"
-              >
-                <span className="font-medium text-foreground">{info.name}</span>
-                <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive text-[10px] font-bold">{info.count}x</span>
-                <span className="text-muted-foreground">R$ {fmt(info.total)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* View switcher */}
       <div className="flex items-center gap-2 animate-fade-in">
         <div className="pill-tabs">
           {([
             { key: "list", label: "Lista", icon: List },
             { key: "calendar", label: "Calendário", icon: CalendarIcon },
-            { key: "kanban", label: "Kanban", icon: LayoutGrid },
           ] as const).map((v) => (
             <button
               key={v.key}
@@ -446,6 +452,7 @@ const Cobrancas = () => {
           ))}
         </div>
       </div>
+
 
       {/* Search + Filters + select all */}
       <div className="space-y-3 animate-fade-in">
@@ -587,9 +594,6 @@ const Cobrancas = () => {
             <button onClick={() => handleBulk("email")} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 flex items-center gap-1.5">
               <Mail size={13} /> E-mail
             </button>
-            <button onClick={() => handleBulk("sms")} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-warning/15 hover:bg-warning/25 text-warning border border-warning/30 flex items-center gap-1.5">
-              <Send size={13} /> SMS
-            </button>
             <button onClick={() => setBulkPayOpen(true)} className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-foreground text-background hover:opacity-90 flex items-center gap-1.5">
               <Zap size={13} /> Marcar como pagas
             </button>
@@ -607,15 +611,7 @@ const Cobrancas = () => {
         />
       )}
 
-      {/* Kanban view */}
-      {view === "kanban" && !loading && (
-        <KanbanView
-          installments={filtered}
-          onWhatsApp={handleWhatsApp}
-          onMarkPaid={(id) => setConfirmPayId(id)}
-          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
-        />
-      )}
+
 
       {/* List */}
       {view === "list" && (<>
@@ -711,6 +707,16 @@ const Cobrancas = () => {
                         <MessageSquare size={14} />
                         <span className="hidden md:inline">WhatsApp</span>
                       </button>
+                      {(profile as any)?.pix_key && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyPix(inst); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-medium hover:bg-primary/20 transition-all active:scale-95 focus-ring"
+                          title="Copiar chave PIX"
+                        >
+                          <Copy size={14} />
+                          <span className="hidden lg:inline">PIX</span>
+                        </button>
+                      )}
                       {inst.client_email && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleEmail(inst); }}
