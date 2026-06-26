@@ -93,14 +93,15 @@ const Cobrancas = () => {
   const { data: installments = [], isLoading: loading } = useQuery({
     queryKey: ["cobrancas-installments", user?.id],
     queryFn: async () => {
-      const { data: clients } = await supabase.from("clients").select("id, name, phone, whatsapp, email").eq("user_id", user!.id);
+      const clients = await fetchAll((f, t) => supabase.from("clients").select("id, name, phone, whatsapp, email").eq("user_id", user!.id).range(f, t));
       const clientMap = new Map((clients || []).map((c: any) => [c.id, { name: c.name, phone: c.whatsapp || c.phone, email: c.email }]));
 
-      const { data } = await supabase
+      const data = await fetchAll((f, t) => supabase
         .from("contract_installments")
         .select("*, contracts(capital, frequency, interest_rate, num_installments)")
         .eq("user_id", user!.id)
-        .order("due_date", { ascending: true });
+        .order("due_date", { ascending: true })
+        .range(f, t));
 
       const today = new Date(); today.setHours(0,0,0,0);
       return (data || []).map((inst: any) => {
