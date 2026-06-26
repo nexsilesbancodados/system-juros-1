@@ -203,7 +203,7 @@ const Analises = () => {
   };
 
   useMultiTableRealtime(
-    ["contracts", "contract_installments", "clients", "transactions"],
+    ["contracts", "contract_installments", "clients", "transactions", "profits", "expenses"],
     [["analises-data", user?.id || ""]],
   );
 
@@ -222,6 +222,9 @@ const Analises = () => {
       };
     },
     enabled: !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
   const m = useMemo(() => {
