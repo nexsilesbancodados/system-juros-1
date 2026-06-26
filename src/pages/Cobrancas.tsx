@@ -555,6 +555,20 @@ const Cobrancas = () => {
             )}
             {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
             {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
+            {(() => {
+              const la = lastAttemptByInst.get(inst.id);
+              if (!la || isPaid) return null;
+              const icon = la.channel === "whatsapp" ? "💬" : la.channel === "email" ? "✉️" : la.channel === "pix_copy" ? "🔑" : "📱";
+              return (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setHistoryFor({ installmentId: inst.id, clientName: inst.client_name }); }}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-accent/40 text-foreground/70 hover:bg-accent text-[10px]"
+                  title={`Última tentativa via ${la.channel} — clique para ver histórico`}
+                >
+                  {icon} cobrado há {relTime(la.created_at)}
+                </button>
+              );
+            })()}
           </div>
         </div>
 
