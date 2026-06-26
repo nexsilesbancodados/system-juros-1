@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
-  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame
+  Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame,
+  History, Bell, Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,17 @@ import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+const relTime = (iso: string) => {
+  const d = new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - d);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h`;
+  const days = Math.floor(h / 24);
+  return `${days}d`;
+};
 
 type StatusFilter = "all" | "pending" | "overdue" | "paid";
 type PeriodFilter = "all" | "today" | "7d" | "30d" | "future";
@@ -50,6 +62,8 @@ const Cobrancas = () => {
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
+  const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
+  const [historyFor, setHistoryFor] = useState<{ installmentId: string; clientName: string } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard "/" focus
@@ -100,6 +114,54 @@ const Cobrancas = () => {
     },
     enabled: !!user,
   });
+
+  const { data: attempts = [] } = useQuery({
+    queryKey: ["collection-attempts", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("collection_attempts")
+        .select("id, installment_id, client_id, channel, message_preview, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
+  const lastAttemptByInst = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const a of attempts) if (a.installment_id && !m.has(a.installment_id)) m.set(a.installment_id, a);
+    return m;
+  }, [attempts]);
+
+  const { data: reminderSettings, refetch: refetchSettings } = useQuery({
+    queryKey: ["cobr-reminder-settings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("settings")
+        .select("bot_send_hour, bot_send_minute, bot_auto_send")
+        .eq("user_id", user!.id).maybeSingle();
+      return data || { bot_send_hour: 9, bot_send_minute: 0, bot_auto_send: false };
+    },
+    enabled: !!user,
+  });
+
+  const logAttempt = async (inst: any, channel: "whatsapp" | "email" | "sms" | "pix_copy" | "manual", preview?: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("collection_attempts").insert({
+        user_id: user.id,
+        client_id: inst.client_id,
+        contract_id: inst.contract_id,
+        installment_id: inst.id,
+        channel,
+        message_preview: (preview || "").slice(0, 280),
+      });
+      qc.invalidateQueries({ queryKey: ["collection-attempts", user.id] });
+    } catch { /* non-blocking */ }
+  };
+
 
   const markPaidOne = async (inst: any) => {
     if (!user) return;
@@ -182,33 +244,44 @@ const Cobrancas = () => {
     });
   };
 
-  const buildMessage = (inst: any) => {
+  const buildMessage = (inst: any, opts: { includePix?: boolean } = {}) => {
     const portalUrl = `${window.location.origin}/portal-cliente`;
     const total = inst.contracts?.num_installments || inst.total_installments || "";
     const parcelaInfo = total ? `${inst.installment_number} de ${total}` : `${inst.installment_number}`;
     const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
-    return billingTemplate
+    let base = billingTemplate
       .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
       .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
       .replace(/\{portal\}|\[Portal\]/g, portalUrl)
       .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
+    const pix = (profile as any)?.pix_key;
+    if (opts.includePix && pix && !/PIX/i.test(base)) {
+      base += `\n\n💸 Pague via PIX:\nChave: ${pix}\nValor: R$ ${Number(inst.amount).toFixed(2)}`;
+    }
+    return base;
   };
 
-  const handleWhatsApp = (inst: any) => {
+  const handleWhatsApp = (inst: any, opts: { withPix?: boolean } = {}) => {
     if (!inst.client_phone) { toast({ title: "Sem telefone", variant: "destructive" }); return; }
     const phone = inst.client_phone.replace(/\D/g, "");
-    const message = buildMessage(inst);
+    const withPix = opts.withPix ?? !!(profile as any)?.pix_key;
+    const message = buildMessage(inst, { includePix: withPix });
+    if (withPix && (profile as any)?.pix_key) {
+      navigator.clipboard?.writeText((profile as any).pix_key).catch(() => {});
+    }
     window.open(`https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}?text=${encodeURIComponent(message)}`, "_blank");
+    logAttempt(inst, "whatsapp", message);
   };
 
   const handleEmail = (inst: any) => {
     if (!inst.client_email) { toast({ title: "Sem e-mail", variant: "destructive" }); return; }
     const totalSub = inst.contracts?.num_installments;
     const subject = `Cobrança - Parcela ${inst.installment_number}${totalSub ? ` de ${totalSub}` : ""}`;
-    const body = buildMessage(inst);
+    const body = buildMessage(inst, { includePix: true });
     window.open(`mailto:${inst.client_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+    logAttempt(inst, "email", body);
   };
 
   const handleSMS = (inst: any) => {
@@ -216,6 +289,7 @@ const Cobrancas = () => {
     const phone = inst.client_phone.replace(/\D/g, "");
     const message = buildMessage(inst);
     window.open(`sms:${phone.startsWith("55") ? "+" + phone : "+55" + phone}?body=${encodeURIComponent(message)}`, "_blank");
+    logAttempt(inst, "sms", message);
   };
 
   const toggleSelect = (id: string) => {
@@ -276,6 +350,16 @@ const Cobrancas = () => {
         // Focar do dia = atrasadas + vence hoje
         if (d > now) return false;
       }
+      if (bucket !== "all") {
+        if (inst.status === "paid") return false;
+        const d = parseLocalDate(inst.due_date);
+        if (!d) return false;
+        const days = Math.floor((now.getTime() - d.getTime()) / 86400000);
+        if (bucket === "today" && days !== 0) return false;
+        if (bucket === "1-7" && (days < 1 || days > 7)) return false;
+        if (bucket === "8-30" && (days < 8 || days > 30)) return false;
+        if (bucket === "30+" && days <= 30) return false;
+      }
       if (q) {
         const name = (inst.client_name || "").toLowerCase();
         const num = `${inst.installment_number}`;
@@ -307,7 +391,7 @@ const Cobrancas = () => {
     else if (sort === "amount_asc") arr = [...arr].sort((a, b) => Number(a.amount) - Number(b.amount));
     else if (sort === "overdue_days") arr = [...arr].sort((a, b) => overdueDays(b) - overdueDays(a));
     return arr;
-  }, [installments, filter, period, sort, dSearch, focoDia]);
+  }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
@@ -386,8 +470,8 @@ const Cobrancas = () => {
     return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); setBucket("all"); };
 
   const copyPix = async (inst: any) => {
     const pix = (profile as any)?.pix_key;
@@ -395,9 +479,19 @@ const Cobrancas = () => {
     try {
       await navigator.clipboard.writeText(pix);
       toast({ title: "✓ PIX copiado", description: `R$ ${fmt(Number(inst.amount))} · ${inst.client_name}` });
+      logAttempt(inst, "pix_copy", pix);
     } catch {
       toast({ title: "Erro ao copiar", variant: "destructive" });
     }
+  };
+
+  const saveReminderTime = async (hour: number, minute: number, auto: boolean) => {
+    if (!user) return;
+    await supabase.from("settings").update({
+      bot_send_hour: hour, bot_send_minute: minute, bot_auto_send: auto,
+    }).eq("user_id", user.id);
+    await refetchSettings();
+    toast({ title: "✓ Lembretes atualizados" });
   };
 
   const renderRow = (inst: any) => {
@@ -461,6 +555,20 @@ const Cobrancas = () => {
             )}
             {daysText && <span className={isOverdue ? "text-destructive font-semibold" : daysText === "hoje" ? "text-warning font-semibold" : "text-muted-foreground"}>{daysText}</span>}
             {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
+            {(() => {
+              const la = lastAttemptByInst.get(inst.id);
+              if (!la || isPaid) return null;
+              const icon = la.channel === "whatsapp" ? "💬" : la.channel === "email" ? "✉️" : la.channel === "pix_copy" ? "🔑" : "📱";
+              return (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setHistoryFor({ installmentId: inst.id, clientName: inst.client_name }); }}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-accent/40 text-foreground/70 hover:bg-accent text-[10px]"
+                  title={`Última tentativa via ${la.channel} — clique para ver histórico`}
+                >
+                  {icon} cobrado há {relTime(la.created_at)}
+                </button>
+              );
+            })()}
           </div>
         </div>
 
@@ -583,6 +691,47 @@ const Cobrancas = () => {
       {/* Métricas de cobranças automáticas */}
       <CollectionMetrics />
 
+      {/* Reminder schedule card */}
+      {reminderSettings && (
+        <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${reminderSettings.bot_auto_send ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+              <Bell size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">Lembrete automático diário</p>
+              <p className="text-[11px] text-muted-foreground">
+                {reminderSettings.bot_auto_send
+                  ? `Disparo todo dia às ${String(reminderSettings.bot_send_hour).padStart(2,"0")}:${String(reminderSettings.bot_send_minute).padStart(2,"0")} para parcelas vencidas`
+                  : "Desligado — ative para enviar cobranças automáticas todo dia"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="time"
+              value={`${String(reminderSettings.bot_send_hour ?? 9).padStart(2,"0")}:${String(reminderSettings.bot_send_minute ?? 0).padStart(2,"0")}`}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(":").map(Number);
+                saveReminderTime(h || 0, m || 0, reminderSettings.bot_auto_send);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            />
+            <button
+              onClick={() => saveReminderTime(reminderSettings.bot_send_hour ?? 9, reminderSettings.bot_send_minute ?? 0, !reminderSettings.bot_auto_send)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                reminderSettings.bot_auto_send
+                  ? "bg-success text-success-foreground hover:opacity-90"
+                  : "bg-muted text-foreground hover:bg-accent"
+              }`}
+            >
+              <Send size={12} /> {reminderSettings.bot_auto_send ? "Ativo" : "Ativar"}
+            </button>
+          </div>
+        </div>
+      )}
+
+
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
 
@@ -611,8 +760,33 @@ const Cobrancas = () => {
         ))}
       </div>
 
+      {/* Bucket de atraso */}
+      <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Atraso</span>
+        {([
+          { v: "all", label: "Todos" },
+          { v: "today", label: "Hoje" },
+          { v: "1-7", label: "1-7 dias" },
+          { v: "8-30", label: "8-30 dias" },
+          { v: "30+", label: "30+ dias" },
+        ] as const).map(b => (
+          <button
+            key={b.v}
+            onClick={() => setBucket(b.v)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              bucket === b.v
+                ? "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
+                : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+            }`}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+
       {/* View switcher */}
       <div className="flex items-center gap-2 animate-fade-in">
+
         <div className="pill-tabs">
           {([
             { key: "list", label: "Lista", icon: List },
@@ -1099,7 +1273,46 @@ const Cobrancas = () => {
           </div>
         );
       })()}
+
+      {/* History modal */}
+      {historyFor && (() => {
+        const list = attempts.filter((a: any) => a.installment_id === historyFor.installmentId);
+        return (
+          <div className="modal-backdrop" onClick={() => setHistoryFor(null)}>
+            <div className="modal-content max-w-md p-0" onClick={e => e.stopPropagation()}>
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center"><History size={16} className="text-primary" /></div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Histórico de cobranças</h3>
+                    <p className="text-[11px] text-muted-foreground">{historyFor.clientName}</p>
+                  </div>
+                </div>
+                <button onClick={() => setHistoryFor(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={14} /></button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Nenhuma tentativa registrada ainda.</p>
+                ) : list.map((a: any) => (
+                  <div key={a.id} className="rounded-xl border border-border bg-card/50 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                        {a.channel === "whatsapp" ? "💬 WhatsApp" : a.channel === "email" ? "✉️ E-mail" : a.channel === "pix_copy" ? "🔑 PIX copiado" : a.channel === "sms" ? "📱 SMS" : "✍️ Manual"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">há {relTime(a.created_at)}</span>
+                    </div>
+                    {a.message_preview && (
+                      <p className="text-[11px] text-muted-foreground whitespace-pre-wrap line-clamp-3">{a.message_preview}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
+
   );
 };
 

@@ -442,6 +442,39 @@ export type Database = {
         }
         Relationships: []
       }
+      collection_attempts: {
+        Row: {
+          channel: string
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          id: string
+          installment_id: string | null
+          message_preview: string | null
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          message_preview?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          message_preview?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       collector_assignments: {
         Row: {
           client_id: string
