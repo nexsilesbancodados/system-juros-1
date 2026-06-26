@@ -66,7 +66,7 @@ type Stat = {
   delta?: number;
   positiveIsGood?: boolean;
   tone?: StatTone;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  icon?: React.ComponentType<any>;
 };
 
 function StatCard({ s }: { s: Stat }) {
