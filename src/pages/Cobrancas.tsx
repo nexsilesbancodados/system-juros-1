@@ -787,6 +787,204 @@ const Cobrancas = () => {
           </div>
         </div>
       )}
+
+      {/* Cobrar até <data> Modal */}
+      {cobrarAteOpen && (() => {
+        const limit = parseLocalDate(cobrarAteDate);
+        if (limit) limit.setHours(23, 59, 59, 999);
+        const items = installments
+          .filter((i: any) => i.status !== "paid")
+          .filter((i: any) => {
+            const d = parseLocalDate(i.due_date);
+            return d && limit && d <= limit;
+          })
+          .sort((a: any, b: any) => (parseLocalDate(a.due_date)?.getTime() ?? 0) - (parseLocalDate(b.due_date)?.getTime() ?? 0));
+
+        const today = new Date(); today.setHours(0,0,0,0);
+        const groups = new Map<string, any[]>();
+        items.forEach((i: any) => {
+          const arr = groups.get(i.client_id) || [];
+          arr.push(i);
+          groups.set(i.client_id, arr);
+        });
+        const totalAll = items.reduce((s: number, i: any) => s + Number(i.amount), 0);
+        const totalOverdue = items.filter((i: any) => i.status === "overdue").reduce((s: number, i: any) => s + Number(i.amount), 0);
+        const totalToday = items.filter((i: any) => {
+          const d = parseLocalDate(i.due_date);
+          return d && d.toDateString() === today.toDateString();
+        }).reduce((s: number, i: any) => s + Number(i.amount), 0);
+
+        const allIds = items.map((i: any) => i.id);
+        const allChecked = allIds.length > 0 && allIds.every((id: string) => cobrarAteSelected.has(id));
+        const selItems = items.filter((i: any) => cobrarAteSelected.has(i.id));
+        const selSum = selItems.reduce((s: number, i: any) => s + Number(i.amount), 0);
+
+        const toggleAll = () => setCobrarAteSelected(allChecked ? new Set() : new Set(allIds));
+        const toggleOne = (id: string) => setCobrarAteSelected(prev => {
+          const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+        });
+
+        const cobrarSelecionados = () => {
+          const target = (selItems.length > 0 ? selItems : items).filter((i: any) => i.client_phone);
+          if (target.length === 0) { toast({ title: "Sem telefones para cobrar", variant: "destructive" }); return; }
+          target.forEach((inst: any, idx: number) => setTimeout(() => handleWhatsApp(inst), idx * 350));
+          toast({ title: `Enviando ${target.length} cobrança(s) por WhatsApp` });
+        };
+        const baixarSelecionados = async () => {
+          const target = selItems.length > 0 ? selItems : items;
+          if (target.length === 0) return;
+          const snapshot = optimisticMarkPaid(target.map((i: any) => i.id));
+          setCobrarAteSelected(new Set());
+          let ok = 0, fail = 0;
+          for (const inst of target) { try { await markPaidOne(inst); ok++; } catch { fail++; } }
+          if (fail > 0) qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
+          qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+          qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+          toast({ title: `✓ ${ok} parcela(s) marcadas como pagas`, description: fail > 0 ? `${fail} falha(s).` : undefined });
+        };
+
+        return (
+          <div className="modal-backdrop" onClick={() => setCobrarAteOpen(false)}>
+            <div className="modal-content w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <CalendarIcon size={18} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Cobrar até a data selecionada</h3>
+                    <p className="text-[11px] text-muted-foreground">Inclui atrasadas anteriores + vencendo até a data.</p>
+                  </div>
+                </div>
+                <button onClick={() => setCobrarAteOpen(false)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+              </div>
+
+              {/* Date + presets */}
+              <div className="px-5 py-3 border-b border-border space-y-3 shrink-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data limite</label>
+                  <input
+                    type="date"
+                    value={cobrarAteDate}
+                    onChange={(e) => { setCobrarAteDate(e.target.value); setCobrarAteSelected(new Set()); }}
+                    className="px-3 py-1.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  />
+                  {[
+                    { label: "Hoje", days: 0 },
+                    { label: "+3 dias", days: 3 },
+                    { label: "+7 dias", days: 7 },
+                    { label: "Fim do mês", days: -1 },
+                  ].map(p => (
+                    <button
+                      key={p.label}
+                      onClick={() => {
+                        const d = new Date();
+                        if (p.days === -1) { d.setMonth(d.getMonth() + 1, 0); }
+                        else d.setDate(d.getDate() + p.days);
+                        setCobrarAteDate(d.toISOString().slice(0, 10));
+                        setCobrarAteSelected(new Set());
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-muted/30 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+                    >{p.label}</button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-destructive font-semibold">Atrasadas</p>
+                    <p className="text-sm font-bold text-destructive">R$ {fmt(totalOverdue)}</p>
+                  </div>
+                  <div className="rounded-xl bg-warning/10 border border-warning/20 p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-warning font-semibold">Vence hoje</p>
+                    <p className="text-sm font-bold text-warning">R$ {fmt(totalToday)}</p>
+                  </div>
+                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Total a cobrar</p>
+                    <p className="text-sm font-bold text-primary">R$ {fmt(totalAll)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto px-5 py-3">
+                {items.length === 0 ? (
+                  <div className="text-center py-10">
+                    <CheckCircle size={32} className="text-success mx-auto mb-2" />
+                    <p className="text-sm text-foreground font-medium">Nada a cobrar até esta data 🎉</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <button onClick={toggleAll} className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground">
+                        {allChecked ? <CheckSquare size={14} className="text-primary" /> : <Square size={14} />}
+                        {allChecked ? "Desmarcar todas" : `Selecionar ${items.length}`}
+                      </button>
+                      <span className="text-[11px] text-muted-foreground">{groups.size} cliente(s)</span>
+                    </div>
+                    {Array.from(groups.entries()).map(([cid, list]) => {
+                      const name = list[0].client_name;
+                      const sum = list.reduce((s, i) => s + Number(i.amount), 0);
+                      return (
+                        <div key={cid} className="rounded-xl border border-border bg-card/50">
+                          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+                            <p className="text-sm font-semibold text-foreground">{name}</p>
+                            <p className="text-xs font-bold text-primary">R$ {fmt(sum)}</p>
+                          </div>
+                          <div className="divide-y divide-border/40">
+                            {list.map((inst: any) => {
+                              const d = parseLocalDate(inst.due_date);
+                              const days = d ? Math.floor((today.getTime() - d.getTime()) / 86400000) : 0;
+                              return (
+                                <label key={inst.id} className="flex items-center gap-3 px-3 py-2 hover:bg-accent/30 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={cobrarAteSelected.has(inst.id)}
+                                    onChange={() => toggleOne(inst.id)}
+                                    className="w-4 h-4 accent-primary"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-foreground truncate">
+                                      Parcela #{inst.installment_number} · {formatBR(inst.due_date)}
+                                    </p>
+                                    <p className="text-[11px]">
+                                      <span className={inst.status === "overdue" ? "text-destructive font-semibold" : "text-muted-foreground"}>
+                                        {inst.status === "overdue" ? `${days}d em atraso` : days === 0 ? "Vence hoje" : `Em ${-days}d`}
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <p className="text-sm font-bold text-foreground shrink-0">R$ {fmt(Number(inst.amount))}</p>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {items.length > 0 && (
+                <div className="px-5 py-3 border-t border-border bg-card/95 backdrop-blur flex items-center justify-between gap-3 shrink-0">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{selItems.length > 0 ? `${selItems.length} selecionada(s)` : "Todas as parcelas"}</p>
+                    <p className="text-base font-bold text-foreground">R$ {fmt(selItems.length > 0 ? selSum : totalAll)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={cobrarSelecionados} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-success/15 text-success border border-success/30 text-xs font-semibold hover:bg-success/25 transition-colors">
+                      <MessageSquare size={14} /> Cobrar WhatsApp
+                    </button>
+                    <button onClick={baixarSelecionados} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity">
+                      <Check size={14} /> Dar baixa
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
