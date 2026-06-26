@@ -234,10 +234,25 @@ const Analises = () => {
     const rangeStart = startOfDay(dateFrom);
     const rangeEnd = endOfDay(dateTo);
     const inRange = (d: Date) => d >= rangeStart && d <= rangeEnd;
+    // Normaliza due_date (que pode vir como "YYYY-MM-DD" ou ISO) para Date local sem deslocamento de fuso
+    const parseDueLocal = (s: string) => {
+      if (!s) return new Date(NaN);
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return new Date(s);
+    };
+    const dueDayStr = (s: string) => String(s || "").slice(0, 10);
+    const todayStr = format(now, "yyyy-MM-dd");
+    const tomorrowStr = format(subDays(now, -1), "yyyy-MM-dd");
+    const rangeStartStr = format(rangeStart, "yyyy-MM-dd");
+    const rangeEndStr = format(rangeEnd, "yyyy-MM-dd");
 
     const paidInRange = installments.filter((i: any) => i.status === "paid" && i.paid_at && inRange(new Date(i.paid_at)));
     const contractsInRange = contracts.filter((c: any) => c.created_at && inRange(new Date(c.created_at)));
-    const dueInRange = installments.filter((i: any) => inRange(new Date(i.due_date)));
+    const dueInRange = installments.filter((i: any) => {
+      const d = dueDayStr(i.due_date);
+      return d >= rangeStartStr && d <= rangeEndStr;
+    });
 
     // ─── Empréstimos no período
     const totalLent = contractsInRange.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
@@ -258,11 +273,11 @@ const Analises = () => {
     const multas = paidInRange.reduce((s: number, i: any) => s + Number(i.late_fee || 0), 0);
 
     // ─── Atraso (saldo atual — não filtrado pelo período)
-    const overdueAll = installments.filter((i: any) => i.status === "pending" && new Date(i.due_date) < now);
+    const overdueAll = installments.filter((i: any) => i.status === "pending" && dueDayStr(i.due_date) < todayStr);
     const overdueAmount = overdueAll.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const overdueClients = new Set(overdueAll.map((i: any) => i.client_id)).size;
     const ag = (min: number, max: number) => overdueAll.filter((i: any) => {
-      const d = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000);
+      const d = Math.floor((startOfDay(now).getTime() - startOfDay(parseDueLocal(i.due_date)).getTime()) / 86400000);
       return d >= min && d <= max;
     });
     const aging = {
@@ -303,28 +318,28 @@ const Analises = () => {
     const totalProfitExpectedAll = contracts.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
 
     // ─── Cobrança / inadimplência
-    const dueAlready = dueInRange.filter((i: any) => new Date(i.due_date) <= now);
-    const pagasNoPrazo = dueAlready.filter((i: any) => i.status === "paid").length;
+    // Considera "paga no prazo" apenas quando o pagamento ocorreu até a data de vencimento
+    const dueAlready = dueInRange.filter((i: any) => dueDayStr(i.due_date) <= todayStr);
+    const pagasNoPrazo = dueAlready.filter((i: any) => {
+      if (i.status !== "paid" || !i.paid_at) return false;
+      return format(new Date(i.paid_at), "yyyy-MM-dd") <= dueDayStr(i.due_date);
+    }).length;
     const taxaCobranca = dueAlready.length > 0 ? (pagasNoPrazo / dueAlready.length) * 100 : 0;
     const inadRate = installments.length > 0 ? (overdueAll.length / installments.length) * 100 : 0;
 
     // ─── Previsão próximos 30 dias
-    const next30Start = startOfDay(now);
-    const next30End = endOfDay(subDays(now, -30));
     const upcoming = installments.filter((i: any) => {
       if (i.status !== "pending") return false;
-      const d = new Date(i.due_date);
-      return d >= next30Start && d <= next30End;
+      const d = dueDayStr(i.due_date);
+      return d >= todayStr && d <= format(subDays(now, -30), "yyyy-MM-dd");
     });
-    const upcoming7 = upcoming.filter((i: any) => new Date(i.due_date) <= endOfDay(subDays(now, -7)));
+    const upcoming7 = upcoming.filter((i: any) => dueDayStr(i.due_date) <= format(subDays(now, -7), "yyyy-MM-dd"));
     const forecastAmount = upcoming.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const forecast7Amount = upcoming7.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
     // ─── Vence hoje / amanhã
-    const todayStr = format(now, "yyyy-MM-dd");
-    const tomorrowStr = format(subDays(now, -1), "yyyy-MM-dd");
-    const dueToday = installments.filter((i: any) => i.status === "pending" && i.due_date === todayStr);
-    const dueTomorrow = installments.filter((i: any) => i.status === "pending" && i.due_date === tomorrowStr);
+    const dueToday = installments.filter((i: any) => i.status === "pending" && dueDayStr(i.due_date) === todayStr);
+    const dueTomorrow = installments.filter((i: any) => i.status === "pending" && dueDayStr(i.due_date) === tomorrowStr);
 
     // ─── Comparação com período anterior
     const rangeMs = rangeEnd.getTime() - rangeStart.getTime();
