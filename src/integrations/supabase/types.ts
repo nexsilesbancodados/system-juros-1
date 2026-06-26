@@ -589,11 +589,15 @@ export type Database = {
         Row: {
           amount: number
           client_id: string
+          collection_count: number
+          collection_status: string | null
           contract_id: string
           created_at: string
           due_date: string
           id: string
           installment_number: number
+          last_collected_at: string | null
+          last_collected_channel: string | null
           late_fee: number | null
           paid_amount: number | null
           paid_at: string | null
@@ -605,11 +609,15 @@ export type Database = {
         Insert: {
           amount: number
           client_id: string
+          collection_count?: number
+          collection_status?: string | null
           contract_id: string
           created_at?: string
           due_date: string
           id?: string
           installment_number: number
+          last_collected_at?: string | null
+          last_collected_channel?: string | null
           late_fee?: number | null
           paid_amount?: number | null
           paid_at?: string | null
@@ -621,11 +629,15 @@ export type Database = {
         Update: {
           amount?: number
           client_id?: string
+          collection_count?: number
+          collection_status?: string | null
           contract_id?: string
           created_at?: string
           due_date?: string
           id?: string
           installment_number?: number
+          last_collected_at?: string | null
+          last_collected_channel?: string | null
           late_fee?: number | null
           paid_amount?: number | null
           paid_at?: string | null

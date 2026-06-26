@@ -403,6 +403,10 @@ const Cobrancas = () => {
     setSelected(new Set());
     setBulkPreview(null);
     setPreviewEditIdx(null);
+    // Refresh installments so the new "cobrado" status from the DB trigger shows up
+    setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+    }, 800);
     setBulkSending(false);
   };
 
@@ -630,15 +634,21 @@ const Cobrancas = () => {
             {isPaid && inst.paid_at && <span className="text-success">Pago: {formatBR(inst.paid_at)}</span>}
             {(() => {
               const la = lastAttemptByInst.get(inst.id);
-              if (!la || isPaid) return null;
-              const icon = la.channel === "whatsapp" ? "💬" : la.channel === "email" ? "✉️" : la.channel === "pix_copy" ? "🔑" : "📱";
+              const persistedAt = inst.last_collected_at;
+              const persistedCh = inst.last_collected_channel;
+              const count = Number(inst.collection_count || 0);
+              if (isPaid) return null;
+              if (!la && !persistedAt) return null;
+              const channel = la?.channel || persistedCh;
+              const at = la?.created_at || persistedAt;
+              const icon = channel === "whatsapp" ? "💬" : channel === "email" ? "✉️" : channel === "pix_copy" ? "🔑" : channel === "sms" ? "📱" : "✍️";
               return (
                 <button
                   onClick={(e) => { e.stopPropagation(); setHistoryFor({ installmentId: inst.id, clientName: inst.client_name }); }}
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-accent/40 text-foreground/70 hover:bg-accent text-[10px]"
-                  title={`Última tentativa via ${la.channel} — clique para ver histórico`}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/15 text-warning hover:bg-warning/25 text-[10px] font-medium border border-warning/20"
+                  title={`Cobrado via ${channel}${count > 0 ? ` • ${count}x` : ""} — clique para ver histórico`}
                 >
-                  {icon} cobrado há {relTime(la.created_at)}
+                  {icon} cobrado há {relTime(at)}{count > 1 ? ` • ${count}x` : ""}
                 </button>
               );
             })()}
