@@ -295,6 +295,7 @@ const Analises = () => {
         return s + Number(c.capital || 0) / Number(c.num_installments);
       }, 0);
     const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
+    const totalProfitExpectedAll = contracts.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
     const historyRows = contracts.map((c: any) => {
       const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
       const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
