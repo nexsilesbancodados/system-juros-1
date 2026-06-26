@@ -283,6 +283,23 @@ const Analises = () => {
       return last >= rangeStart.getTime() && last <= rangeEnd.getTime();
     }).length;
 
+    // ─── Capital emprestado (histórico) — independente do período
+    const totalLentHistory = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const paidPrincipalAll = installments
+      .filter((i: any) => i.status === "paid")
+      .reduce((s: number, i: any) => {
+        const c = contracts.find((c: any) => c.id === i.contract_id);
+        if (!c?.num_installments) return s;
+        return s + Number(c.capital || 0) / Number(c.num_installments);
+      }, 0);
+    const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
+    const historyRows = contracts.map((c: any) => {
+      const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
+      const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
+      const remainingCapital = Math.max(0, Number(c.capital || 0) - paidInsts * principalPer);
+      return { ...decorateContract(c), _remainingCapital: remainingCapital };
+    }).sort((a: any, b: any) => b._remainingCapital - a._remainingCapital);
+
     // ─── Cobrança / inadimplência
     const dueAlready = dueInRange.filter((i: any) => new Date(i.due_date) <= now);
     const pagasNoPrazo = dueAlready.filter((i: any) => i.status === "paid").length;
@@ -453,6 +470,8 @@ const Analises = () => {
       agingD: makeAging(aging.d, "31-60 dias"),
       agingE: makeAging(aging.e, "60+ dias"),
       capitalAtivo: { title: "Capital ativo na rua", criteria: "Soma do capital dos contratos com status \"ativo\" ou \"em atraso\".", total: fmtBRL(capitalAtivo), count: activeRows.length, columns: contractCols, rows: activeRows },
+      totalLentHistory: { title: "Total emprestado (desde sempre)", criteria: "Soma do capital de todos os contratos criados, independente do período selecionado.", total: fmtBRL(totalLentHistory), count: contracts.length, columns: contractCols, rows: contracts.map(decorateContract).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) },
+      outstandingCapital: { title: "Saldo de capital emprestado", criteria: "Capital total já emprestado menos o principal já recuperado pelas parcelas pagas.", total: fmtBRL(outstandingCapital), count: historyRows.filter((r: any) => r._remainingCapital > 0).length, columns: [...contractCols, { label: "Capital em aberto", key: "_remainingCapital", align: "right", format: (v) => fmtBRL(Number(v || 0)) }], rows: historyRows.filter((r: any) => r._remainingCapital > 0) },
       aReceber: { title: "A receber (total)", criteria: "Soma do valor de todas as parcelas com status \"pendente\".", total: fmtBRL(aReceberTotal), count: pendingRows.length, columns: instCols, rows: pendingRows },
       activeContracts: { title: "Contratos ativos", criteria: "Contratos com status \"ativo\" ou \"em atraso\".", count: activeRows.length, columns: contractCols, rows: activeRows },
       totalClients: { title: "Total de clientes", criteria: "Todos os clientes cadastrados (independente de status).", count: clients.length, columns: [{ label: "Cliente", key: "name" }, { label: "Cadastro", key: "created_at", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" }, { label: "Status", key: "status" }], rows: clients },
@@ -485,6 +504,7 @@ const Analises = () => {
       overdueAmount, overdueCount: overdueAll.length, overdueClients, aging, sumAmt,
       // carteira
       capitalAtivo, aReceberTotal, activeCount: activeContracts.length, totalClients: clients.length,
+      totalLentHistory, outstandingCapital,
       quitados, quitadosNoPeriodo,
       // cobrança
       taxaCobranca, inadRate,
@@ -653,6 +673,14 @@ const Analises = () => {
                   <p className="text-[11px] text-muted-foreground">{b.data.length} parcela(s)</p>
                 </button>
               ))}
+            </div>
+          </Section>
+
+          {/* ─── CAPITAL EMPRESTADO ─── */}
+          <Section title="Capital emprestado" subtitle="Quanto já saiu e quanto ainda está em aberto">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (desde sempre)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Ainda tenho emprestado", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "saldo de capital não recuperado" }} />
             </div>
           </Section>
 
