@@ -636,9 +636,10 @@ const Analises = () => {
           </div>
 
           {/* ─── EMPRÉSTIMOS ─── */}
-          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Total emprestado", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro total dos contratos", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.newContracts)} s={{ label: "Novos contratos", value: fmtNum(m.newContracts), tone: "default", icon: FileSignature, delta: m.deltaContracts, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.ticketMedio)} s={{ label: "Ticket médio", value: fmtBRL(m.ticketMedio), tone: "default", icon: Target }} />
               <StatCard onClick={() => setDetail(m.details.novosClientes)} s={{ label: "Novos clientes", value: fmtNum(m.novosClientes), tone: "default", icon: Users }} />
