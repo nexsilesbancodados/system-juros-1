@@ -746,48 +746,7 @@ const Configuracoes = () => {
               </div>
             </div>
 
-            {/* Sidebar Style */}
-            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
-              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <LayoutDashboard size={12} className="text-primary" /> Estilo da Sidebar
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: "default", label: "Padrão", desc: "Clássico, limpo" },
-                  { value: "minimal", label: "Minimalista", desc: "Ícones + texto fino" },
-                  { value: "gradient", label: "Gradiente", desc: "Fundo com gradiente" },
-                ].map(style => (
-                  <button
-                    key={style.value}
-                    onClick={() => setForm({ ...form, sidebar_style: style.value })}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      form.sidebar_style === style.value
-                        ? "border-primary/40 bg-primary/10 shadow-sm"
-                        : "border-border hover:border-primary/20 hover:bg-accent/20"
-                    }`}
-                  >
-                    <div className="w-8 h-14 mx-auto mb-2 rounded-lg border border-border/50 overflow-hidden">
-                      <div className={`w-full h-full ${
-                        style.value === "gradient" 
-                          ? "" 
-                          : style.value === "minimal" 
-                            ? "bg-transparent" 
-                            : "bg-card"
-                      }`} style={style.value === "gradient" ? { background: `linear-gradient(180deg, ${form.primary_color}15, ${form.primary_color}05)` } : {}}>
-                        <div className="space-y-1 p-1 pt-2">
-                          <div className="w-3 h-0.5 rounded-full" style={{ background: form.primary_color }} />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-semibold text-foreground">{style.label}</p>
-                    <p className="text-[8px] text-muted-foreground">{style.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Sidebar Style removido — usa "default" sempre */}
 
             {/* Font Family */}
             <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
