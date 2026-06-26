@@ -80,14 +80,25 @@ type Stat = {
   icon?: React.ComponentType<any>;
 };
 
-function StatCard({ s }: { s: Stat }) {
+function StatCard({ s, onClick }: { s: Stat; onClick?: () => void }) {
   const tone = toneClasses[s.tone || "default"];
   const Icon = s.icon;
   const showDelta = typeof s.delta === "number" && isFinite(s.delta);
   const up = showDelta && (s.delta as number) >= 0;
   const good = showDelta && ((s.positiveIsGood ?? true) ? up : !up);
+  const clickable = !!onClick;
   return (
-    <div className={cn("glass-card rounded-2xl p-4 flex flex-col gap-2", tone.border)}>
+    <button
+      type="button"
+      disabled={!clickable}
+      onClick={onClick}
+      className={cn(
+        "glass-card rounded-2xl p-4 flex flex-col gap-2 text-left w-full",
+        tone.border,
+        clickable && "hover:border-primary/40 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40",
+        !clickable && "cursor-default"
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{s.label}</p>
         {Icon ? (
@@ -105,7 +116,61 @@ function StatCard({ s }: { s: Stat }) {
       ) : s.hint ? (
         <p className="text-[11px] text-muted-foreground">{s.hint}</p>
       ) : null}
-    </div>
+    </button>
+  );
+}
+
+function DetailModal({ payload, onClose }: { payload: DetailPayload; onClose: () => void }) {
+  const open = !!payload;
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{payload?.title}</DialogTitle>
+          <DialogDescription>{payload?.criteria}</DialogDescription>
+        </DialogHeader>
+        {payload && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 text-xs">
+              {payload.total !== undefined && (
+                <div className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-semibold">Total: {payload.total}</div>
+              )}
+              {payload.count !== undefined && (
+                <div className="px-3 py-1.5 rounded-lg bg-muted text-foreground font-semibold">{payload.count} item(ns)</div>
+              )}
+            </div>
+            {payload.rows.length === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">Nenhum registro encontrado.</div>
+            ) : (
+              <div className="max-h-[60vh] overflow-auto rounded-lg border border-border/50">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      {payload.columns.map((c) => (
+                        <th key={c.key} className={cn("px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold", c.align === "right" ? "text-right" : "text-left")}>
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {payload.rows.map((row, i) => (
+                      <tr key={i} className="hover:bg-muted/30">
+                        {payload.columns.map((c) => (
+                          <td key={c.key} className={cn("px-3 py-2 tabular-nums", c.align === "right" ? "text-right" : "text-left")}>
+                            {c.format ? c.format(row[c.key], row) : (row[c.key] ?? "—")}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
