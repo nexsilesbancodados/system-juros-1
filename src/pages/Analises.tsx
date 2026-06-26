@@ -241,6 +241,7 @@ const Analises = () => {
     const newContracts = contractsInRange.length;
     const ticketMedio = newContracts > 0 ? totalLent / newContracts : 0;
     const novosClientes = clients.filter((c: any) => c.created_at && inRange(new Date(c.created_at))).length;
+    const totalProfitExpected = contractsInRange.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
 
     // ─── Recebimentos no período
     const totalReceived = paidInRange.reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
@@ -293,6 +294,7 @@ const Analises = () => {
         return s + Number(c.capital || 0) / Number(c.num_installments);
       }, 0);
     const outstandingCapital = Math.max(0, totalLentHistory - paidPrincipalAll);
+    const totalProfitExpectedAll = contracts.reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
     const historyRows = contracts.map((c: any) => {
       const paidInsts = installments.filter((i: any) => i.contract_id === c.id && i.status === "paid").length;
       const principalPer = Number(c.num_installments || 0) > 0 ? Number(c.capital || 0) / Number(c.num_installments) : 0;
@@ -336,6 +338,9 @@ const Analises = () => {
       .reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount), 0);
     const prevPaidCount = installments.filter((i: any) => i.status === "paid" && i.paid_at && new Date(i.paid_at) >= prevStart && new Date(i.paid_at) <= prevEnd).length;
     const prevContracts = contracts.filter((c: any) => { const d = new Date(c.created_at); return d >= prevStart && d <= prevEnd; }).length;
+    const prevProfit = contracts
+      .filter((c: any) => { const d = new Date(c.created_at); return d >= prevStart && d <= prevEnd; })
+      .reduce((s: number, c: any) => s + Math.max(0, Number(c.total_amount || 0) - Number(c.capital || 0)), 0);
     const delta = (cur: number, prev: number) => prev === 0 ? (cur > 0 ? 100 : 0) : ((cur - prev) / prev) * 100;
 
     // ─── Top piores pagadores
@@ -453,6 +458,7 @@ const Analises = () => {
 
     const details: Record<string, DetailPayload> = {
       totalLent: { title: "Total emprestado no período", criteria: `Soma do capital dos contratos criados entre ${format(dateFrom, "dd/MM/yy")} e ${format(dateTo, "dd/MM/yy")}.`, total: fmtBRL(totalLent), count: contractsRows.length, columns: contractCols, rows: contractsRows },
+      totalProfitExpected: { title: "Lucro total dos contratos no período", criteria: `Soma do lucro previsto (total do contrato − capital) dos contratos criados entre ${format(dateFrom, "dd/MM/yy")} e ${format(dateTo, "dd/MM/yy")}.`, total: fmtBRL(totalProfitExpected), count: contractsRows.length, columns: contractCols, rows: contractsRows },
       newContracts: { title: "Novos contratos no período", criteria: "Contratos cuja data de criação está dentro do período selecionado.", count: contractsRows.length, columns: contractCols, rows: contractsRows },
       ticketMedio: { title: "Ticket médio", criteria: "Total emprestado ÷ nº de contratos no período.", total: fmtBRL(ticketMedio), count: contractsRows.length, columns: contractCols, rows: contractsRows },
       novosClientes: { title: "Novos clientes no período", criteria: "Clientes cuja data de cadastro caiu dentro do período selecionado.", count: newClientsRows.length, columns: [{ label: "Cliente", key: "name" }, { label: "Cadastro", key: "_created", format: (v) => v ? format(new Date(v), "dd/MM/yy") : "—" }, { label: "Status", key: "status" }], rows: newClientsRows },
@@ -471,6 +477,7 @@ const Analises = () => {
       agingE: makeAging(aging.e, "60+ dias"),
       capitalAtivo: { title: "Capital ativo na rua", criteria: "Soma do capital dos contratos com status \"ativo\" ou \"em atraso\".", total: fmtBRL(capitalAtivo), count: activeRows.length, columns: contractCols, rows: activeRows },
       totalLentHistory: { title: "Total emprestado (desde sempre)", criteria: "Soma do capital de todos os contratos criados, independente do período selecionado.", total: fmtBRL(totalLentHistory), count: contracts.length, columns: contractCols, rows: contracts.map(decorateContract).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) },
+      totalProfitExpectedAll: { title: "Lucro total esperado (desde sempre)", criteria: "Soma do lucro previsto (total do contrato − capital) de todos os contratos, independente do período selecionado.", total: fmtBRL(totalProfitExpectedAll), count: contracts.length, columns: contractCols, rows: contracts.map(decorateContract).sort((a: any, b: any) => b._lucro - a._lucro) },
       outstandingCapital: { title: "Saldo de capital emprestado", criteria: "Capital total já emprestado menos o principal já recuperado pelas parcelas pagas.", total: fmtBRL(outstandingCapital), count: historyRows.filter((r: any) => r._remainingCapital > 0).length, columns: [...contractCols, { label: "Capital em aberto", key: "_remainingCapital", align: "right", format: (v) => fmtBRL(Number(v || 0)) }], rows: historyRows.filter((r: any) => r._remainingCapital > 0) },
       aReceber: { title: "A receber (total)", criteria: "Soma do valor de todas as parcelas com status \"pendente\".", total: fmtBRL(aReceberTotal), count: pendingRows.length, columns: instCols, rows: pendingRows },
       activeContracts: { title: "Contratos ativos", criteria: "Contratos com status \"ativo\" ou \"em atraso\".", count: activeRows.length, columns: contractCols, rows: activeRows },
@@ -497,14 +504,14 @@ const Analises = () => {
 
     return {
       // empréstimos
-      totalLent, newContracts, ticketMedio, novosClientes,
+      totalLent, newContracts, ticketMedio, novosClientes, totalProfitExpected,
       // recebimentos
       totalReceived, paidCount, lucroPeriodo, multas,
       // atraso
       overdueAmount, overdueCount: overdueAll.length, overdueClients, aging, sumAmt,
       // carteira
       capitalAtivo, aReceberTotal, activeCount: activeContracts.length, totalClients: clients.length,
-      totalLentHistory, outstandingCapital,
+      totalLentHistory, outstandingCapital, totalProfitExpectedAll,
       quitados, quitadosNoPeriodo,
       // cobrança
       taxaCobranca, inadRate,
@@ -519,6 +526,7 @@ const Analises = () => {
       deltaReceived: delta(totalReceived, prevReceived),
       deltaPaidCount: delta(paidCount, prevPaidCount),
       deltaContracts: delta(newContracts, prevContracts),
+      deltaProfit: delta(totalProfitExpected, prevProfit),
       // listas
       worstPayers,
       freqLabels, freqCount,
@@ -627,9 +635,10 @@ const Analises = () => {
           </div>
 
           {/* ─── EMPRÉSTIMOS ─── */}
-          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Total emprestado", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro total dos contratos", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.newContracts)} s={{ label: "Novos contratos", value: fmtNum(m.newContracts), tone: "default", icon: FileSignature, delta: m.deltaContracts, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.ticketMedio)} s={{ label: "Ticket médio", value: fmtBRL(m.ticketMedio), tone: "default", icon: Target }} />
               <StatCard onClick={() => setDetail(m.details.novosClientes)} s={{ label: "Novos clientes", value: fmtNum(m.novosClientes), tone: "default", icon: Users }} />
@@ -677,9 +686,10 @@ const Analises = () => {
           </Section>
 
           {/* ─── CAPITAL EMPRESTADO ─── */}
-          <Section title="Capital emprestado" subtitle="Quanto já saiu e quanto ainda está em aberto">
+          <Section title="Capital emprestado" subtitle="Quanto já saiu, quanto ainda está em aberto e o lucro esperado">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (desde sempre)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpectedAll)} s={{ label: "Lucro total esperado", value: fmtBRL(m.totalProfitExpectedAll), tone: "success", icon: PiggyBank, hint: "soma do lucro previsto de todos os contratos" }} />
               <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Ainda tenho emprestado", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "saldo de capital não recuperado" }} />
             </div>
           </Section>
