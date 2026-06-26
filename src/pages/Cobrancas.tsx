@@ -374,6 +374,21 @@ const Cobrancas = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
+              onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
+                focoDia
+                  ? "bg-destructive/15 border-destructive/40 text-destructive"
+                  : "bg-card border-border text-foreground hover:bg-accent"
+              }`}
+              title="Mostra apenas atrasadas + vencendo hoje"
+            >
+              <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
+              {focoDia ? "Foco do dia ativo" : "Foco do dia"}
+              {(stats.overdue + dueTodayStats.count) > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-background/40">{stats.overdue + dueTodayStats.count}</span>
+              )}
+            </button>
+            <button
               onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
               title="Selecionar uma data e ver tudo a cobrar até ela"
