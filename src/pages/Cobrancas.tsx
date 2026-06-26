@@ -760,8 +760,33 @@ const Cobrancas = () => {
         ))}
       </div>
 
+      {/* Bucket de atraso */}
+      <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Atraso</span>
+        {([
+          { v: "all", label: "Todos" },
+          { v: "today", label: "Hoje" },
+          { v: "1-7", label: "1-7 dias" },
+          { v: "8-30", label: "8-30 dias" },
+          { v: "30+", label: "30+ dias" },
+        ] as const).map(b => (
+          <button
+            key={b.v}
+            onClick={() => setBucket(b.v)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              bucket === b.v
+                ? "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
+                : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+            }`}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+
       {/* View switcher */}
       <div className="flex items-center gap-2 animate-fade-in">
+
         <div className="pill-tabs">
           {([
             { key: "list", label: "Lista", icon: List },
