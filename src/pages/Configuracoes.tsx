@@ -445,12 +445,14 @@ const Configuracoes = () => {
           </div>
           <div className="hidden md:block relative">
             <input
+              ref={searchInputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar configuração..."
-              className="w-64 pl-8 pr-3 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
+              placeholder="Buscar configuração... (Ctrl+K)"
+              className="w-72 pl-8 pr-12 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
             />
             <Settings size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono px-1.5 py-0.5 rounded border border-border/50 bg-muted/30 text-muted-foreground/70 pointer-events-none">⌘K</kbd>
           </div>
           <button onClick={handleSave} disabled={saving}
             className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
