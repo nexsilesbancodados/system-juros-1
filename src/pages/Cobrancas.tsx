@@ -16,6 +16,7 @@ import CalendarView from "@/components/cobrancas/CalendarView";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import EmptyState from "@/components/EmptyState";
 import CollectionMetrics from "@/components/cobrancas/CollectionMetrics";
+import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 const relTime = (iso: string) => {
