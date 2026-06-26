@@ -309,6 +309,49 @@ const Cobrancas = () => {
     return arr;
   }, [installments, filter, period, sort, dSearch, focoDia]);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
+    filtered.forEach((inst: any) => {
+      if (!map.has(inst.client_id)) {
+        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, minDue: inst.due_date });
+      }
+      const g = map.get(inst.client_id)!;
+      g.items.push(inst);
+      if (inst.status !== "paid") g.total += Number(inst.amount);
+      if (inst.due_date < g.minDue) g.minDue = inst.due_date;
+    });
+    const groups = Array.from(map.values());
+    const key = (g: any) => {
+      if (sort === "amount_desc") return -g.total;
+      if (sort === "amount_asc") return g.total;
+      if (sort === "overdue_days") {
+        const maxDays = Math.max(...g.items.map((i: any) => {
+          const d = parseLocalDate(i.due_date);
+          return d ? Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000)) : 0;
+        }));
+        return -maxDays;
+      }
+      const t = parseLocalDate(g.minDue)?.getTime() ?? 0;
+      return sort === "due_desc" ? -t : t;
+    };
+    groups.sort((a, b) => key(a) - key(b));
+    groups.forEach((g: any) => {
+      g.items.sort((a: any, b: any) => {
+        if (sort === "amount_desc") return Number(b.amount) - Number(a.amount);
+        if (sort === "amount_asc") return Number(a.amount) - Number(b.amount);
+        if (sort === "overdue_days") {
+          const da = parseLocalDate(a.due_date) ? Math.max(0, Math.floor((Date.now() - parseLocalDate(a.due_date)!.getTime()) / 86400000)) : 0;
+          const db = parseLocalDate(b.due_date) ? Math.max(0, Math.floor((Date.now() - parseLocalDate(b.due_date)!.getTime()) / 86400000)) : 0;
+          return db - da;
+        }
+        const ta = parseLocalDate(a.due_date)?.getTime() ?? 0;
+        const tb = parseLocalDate(b.due_date)?.getTime() ?? 0;
+        return sort === "due_desc" ? tb - ta : ta - tb;
+      });
+    });
+    return groups;
+  }, [filtered, sort]);
+
   const stats = useMemo(() => {
     const pending = installments.filter((i: any) => i.status === "pending");
     const overdue = installments.filter((i: any) => i.status === "overdue");
