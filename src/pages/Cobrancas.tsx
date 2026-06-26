@@ -115,6 +115,54 @@ const Cobrancas = () => {
     enabled: !!user,
   });
 
+  const { data: attempts = [] } = useQuery({
+    queryKey: ["collection-attempts", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("collection_attempts")
+        .select("id, installment_id, client_id, channel, message_preview, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
+  const lastAttemptByInst = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const a of attempts) if (a.installment_id && !m.has(a.installment_id)) m.set(a.installment_id, a);
+    return m;
+  }, [attempts]);
+
+  const { data: reminderSettings, refetch: refetchSettings } = useQuery({
+    queryKey: ["cobr-reminder-settings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("settings")
+        .select("bot_send_hour, bot_send_minute, bot_auto_send")
+        .eq("user_id", user!.id).maybeSingle();
+      return data || { bot_send_hour: 9, bot_send_minute: 0, bot_auto_send: false };
+    },
+    enabled: !!user,
+  });
+
+  const logAttempt = async (inst: any, channel: "whatsapp" | "email" | "sms" | "pix_copy" | "manual", preview?: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("collection_attempts").insert({
+        user_id: user.id,
+        client_id: inst.client_id,
+        contract_id: inst.contract_id,
+        installment_id: inst.id,
+        channel,
+        message_preview: (preview || "").slice(0, 280),
+      });
+      qc.invalidateQueries({ queryKey: ["collection-attempts", user.id] });
+    } catch { /* non-blocking */ }
+  };
+
+
   const markPaidOne = async (inst: any) => {
     if (!user) return;
     const { error } = await supabase.from("contract_installments").update({
