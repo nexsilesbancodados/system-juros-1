@@ -12,17 +12,11 @@ import { DEFAULT_MODULES, type ModuleKey } from "@/contexts/WhiteLabelContext";
 
 const COLOR_PRESETS = [
   { label: "Azul Steel", primary: "#4a86c8", accent: "#6ba3d6", emoji: "🔷" },
-  { label: "Âmbar", primary: "#d97706", accent: "#f59e0b", emoji: "🟡" },
   { label: "Azul Royal", primary: "#2563eb", accent: "#3b82f6", emoji: "💎" },
   { label: "Esmeralda", primary: "#059669", accent: "#10b981", emoji: "💚" },
   { label: "Roxo", primary: "#7c3aed", accent: "#8b5cf6", emoji: "💜" },
-  { label: "Rosa", primary: "#db2777", accent: "#ec4899", emoji: "💖" },
+  { label: "Âmbar", primary: "#d97706", accent: "#f59e0b", emoji: "🟡" },
   { label: "Vermelho", primary: "#dc2626", accent: "#ef4444", emoji: "❤️" },
-  { label: "Ciano", primary: "#0891b2", accent: "#06b6d4", emoji: "🩵" },
-  { label: "Laranja", primary: "#ea580c", accent: "#f97316", emoji: "🟠" },
-  { label: "Índigo", primary: "#4f46e5", accent: "#6366f1", emoji: "🔮" },
-  { label: "Teal", primary: "#0d9488", accent: "#14b8a6", emoji: "🌊" },
-  { label: "Dourado", primary: "#b45309", accent: "#d97706", emoji: "👑" },
 ];
 
 const Configuracoes = () => {
@@ -366,7 +360,6 @@ const Configuracoes = () => {
       items: [
         { id: "bot", label: "Bot de Cobranças", icon: Bot, keywords: "bot ia automático mensagem cobrança horário" },
         { id: "templates", label: "Templates de Mensagem", icon: MessageSquare, keywords: "template mensagem padrão" },
-        { id: "mensagem", label: "Mensagem Padrão", icon: Send, keywords: "mensagem padrão saudação assinatura" },
       ],
     },
     {
@@ -374,9 +367,7 @@ const Configuracoes = () => {
       label: "Integrações",
       items: [
         { id: "whatsapp", label: "WhatsApp (Evolution)", icon: MessageSquare, keywords: "whatsapp evolution instance api" },
-        { id: "notificacoes", label: "Notificações Push", icon: Bell, keywords: "push notificação alerta" },
         { id: "pwa", label: "Aplicativo Mobile", icon: Zap, keywords: "pwa android ios mobile app instalar" },
-        { id: "ia-voz", label: "IA de Voz", icon: Volume2, keywords: "voz áudio tts ia" },
       ],
     },
     {
@@ -385,7 +376,6 @@ const Configuracoes = () => {
       advanced: true,
       items: [
         { id: "webhooks", label: "Webhooks / N8N", icon: Webhook, keywords: "webhook n8n integração http", adminOnly: true },
-        { id: "pagamentos", label: "Checkout Hubla", icon: CreditCard, keywords: "hubla checkout pagamento assinatura", adminOnly: true },
         { id: "admin_global", label: "Admin Global", icon: Shield, keywords: "admin global sistema", adminOnly: true },
       ],
     },
@@ -393,6 +383,20 @@ const Configuracoes = () => {
 
   const [search, setSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Atalho Ctrl+K / Cmd+K para focar a busca
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const visibleGroups = groups
     .map(g => ({
@@ -441,12 +445,14 @@ const Configuracoes = () => {
           </div>
           <div className="hidden md:block relative">
             <input
+              ref={searchInputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar configuração..."
-              className="w-64 pl-8 pr-3 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
+              placeholder="Buscar configuração... (Ctrl+K)"
+              className="w-72 pl-8 pr-12 py-2 rounded-lg bg-card border border-border/50 text-sm placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none"
             />
             <Settings size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono px-1.5 py-0.5 rounded border border-border/50 bg-muted/30 text-muted-foreground/70 pointer-events-none">⌘K</kbd>
           </div>
           <button onClick={handleSave} disabled={saving}
             className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
@@ -756,48 +762,7 @@ const Configuracoes = () => {
               </div>
             </div>
 
-            {/* Sidebar Style */}
-            <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
-              <p className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <LayoutDashboard size={12} className="text-primary" /> Estilo da Sidebar
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: "default", label: "Padrão", desc: "Clássico, limpo" },
-                  { value: "minimal", label: "Minimalista", desc: "Ícones + texto fino" },
-                  { value: "gradient", label: "Gradiente", desc: "Fundo com gradiente" },
-                ].map(style => (
-                  <button
-                    key={style.value}
-                    onClick={() => setForm({ ...form, sidebar_style: style.value })}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      form.sidebar_style === style.value
-                        ? "border-primary/40 bg-primary/10 shadow-sm"
-                        : "border-border hover:border-primary/20 hover:bg-accent/20"
-                    }`}
-                  >
-                    <div className="w-8 h-14 mx-auto mb-2 rounded-lg border border-border/50 overflow-hidden">
-                      <div className={`w-full h-full ${
-                        style.value === "gradient" 
-                          ? "" 
-                          : style.value === "minimal" 
-                            ? "bg-transparent" 
-                            : "bg-card"
-                      }`} style={style.value === "gradient" ? { background: `linear-gradient(180deg, ${form.primary_color}15, ${form.primary_color}05)` } : {}}>
-                        <div className="space-y-1 p-1 pt-2">
-                          <div className="w-3 h-0.5 rounded-full" style={{ background: form.primary_color }} />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                          <div className="w-full h-0.5 rounded-full bg-muted-foreground/10" />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-semibold text-foreground">{style.label}</p>
-                    <p className="text-[8px] text-muted-foreground">{style.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Sidebar Style removido — usa "default" sempre */}
 
             {/* Font Family */}
             <div className="space-y-3 p-4 rounded-2xl border border-border bg-accent/5">
@@ -808,10 +773,7 @@ const Configuracoes = () => {
                 {[
                   { value: "default", label: "Space Grotesk", sample: "Aa 123" },
                   { value: "inter", label: "Inter", sample: "Aa 123" },
-                  { value: "roboto", label: "Roboto", sample: "Aa 123" },
                   { value: "poppins", label: "Poppins", sample: "Aa 123" },
-                  { value: "montserrat", label: "Montserrat", sample: "Aa 123" },
-                  { value: "nunito", label: "Nunito", sample: "Aa 123" },
                 ].map(font => (
                   <button
                     key={font.value}
