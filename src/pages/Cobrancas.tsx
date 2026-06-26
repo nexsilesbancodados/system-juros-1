@@ -596,15 +596,7 @@ const Cobrancas = () => {
         />
       )}
 
-      {/* Kanban view */}
-      {view === "kanban" && !loading && (
-        <KanbanView
-          installments={filtered}
-          onWhatsApp={handleWhatsApp}
-          onMarkPaid={(id) => setConfirmPayId(id)}
-          onClickInstallment={(i) => navigate(`/clientes/${i.client_id}`)}
-        />
-      )}
+
 
       {/* List */}
       {view === "list" && (<>
