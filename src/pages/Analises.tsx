@@ -687,9 +687,10 @@ const Analises = () => {
           </Section>
 
           {/* ─── CAPITAL EMPRESTADO ─── */}
-          <Section title="Capital emprestado" subtitle="Quanto já saiu e quanto ainda está em aberto">
+          <Section title="Capital emprestado" subtitle="Quanto já saiu, quanto ainda está em aberto e o lucro esperado">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (desde sempre)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s)` }} />
+              <StatCard onClick={() => setDetail(m.details.totalProfitExpectedAll)} s={{ label: "Lucro total esperado", value: fmtBRL(m.totalProfitExpectedAll), tone: "success", icon: PiggyBank, hint: "soma do lucro previsto de todos os contratos" }} />
               <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Ainda tenho emprestado", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "saldo de capital não recuperado" }} />
             </div>
           </Section>
