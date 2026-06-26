@@ -354,8 +354,6 @@ const Cobrancas = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
             </div>
           </div>
-          {stats.overdue > 0 && selected.size === 0 && (
-            <div className="flex flex-wrap gap-2">
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
