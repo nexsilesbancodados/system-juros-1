@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import NotificationsBell from "./NotificationsBell";
+import { fetchAll } from "@/lib/fetchAll";
 
 interface TopBarProps {
   onSearchClick?: () => void;
