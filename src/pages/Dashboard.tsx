@@ -17,6 +17,7 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
 import PeriodComparison from "@/components/dashboard/PeriodComparison";
 import { formatBR } from "@/lib/dateUtils";
+import { fetchAll } from "@/lib/fetchAll";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
