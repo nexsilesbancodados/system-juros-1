@@ -89,11 +89,11 @@ const Hoje = () => {
           .not("paid_at", "is", null)
           .order("paid_at", { ascending: false }).limit(5),
         // Lucro do mês
-        supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", som).lte("date", eom),
+        fetchAll((f, t) => supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", som).lte("date", eom).range(f, t)).then((d) => ({ data: d })),
         // A receber no mês (pendente)
-        supabase.from("contract_installments").select("amount")
+        fetchAll((f, t) => supabase.from("contract_installments").select("amount")
           .eq("user_id", user.id).eq("status", "pending")
-          .gte("due_date", som).lte("due_date", eom),
+          .gte("due_date", som).lte("due_date", eom).range(f, t)).then((d) => ({ data: d })),
         // Aniversariantes (puxa só os com birth_date e filtra no client)
         supabase.from("clients")
           .select("id, name, birth_date, phone, whatsapp")
