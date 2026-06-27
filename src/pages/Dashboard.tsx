@@ -17,6 +17,7 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
 import PeriodComparison from "@/components/dashboard/PeriodComparison";
 import { formatBR } from "@/lib/dateUtils";
+import { fetchAll } from "@/lib/fetchAll";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -38,18 +39,18 @@ const Dashboard = () => {
     queryKey: ["dashboard-data", user?.id],
     queryFn: async () => {
       const [contracts, installments, clients, goals, profits] = await Promise.all([
-        supabase.from("contracts").select("*, clients(name, cpf_cnpj)").eq("user_id", user!.id),
-        supabase.from("contract_installments").select("*").eq("user_id", user!.id),
-        supabase.from("clients").select("id, name, credit_score, status").eq("user_id", user!.id),
-        supabase.from("goals").select("*").eq("user_id", user!.id),
+        fetchAll((f, t) => supabase.from("contracts").select("*, clients(name, cpf_cnpj)").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("clients").select("id, name, credit_score, status").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("goals").select("*").eq("user_id", user!.id).range(f, t)),
         supabase.from("profits").select("amount, date").eq("user_id", user!.id).order("date", { ascending: false }).limit(30),
       ]);
       return {
-        contracts: contracts.data || [],
-        installments: installments.data || [],
-        clients: clients.data || [],
-        goals: goals.data || [],
-        profits: profits.data || [],
+        contracts,
+        installments,
+        clients,
+        goals,
+        profits: (profits as any).data || [],
       };
     },
     enabled: !!user,

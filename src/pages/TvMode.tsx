@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { ArrowLeft, Wallet, TrendingUp, AlertCircle, Users, FileSignature, Activity } from "lucide-react";
 
@@ -23,12 +24,12 @@ export default function TvMode() {
   const { data } = useQuery({
     queryKey: ["tv-mode-data", user?.id],
     queryFn: async () => {
-      const [c, i, cl] = await Promise.all([
-        supabase.from("contracts").select("*, clients(name)").eq("user_id", user!.id),
-        supabase.from("contract_installments").select("*").eq("user_id", user!.id),
-        supabase.from("clients").select("id").eq("user_id", user!.id),
+      const [contracts, installments, clients] = await Promise.all([
+        fetchAll((f, t) => supabase.from("contracts").select("*, clients(name)").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("clients").select("id").eq("user_id", user!.id).range(f, t)),
       ]);
-      return { contracts: c.data || [], installments: i.data || [], clients: cl.data || [] };
+      return { contracts, installments, clients };
     },
     enabled: !!user,
     refetchInterval: 60000,

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,23 +50,25 @@ const Inadimplencia = () => {
     if (!user) return;
     setLoading(true);
     const today = new Date().toISOString();
-    const { data: insts } = await supabase
+    const insts = await fetchAll((f, t) => supabase
       .from("contract_installments")
       .select("id, client_id, contract_id, amount, due_date, status, late_fee")
       .eq("user_id", user.id)
       .neq("status", "paid")
-      .lt("due_date", today);
+      .lt("due_date", today)
+      .range(f, t));
 
-    const ids = Array.from(new Set((insts || []).map(i => i.client_id)));
+    const ids = Array.from(new Set(insts.map((i: any) => i.client_id)));
     let cmap: Record<string, Client> = {};
     if (ids.length) {
-      const { data: cs } = await supabase
+      const cs = await fetchAll((f, t) => supabase
         .from("clients")
         .select("id, name, whatsapp, phone, credit_score")
-        .in("id", ids);
-      cmap = Object.fromEntries((cs || []).map(c => [c.id, c]));
+        .in("id", ids)
+        .range(f, t));
+      cmap = Object.fromEntries(cs.map((c: any) => [c.id, c]));
     }
-    setInstallments(insts || []);
+    setInstallments(insts);
     setClients(cmap);
     setLoading(false);
   }, [user]);

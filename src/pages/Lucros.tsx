@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { TrendingUp, Plus, X, Search, Calendar, ArrowUpRight, Edit2, Download, Trash2, MoreVertical, BarChart3, Wallet, SlidersHorizontal, CheckSquare, Square, Trophy, Target, Sparkles, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -64,8 +65,8 @@ const Lucros = () => {
   const { data: profits = [], isLoading: loading } = useQuery({
     queryKey: ["lucros-data", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false });
-      return data || [];
+      const data = await fetchAll((f, t) => supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false }).range(f, t));
+      return data;
     },
     enabled: !!user,
   });

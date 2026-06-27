@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3, FileDown, Sparkles, Loader2, Lightbulb, ShieldCheck, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -57,17 +58,12 @@ const Relatorios = () => {
     const startDate = new Date(year, mon - 1, 1).toISOString();
     const endDate = new Date(year, mon, 0, 23, 59, 59).toISOString();
 
-    const [profits, expenses, clients, installments] = await Promise.all([
-      supabase.from("profits").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate),
-      supabase.from("expenses").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate),
-      supabase.from("clients").select("*").eq("user_id", user.id),
-      supabase.from("installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate),
+    const [profitData, expenseData, clientData, installmentData] = await Promise.all([
+      fetchAll((f, t) => supabase.from("profits").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
+      fetchAll((f, t) => supabase.from("expenses").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
+      fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user.id).range(f, t)),
+      fetchAll((f, t) => supabase.from("installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate).range(f, t)),
     ]);
-
-    const profitData = profits.data || [];
-    const expenseData = expenses.data || [];
-    const clientData = clients.data || [];
-    const installmentData = installments.data || [];
 
     const totalProfit = profitData.reduce((a: number, p: any) => a + Number(p.amount), 0);
     const totalExpense = expenseData.reduce((a: number, e: any) => a + Number(e.amount), 0);

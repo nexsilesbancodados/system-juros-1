@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { TrendingUp, MessageSquare, Mail, Target, Sparkles, Activity } from "lucide-react";
 
 const fmtPct = (n: number) => `${n.toFixed(1)}%`;
@@ -15,13 +16,14 @@ const CollectionMetrics = () => {
       const since = new Date(Date.now() - 30 * 86400000).toISOString();
 
       // 1. All collection messages in the last 30d
-      const { data: logs } = await supabase
+      const logs = await fetchAll((f, t) => supabase
         .from("audit_logs")
         .select("entity_id, details, created_at")
         .eq("user_id", user.id)
         .eq("entity_type", "auto_collection")
         .eq("action", "message_sent")
-        .gte("created_at", since);
+        .gte("created_at", since)
+        .range(f, t));
 
       const totalMsgs = logs?.length || 0;
       const wa = logs?.filter((l: any) => l.details?.channel === "whatsapp").length || 0;
@@ -30,12 +32,13 @@ const CollectionMetrics = () => {
       const contactedClients = new Set(logs?.map((l: any) => l.entity_id)).size;
 
       // 2. Recovery: paid installments in same window
-      const { data: paid } = await supabase
+      const paid = await fetchAll((f, t) => supabase
         .from("contract_installments")
         .select("client_id, paid_at, amount")
         .eq("user_id", user.id)
         .eq("status", "paid")
-        .gte("paid_at", since);
+        .gte("paid_at", since)
+        .range(f, t));
 
       const recoveredClients = new Set(
         paid?.filter((p: any) =>

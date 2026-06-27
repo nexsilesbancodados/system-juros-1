@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
+import { fetchAll } from "@/lib/fetchAll";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
@@ -66,14 +67,14 @@ const Hoje = () => {
           .eq("user_id", user.id).eq("status", "pending")
           .gte("due_date", today).lte("due_date", eod)
           .order("due_date", { ascending: true }).limit(50),
-        supabase.from("contract_installments")
+        fetchAll((f, t) => supabase.from("contract_installments")
           .select("id, amount, due_date, installment_number, client_id, contract_id, clients:client_id(name, phone, whatsapp), contracts:contract_id(capital)")
           .eq("user_id", user.id).eq("status", "pending")
           .lt("due_date", today)
-          .order("due_date", { ascending: true }).limit(200),
+          .order("due_date", { ascending: true }).range(f, t)).then((d) => ({ data: d })),
         supabase.from("todos").select("id, task, is_complete").eq("user_id", user.id).eq("is_complete", false).order("created_at", { ascending: false }).limit(8),
         supabase.from("notifications").select("id, message, type, link, sent_at").eq("user_id", user.id).eq("is_read", false).order("sent_at", { ascending: false }).limit(5),
-        supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", today).lte("date", eod),
+        fetchAll((f, t) => supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", today).lte("date", eod).range(f, t)).then((d) => ({ data: d })),
         supabase.from("audit_logs").select("id, details, created_at").eq("user_id", user.id).eq("action", "promise_to_pay").order("created_at", { ascending: false }).limit(5),
         // Agenda 7 dias (incluindo hoje)
         supabase.from("contract_installments")
@@ -88,11 +89,11 @@ const Hoje = () => {
           .not("paid_at", "is", null)
           .order("paid_at", { ascending: false }).limit(5),
         // Lucro do mês
-        supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", som).lte("date", eom),
+        fetchAll((f, t) => supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", som).lte("date", eom).range(f, t)).then((d) => ({ data: d })),
         // A receber no mês (pendente)
-        supabase.from("contract_installments").select("amount")
+        fetchAll((f, t) => supabase.from("contract_installments").select("amount")
           .eq("user_id", user.id).eq("status", "pending")
-          .gte("due_date", som).lte("due_date", eom),
+          .gte("due_date", som).lte("due_date", eom).range(f, t)).then((d) => ({ data: d })),
         // Aniversariantes (puxa só os com birth_date e filtra no client)
         supabase.from("clients")
           .select("id, name, birth_date, phone, whatsapp")

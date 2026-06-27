@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { fetchAll } from "@/lib/fetchAll";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
 type ScoreBand = "all" | "high" | "mid" | "low";
@@ -89,8 +90,8 @@ const Clientes = () => {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("*").eq("user_id", user!.id).order("created_at", { ascending: false });
-      return data || [];
+      const data = await fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).range(f, t));
+      return data;
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -100,9 +101,9 @@ const Clientes = () => {
   const { data: contractMap = {} } = useQuery({
     queryKey: ["clients-contract-summary", user?.id],
     queryFn: async () => {
-      const [{ data: ctr }, { data: ins }] = await Promise.all([
-        supabase.from("contracts").select("client_id, status").eq("user_id", user!.id),
-        supabase.from("contract_installments").select("client_id, status, due_date").eq("user_id", user!.id).eq("status", "pending"),
+      const [ctr, ins] = await Promise.all([
+        fetchAll((f, t) => supabase.from("contracts").select("client_id, status").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("contract_installments").select("client_id, status, due_date").eq("user_id", user!.id).eq("status", "pending").range(f, t)),
       ]);
       const map: Record<string, { contracts: number; active: number; overdue: number }> = {};
       const now = Date.now();
