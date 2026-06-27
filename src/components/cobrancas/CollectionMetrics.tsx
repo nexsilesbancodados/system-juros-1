@@ -32,12 +32,13 @@ const CollectionMetrics = () => {
       const contactedClients = new Set(logs?.map((l: any) => l.entity_id)).size;
 
       // 2. Recovery: paid installments in same window
-      const { data: paid } = await supabase
+      const paid = await fetchAll((f, t) => supabase
         .from("contract_installments")
         .select("client_id, paid_at, amount")
         .eq("user_id", user.id)
         .eq("status", "paid")
-        .gte("paid_at", since);
+        .gte("paid_at", since)
+        .range(f, t));
 
       const recoveredClients = new Set(
         paid?.filter((p: any) =>
