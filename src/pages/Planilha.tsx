@@ -24,13 +24,13 @@ const Planilha = () => {
     if (!user) return;
     const fetch = async () => {
       const [c, ct, i] = await Promise.all([
-        supabase.from("clients").select("*").eq("user_id", user.id).order("name"),
-        supabase.from("contracts").select("*").eq("user_id", user.id),
-        supabase.from("contract_installments").select("*").eq("user_id", user.id),
+        fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user.id).order("name").range(f, t)),
+        fetchAll((f, t) => supabase.from("contracts").select("*").eq("user_id", user.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user.id).range(f, t)),
       ]);
-      setClients(c.data || []);
-      setContracts(ct.data || []);
-      setInstallments(i.data || []);
+      setClients(c);
+      setContracts(ct);
+      setInstallments(i);
       setLoading(false);
     };
     fetch();
