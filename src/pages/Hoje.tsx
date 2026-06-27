@@ -67,11 +67,11 @@ const Hoje = () => {
           .eq("user_id", user.id).eq("status", "pending")
           .gte("due_date", today).lte("due_date", eod)
           .order("due_date", { ascending: true }).limit(50),
-        supabase.from("contract_installments")
+        fetchAll((f, t) => supabase.from("contract_installments")
           .select("id, amount, due_date, installment_number, client_id, contract_id, clients:client_id(name, phone, whatsapp), contracts:contract_id(capital)")
           .eq("user_id", user.id).eq("status", "pending")
           .lt("due_date", today)
-          .order("due_date", { ascending: true }).limit(200),
+          .order("due_date", { ascending: true }).range(f, t)).then((d) => ({ data: d })),
         supabase.from("todos").select("id, task, is_complete").eq("user_id", user.id).eq("is_complete", false).order("created_at", { ascending: false }).limit(8),
         supabase.from("notifications").select("id, message, type, link, sent_at").eq("user_id", user.id).eq("is_read", false).order("sent_at", { ascending: false }).limit(5),
         supabase.from("profits").select("amount").eq("user_id", user.id).gte("date", today).lte("date", eod),
