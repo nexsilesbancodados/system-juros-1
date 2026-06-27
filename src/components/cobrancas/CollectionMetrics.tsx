@@ -16,13 +16,14 @@ const CollectionMetrics = () => {
       const since = new Date(Date.now() - 30 * 86400000).toISOString();
 
       // 1. All collection messages in the last 30d
-      const { data: logs } = await supabase
+      const logs = await fetchAll((f, t) => supabase
         .from("audit_logs")
         .select("entity_id, details, created_at")
         .eq("user_id", user.id)
         .eq("entity_type", "auto_collection")
         .eq("action", "message_sent")
-        .gte("created_at", since);
+        .gte("created_at", since)
+        .range(f, t));
 
       const totalMsgs = logs?.length || 0;
       const wa = logs?.filter((l: any) => l.details?.channel === "whatsapp").length || 0;
