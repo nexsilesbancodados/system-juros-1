@@ -40,15 +40,15 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     queryKey: ["topbar-financials", user?.id],
     queryFn: async () => {
       const nowIso = new Date().toISOString();
-      const [contractsRes, profitsRes, overdueRes] = await Promise.all([
-        supabase.from("contracts").select("capital, status").eq("user_id", user!.id),
-        supabase.from("profits").select("amount").eq("user_id", user!.id).eq("status", "available"),
+      const [contracts, profits, overdueRes] = await Promise.all([
+        fetchAll((f, t) => supabase.from("contracts").select("capital, status").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("profits").select("amount").eq("user_id", user!.id).eq("status", "available").range(f, t)),
         supabase.from("contract_installments").select("id", { count: "exact", head: true })
           .eq("user_id", user!.id).eq("status", "pending").lt("due_date", nowIso),
       ]);
-      const activeContracts = (contractsRes.data || []).filter((c: any) => c.status === "active" || c.status === "overdue");
+      const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
       const carteira = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
-      const lucro = (profitsRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      const lucro = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
       const overdue = overdueRes.count || 0;
       return { carteira, lucro, overdue };
     },
