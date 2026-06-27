@@ -59,8 +59,8 @@ const Gastos = () => {
   const { data: expenses = [], isLoading: loading } = useQuery({
     queryKey: ["gastos-data", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false });
-      return data || [];
+      const data = await fetchAll((f, t) => supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false }).range(f, t));
+      return data;
     },
     enabled: !!user,
   });
