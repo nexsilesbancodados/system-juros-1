@@ -307,11 +307,11 @@ const AgenteIA = () => {
     queryKey: ["agent-context", user?.id],
     queryFn: async () => {
       const [contracts, installments, clients] = await Promise.all([
-        supabase.from("contracts").select("*, clients(name)").eq("user_id", user!.id),
-        supabase.from("contract_installments").select("*").eq("user_id", user!.id),
-        supabase.from("clients").select("id, name, credit_score, status, phone, whatsapp").eq("user_id", user!.id),
+        fetchAll((f, t) => supabase.from("contracts").select("*, clients(name)").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user!.id).range(f, t)),
+        fetchAll((f, t) => supabase.from("clients").select("id, name, credit_score, status, phone, whatsapp").eq("user_id", user!.id).range(f, t)),
       ]);
-      return { contracts: contracts.data || [], installments: installments.data || [], clients: clients.data || [] };
+      return { contracts, installments, clients };
     },
     enabled: !!user,
   });
