@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
+import { fetchAll } from "@/lib/fetchAll";
 
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
