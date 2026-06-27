@@ -34,48 +34,33 @@ const Carteira = () => {
 
   const { data: profits = [], isLoading: loadingProfits } = useQuery({
     queryKey: ["carteira-profits", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false });
-      return data || [];
-    },
+    queryFn: async () => fetchAll((f, t) => supabase.from("profits").select("*").eq("user_id", user!.id).order("date", { ascending: false }).range(f, t)),
     enabled: !!user,
   });
 
   const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
     queryKey: ["carteira-expenses", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false });
-      return data || [];
-    },
+    queryFn: async () => fetchAll((f, t) => supabase.from("expenses").select("*").eq("user_id", user!.id).order("date", { ascending: false }).range(f, t)),
     enabled: !!user,
   });
 
   const { data: installments = [], isLoading: loadingInst } = useQuery({
     queryKey: ["carteira-installments", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("contract_installments").select("*").eq("user_id", user!.id).eq("status", "paid").order("paid_at", { ascending: false });
-      return data || [];
-    },
+    queryFn: async () => fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user!.id).eq("status", "paid").order("paid_at", { ascending: false }).range(f, t)),
     enabled: !!user,
   });
 
   // Aportes de capital (dinheiro disponível para emprestar - NÃO é lucro)
   const { data: capital = [], isLoading: loadingCapital } = useQuery({
     queryKey: ["carteira-capital", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_injection").order("date", { ascending: false });
-      return data || [];
-    },
+    queryFn: async () => fetchAll((f, t) => supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_injection").order("date", { ascending: false }).range(f, t)),
     enabled: !!user,
   });
 
   // Retiradas de capital
   const { data: withdrawals = [], isLoading: loadingWithdraw } = useQuery({
     queryKey: ["carteira-withdrawals", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_withdrawal").order("date", { ascending: false });
-      return data || [];
-    },
+    queryFn: async () => fetchAll((f, t) => supabase.from("transactions").select("*").eq("user_id", user!.id).eq("type", "capital_withdrawal").order("date", { ascending: false }).range(f, t)),
     enabled: !!user,
   });
 
