@@ -3,6 +3,7 @@ import { Table, Download, Search, X, ArrowUpDown, Filter, Users, DollarSign } fr
 import EmptyState from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 

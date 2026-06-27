@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { TrendingUp, Plus, X, Search, Calendar, ArrowUpRight, Edit2, Download, Trash2, MoreVertical, BarChart3, Wallet, SlidersHorizontal, CheckSquare, Square, Trophy, Target, Sparkles, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {

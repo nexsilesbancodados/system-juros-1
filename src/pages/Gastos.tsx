@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { DollarSign, Plus, X, ArrowDownRight, Search, Calendar, Tag, PieChart, Edit2, Download, Trash2, MoreVertical, BarChart3, TrendingDown, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {

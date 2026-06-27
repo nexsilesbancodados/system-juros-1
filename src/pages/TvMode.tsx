@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchAll } from "@/lib/fetchAll";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { ArrowLeft, Wallet, TrendingUp, AlertCircle, Users, FileSignature, Activity } from "lucide-react";
 
