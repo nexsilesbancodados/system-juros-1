@@ -90,8 +90,8 @@ const Clientes = () => {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("clients").select("*").eq("user_id", user!.id).order("created_at", { ascending: false });
-      return data || [];
+      const data = await fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).range(f, t));
+      return data;
     },
     enabled: !!user,
     staleTime: 30_000,
