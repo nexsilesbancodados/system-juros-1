@@ -31,14 +31,12 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  if (!installment) return null;
-
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-  const isOverdue = installment.status === "overdue";
-  const isPaid = installment.status === "paid";
+  const isOverdue = installment?.status === "overdue";
+  const isPaid = installment?.status === "paid";
 
   const pixPayload = useMemo(() => {
-    if (!ownerProfile?.pix_key || isPaid) return "";
+    if (!installment || !ownerProfile?.pix_key || isPaid) return "";
     try {
       return generatePixPayload(
         ownerProfile.pix_key,
@@ -52,6 +50,9 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
       return "";
     }
   }, [ownerProfile, installment, isPaid]);
+
+  if (!installment) return null;
+
 
   const handleCopyPix = () => {
     const textToCopy = pixPayload || ownerProfile?.pix_key;
