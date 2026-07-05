@@ -63,6 +63,14 @@ class ErrorBoundaryInner extends Component<Props, State> {
     if (!error) return this.props.children;
     if (this.props.fallback) return this.props.fallback(error, this.reset);
 
+    // Rotas públicas (portal do cliente / cobrador externo) NUNCA devem
+    // levar o usuário para o app do emprestador. Detectamos o contexto
+    // pelo pathname atual e escondemos o botão de "Início".
+    const path = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
+    const isPortalContext =
+      path.startsWith("/portal-cliente") ||
+      path.startsWith("/cobrador-externo");
+
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-6">
         <div className="max-w-md w-full rounded-2xl border border-destructive/30 bg-card/60 backdrop-blur p-6 text-center space-y-4">
@@ -72,7 +80,9 @@ class ErrorBoundaryInner extends Component<Props, State> {
           <div>
             <h2 className="text-lg font-bold text-foreground">Algo deu errado</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Esta tela travou. Tente recarregar ou voltar pro início.
+              {isPortalContext
+                ? "Não foi possível carregar esta tela. Tente novamente."
+                : "Esta tela travou. Tente recarregar ou voltar pro início."}
             </p>
             {error.message && (
               <p className="mt-3 text-[11px] font-mono text-muted-foreground/80 bg-muted/30 rounded-md p-2 break-words text-left max-h-32 overflow-auto">
@@ -87,18 +97,21 @@ class ErrorBoundaryInner extends Component<Props, State> {
             >
               <RotateCcw size={12} /> Tentar de novo
             </button>
-            <a
-              href="/dashboard"
-              className="px-3 py-2 rounded-lg bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 hover:bg-accent"
-            >
-              <Home size={12} /> Início
-            </a>
+            {!isPortalContext && (
+              <a
+                href="/dashboard"
+                className="px-3 py-2 rounded-lg bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 hover:bg-accent"
+              >
+                <Home size={12} /> Início
+              </a>
+            )}
           </div>
         </div>
       </div>
     );
   }
 }
+
 
 // Wrapper para auto-resetar quando o usuário troca de rota,
 // evitando ficar "preso" na tela de erro ao navegar pelo menu.
