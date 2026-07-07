@@ -104,6 +104,31 @@ const PortalCliente = () => {
   const [tab, setTab] = useState<Tab>("open");
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [helpContact, setHelpContact] = useState<{ company_name?: string | null; portal_contact_phone?: string | null; portal_contact_email?: string | null } | null>(null);
+  const [helpContactLoading, setHelpContactLoading] = useState(false);
+
+  // Load creditor contact info when help modal opens (pre-login)
+  useEffect(() => {
+    if (!helpOpen || portalData) return;
+    const clean = onlyDigits(cpf);
+    if (clean.length !== 11 || !isValidCPF(clean)) {
+      setHelpContact(null);
+      return;
+    }
+    let cancelled = false;
+    setHelpContactLoading(true);
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("portal_lookup_creditor_contact", { _cpf: clean });
+        if (!cancelled) setHelpContact(data || null);
+      } catch {
+        if (!cancelled) setHelpContact(null);
+      } finally {
+        if (!cancelled) setHelpContactLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [helpOpen, cpf, portalData]);
 
   // Auto re-login from saved CPF on mount + isolamento absoluto do app do credor
   useEffect(() => {
@@ -869,49 +894,85 @@ const PortalCliente = () => {
                 <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                   <MessageCircle size={11} /> Fale com o credor
                 </p>
-                {branding?.portal_contact_phone || branding?.portal_contact_email ? (
-                  <div className="space-y-2">
-                    {branding?.portal_contact_phone && (
-                      <>
-                        <a
-                          href={`https://wa.me/${onlyDigits(branding.portal_contact_phone)}?text=${encodeURIComponent("Olá! Preciso de ajuda para acessar o portal do cliente.")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-white transition-colors hover:bg-emerald-500/10"
-                        >
-                          <span className="flex items-center gap-2">
-                            <MessageCircle size={15} className="text-emerald-400" /> WhatsApp
-                          </span>
-                          <span className="font-mono text-xs text-white/70">{branding.portal_contact_phone}</span>
-                        </a>
-                        <a
-                          href={`tel:${branding.portal_contact_phone}`}
-                          className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Phone size={15} className="text-primary" /> Telefone
-                          </span>
-                          <span className="font-mono text-xs text-white/70">{branding.portal_contact_phone}</span>
-                        </a>
-                      </>
-                    )}
-                    {branding?.portal_contact_email && (
-                      <a
-                        href={`mailto:${branding.portal_contact_email}?subject=${encodeURIComponent("Ajuda com acesso ao portal")}`}
-                        className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Mail size={15} className="text-primary" /> E-mail
-                        </span>
-                        <span className="text-xs text-white/70">{branding.portal_contact_email}</span>
-                      </a>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-white/70">
-                    Entre em contato diretamente com <strong className="text-white">quem forneceu seu crédito</strong> pelo WhatsApp, telefone ou e-mail já conhecidos. Peça a confirmação do CPF cadastrado no sistema.
-                  </p>
-                )}
+                {(() => {
+                  const contact = {
+                    phone: branding?.portal_contact_phone || helpContact?.portal_contact_phone || null,
+                    email: branding?.portal_contact_email || helpContact?.portal_contact_email || null,
+                    name: branding?.company_name || helpContact?.company_name || null,
+                  };
+                  if (helpContactLoading && !contact.phone && !contact.email) {
+                    return (
+                      <div className="flex items-center gap-2 text-sm text-white/60">
+                        <RefreshCw size={14} className="animate-spin" /> Buscando dados de contato…
+                      </div>
+                    );
+                  }
+                  if (contact.phone || contact.email) {
+                    return (
+                      <div className="space-y-2">
+                        {contact.name && (
+                          <p className="mb-1 text-xs text-white/60">
+                            Credor: <strong className="text-white">{contact.name}</strong>
+                          </p>
+                        )}
+                        {contact.phone && (
+                          <>
+                            <a
+                              href={`https://wa.me/${onlyDigits(contact.phone)}?text=${encodeURIComponent("Olá! Preciso de ajuda para acessar o portal do cliente.")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-white transition-colors hover:bg-emerald-500/10"
+                            >
+                              <span className="flex items-center gap-2">
+                                <MessageCircle size={15} className="text-emerald-400" /> WhatsApp
+                              </span>
+                              <span className="font-mono text-xs text-white/70">{contact.phone}</span>
+                            </a>
+                            <a
+                              href={`tel:${contact.phone}`}
+                              className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Phone size={15} className="text-primary" /> Telefone
+                              </span>
+                              <span className="font-mono text-xs text-white/70">{contact.phone}</span>
+                            </a>
+                          </>
+                        )}
+                        {contact.email && (
+                          <a
+                            href={`mailto:${contact.email}?subject=${encodeURIComponent("Ajuda com acesso ao portal")}`}
+                            className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
+                          >
+                            <span className="flex items-center gap-2">
+                              <Mail size={15} className="text-primary" /> E-mail
+                            </span>
+                            <span className="text-xs text-white/70">{contact.email}</span>
+                          </a>
+                        )}
+                      </div>
+                    );
+                  }
+                  const cpfClean = onlyDigits(cpf);
+                  const cpfReady = cpfClean.length === 11 && isValidCPF(cpfClean);
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                        <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-400" />
+                        <p className="text-sm text-white/80">
+                          {portalData
+                            ? "O credor ainda não cadastrou canais de contato públicos."
+                            : cpfReady
+                              ? "Não localizamos os canais de contato do credor deste CPF."
+                              : "Digite um CPF válido no campo de acesso para buscarmos automaticamente o contato do credor."}
+                        </p>
+                      </div>
+                      <p className="text-xs text-white/60">
+                        Enquanto isso, entre em contato diretamente com <strong className="text-white">quem forneceu seu crédito</strong> pelo WhatsApp, telefone ou e-mail já conhecidos. Peça a confirmação do CPF cadastrado no sistema.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
 
               <button
