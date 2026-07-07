@@ -82,6 +82,12 @@ const Login = () => {
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
   const navigate = useNavigate();
 
+  // Se este navegador possui sessão do portal do cliente, não permitir acesso
+  // à tela de login do credor — devolve o cliente ao portal dele.
+  if (hasPortalSession()) {
+    return <Navigate to="/portal-cliente" replace />;
+  }
+
   const sanitizeNext = (raw: string | null): string | null => {
     if (!raw) return null;
     if (!raw.startsWith("/")) return null;
