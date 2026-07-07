@@ -416,7 +416,27 @@ const PortalCliente = () => {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-base font-bold">{money(Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0))}</p>
+                      {(() => {
+                        const fee = computeLateFee({
+                          amount: installment.amount,
+                          due_date: installment.due_date,
+                          status: installment.status,
+                          late_fee: installment.late_fee,
+                          late_fee_percent: contract.late_fee_percent,
+                          daily_interest_percent: contract.daily_interest_percent,
+                        });
+                        const total = installment.status === "paid"
+                          ? Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0)
+                          : Number(installment.amount) + fee;
+                        return (
+                          <>
+                            <p className="text-base font-bold">{money(total)}</p>
+                            {fee > 0 && installment.status !== "paid" && (
+                              <p className="text-[10px] text-warning">+ {money(fee)} multa/juros</p>
+                            )}
+                          </>
+                        );
+                      })()}
                       <span className={`text-[10px] font-semibold uppercase tracking-wider ${installment.status === "paid" ? "text-success" : isOverdue ? "text-warning" : "text-primary"}`}>
                         {installment.status === "paid" ? "Pago" : isOverdue ? "Vencido" : "Em aberto"}
                       </span>
