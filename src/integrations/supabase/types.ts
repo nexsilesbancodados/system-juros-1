@@ -344,6 +344,73 @@ export type Database = {
           },
         ]
       }
+      client_notifications: {
+        Row: {
+          client_id: string
+          contract_id: string | null
+          created_at: string
+          dedupe_day: string
+          id: string
+          installment_id: string | null
+          is_read: boolean
+          message: string
+          metadata: Json
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          contract_id?: string | null
+          created_at?: string
+          dedupe_day?: string
+          id?: string
+          installment_id?: string | null
+          is_read?: boolean
+          message: string
+          metadata?: Json
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          contract_id?: string | null
+          created_at?: string
+          dedupe_day?: string
+          id?: string
+          installment_id?: string | null
+          is_read?: boolean
+          message?: string
+          metadata?: Json
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notifications_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notifications_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "contract_installments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_tokens: {
         Row: {
           client_id: string
@@ -2156,6 +2223,14 @@ export type Database = {
         Returns: Json
       }
       portal_client_login_cpf: { Args: { _cpf: string }; Returns: Json }
+      portal_client_mark_notifications_read: {
+        Args: { _cpf: string; _ids?: string[] }
+        Returns: number
+      }
+      portal_client_notifications: {
+        Args: { _cpf: string; _limit?: number }
+        Returns: Json
+      }
       portal_lookup_creditor_contact: { Args: { _cpf: string }; Returns: Json }
       search_clients_by_document: {
         Args: { _document: string }
