@@ -11,6 +11,8 @@ import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phon
 import EmptyState from "@/components/EmptyState";
 import { differenceInDays } from "date-fns";
 
+import { computeLateFee } from "@/lib/lateFee";
+
 interface Installment {
   id: string;
   client_id: string;
@@ -19,6 +21,8 @@ interface Installment {
   due_date: string;
   status: string;
   late_fee: number | null;
+  late_fee_percent?: number | null;
+  daily_interest_percent?: number | null;
 }
 
 interface Client {
