@@ -452,6 +452,16 @@ const PortalCliente = () => {
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
                     {loading ? "Verificando..." : "Acessar o portal"}
                   </button>
+
+                  <div className="flex justify-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setHelpOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 transition-colors hover:text-primary hover:underline"
+                    >
+                      <HelpCircle size={13} /> Preciso de ajuda para entrar
+                    </button>
+                  </div>
                 </form>
 
                 <div className="grid grid-cols-3 gap-2 pt-2">
