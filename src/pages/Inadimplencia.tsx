@@ -63,6 +63,8 @@ const Inadimplencia = () => {
       .range(f, t));
 
     const ids = Array.from(new Set(insts.map((i: any) => i.client_id)));
+    const contractIds = Array.from(new Set(insts.map((i: any) => i.contract_id)));
+
     let cmap: Record<string, Client> = {};
     if (ids.length) {
       const cs = await fetchAll((f, t) => supabase
@@ -72,7 +74,27 @@ const Inadimplencia = () => {
         .range(f, t));
       cmap = Object.fromEntries(cs.map((c: any) => [c.id, c]));
     }
-    setInstallments(insts);
+
+    let feeMap: Record<string, { late_fee_percent: number; daily_interest_percent: number }> = {};
+    if (contractIds.length) {
+      const contracts = await fetchAll((f, t) => supabase
+        .from("contracts")
+        .select("id, late_fee_percent, daily_interest_percent")
+        .in("id", contractIds)
+        .range(f, t));
+      feeMap = Object.fromEntries(contracts.map((c: any) => [c.id, {
+        late_fee_percent: Number(c.late_fee_percent) || 0,
+        daily_interest_percent: Number(c.daily_interest_percent) || 0,
+      }]));
+    }
+
+    const enriched = insts.map((i: any) => ({
+      ...i,
+      late_fee_percent: feeMap[i.contract_id]?.late_fee_percent ?? 0,
+      daily_interest_percent: feeMap[i.contract_id]?.daily_interest_percent ?? 0,
+    }));
+
+    setInstallments(enriched);
     setClients(cmap);
     setLoading(false);
   }, [user]);
