@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, Us
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
+import { NotificationsBell } from "@/components/ClientPortal/NotificationsBell";
 import { computeLateFee } from "@/lib/lateFee";
 import { isPortalLoginBlocked, recordPortalLoginAttempt, performFullPortalLogout } from "@/lib/portalSession";
 import { isValidCPF, onlyDigits } from "@/lib/cpfCnpj";
@@ -537,9 +538,12 @@ const PortalCliente = () => {
                   <h2 className="font-heading text-3xl font-bold tracking-tight text-white md:text-4xl">{firstName}</h2>
                 </div>
               </div>
-              <button onClick={handleLogout} className="portal-chip warn hover:brightness-125">
-                <LogOut size={12} /> Sair com segurança
-              </button>
+              <div className="flex items-center gap-2">
+                <NotificationsBell cpf={onlyDigits(portalData.client.cpf_cnpj || cpf)} />
+                <button onClick={handleLogout} className="portal-chip warn hover:brightness-125">
+                  <LogOut size={12} /> Sair com segurança
+                </button>
+              </div>
             </header>
 
             {/* Bento Grid */}
