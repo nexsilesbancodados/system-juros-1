@@ -17,7 +17,7 @@ const LandingFooter = () => {
                 {brandTitle}
               </span>
             </div>
-            <p className="text-white/40 text-sm leading-relaxed">
+            <p className="text-white/70 text-sm leading-relaxed">
               O sistema completo para gestão de empréstimos, clientes, parcelas e cobranças. Mais controle, segurança e resultados para o seu negócio.
             </p>
             <div className="flex items-center gap-4">
@@ -38,7 +38,7 @@ const LandingFooter = () => {
             <ul className="space-y-4">
               {["Início", "Recursos", "Benefícios", "Planos", "Depoimentos", "Contato"].map((item) => (
                 <li key={item}>
-                  <a href={`#${item.toLowerCase()}`} className="text-white/40 hover:text-white text-sm transition-colors">
+                  <a href={`#${item.toLowerCase()}`} className="text-white/70 hover:text-white text-sm transition-colors">
                     {item}
                   </a>
                 </li>
@@ -51,7 +51,7 @@ const LandingFooter = () => {
             <ul className="space-y-4">
               {["Gestão de Clientes", "Controle de Parcelas", "Relatórios", "Alertas e Lembretes", "Segurança", "Integrações"].map((item) => (
                 <li key={item}>
-                  <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">
+                  <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
                     {item}
                   </a>
                 </li>
@@ -62,16 +62,16 @@ const LandingFooter = () => {
           <div>
             <h4 className="font-display font-bold text-white mb-6">Fale Conosco</h4>
             <ul className="space-y-4">
-              <li className="flex items-center gap-3 text-white/40 text-sm">
-                <Phone size={16} className="text-white/20" />
+              <li className="flex items-center gap-3 text-white/70 text-sm">
+                <Phone size={16} className="text-white/60" />
                 (11) 99999-9999
               </li>
-              <li className="flex items-center gap-3 text-white/40 text-sm">
-                <Mail size={16} className="text-white/20" />
+              <li className="flex items-center gap-3 text-white/70 text-sm">
+                <Mail size={16} className="text-white/60" />
                 contato@systemjuros.com.br
               </li>
-              <li className="flex items-center gap-3 text-white/40 text-sm">
-                <MapPin size={16} className="text-white/20" />
+              <li className="flex items-center gap-3 text-white/70 text-sm">
+                <MapPin size={16} className="text-white/60" />
                 São Paulo - SP
               </li>
             </ul>
@@ -79,12 +79,12 @@ const LandingFooter = () => {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] text-white/20 tracking-wider">
+          <p className="text-[10px] text-white/60 tracking-wider">
             © 2025 {brandTitle} — TODOS OS DIREITOS RESERVADOS.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-[10px] text-white/20 hover:text-white transition-colors">Política de Privacidade</a>
-            <a href="#" className="text-[10px] text-white/20 hover:text-white transition-colors">Termos de Uso</a>
+            <a href="#" className="text-[10px] text-white/60 hover:text-white transition-colors">Política de Privacidade</a>
+            <a href="#" className="text-[10px] text-white/60 hover:text-white transition-colors">Termos de Uso</a>
           </div>
         </div>
       </div>
