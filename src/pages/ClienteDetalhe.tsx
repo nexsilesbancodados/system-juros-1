@@ -16,6 +16,7 @@ import {
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera,
   Hash, Coins, TrendingDown, Target, PauseCircle, Wrench, Repeat, PhoneCall, StickyNote,
+  Info,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
@@ -23,6 +24,8 @@ import { useConfirm } from "@/components/ConfirmProvider";
 import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
 import { getSignedUploadUrl } from "@/lib/storage";
 import ClientToolsPanel, { type ToolGroup } from "@/components/clients/ClientToolsPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { computeLateFee } from "@/lib/lateFee";
 
 const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
   { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
