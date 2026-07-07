@@ -448,9 +448,6 @@ const PortalCliente = () => {
                     disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf))}
                     className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                  </div>
-
-                  <button type="submit" disabled={loading} className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:opacity-60">
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
                     {loading ? "Verificando..." : "Acessar o portal"}
                   </button>
