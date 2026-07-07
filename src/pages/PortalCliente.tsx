@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 import { computeLateFee } from "@/lib/lateFee";
+import { isPortalLoginBlocked, recordPortalLoginAttempt } from "@/lib/portalSession";
 
 type PortalInstallment = {
   id: string;
