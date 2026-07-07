@@ -98,6 +98,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return () => { cancelled = true; };
   }, [user?.id, profile?.is_admin, profile?.trial_ends_at, (profile as any)?.subscription_expires_at, loading]);
 
+  // Se o navegador tem sessão do portal do cliente, jamais permite o app do credor.
+  if (hasPortalSession()) {
+    return <Navigate to="/portal-cliente" replace />;
+  }
+
   if (loading || (user && access === "checking")) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
