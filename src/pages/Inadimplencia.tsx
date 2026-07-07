@@ -11,6 +11,8 @@ import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phon
 import EmptyState from "@/components/EmptyState";
 import { differenceInDays } from "date-fns";
 
+import { computeLateFee } from "@/lib/lateFee";
+
 interface Installment {
   id: string;
   client_id: string;
@@ -19,6 +21,8 @@ interface Installment {
   due_date: string;
   status: string;
   late_fee: number | null;
+  late_fee_percent?: number | null;
+  daily_interest_percent?: number | null;
 }
 
 interface Client {
@@ -59,6 +63,8 @@ const Inadimplencia = () => {
       .range(f, t));
 
     const ids = Array.from(new Set(insts.map((i: any) => i.client_id)));
+    const contractIds = Array.from(new Set(insts.map((i: any) => i.contract_id)));
+
     let cmap: Record<string, Client> = {};
     if (ids.length) {
       const cs = await fetchAll((f, t) => supabase
@@ -68,7 +74,27 @@ const Inadimplencia = () => {
         .range(f, t));
       cmap = Object.fromEntries(cs.map((c: any) => [c.id, c]));
     }
-    setInstallments(insts);
+
+    let feeMap: Record<string, { late_fee_percent: number; daily_interest_percent: number }> = {};
+    if (contractIds.length) {
+      const contracts = await fetchAll((f, t) => supabase
+        .from("contracts")
+        .select("id, late_fee_percent, daily_interest_percent")
+        .in("id", contractIds)
+        .range(f, t));
+      feeMap = Object.fromEntries(contracts.map((c: any) => [c.id, {
+        late_fee_percent: Number(c.late_fee_percent) || 0,
+        daily_interest_percent: Number(c.daily_interest_percent) || 0,
+      }]));
+    }
+
+    const enriched = insts.map((i: any) => ({
+      ...i,
+      late_fee_percent: feeMap[i.contract_id]?.late_fee_percent ?? 0,
+      daily_interest_percent: feeMap[i.contract_id]?.daily_interest_percent ?? 0,
+    }));
+
+    setInstallments(enriched);
     setClients(cmap);
     setLoading(false);
   }, [user]);
@@ -94,7 +120,8 @@ const Inadimplencia = () => {
     for (const inst of installments) {
       const days = differenceInDays(today, new Date(inst.due_date));
       if (days < 1) continue;
-      const due = Number(inst.amount) + Number(inst.late_fee || 0);
+      const liveFee = computeLateFee(inst as any, today);
+      const due = Number(inst.amount) + liveFee;
       total += due;
       const bucket: OverdueRow["bucket"] = days <= 30 ? "0-30" : days <= 60 ? "31-60" : days <= 90 ? "61-90" : "90+";
       buckets[bucket] += due;

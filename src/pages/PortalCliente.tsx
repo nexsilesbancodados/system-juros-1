@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, Us
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
+import { computeLateFee } from "@/lib/lateFee";
 
 type PortalInstallment = {
   id: string;
@@ -18,6 +19,8 @@ type PortalInstallment = {
   status: string;
   payment_method?: string | null;
   receipt_url?: string | null;
+  late_fee_percent?: number | string | null;
+  daily_interest_percent?: number | string | null;
 };
 
 type PortalContract = {
@@ -32,6 +35,8 @@ type PortalContract = {
   total_amount: number | string;
   total_interest: number | string;
   payment_method?: string | null;
+  late_fee_percent?: number | string | null;
+  daily_interest_percent?: number | string | null;
   installments: PortalInstallment[];
 };
 
@@ -148,15 +153,28 @@ const PortalCliente = () => {
 
   const summary = useMemo(() => {
     const contracts = portalData?.contracts || [];
-    const installments = contracts.flatMap((contract) => contract.installments || []);
-    const paid = installments.filter((installment) => installment.status === "paid");
-    const open = installments.filter((installment) => installment.status !== "paid");
-    const overdue = open.filter((installment) => new Date(installment.due_date) < new Date());
+    const now = new Date();
+    const rows = contracts.flatMap((contract) =>
+      (contract.installments || []).map((i) => ({ contract, i }))
+    );
+    const paid = rows.filter(({ i }) => i.status === "paid");
+    const open = rows.filter(({ i }) => i.status !== "paid");
+    const overdue = open.filter(({ i }) => new Date(i.due_date) < now);
 
     return {
       activeContracts: contracts.filter((contract) => contract.status === "active").length,
-      openAmount: open.reduce((sum, installment) => sum + Number(installment.amount || 0) + Number(installment.late_fee || 0), 0),
-      paidAmount: paid.reduce((sum, installment) => sum + Number(installment.paid_amount || installment.amount || 0), 0),
+      openAmount: open.reduce((sum, { contract, i }) => {
+        const fee = computeLateFee({
+          amount: i.amount,
+          due_date: i.due_date,
+          status: i.status,
+          late_fee: i.late_fee,
+          late_fee_percent: contract.late_fee_percent,
+          daily_interest_percent: contract.daily_interest_percent,
+        }, now);
+        return sum + Number(i.amount || 0) + fee;
+      }, 0),
+      paidAmount: paid.reduce((sum, { i }) => sum + Number(i.paid_amount || i.amount || 0), 0),
       overdueCount: overdue.length,
       openCount: open.length,
       paidCount: paid.length,
@@ -377,7 +395,11 @@ const PortalCliente = () => {
                 filtered.map(({ contract, installment, isOverdue }) => (
                   <button
                     key={installment.id}
-                    onClick={() => openPayment(installment)}
+                    onClick={() => openPayment({
+                      ...installment,
+                      late_fee_percent: contract.late_fee_percent,
+                      daily_interest_percent: contract.daily_interest_percent,
+                    } as PortalInstallment)}
                     className="glass-card flex w-full items-center gap-4 p-4 text-left transition-all hover:border-primary/40 hover:shadow-md"
                   >
                     <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
@@ -400,7 +422,27 @@ const PortalCliente = () => {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-base font-bold">{money(Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0))}</p>
+                      {(() => {
+                        const fee = computeLateFee({
+                          amount: installment.amount,
+                          due_date: installment.due_date,
+                          status: installment.status,
+                          late_fee: installment.late_fee,
+                          late_fee_percent: contract.late_fee_percent,
+                          daily_interest_percent: contract.daily_interest_percent,
+                        });
+                        const total = installment.status === "paid"
+                          ? Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0)
+                          : Number(installment.amount) + fee;
+                        return (
+                          <>
+                            <p className="text-base font-bold">{money(total)}</p>
+                            {fee > 0 && installment.status !== "paid" && (
+                              <p className="text-[10px] text-warning">+ {money(fee)} multa/juros</p>
+                            )}
+                          </>
+                        );
+                      })()}
                       <span className={`text-[10px] font-semibold uppercase tracking-wider ${installment.status === "paid" ? "text-success" : isOverdue ? "text-warning" : "text-primary"}`}>
                         {installment.status === "paid" ? "Pago" : isOverdue ? "Vencido" : "Em aberto"}
                       </span>

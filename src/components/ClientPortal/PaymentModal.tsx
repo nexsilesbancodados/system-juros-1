@@ -15,6 +15,7 @@ import { generatePortalReceiptPdf } from "@/utils/portalPdf";
 import { QRCodeSVG } from "qrcode.react";
 import { generatePixPayload } from "@/utils/pixGenerator";
 import { formatBR } from "@/lib/dateUtils";
+import { computeLateFee } from "@/lib/lateFee";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -32,15 +33,27 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
   const [isDownloading, setIsDownloading] = useState(false);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-  const isOverdue = installment?.status === "overdue";
+  const isOverdue = installment?.status === "overdue" ||
+    (installment && installment.status !== "paid" && new Date(installment.due_date) < new Date());
   const isPaid = installment?.status === "paid";
+
+  const liveFee = useMemo(() => {
+    if (!installment) return 0;
+    return computeLateFee(installment);
+  }, [installment]);
+
+  const totalDue = useMemo(() => {
+    if (!installment) return 0;
+    if (isPaid) return Number(installment.paid_amount || installment.amount) + Number(installment.late_fee || 0);
+    return Number(installment.amount || 0) + liveFee;
+  }, [installment, isPaid, liveFee]);
 
   const pixPayload = useMemo(() => {
     if (!installment || !ownerProfile?.pix_key || isPaid) return "";
     try {
       return generatePixPayload(
         ownerProfile.pix_key,
-        Number(installment.amount),
+        totalDue,
         "SAO PAULO",
         ownerProfile.full_name || "CREDOR",
         `PARCELA ${installment.installment_number}`
@@ -49,7 +62,7 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
       console.error("Erro ao gerar PIX", e);
       return "";
     }
-  }, [ownerProfile, installment, isPaid]);
+  }, [ownerProfile, installment, isPaid, totalDue]);
 
   if (!installment) return null;
 
@@ -111,10 +124,15 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
               </div>
             </div>
             <DialogTitle className="text-2xl font-bold mt-2">
-              R$ {fmt(Number(isPaid ? (installment.paid_amount || installment.amount) : installment.amount))}
+              R$ {fmt(totalDue)}
             </DialogTitle>
+            {!isPaid && liveFee > 0 && (
+              <p className="text-white/90 text-xs">
+                Parcela R$ {fmt(Number(installment.amount))} + multa/juros R$ {fmt(liveFee)}
+              </p>
+            )}
             <DialogDescription className="text-white/80 text-sm">
-              {isPaid 
+              {isPaid
                 ? `Pago em ${formatBR(installment.paid_at)}`
                 : `Vencimento em ${formatBR(installment.due_date)}`}
             </DialogDescription>
