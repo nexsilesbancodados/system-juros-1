@@ -14,14 +14,17 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import SuspenseWatchdog from "./components/SuspenseWatchdog";
 import { ConfirmProvider } from "./components/ConfirmProvider";
 import PortalSessionGuard from "./components/PortalSessionGuard";
-
-import Index from "./pages/Index";
+import {
+  CredmaisAboutPage,
+  CredmaisContactPage,
+  CredmaisHome,
+  CredmaisSolutionPage,
+} from "./pages/CredmaisPublic";
 
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const PortalCliente = lazy(() => import("./pages/PortalCliente"));
-// ... keep existing code
 const NovoCliente = lazy(() => import("./pages/NovoCliente"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Analises = lazy(() => import("./pages/Analises"));
@@ -36,7 +39,6 @@ const Tarefas = lazy(() => import("./pages/Tarefas"));
 const Anotacoes = lazy(() => import("./pages/Anotacoes"));
 const Planilha = lazy(() => import("./pages/Planilha"));
 const PuxadaDados = lazy(() => import("./pages/PuxadaDados"));
-const Sobre = lazy(() => import("./pages/Sobre"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
@@ -47,7 +49,6 @@ const QRCodePage = lazy(() => import("./pages/QRCodePage"));
 const AgenteIA = lazy(() => import("./pages/AgenteIA"));
 const CobradorExterno = lazy(() => import("./pages/CobradorExterno"));
 const Auditoria = lazy(() => import("./pages/Auditoria"));
-
 const ClienteDetalhe = lazy(() => import("./pages/ClienteDetalhe"));
 const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 const Suporte = lazy(() => import("./pages/Suporte"));
@@ -62,6 +63,14 @@ const Planos = lazy(() => import("./pages/Planos"));
 const Comunicacao = lazy(() => import("./pages/Comunicacao"));
 const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
 
+const publicSolutionRoutes = [
+  "antecipacao-de-recebiveis",
+  "boleto-garantido",
+  "consultoria",
+  "crediario",
+  "gestao-de-contas",
+];
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -70,7 +79,6 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
         const status = error?.status ?? error?.code;
-        // não retentar 4xx (auth/permissão/validação)
         if (typeof status === "number" && status >= 400 && status < 500) return false;
         return failureCount < 2;
       },
@@ -105,63 +113,67 @@ const App = () => (
       <AuthProvider>
         <WhiteLabelProvider>
           <ThemeProvider>
-          <ConfirmProvider>
-          <BrowserRouter>
-            <ErrorBoundary>
-              <PortalSessionGuard />
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/planos" element={<Planos />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/portal-cliente" element={<PortalCliente />} />
-                  <Route path="/cobrador-externo" element={<CobradorExterno />} />
-                  <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
-                  <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                    <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
-                    <Route path="/hoje" element={<ErrorBoundary><Hoje /></ErrorBoundary>}/>
-                    <Route path="/analises" element={<ErrorBoundary><Analises /></ErrorBoundary>} />
-                    <Route path="/clientes" element={<ErrorBoundary><Clientes /></ErrorBoundary>} />
-                    <Route path="/clientes/novo" element={<ErrorBoundary><NovoCliente /></ErrorBoundary>} />
-                    <Route path="/clientes/buscar" element={<ErrorBoundary><BuscarClientes /></ErrorBoundary>} />
-                    <Route path="/clientes/:id" element={<ErrorBoundary><ClienteDetalhe /></ErrorBoundary>} />
-                    <Route path="/contratos/:id" element={<ContractRedirect />} />
-                    <Route path="/cobrancas" element={<ErrorBoundary><Cobrancas /></ErrorBoundary>} />
-                    <Route path="/carteira" element={<ErrorBoundary><Carteira /></ErrorBoundary>} />
-                    <Route path="/lucros" element={<ErrorBoundary><Lucros /></ErrorBoundary>} />
-                    <Route path="/gastos" element={<ErrorBoundary><Gastos /></ErrorBoundary>} />
-                    <Route path="/ferramentas/metas" element={<ErrorBoundary><Metas /></ErrorBoundary>} />
-                    <Route path="/ferramentas/simulador" element={<ErrorBoundary><Simulador /></ErrorBoundary>} />
-                    <Route path="/ferramentas/tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>} />
-                    <Route path="/ferramentas/anotacoes" element={<ErrorBoundary><Anotacoes /></ErrorBoundary>} />
-                    <Route path="/ferramentas/planilha" element={<ErrorBoundary><Planilha /></ErrorBoundary>} />
-                    <Route path="/puxada-dados" element={<ErrorBoundary><PuxadaDados /></ErrorBoundary>} />
-                    <Route path="/sobre" element={<Sobre />} />
-                    <Route path="/perfil" element={<ErrorBoundary><Perfil /></ErrorBoundary>} />
-                    <Route path="/admin" element={<ErrorBoundary><Admin /></ErrorBoundary>} />
-                    <Route path="/relatorios" element={<ErrorBoundary><Relatorios /></ErrorBoundary>} />
-                    <Route path="/historico" element={<ErrorBoundary><Historico /></ErrorBoundary>} />
-                    <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
-                    <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
-                    <Route path="/qrcode" element={<QRCodePage />} />
-                    <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
-                    <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
-                    <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
-                    <Route path="/automacoes" element={<Navigate to="/configuracoes?tab=bot" replace />} />
-                    <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
-                    <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
-                    <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
-                    <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
-                    <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
-                    <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </ErrorBoundary>
-          </BrowserRouter>
-          </ConfirmProvider>
+            <ConfirmProvider>
+              <BrowserRouter>
+                <ErrorBoundary>
+                  <PortalSessionGuard />
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<CredmaisHome />} />
+                      {publicSolutionRoutes.map((slug) => (
+                        <Route key={slug} path={`/${slug}`} element={<CredmaisSolutionPage />} />
+                      ))}
+                      <Route path="/sobre" element={<CredmaisAboutPage />} />
+                      <Route path="/contato" element={<CredmaisContactPage />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/planos" element={<Planos />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/portal-cliente" element={<PortalCliente />} />
+                      <Route path="/cobrador-externo" element={<CobradorExterno />} />
+                      <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
+                      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                        <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                        <Route path="/hoje" element={<ErrorBoundary><Hoje /></ErrorBoundary>} />
+                        <Route path="/analises" element={<ErrorBoundary><Analises /></ErrorBoundary>} />
+                        <Route path="/clientes" element={<ErrorBoundary><Clientes /></ErrorBoundary>} />
+                        <Route path="/clientes/novo" element={<ErrorBoundary><NovoCliente /></ErrorBoundary>} />
+                        <Route path="/clientes/buscar" element={<ErrorBoundary><BuscarClientes /></ErrorBoundary>} />
+                        <Route path="/clientes/:id" element={<ErrorBoundary><ClienteDetalhe /></ErrorBoundary>} />
+                        <Route path="/contratos/:id" element={<ContractRedirect />} />
+                        <Route path="/cobrancas" element={<ErrorBoundary><Cobrancas /></ErrorBoundary>} />
+                        <Route path="/carteira" element={<ErrorBoundary><Carteira /></ErrorBoundary>} />
+                        <Route path="/lucros" element={<ErrorBoundary><Lucros /></ErrorBoundary>} />
+                        <Route path="/gastos" element={<ErrorBoundary><Gastos /></ErrorBoundary>} />
+                        <Route path="/ferramentas/metas" element={<ErrorBoundary><Metas /></ErrorBoundary>} />
+                        <Route path="/ferramentas/simulador" element={<ErrorBoundary><Simulador /></ErrorBoundary>} />
+                        <Route path="/ferramentas/tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>} />
+                        <Route path="/ferramentas/anotacoes" element={<ErrorBoundary><Anotacoes /></ErrorBoundary>} />
+                        <Route path="/ferramentas/planilha" element={<ErrorBoundary><Planilha /></ErrorBoundary>} />
+                        <Route path="/puxada-dados" element={<ErrorBoundary><PuxadaDados /></ErrorBoundary>} />
+                        <Route path="/perfil" element={<ErrorBoundary><Perfil /></ErrorBoundary>} />
+                        <Route path="/admin" element={<ErrorBoundary><Admin /></ErrorBoundary>} />
+                        <Route path="/relatorios" element={<ErrorBoundary><Relatorios /></ErrorBoundary>} />
+                        <Route path="/historico" element={<ErrorBoundary><Historico /></ErrorBoundary>} />
+                        <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
+                        <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
+                        <Route path="/qrcode" element={<QRCodePage />} />
+                        <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
+                        <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
+                        <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
+                        <Route path="/automacoes" element={<Navigate to="/configuracoes?tab=bot" replace />} />
+                        <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
+                        <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
+                        <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
+                        <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
+                        <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
+                        <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
+                      </Route>
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
+              </BrowserRouter>
+            </ConfirmProvider>
           </ThemeProvider>
         </WhiteLabelProvider>
       </AuthProvider>
