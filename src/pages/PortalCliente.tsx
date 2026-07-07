@@ -403,13 +403,51 @@ const PortalCliente = () => {
                     </label>
                     <input
                       value={cpf}
-                      onChange={(e) => setCpf(formatCpf(e.target.value))}
+                      onChange={(e) => {
+                        const masked = formatCpf(e.target.value);
+                        setCpf(masked);
+                        const digits = onlyDigits(masked);
+                        if (!cpfTouched) return;
+                        if (digits.length === 0) setCpfError("Informe seu CPF para continuar.");
+                        else if (digits.length < 11) setCpfError("O CPF deve conter 11 dígitos.");
+                        else if (!isValidCPF(digits)) setCpfError("CPF inválido — verifique os dígitos.");
+                        else setCpfError(null);
+                      }}
+                      onBlur={() => {
+                        setCpfTouched(true);
+                        const digits = onlyDigits(cpf);
+                        if (digits.length === 0) setCpfError("Informe seu CPF para continuar.");
+                        else if (digits.length < 11) setCpfError("O CPF deve conter 11 dígitos.");
+                        else if (!isValidCPF(digits)) setCpfError("CPF inválido — verifique os dígitos.");
+                        else setCpfError(null);
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const text = e.clipboardData.getData("text");
+                        setCpf(formatCpf(text));
+                        setCpfTouched(true);
+                      }}
                       placeholder="000.000.000-00"
                       required
                       inputMode="numeric"
                       autoComplete="off"
-                      className="portal-input w-full rounded-2xl px-5 py-5 text-center font-mono text-2xl tracking-wider"
+                      maxLength={14}
+                      aria-invalid={!!cpfError}
+                      aria-describedby={cpfError ? "cpf-error" : undefined}
+                      className={`portal-input w-full rounded-2xl px-5 py-5 text-center font-mono text-2xl tracking-wider ${cpfError ? "border-red-500/60 focus:border-red-500" : ""}`}
                     />
+                    {cpfError && (
+                      <p id="cpf-error" className="ml-1 flex items-center gap-1.5 text-xs text-red-400">
+                        <AlertTriangle size={12} /> {cpfError}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf))}
+                    className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                   </div>
 
                   <button type="submit" disabled={loading} className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:opacity-60">
