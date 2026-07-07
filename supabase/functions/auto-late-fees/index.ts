@@ -209,9 +209,10 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        message: `Multas: ${feesUpdated} atualizadas · ${statusUpdated} marcadas como atrasadas`,
+        message: `Multas: ${feesUpdated} atualizadas · ${statusUpdated} marcadas como atrasadas · ${clientNotifsInserted} notificações ao cliente`,
         fees_updated: feesUpdated,
         status_updated: statusUpdated,
+        client_notifications: clientNotifsInserted,
         total_overdue: overdueInstallments.length,
         errors: errors.length > 0 ? errors : undefined,
       }),
