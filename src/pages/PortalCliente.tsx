@@ -104,6 +104,31 @@ const PortalCliente = () => {
   const [tab, setTab] = useState<Tab>("open");
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [helpContact, setHelpContact] = useState<{ company_name?: string | null; portal_contact_phone?: string | null; portal_contact_email?: string | null } | null>(null);
+  const [helpContactLoading, setHelpContactLoading] = useState(false);
+
+  // Load creditor contact info when help modal opens (pre-login)
+  useEffect(() => {
+    if (!helpOpen || portalData) return;
+    const clean = onlyDigits(cpf);
+    if (clean.length !== 11 || !isValidCPF(clean)) {
+      setHelpContact(null);
+      return;
+    }
+    let cancelled = false;
+    setHelpContactLoading(true);
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("portal_lookup_creditor_contact", { _cpf: clean });
+        if (!cancelled) setHelpContact(data || null);
+      } catch {
+        if (!cancelled) setHelpContact(null);
+      } finally {
+        if (!cancelled) setHelpContactLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [helpOpen, cpf, portalData]);
 
   // Auto re-login from saved CPF on mount + isolamento absoluto do app do credor
   useEffect(() => {
