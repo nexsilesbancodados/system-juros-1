@@ -8,6 +8,7 @@ import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 import { computeLateFee } from "@/lib/lateFee";
 import { isPortalLoginBlocked, recordPortalLoginAttempt, performFullPortalLogout } from "@/lib/portalSession";
+import { isValidCPF, onlyDigits } from "@/lib/cpfCnpj";
 
 type PortalInstallment = {
   id: string;
@@ -95,6 +96,8 @@ const SESSION_KEY = "portal-cliente-session";
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
+  const [cpfError, setCpfError] = useState<string | null>(null);
+  const [cpfTouched, setCpfTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
@@ -242,11 +245,24 @@ const PortalCliente = () => {
 
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11) {
-      toast({ title: "Informe um CPF válido", variant: "destructive" });
+    setCpfTouched(true);
+    const cleanCpf = onlyDigits(cpf);
+    if (!cleanCpf) {
+      setCpfError("Informe seu CPF para continuar.");
+      toast({ title: "CPF obrigatório", description: "Digite seu CPF para acessar o portal.", variant: "destructive" });
       return;
     }
+    if (cleanCpf.length !== 11) {
+      setCpfError("O CPF deve conter 11 dígitos.");
+      toast({ title: "CPF incompleto", description: "Digite os 11 dígitos do CPF.", variant: "destructive" });
+      return;
+    }
+    if (!isValidCPF(cleanCpf)) {
+      setCpfError("CPF inválido — verifique os dígitos.");
+      toast({ title: "CPF inválido", description: "Os dígitos verificadores não conferem.", variant: "destructive" });
+      return;
+    }
+    setCpfError(null);
     await doLogin(cleanCpf);
   };
 
@@ -387,16 +403,51 @@ const PortalCliente = () => {
                     </label>
                     <input
                       value={cpf}
-                      onChange={(e) => setCpf(formatCpf(e.target.value))}
+                      onChange={(e) => {
+                        const masked = formatCpf(e.target.value);
+                        setCpf(masked);
+                        const digits = onlyDigits(masked);
+                        if (!cpfTouched) return;
+                        if (digits.length === 0) setCpfError("Informe seu CPF para continuar.");
+                        else if (digits.length < 11) setCpfError("O CPF deve conter 11 dígitos.");
+                        else if (!isValidCPF(digits)) setCpfError("CPF inválido — verifique os dígitos.");
+                        else setCpfError(null);
+                      }}
+                      onBlur={() => {
+                        setCpfTouched(true);
+                        const digits = onlyDigits(cpf);
+                        if (digits.length === 0) setCpfError("Informe seu CPF para continuar.");
+                        else if (digits.length < 11) setCpfError("O CPF deve conter 11 dígitos.");
+                        else if (!isValidCPF(digits)) setCpfError("CPF inválido — verifique os dígitos.");
+                        else setCpfError(null);
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const text = e.clipboardData.getData("text");
+                        setCpf(formatCpf(text));
+                        setCpfTouched(true);
+                      }}
                       placeholder="000.000.000-00"
                       required
                       inputMode="numeric"
                       autoComplete="off"
-                      className="portal-input w-full rounded-2xl px-5 py-5 text-center font-mono text-2xl tracking-wider"
+                      maxLength={14}
+                      aria-invalid={!!cpfError}
+                      aria-describedby={cpfError ? "cpf-error" : undefined}
+                      className={`portal-input w-full rounded-2xl px-5 py-5 text-center font-mono text-2xl tracking-wider ${cpfError ? "border-red-500/60 focus:border-red-500" : ""}`}
                     />
+                    {cpfError && (
+                      <p id="cpf-error" className="ml-1 flex items-center gap-1.5 text-xs text-red-400">
+                        <AlertTriangle size={12} /> {cpfError}
+                      </p>
+                    )}
                   </div>
 
-                  <button type="submit" disabled={loading} className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:opacity-60">
+                  <button
+                    type="submit"
+                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf))}
+                    className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
                     {loading ? "Verificando..." : "Acessar o portal"}
                   </button>
