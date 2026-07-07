@@ -74,6 +74,7 @@ serve(async (req) => {
     let feesUpdated = 0;
     let statusUpdated = 0;
     const errors: string[] = [];
+    const clientNotifications: Array<Record<string, unknown>> = [];
 
     for (const inst of overdueInstallments) {
       const config = contractMap.get(inst.contract_id);
