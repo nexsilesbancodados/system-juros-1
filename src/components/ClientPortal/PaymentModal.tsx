@@ -124,10 +124,15 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
               </div>
             </div>
             <DialogTitle className="text-2xl font-bold mt-2">
-              R$ {fmt(Number(isPaid ? (installment.paid_amount || installment.amount) : installment.amount))}
+              R$ {fmt(totalDue)}
             </DialogTitle>
+            {!isPaid && liveFee > 0 && (
+              <p className="text-white/90 text-xs">
+                Parcela R$ {fmt(Number(installment.amount))} + multa/juros R$ {fmt(liveFee)}
+              </p>
+            )}
             <DialogDescription className="text-white/80 text-sm">
-              {isPaid 
+              {isPaid
                 ? `Pago em ${formatBR(installment.paid_at)}`
                 : `Vencimento em ${formatBR(installment.due_date)}`}
             </DialogDescription>
