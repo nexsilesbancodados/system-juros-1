@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, Us
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
+import { computeLateFee } from "@/lib/lateFee";
 
 type PortalInstallment = {
   id: string;
