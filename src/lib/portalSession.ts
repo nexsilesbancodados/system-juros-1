@@ -31,6 +31,78 @@ export const clearPortalSession = () => {
   } catch {}
 };
 
+/**
+ * Logout completo do portal do cliente.
+ * Limpa TODO vestígio de autenticação no navegador para garantir que
+ * nenhuma sessão (portal ou credor) sobreviva ao logout.
+ */
+export const performFullPortalLogout = async (): Promise<void> => {
+  // 1) Sign out do supabase (invalida refresh token + limpa storage do SDK)
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    try {
+      await supabase.auth.signOut({ scope: "global" } as any);
+    } catch {
+      await supabase.auth.signOut().catch(() => {});
+    }
+  } catch {}
+
+  // 2) Limpar sessionStorage inteiro (portal, tentativas, cache de rota)
+  try {
+    sessionStorage.clear();
+  } catch {}
+
+  // 3) Limpar chaves de auth do localStorage (sb-*, supabase.*, portal-*)
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (
+        k.startsWith("sb-") ||
+        k.startsWith("supabase.") ||
+        k.startsWith("portal-") ||
+        k.includes("auth-token")
+      ) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {}
+
+  // 4) Expirar cookies de sessão do supabase/ssr no domínio atual e superiores
+  try {
+    const host = window.location.hostname;
+    const parts = host.split(".");
+    const domains = new Set<string>(["", host]);
+    for (let i = 1; i < parts.length - 1; i++) {
+      domains.add("." + parts.slice(i).join("."));
+    }
+    document.cookie.split(";").forEach((raw) => {
+      const name = raw.split("=")[0]?.trim();
+      if (!name) return;
+      if (
+        name.startsWith("sb-") ||
+        name.startsWith("supabase") ||
+        name.includes("auth-token") ||
+        name.startsWith("portal-")
+      ) {
+        domains.forEach((d) => {
+          document.cookie = `${name}=; Max-Age=0; path=/;${d ? ` domain=${d};` : ""}`;
+        });
+      }
+    });
+  } catch {}
+
+  // 5) Limpar caches do service worker (se houver PWA)
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {}
+};
+
 // Rate limit: bloqueia após N tentativas em janela curta
 export function recordPortalLoginAttempt(success: boolean): { blocked: boolean; waitSec: number } {
   const WINDOW_MS = 15 * 60 * 1000; // 15 min

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 import { computeLateFee } from "@/lib/lateFee";
-import { isPortalLoginBlocked, recordPortalLoginAttempt } from "@/lib/portalSession";
+import { isPortalLoginBlocked, recordPortalLoginAttempt, performFullPortalLogout } from "@/lib/portalSession";
 
 type PortalInstallment = {
   id: string;
@@ -250,10 +250,16 @@ const PortalCliente = () => {
     await doLogin(cleanCpf);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY);
+  const handleLogout = async () => {
+    // Limpa estado local do React primeiro para UI responsiva
     setPortalData(null);
     setCpf("");
+    setSelectedInstallment(null);
+    setPaymentOpen(false);
+    // Limpeza completa: supabase signOut + storage + cookies + caches
+    await performFullPortalLogout();
+    // Hard reload garante que nenhum estado in-memory (queries, contexts) sobreviva
+    window.location.replace("/portal-cliente");
   };
 
 
