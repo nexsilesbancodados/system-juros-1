@@ -851,3 +851,174 @@ div[style*="Edit with Lovable"],
     color: #000 !important;
   }
 }
+
+/* ═══════════════ PORTAL DO CLIENTE — Fintech Premium ═══════════════ */
+@layer components {
+  /* Aurora animada de fundo (contida no wrapper .portal-shell) */
+  .portal-shell {
+    position: relative;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, hsl(217 91% 55% / 0.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 10%, hsl(199 89% 55% / 0.14), transparent 60%),
+      radial-gradient(800px 500px at 50% 120%, hsl(217 91% 70% / 0.12), transparent 60%),
+      linear-gradient(180deg, hsl(215 40% 6%) 0%, hsl(215 40% 4%) 100%);
+    color: hsl(215 20% 96%);
+    overflow: hidden;
+  }
+  .portal-shell::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(hsl(217 91% 70% / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(217 91% 70% / 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 75%);
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 75%);
+    pointer-events: none;
+    animation: portalGridDrift 40s linear infinite;
+  }
+  .portal-shell::after {
+    content: "";
+    position: absolute; inset: -20%;
+    background: conic-gradient(from 180deg at 50% 50%,
+      hsl(217 91% 55% / 0.10),
+      transparent 25%,
+      hsl(199 89% 55% / 0.10),
+      transparent 55%,
+      hsl(217 91% 70% / 0.12),
+      transparent 90%);
+    filter: blur(80px);
+    pointer-events: none;
+    animation: portalAurora 24s linear infinite;
+  }
+  @keyframes portalAurora {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes portalGridDrift {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 48px 48px, 48px 48px; }
+  }
+
+  .portal-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Cartão premium com borda gradiente */
+  .portal-card {
+    position: relative;
+    background: linear-gradient(180deg, hsl(215 40% 10% / 0.85), hsl(215 40% 6% / 0.85));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 1.25rem;
+    box-shadow: 0 30px 80px -20px hsl(217 91% 30% / 0.35),
+                inset 0 1px 0 hsl(217 91% 80% / 0.08);
+  }
+  .portal-card::before {
+    content: "";
+    position: absolute; inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg,
+      hsl(217 91% 70% / 0.6),
+      hsl(199 89% 55% / 0.15) 40%,
+      transparent 60%,
+      hsl(217 91% 55% / 0.4));
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Cartão do bento */
+  .bento-tile {
+    position: relative;
+    background: linear-gradient(180deg, hsl(215 40% 12% / 0.65), hsl(215 40% 7% / 0.65));
+    border: 1px solid hsl(217 91% 70% / 0.10);
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s, box-shadow .3s;
+    overflow: hidden;
+  }
+  .bento-tile:hover {
+    border-color: hsl(217 91% 65% / 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -20px hsl(217 91% 55% / 0.35);
+  }
+  .bento-tile::after {
+    content: "";
+    position: absolute;
+    top: -60%; left: -20%;
+    width: 60%; height: 200%;
+    background: linear-gradient(75deg, transparent, hsl(217 91% 80% / 0.08), transparent);
+    transform: skewX(-15deg);
+    transition: left .8s ease;
+    pointer-events: none;
+  }
+  .bento-tile:hover::after { left: 120%; }
+
+  .bento-hero {
+    background:
+      radial-gradient(500px 200px at 100% 0%, hsl(217 91% 55% / 0.35), transparent 60%),
+      linear-gradient(135deg, hsl(217 91% 30%) 0%, hsl(215 60% 12%) 60%);
+    color: hsl(215 20% 98%);
+    border: 1px solid hsl(217 91% 70% / 0.25);
+  }
+  .bento-hero .kpi-value { font-family: var(--font-heading); }
+
+  /* Input premium */
+  .portal-input {
+    background: hsl(215 40% 8%);
+    border: 1px solid hsl(217 91% 70% / 0.15);
+    color: hsl(215 20% 96%);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  .portal-input:focus {
+    outline: none;
+    border-color: hsl(217 91% 60%);
+    box-shadow: 0 0 0 4px hsl(217 91% 60% / 0.15),
+                0 8px 24px -8px hsl(217 91% 55% / 0.35);
+    background: hsl(215 40% 10%);
+  }
+
+  /* Botão premium */
+  .portal-btn-primary {
+    position: relative;
+    background: linear-gradient(135deg, hsl(217 91% 55%), hsl(199 89% 55%));
+    color: #fff;
+    border-radius: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 10px 30px -8px hsl(217 91% 55% / 0.6),
+                inset 0 1px 0 hsl(0 0% 100% / 0.25);
+    transition: transform .15s, box-shadow .2s, filter .2s;
+  }
+  .portal-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .portal-btn-primary:active { transform: translateY(0); }
+
+  /* Chip / badge */
+  .portal-chip {
+    display: inline-flex; align-items: center; gap: .375rem;
+    padding: .3rem .65rem;
+    border-radius: 9999px;
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border: 1px solid hsl(217 91% 70% / 0.2);
+    background: hsl(217 91% 55% / 0.08);
+    color: hsl(217 91% 82%);
+  }
+  .portal-chip.warn { border-color: hsl(38 92% 60% / 0.35); background: hsl(38 92% 50% / 0.12); color: hsl(38 92% 78%); }
+  .portal-chip.ok   { border-color: hsl(152 65% 55% / 0.35); background: hsl(152 65% 42% / 0.12); color: hsl(152 65% 72%); }
+
+  /* Animação de pulso do escudo */
+  @keyframes shieldPulse {
+    0%,100% { box-shadow: 0 0 0 0 hsl(217 91% 60% / 0.5); }
+    50%     { box-shadow: 0 0 0 18px hsl(217 91% 60% / 0); }
+  }
+  .shield-pulse { animation: shieldPulse 2.4s ease-out infinite; }
+}
