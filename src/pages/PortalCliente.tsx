@@ -189,6 +189,17 @@ const PortalCliente = () => {
   }, [portalData]);
 
   const doLogin = async (cleanCpf: string, silent = false) => {
+    if (!silent) {
+      const block = isPortalLoginBlocked();
+      if (block.blocked) {
+        toast({
+          title: "Muitas tentativas",
+          description: `Aguarde ${Math.ceil(block.waitSec / 60)} min antes de tentar novamente.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("portal_client_login_cpf" as never, {
@@ -196,22 +207,34 @@ const PortalCliente = () => {
       } as never);
 
       if (error) {
-        if (!silent) toast({ title: "Erro ao acessar o portal", description: "Tente novamente em instantes.", variant: "destructive" });
+        if (!silent) {
+          recordPortalLoginAttempt(false);
+          toast({ title: "Erro ao acessar o portal", description: "Tente novamente em instantes.", variant: "destructive" });
+        }
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       if (!data) {
-        if (!silent) toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
+        if (!silent) {
+          recordPortalLoginAttempt(false);
+          toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
+        }
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf }));
-      if (!silent) toast({ title: "Acesso autorizado!" });
+      if (!silent) {
+        recordPortalLoginAttempt(true);
+        toast({ title: "Acesso autorizado!" });
+      }
     } catch (err) {
-      if (!silent) toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
+      if (!silent) {
+        recordPortalLoginAttempt(false);
+        toast({ title: "Erro no acesso", description: "Não foi possível carregar seus dados.", variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
