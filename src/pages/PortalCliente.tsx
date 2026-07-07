@@ -101,8 +101,14 @@ const PortalCliente = () => {
   const [selectedInstallment, setSelectedInstallment] = useState<PortalInstallment | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
-  // Auto re-login from saved CPF on mount
+  // Auto re-login from saved CPF on mount + isolamento absoluto do app do credor
   useEffect(() => {
+    // Se houver uma sessão do credor no mesmo navegador, deslogar imediatamente.
+    // Portal do cliente e app do credor NÃO podem coexistir na mesma sessão.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) void supabase.auth.signOut();
+    });
+
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
