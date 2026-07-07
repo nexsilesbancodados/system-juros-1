@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
-} from "@/components/ui/dialog";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  CreditCard, Copy, Check, QrCode, Receipt, Calendar, 
-  DollarSign, Download, Share2, Info, Loader2, MessageCircle
+import {
+  CreditCard, Copy, Check, QrCode, Receipt, Calendar,
+  Download, Info, Loader2, MessageCircle, X
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
