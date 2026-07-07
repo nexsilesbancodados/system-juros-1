@@ -88,16 +88,16 @@ const LandingHero = () => {
               className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-8"
             >
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-white/40" />
-                <span className="text-xs text-white/40">Sem cartão de crédito</span>
+                <CheckCircle2 size={16} className="text-white/70" />
+                <span className="text-xs text-white/70">Sem cartão de crédito</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-white/40" />
-                <span className="text-xs text-white/40">Setup em minutos</span>
+                <CheckCircle2 size={16} className="text-white/70" />
+                <span className="text-xs text-white/70">Setup em minutos</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-white/40" />
-                <span className="text-xs text-white/40">Suporte especializado</span>
+                <CheckCircle2 size={16} className="text-white/70" />
+                <span className="text-xs text-white/70">Suporte especializado</span>
               </div>
             </motion.div>
           </div>
@@ -119,7 +119,7 @@ const LandingHero = () => {
               transition={{ duration: 4, repeat: Infinity }}
               className="absolute -top-10 -left-10 p-6 glass border border-white/10 rounded-2xl hidden md:block"
             >
-              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Entradas Hoje</p>
+              <p className="text-[10px] text-white/70 uppercase tracking-widest mb-1">Entradas Hoje</p>
               <p className="text-2xl font-bold text-white tracking-tight">R$ 15.420,00</p>
               <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-green-500 w-3/4" />
@@ -131,7 +131,7 @@ const LandingHero = () => {
               transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
               className="absolute -bottom-10 -right-10 p-6 glass border border-white/10 rounded-2xl hidden md:block"
             >
-              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Inadimplência</p>
+              <p className="text-[10px] text-white/70 uppercase tracking-widest mb-1">Inadimplência</p>
               <p className="text-2xl font-bold text-red-400 tracking-tight">2.4%</p>
               <p className="text-[10px] text-green-400 mt-1">↓ 0.8% este mês</p>
             </motion.div>
