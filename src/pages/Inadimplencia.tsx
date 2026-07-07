@@ -120,7 +120,8 @@ const Inadimplencia = () => {
     for (const inst of installments) {
       const days = differenceInDays(today, new Date(inst.due_date));
       if (days < 1) continue;
-      const due = Number(inst.amount) + Number(inst.late_fee || 0);
+      const liveFee = computeLateFee(inst as any, today);
+      const due = Number(inst.amount) + liveFee;
       total += due;
       const bucket: OverdueRow["bucket"] = days <= 30 ? "0-30" : days <= 60 ? "31-60" : days <= 90 ? "61-90" : "90+";
       buckets[bucket] += due;
