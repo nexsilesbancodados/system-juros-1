@@ -18,13 +18,16 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
 
-    // Get all overdue contract installments that are still pending
+    // Todas as parcelas ainda não pagas/canceladas cujo vencimento já passou.
+    // Cobre TODOS os tipos de empréstimo (installments, percentage, etc.) — todos
+    // gravam suas parcelas na mesma tabela contract_installments.
     const { data: overdueInstallments, error: fetchErr } = await supabase
       .from("contract_installments")
-      .select("id, amount, due_date, late_fee, contract_id, user_id, client_id, installment_number")
-      .eq("status", "pending")
-      .lt("due_date", now.toISOString());
+      .select("id, amount, due_date, late_fee, contract_id, user_id, client_id, installment_number, status")
+      .not("status", "in", "(paid,cancelled)")
+      .lt("due_date", todayStr);
 
     if (fetchErr) {
       throw new Error(`Erro ao buscar parcelas: ${fetchErr.message}`);
@@ -36,22 +39,40 @@ serve(async (req) => {
       });
     }
 
-    // Get unique contract IDs to fetch their fee configs
-    const contractIds = [...new Set(overdueInstallments.map(i => i.contract_id))];
+    // Configuração por contrato (multa e juros diários)
+    const contractIds = [...new Set(overdueInstallments.map((i) => i.contract_id))];
     const { data: contracts } = await supabase
       .from("contracts")
-      .select("id, late_fee_percent, daily_interest_percent")
+      .select("id, user_id, loan_mode, late_fee_percent, daily_interest_percent")
       .in("id", contractIds);
 
-    const contractMap = new Map<string, { late_fee_percent: number; daily_interest_percent: number }>();
+    const contractMap = new Map<string, { user_id: string; loan_mode: string | null; late_fee_percent: number; daily_interest_percent: number }>();
     for (const c of contracts || []) {
       contractMap.set(c.id, {
+        user_id: c.user_id,
+        loan_mode: c.loan_mode,
         late_fee_percent: Number(c.late_fee_percent) || 0,
         daily_interest_percent: Number(c.daily_interest_percent) || 0,
       });
     }
 
-    let updated = 0;
+    // Fallback global do credor: settings.default_late_fee / default_daily_interest.
+    // Garante que mesmo contratos antigos (sem multa configurada) apliquem a política padrão.
+    const userIds = [...new Set((contracts || []).map((c) => c.user_id))];
+    const { data: settingsRows } = await supabase
+      .from("settings")
+      .select("user_id, default_late_fee, default_daily_interest")
+      .in("user_id", userIds);
+    const settingsMap = new Map<string, { late_fee: number; daily_interest: number }>();
+    for (const s of settingsRows || []) {
+      settingsMap.set(s.user_id, {
+        late_fee: Number(s.default_late_fee) || 0,
+        daily_interest: Number(s.default_daily_interest) || 0,
+      });
+    }
+
+    let feesUpdated = 0;
+    let statusUpdated = 0;
     const errors: string[] = [];
 
     for (const inst of overdueInstallments) {
@@ -62,38 +83,47 @@ serve(async (req) => {
       const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       if (daysOverdue <= 0) continue;
 
-      const baseAmount = Number(inst.amount);
+      const baseAmount = Number(inst.amount) || 0;
 
-      // Calculate fees:
-      // Late fee (multa): one-time percentage on the base amount
-      const lateFeeAmount = baseAmount * (config.late_fee_percent / 100);
-      // Daily interest (juros diários): daily percentage * days overdue
-      const dailyInterestAmount = baseAmount * (config.daily_interest_percent / 100) * daysOverdue;
-      // Total late fee = multa + juros diários acumulados
-      const totalLateFee = Math.round((lateFeeAmount + dailyInterestAmount) * 100) / 100;
+      // Aplica config do contrato; se faltar, cai para o padrão do credor.
+      const defaults = settingsMap.get(config.user_id) || { late_fee: 0, daily_interest: 0 };
+      const lateFeePct = config.late_fee_percent > 0 ? config.late_fee_percent : defaults.late_fee;
+      const dailyPct = config.daily_interest_percent > 0 ? config.daily_interest_percent : defaults.daily_interest;
 
-      // Only update if the fee changed
+      // Multa (aplicada 1x) + juros diários acumulados sobre o valor da parcela.
+      // Vale para qualquer tipo de empréstimo — cada parcela tem seu próprio `amount`.
+      const multa = baseAmount * (lateFeePct / 100);
+      const juros = baseAmount * (dailyPct / 100) * daysOverdue;
+      const totalLateFee = Math.round((multa + juros) * 100) / 100;
+
+      const patch: Record<string, unknown> = {};
       const currentFee = Number(inst.late_fee) || 0;
-      if (Math.abs(totalLateFee - currentFee) < 0.01) continue;
+      if (Math.abs(totalLateFee - currentFee) >= 0.01 && (lateFeePct > 0 || dailyPct > 0)) {
+        patch.late_fee = totalLateFee;
+      }
+      // Marca a parcela como overdue automaticamente se ainda estiver pendente.
+      if (inst.status === "pending") {
+        patch.status = "overdue";
+      }
+
+      if (Object.keys(patch).length === 0) continue;
 
       const { error: updateErr } = await supabase
         .from("contract_installments")
-        .update({ late_fee: totalLateFee })
+        .update(patch)
         .eq("id", inst.id);
 
       if (updateErr) {
         errors.push(`Parcela ${inst.id}: ${updateErr.message}`);
       } else {
-        updated++;
+        if (patch.late_fee !== undefined) feesUpdated++;
+        if (patch.status !== undefined) statusUpdated++;
       }
     }
 
-    // Create notification for each user about updated fees
-    const userIds = [...new Set(overdueInstallments.map(i => i.user_id))];
-    const todayStr = now.toISOString().split("T")[0];
-
-    for (const userId of userIds) {
-      // Check if already notified today
+    // Notifica cada credor 1x por dia sobre as multas atualizadas
+    const affectedUsers = [...new Set(overdueInstallments.map((i) => i.user_id))];
+    for (const userId of affectedUsers) {
       const { data: existing } = await supabase
         .from("notifications")
         .select("id")
@@ -101,10 +131,9 @@ serve(async (req) => {
         .eq("type", "late_fees_auto")
         .gte("created_at", `${todayStr}T00:00:00Z`)
         .limit(1);
-
       if (existing && existing.length > 0) continue;
 
-      const userOverdue = overdueInstallments.filter(i => i.user_id === userId);
+      const userOverdue = overdueInstallments.filter((i) => i.user_id === userId);
       if (userOverdue.length === 0) continue;
 
       await supabase.from("notifications").insert({
@@ -118,18 +147,19 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        message: `Multas atualizadas: ${updated} parcelas`,
-        updated,
+        message: `Multas: ${feesUpdated} atualizadas · ${statusUpdated} marcadas como atrasadas`,
+        fees_updated: feesUpdated,
+        status_updated: statusUpdated,
         total_overdue: overdueInstallments.length,
         errors: errors.length > 0 ? errors : undefined,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     console.error("auto-late-fees error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
