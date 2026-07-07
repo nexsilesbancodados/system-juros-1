@@ -116,9 +116,70 @@ serve(async (req) => {
 
       if (updateErr) {
         errors.push(`Parcela ${inst.id}: ${updateErr.message}`);
+        continue;
+      }
+
+      if (patch.late_fee !== undefined) feesUpdated++;
+      if (patch.status !== undefined) statusUpdated++;
+
+      // Prepara notificação para o cliente
+      const totalDue = Math.round((baseAmount + totalLateFee) * 100) / 100;
+      const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+      if (patch.status === "overdue") {
+        clientNotifications.push({
+          client_id: inst.client_id,
+          user_id: config.user_id,
+          contract_id: inst.contract_id,
+          installment_id: inst.id,
+          type: "installment_overdue",
+          title: `Parcela ${inst.installment_number} em atraso`,
+          message: `Sua parcela ${inst.installment_number} de ${fmt(baseAmount)} venceu em ${inst.due_date}. Regularize para evitar aumento de juros.`,
+          metadata: {
+            installment_number: inst.installment_number,
+            amount: baseAmount,
+            due_date: inst.due_date,
+            days_overdue: daysOverdue,
+            late_fee: totalLateFee,
+            total_due: totalDue,
+          },
+        });
+      } else if (patch.late_fee !== undefined) {
+        clientNotifications.push({
+          client_id: inst.client_id,
+          user_id: config.user_id,
+          contract_id: inst.contract_id,
+          installment_id: inst.id,
+          type: "late_fee_updated",
+          title: `Multa/juros atualizados — parcela ${inst.installment_number}`,
+          message: `Sua parcela ${inst.installment_number} está com ${daysOverdue} dia(s) de atraso. Multa + juros: ${fmt(totalLateFee)}. Total atual: ${fmt(totalDue)}.`,
+          metadata: {
+            installment_number: inst.installment_number,
+            amount: baseAmount,
+            due_date: inst.due_date,
+            days_overdue: daysOverdue,
+            late_fee: totalLateFee,
+            previous_late_fee: currentFee,
+            total_due: totalDue,
+          },
+        });
+      }
+    }
+
+    // Grava notificações do cliente (dedupe diária via índice único)
+    let clientNotifsInserted = 0;
+    if (clientNotifications.length > 0) {
+      const { error: notifErr, count } = await supabase
+        .from("client_notifications")
+        .upsert(clientNotifications, {
+          onConflict: "installment_id,type,dedupe_day",
+          ignoreDuplicates: true,
+          count: "exact",
+        });
+      if (notifErr) {
+        errors.push(`Notificações cliente: ${notifErr.message}`);
       } else {
-        if (patch.late_fee !== undefined) feesUpdated++;
-        if (patch.status !== undefined) statusUpdated++;
+        clientNotifsInserted = count || clientNotifications.length;
       }
     }
 
