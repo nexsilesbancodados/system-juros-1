@@ -112,7 +112,7 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="!left-1/2 !top-1/2 !right-auto !bottom-auto !-translate-x-1/2 !-translate-y-1/2 w-[calc(100vw-1.5rem)] max-w-md sm:max-w-md rounded-3xl p-0 overflow-hidden overflow-y-auto border-none shadow-2xl max-h-[90dvh]">
         <div className={`p-6 text-white ${isPaid ? "bg-success" : isOverdue ? "bg-destructive" : "bg-primary"}`}>
           <DialogHeader className="space-y-1">
             <div className="flex items-center justify-between">
@@ -192,8 +192,8 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                     <p className="text-[10px] text-muted-foreground font-medium uppercase text-center">
                       {pixPayload ? "Código PIX Copia e Cola" : "Chave do Credor"}
                     </p>
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border p-2 rounded-xl group hover:border-primary/50 transition-colors">
-                      <code className="flex-1 text-[10px] font-mono font-medium truncate px-1 text-muted-foreground">
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border p-2 rounded-xl group hover:border-primary/50 transition-colors min-w-0">
+                      <code className="flex-1 min-w-0 text-[10px] font-mono font-medium truncate px-1 text-muted-foreground">
                         {pixPayload || ownerProfile?.pix_key || "carregando..."}
                       </code>
                       <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg shrink-0" onClick={handleCopyPix}>
