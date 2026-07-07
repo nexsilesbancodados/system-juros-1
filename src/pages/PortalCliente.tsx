@@ -393,7 +393,11 @@ const PortalCliente = () => {
                 filtered.map(({ contract, installment, isOverdue }) => (
                   <button
                     key={installment.id}
-                    onClick={() => openPayment(installment)}
+                    onClick={() => openPayment({
+                      ...installment,
+                      late_fee_percent: contract.late_fee_percent,
+                      daily_interest_percent: contract.daily_interest_percent,
+                    } as PortalInstallment)}
                     className="glass-card flex w-full items-center gap-4 p-4 text-left transition-all hover:border-primary/40 hover:shadow-md"
                   >
                     <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
