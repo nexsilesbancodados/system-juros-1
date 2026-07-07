@@ -98,6 +98,7 @@ const PortalCliente = () => {
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState<string | null>(null);
   const [cpfTouched, setCpfTouched] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
