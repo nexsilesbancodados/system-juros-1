@@ -250,10 +250,16 @@ const PortalCliente = () => {
     await doLogin(cleanCpf);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY);
+  const handleLogout = async () => {
+    // Limpa estado local do React primeiro para UI responsiva
     setPortalData(null);
     setCpf("");
+    setSelectedInstallment(null);
+    setPaymentOpen(false);
+    // Limpeza completa: supabase signOut + storage + cookies + caches
+    await performFullPortalLogout();
+    // Hard reload garante que nenhum estado in-memory (queries, contexts) sobreviva
+    window.location.replace("/portal-cliente");
   };
 
 
