@@ -19,6 +19,8 @@ type PortalInstallment = {
   status: string;
   payment_method?: string | null;
   receipt_url?: string | null;
+  late_fee_percent?: number | string | null;
+  daily_interest_percent?: number | string | null;
 };
 
 type PortalContract = {
