@@ -108,6 +108,7 @@ const App = () => (
           <ConfirmProvider>
           <BrowserRouter>
             <ErrorBoundary>
+              <PortalSessionGuard />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
