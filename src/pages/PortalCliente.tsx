@@ -259,7 +259,22 @@ const PortalCliente = () => {
     // Limpeza completa: supabase signOut + storage + cookies + caches
     await performFullPortalLogout();
     // Hard reload garante que nenhum estado in-memory (queries, contexts) sobreviva
-    window.location.replace("/portal-cliente");
+    window.location.replace("/portal-cliente?logout=1");
+  };
+
+  // Flag pós-logout: mostra tela de confirmação em vez do formulário de login
+  const [justLoggedOut, setJustLoggedOut] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("logout") === "1";
+  });
+
+  const dismissLogoutScreen = () => {
+    setJustLoggedOut(false);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("logout");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    } catch {}
   };
 
 
