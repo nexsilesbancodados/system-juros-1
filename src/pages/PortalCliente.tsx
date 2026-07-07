@@ -33,6 +33,8 @@ type PortalContract = {
   total_amount: number | string;
   total_interest: number | string;
   payment_method?: string | null;
+  late_fee_percent?: number | string | null;
+  daily_interest_percent?: number | string | null;
   installments: PortalInstallment[];
 };
 
