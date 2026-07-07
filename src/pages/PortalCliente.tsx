@@ -418,6 +418,7 @@ const PortalCliente = () => {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Criptografia de Ponta a Ponta</p>
             </div>
           </section>
+          )
         ) : (
           <section className="w-full space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
