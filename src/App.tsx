@@ -13,6 +13,7 @@ import OfflineIndicator from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import SuspenseWatchdog from "./components/SuspenseWatchdog";
 import { ConfirmProvider } from "./components/ConfirmProvider";
+import PortalSessionGuard from "./components/PortalSessionGuard";
 
 import Index from "./pages/Index";
 
