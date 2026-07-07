@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatBR } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User, Phone, Mail, TrendingUp, Wallet, AlertTriangle, CheckCircle2, Sparkles, ChevronRight, LogOut, BadgeCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, CreditCard, FileText, Lock, Shield, User, Phone, Mail, TrendingUp, Wallet, AlertTriangle, CheckCircle2, Sparkles, ChevronRight, LogOut, BadgeCheck, HelpCircle, X, MessageCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
@@ -98,6 +98,7 @@ const PortalCliente = () => {
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState<string | null>(null);
   const [cpfTouched, setCpfTouched] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
@@ -451,6 +452,16 @@ const PortalCliente = () => {
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
                     {loading ? "Verificando..." : "Acessar o portal"}
                   </button>
+
+                  <div className="flex justify-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setHelpOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 transition-colors hover:text-primary hover:underline"
+                    >
+                      <HelpCircle size={13} /> Preciso de ajuda para entrar
+                    </button>
+                  </div>
                 </form>
 
                 <div className="grid grid-cols-3 gap-2 pt-2">
@@ -809,6 +820,111 @@ const PortalCliente = () => {
         contactPhone={portalData?.branding?.portal_contact_phone || portalData?.client?.whatsapp || portalData?.client?.phone || null}
       />
 
+      {/* ═══════════ MODAL DE AJUDA ═══════════ */}
+      {helpOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => setHelpOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="help-title"
+        >
+          <div
+            className="portal-card relative w-full max-w-md overflow-hidden rounded-3xl p-6 md:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setHelpOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-2 text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-info/10 border border-white/10">
+                <HelpCircle className="text-primary" size={22} />
+              </div>
+              <div>
+                <h3 id="help-title" className="font-heading text-xl font-bold text-white">Precisa de ajuda?</h3>
+                <p className="text-xs text-white/60">Vamos te ajudar a acessar seu portal</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                  <RefreshCw size={11} /> Como entrar novamente
+                </p>
+                <ol className="ml-4 list-decimal space-y-1.5 text-sm text-white/75">
+                  <li>Digite seu <strong className="text-white">CPF completo</strong> (11 dígitos).</li>
+                  <li>Use o mesmo CPF cadastrado com o credor.</li>
+                  <li>Se receber "CPF não encontrado", confirme os dados com o credor.</li>
+                  <li>Após muitas tentativas, aguarde alguns minutos e tente de novo.</li>
+                </ol>
+              </div>
+
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                  <MessageCircle size={11} /> Fale com o credor
+                </p>
+                {branding?.portal_contact_phone || branding?.portal_contact_email ? (
+                  <div className="space-y-2">
+                    {branding?.portal_contact_phone && (
+                      <>
+                        <a
+                          href={`https://wa.me/${onlyDigits(branding.portal_contact_phone)}?text=${encodeURIComponent("Olá! Preciso de ajuda para acessar o portal do cliente.")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-white transition-colors hover:bg-emerald-500/10"
+                        >
+                          <span className="flex items-center gap-2">
+                            <MessageCircle size={15} className="text-emerald-400" /> WhatsApp
+                          </span>
+                          <span className="font-mono text-xs text-white/70">{branding.portal_contact_phone}</span>
+                        </a>
+                        <a
+                          href={`tel:${branding.portal_contact_phone}`}
+                          className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Phone size={15} className="text-primary" /> Telefone
+                          </span>
+                          <span className="font-mono text-xs text-white/70">{branding.portal_contact_phone}</span>
+                        </a>
+                      </>
+                    )}
+                    {branding?.portal_contact_email && (
+                      <a
+                        href={`mailto:${branding.portal_contact_email}?subject=${encodeURIComponent("Ajuda com acesso ao portal")}`}
+                        className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-white transition-colors hover:bg-white/5"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Mail size={15} className="text-primary" /> E-mail
+                        </span>
+                        <span className="text-xs text-white/70">{branding.portal_contact_email}</span>
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-white/70">
+                    Entre em contato diretamente com <strong className="text-white">quem forneceu seu crédito</strong> pelo WhatsApp, telefone ou e-mail já conhecidos. Peça a confirmação do CPF cadastrado no sistema.
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                className="portal-btn-primary flex w-full items-center justify-center gap-2 py-4 text-sm"
+              >
+                <ArrowRight size={16} /> Entendi, tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
