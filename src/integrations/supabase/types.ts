@@ -2156,6 +2156,7 @@ export type Database = {
         Returns: Json
       }
       portal_client_login_cpf: { Args: { _cpf: string }; Returns: Json }
+      portal_lookup_creditor_contact: { Args: { _cpf: string }; Returns: Json }
       search_clients_by_document: {
         Args: { _document: string }
         Returns: {
