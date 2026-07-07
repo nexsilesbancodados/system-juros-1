@@ -112,7 +112,7 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="!left-1/2 !top-1/2 !right-auto !bottom-auto !-translate-x-1/2 !-translate-y-1/2 w-[calc(100vw-1.5rem)] max-w-md sm:max-w-md rounded-3xl p-0 overflow-hidden overflow-y-auto border-none shadow-2xl max-h-[90dvh]">
         <div className={`p-6 text-white ${isPaid ? "bg-success" : isOverdue ? "bg-destructive" : "bg-primary"}`}>
           <DialogHeader className="space-y-1">
             <div className="flex items-center justify-between">
