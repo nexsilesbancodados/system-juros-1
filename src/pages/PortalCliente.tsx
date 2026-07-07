@@ -96,6 +96,8 @@ const SESSION_KEY = "portal-cliente-session";
 const PortalCliente = () => {
   const { toast } = useToast();
   const [cpf, setCpf] = useState("");
+  const [cpfError, setCpfError] = useState<string | null>(null);
+  const [cpfTouched, setCpfTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [tab, setTab] = useState<Tab>("open");
