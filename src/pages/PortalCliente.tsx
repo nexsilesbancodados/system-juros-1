@@ -309,6 +309,53 @@ const PortalCliente = () => {
     <main className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center md:min-h-[calc(100vh-4rem)]">
         {!portalData ? (
+          justLoggedOut ? (
+            <section className="glass-card relative w-full max-w-md overflow-hidden p-8 shadow-elevated">
+              <div className="absolute inset-x-0 top-0 h-1 bg-success" />
+              <div className="space-y-5 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-success/20 bg-success/10">
+                  <Shield size={40} className="text-success" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold tracking-normal">Sessão encerrada</h1>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Sua sessão foi finalizada com segurança. Todos os dados de acesso deste navegador foram apagados.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-card/40 p-4 text-left text-xs text-muted-foreground space-y-2">
+                  <p className="flex items-start gap-2">
+                    <Lock className="mt-0.5 shrink-0 text-primary" size={14} />
+                    <span>Cookies e credenciais locais foram removidos.</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <Shield className="mt-0.5 shrink-0 text-primary" size={14} />
+                    <span>Para consultar seus contratos novamente, entre com seu CPF.</span>
+                  </p>
+                </div>
+                <Button
+                  onClick={dismissLogoutScreen}
+                  className="w-full rounded-xl py-6 text-base font-bold shadow-premium"
+                >
+                  <ArrowRight className="mr-2" size={18} />
+                  Entrar novamente
+                </Button>
+                {(branding.portal_contact_phone || branding.portal_contact_email) && (
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-muted-foreground">
+                    {branding.portal_contact_phone && (
+                      <a href={`tel:${branding.portal_contact_phone}`} className="flex items-center gap-1 hover:text-primary">
+                        <Phone size={12} /> {branding.portal_contact_phone}
+                      </a>
+                    )}
+                    {branding.portal_contact_email && (
+                      <a href={`mailto:${branding.portal_contact_email}`} className="flex items-center gap-1 hover:text-primary">
+                        <Mail size={12} /> {branding.portal_contact_email}
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : (
           <section className="glass-card relative w-full max-w-md overflow-hidden p-8 shadow-elevated">
             <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
 
