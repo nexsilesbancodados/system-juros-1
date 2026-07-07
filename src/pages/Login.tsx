@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { hasPortalSession } from "@/lib/portalSession";
 import { z } from "zod";
 import ConstellationBackground from "@/components/ConstellationBackground";
 import eagleLogo from "@/assets/eagle-logo.webp";
@@ -80,6 +81,12 @@ const Login = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
   const navigate = useNavigate();
+
+  // Se este navegador possui sessão do portal do cliente, não permitir acesso
+  // à tela de login do credor — devolve o cliente ao portal dele.
+  if (hasPortalSession()) {
+    return <Navigate to="/portal-cliente" replace />;
+  }
 
   const sanitizeNext = (raw: string | null): string | null => {
     if (!raw) return null;

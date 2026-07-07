@@ -13,6 +13,7 @@ import OfflineIndicator from "./components/OfflineIndicator";
 import ErrorBoundary from "./components/ErrorBoundary";
 import SuspenseWatchdog from "./components/SuspenseWatchdog";
 import { ConfirmProvider } from "./components/ConfirmProvider";
+import PortalSessionGuard from "./components/PortalSessionGuard";
 
 import Index from "./pages/Index";
 
@@ -107,6 +108,7 @@ const App = () => (
           <ConfirmProvider>
           <BrowserRouter>
             <ErrorBoundary>
+              <PortalSessionGuard />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
