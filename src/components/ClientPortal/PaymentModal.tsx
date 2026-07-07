@@ -15,6 +15,7 @@ import { generatePortalReceiptPdf } from "@/utils/portalPdf";
 import { QRCodeSVG } from "qrcode.react";
 import { generatePixPayload } from "@/utils/pixGenerator";
 import { formatBR } from "@/lib/dateUtils";
+import { computeLateFee } from "@/lib/lateFee";
 
 interface PaymentModalProps {
   isOpen: boolean;
