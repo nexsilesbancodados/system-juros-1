@@ -245,11 +245,24 @@ const PortalCliente = () => {
 
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11) {
-      toast({ title: "Informe um CPF válido", variant: "destructive" });
+    setCpfTouched(true);
+    const cleanCpf = onlyDigits(cpf);
+    if (!cleanCpf) {
+      setCpfError("Informe seu CPF para continuar.");
+      toast({ title: "CPF obrigatório", description: "Digite seu CPF para acessar o portal.", variant: "destructive" });
       return;
     }
+    if (cleanCpf.length !== 11) {
+      setCpfError("O CPF deve conter 11 dígitos.");
+      toast({ title: "CPF incompleto", description: "Digite os 11 dígitos do CPF.", variant: "destructive" });
+      return;
+    }
+    if (!isValidCPF(cleanCpf)) {
+      setCpfError("CPF inválido — verifique os dígitos.");
+      toast({ title: "CPF inválido", description: "Os dígitos verificadores não conferem.", variant: "destructive" });
+      return;
+    }
+    setCpfError(null);
     await doLogin(cleanCpf);
   };
 
