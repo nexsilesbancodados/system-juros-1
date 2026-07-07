@@ -151,15 +151,28 @@ const PortalCliente = () => {
 
   const summary = useMemo(() => {
     const contracts = portalData?.contracts || [];
-    const installments = contracts.flatMap((contract) => contract.installments || []);
-    const paid = installments.filter((installment) => installment.status === "paid");
-    const open = installments.filter((installment) => installment.status !== "paid");
-    const overdue = open.filter((installment) => new Date(installment.due_date) < new Date());
+    const now = new Date();
+    const rows = contracts.flatMap((contract) =>
+      (contract.installments || []).map((i) => ({ contract, i }))
+    );
+    const paid = rows.filter(({ i }) => i.status === "paid");
+    const open = rows.filter(({ i }) => i.status !== "paid");
+    const overdue = open.filter(({ i }) => new Date(i.due_date) < now);
 
     return {
       activeContracts: contracts.filter((contract) => contract.status === "active").length,
-      openAmount: open.reduce((sum, installment) => sum + Number(installment.amount || 0) + Number(installment.late_fee || 0), 0),
-      paidAmount: paid.reduce((sum, installment) => sum + Number(installment.paid_amount || installment.amount || 0), 0),
+      openAmount: open.reduce((sum, { contract, i }) => {
+        const fee = computeLateFee({
+          amount: i.amount,
+          due_date: i.due_date,
+          status: i.status,
+          late_fee: i.late_fee,
+          late_fee_percent: contract.late_fee_percent,
+          daily_interest_percent: contract.daily_interest_percent,
+        }, now);
+        return sum + Number(i.amount || 0) + fee;
+      }, 0),
+      paidAmount: paid.reduce((sum, { i }) => sum + Number(i.paid_amount || i.amount || 0), 0),
       overdueCount: overdue.length,
       openCount: open.length,
       paidCount: paid.length,
