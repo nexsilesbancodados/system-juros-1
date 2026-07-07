@@ -15,7 +15,7 @@ export function computeLateFee(inst: LateFeeInput, now: Date = new Date()): numb
   const stored = Number(inst.late_fee || 0);
 
   // Se já foi paga, mostra a multa que foi cobrada (persistida)
-  if (inst.status === "paid") return stored;
+  if (inst.status === "paid" || inst.status === "cancelled") return stored;
 
   const base = Number(inst.amount || 0);
   if (!base || !inst.due_date) return stored;
@@ -30,7 +30,8 @@ export function computeLateFee(inst: LateFeeInput, now: Date = new Date()): numb
   const multaPct = Number(inst.late_fee_percent || 0);
   const jurosPct = Number(inst.daily_interest_percent || 0);
 
-  // Sem configuração — usa o que já está salvo (cron pode ter escrito)
+  // Sem configuração de multa/juros no contrato — mantém o valor já persistido
+  // (o cron auto-late-fees aplica o fallback dos defaults do credor).
   if (multaPct <= 0 && jurosPct <= 0) return stored;
 
   const multa = base * (multaPct / 100);
