@@ -38,20 +38,24 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get Hubla Token from settings to verify (any tenant with token configured)
-    const { data: settings } = await supabaseClient
-      .from('settings')
-      .select('hubla_webhook_token')
-      .not('hubla_webhook_token', 'is', null)
-      .limit(1)
-      .maybeSingle()
-
-    const hublaToken = req.headers.get('x-hubla-token')
+    // Security: platform-wide webhook secret (env var, not user-writable settings row).
+    // Previously we read `settings.hubla_webhook_token`, but tenants can update their own
+    // settings and therefore could forge webhook calls to grant themselves paid access.
+    const expectedToken = Deno.env.get('HUBLA_WEBHOOK_TOKEN') ?? ''
+    const hublaToken = req.headers.get('x-hubla-token') ?? ''
     const isSandbox = req.headers.get('x-hubla-sandbox') === 'true'
     const idempotencyKey = req.headers.get('x-hubla-idempotency')
 
-    // Security: require token match if one is configured
-    if (settings?.hubla_webhook_token && hublaToken !== settings.hubla_webhook_token) {
+    if (!expectedToken) {
+      console.error('HUBLA_WEBHOOK_TOKEN env secret not configured — refusing webhook')
+      return new Response(JSON.stringify({ error: 'Webhook not configured' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Constant-time-ish compare
+    if (hublaToken.length !== expectedToken.length || hublaToken !== expectedToken) {
       console.error('Invalid Hubla token')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
