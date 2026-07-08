@@ -83,8 +83,8 @@ const LandingFooter = () => {
             © 2025 {brandTitle} — TODOS OS DIREITOS RESERVADOS.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-[10px] text-white/60 hover:text-white transition-colors">Política de Privacidade</a>
-            <a href="#" className="text-[10px] text-white/60 hover:text-white transition-colors">Termos de Uso</a>
+            <a href="/privacidade" className="text-[10px] text-white/60 hover:text-white transition-colors">Política de Privacidade</a>
+            <a href="/privacidade" className="text-[10px] text-white/60 hover:text-white transition-colors">Termos de Uso</a>
           </div>
         </div>
       </div>
