@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { formatBR } from "@/lib/dateUtils";
 import { getSignedUploadUrl } from "@/lib/storage";
+import DangerZone from "@/components/perfil/DangerZone";
 
 const Perfil = () => {
   const { user, profile, signOut } = useAuth();
@@ -215,6 +216,16 @@ const Perfil = () => {
           className={`${inputCls} resize-none`}
           placeholder="Olá {nome}, sua parcela {parcela} de R$ {valor} venceu em {data}..."
         />
+      </div>
+
+      {/* Zona LGPD: exportar / apagar conta */}
+      <DangerZone />
+
+      {/* Link política */}
+      <div className="text-center pt-2">
+        <Link to="/privacidade" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4">
+          Política de Privacidade (LGPD)
+        </Link>
       </div>
 
       {/* Actions */}
