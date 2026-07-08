@@ -659,8 +659,18 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           entity_id: client.id,
           details: { reasons: v.reasons },
         });
+        // Se detectou valor inventado ou chave PIX errada, notifica o operador
+        // (o cliente já recebe a versão corrigida, mas o operador precisa saber)
+        const critical = v.reasons.some(r => r.startsWith("invented_values") || r.startsWith("pix_key_mismatch"));
+        if (critical) {
+          await supabase.from("notifications").insert({
+            user_id: userId,
+            title: "⚠️ IA quase enviou dado incorreto",
+            message: `Cliente ${client.name}: bot corrigido automaticamente (${v.reasons.slice(0,2).join("; ")}). Revise a conversa.`,
+            type: "warning",
+          });
+        }
       }
-    }
 
     if (result.reply) await botSay(result.reply);
 
