@@ -671,6 +671,7 @@ Responda APENAS em JSON puro (sem markdown, sem cercas):
           });
         }
       }
+    }
 
     if (result.reply) await botSay(result.reply);
 
