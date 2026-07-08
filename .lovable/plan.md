@@ -1,51 +1,57 @@
-## Plano: 4 micro-cirurgias de UI
+# Auditoria funcional completa do System Juros
 
-Executar em 4 fases curtas e independentes. Sem mexer em lógica de negócio — só presentation/UX.
+Objetivo: rodar um "smoke test" ponta a ponta em todas as áreas do app, registrar o que funciona e o que quebra, e entregar um relatório priorizado com correções aplicadas em seguida.
 
-### Fase 1 — Modais grandes (Cliente / Pagamento / Parcela)
-Padronizar `DialogContent` dos 3 modais principais:
-- `src/components/QuickPaymentModal.tsx`
-- `src/components/CobrarAgoraModal.tsx`
-- Dialog de parcela dentro de `src/pages/ClienteDetalhe.tsx`
+## Como vou testar
 
-Regras unificadas:
-- `max-w-2xl` desktop, `w-[calc(100vw-1rem)]` mobile
-- `max-h-[90vh]` com `overflow-y-auto` no corpo
-- Header sticky (`sticky top-0 bg-background/95 backdrop-blur z-10`)
-- Footer sticky em modais com ações
-- `gap-4` consistente entre seções
+1. **Linter do banco** — `supabase--linter` para achar RLS aberto, policies frouxas, colunas sensíveis expostas.
+2. **Playwright headless no preview local** (`http://localhost:8080`) — script único que percorre os fluxos, tira screenshots e captura erros de console / rede.
+3. **Testes de edge functions** — `supabase--test_edge_functions` nas funções críticas (hubla-webhook, auto-late-fees, portal-upload-comprovante, client-negotiation, whatsapp-send).
+4. **Leitura de logs** — edge function logs das funções que falharem.
 
-### Fase 2 — MobileBottomNav polish
-`src/components/MobileBottomNav.tsx`:
-- `pb-[env(safe-area-inset-bottom)]`
-- Ícones `size={20}` uniformes
-- Estado ativo: pill `bg-primary/15` + `text-primary` + indicador superior 2px
-- Labels `text-[10px] font-medium`, truncadas
-- Haptic-like scale: `active:scale-95 transition-transform`
+## Escopo dos fluxos (o que o Playwright vai cobrir)
 
-### Fase 3 — Sidebar desktop
-`src/components/Sidebar.tsx`:
-- Agrupar itens em seções visuais (Operação / Financeiro / Configuração) com label `text-[10px] uppercase tracking-wider text-muted-foreground/60`
-- Reduzir densidade vertical: `py-2` → `py-1.5`, `gap-3` → `gap-2.5`
-- Estado ativo com barra lateral 2px à esquerda
-- Tooltip nos itens quando colapsada (já existe o mecanismo de collapse — só refinar)
+**Área pública / SEO**
+- Landing `/` — hero, pricing, CTA, footer, meta tags, sitemap/robots.
+- Login `/login` — form, validação, link recuperar senha.
+- Portal cliente `/portal-cliente` — login CPF+data.
+- Cobrador externo `/cobrador-externo` — login por token.
 
-### Fase 4 — Configurações: split por aba
-`src/pages/Configuracoes.tsx` (2029 linhas) — quebrar em subcomponentes por aba dentro de `src/components/configuracoes/`:
-- `EmpresaTab.tsx`
-- `PortalTab.tsx`
-- `WhatsAppTab.tsx`
-- `IATab.tsx`
-- `IntegracoesTab.tsx`
-- `AssinaturaTab.tsx`
+**Área autenticada (sessão Supabase injetada)**
+- Dashboard — KPIs, gráficos, briefing.
+- Clientes — listar, buscar, abrir detalhe, criar novo.
+- Empréstimo/Contrato — simulador, criar contrato, ver parcelas.
+- Cobranças — Kanban, Calendar, marcar como pago, cobrar agora.
+- Inadimplência — lista, aplicar multa/juros.
+- Chat interno + WhatsApp Inbox — abrir conversa.
+- Configurações — Hubla, WhatsApp, Portal branding, PIX.
+- Assinatura/Planos — checkout Hubla, tela "assinatura necessária".
+- Admin (se aplicável) — support inbox, users.
 
-`Configuracoes.tsx` vira shell com `<Tabs>` + lazy imports. Nenhuma mudança de schema/RLS/edge.
+**Edge functions críticas**
+- `hubla-webhook` — assinatura de token, ativar sub, e-mail Brevo.
+- `auto-late-fees` — recalcular multa/juros, gerar notificação.
+- `portal-client-login` / `portal-client-notifications` — RPC.
+- `client-negotiation` — proposta cliente.
+- `whatsapp-send` / `whatsapp-webhook` — envio e recebimento.
 
-### Detalhes técnicos
-- Tokens semânticos do `index.css` apenas (sem cores hard-coded)
-- Sem novas deps
-- Sem migrações
-- Verificação por fase: build + screenshot Playwright (mobile 390px + desktop 1440px) para Fases 1-3; render check para Fase 4
+## Entregável
 
-### Ordem de entrega
-Fase 1 → confirmar → Fase 2 → confirmar → Fase 3 → confirmar → Fase 4 (a maior, pode demorar 2-3 turnos).
+Um relatório em `QA-REPORT.md` com:
+- ✅ Passou / ⚠️ Aviso / ❌ Quebrou por fluxo.
+- Screenshots dos pontos críticos em `/tmp/browser/audit/`.
+- Lista de bugs encontrados, ordenada por severidade (bloqueia venda → cosmético).
+- Correções aplicadas imediatamente para tudo que for **bloqueador** (ex.: tela branca, RLS aberta, webhook 500, checkout quebrado).
+- Correções não-bloqueadoras ficam listadas para você aprovar antes de eu mexer.
+
+## Suposições
+
+- Vou usar a sessão Supabase gerenciada do preview (auth injetada) para as rotas autenticadas. Se `LOVABLE_BROWSER_AUTH_STATUS` estiver `signed_out`, peço pra você logar uma vez no preview.
+- Não vou disparar cobranças reais no WhatsApp / Hubla (sandbox / mocks quando aplicável).
+- `HUBLA_WEBHOOK_TOKEN` ainda não está salvo — vou testar o webhook validando que ele responde 503 corretamente sem o secret, e deixar o teste completo pra depois que você cadastrar.
+
+## Tempo estimado
+
+Rodada 1 (auditoria + fixes bloqueadores): ~15–25 min de execução minha.
+
+Aprova?
