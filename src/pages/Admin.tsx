@@ -48,7 +48,7 @@ type AdminSection = "users" | "support" | "automations" | "logs" | "settings";
 const Admin = () => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
-  const isSuperAdmin = isSuperAdminEmail(user?.email);
+  const isSuperAdmin = isSuperAdminEmail(user?.email) || profile?.is_admin === true;
   const [section, setSection] = useState<AdminSection>("users");
   const [supportUnread, setSupportUnread] = useState(0);
   const [users, setUsers] = useState<UserRow[]>([]);
