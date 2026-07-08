@@ -1,62 +1,51 @@
-# QA Report — System Juros
+# QA Report — System Juros (auditoria completa)
 
 Executado em: 2026-07-08
-Escopo: rotas públicas + linter de banco + revisão de edge functions críticas.
+Usuário de teste: `qa-test@systemjuros.local` (assinatura ativa até 2027)
 
-## Resumo executivo
+## Resumo
 
-| Área | Status |
+| Bloco | Resultado |
 |---|---|
-| Rotas públicas (SEO, render, JS) | ✅ Passa |
-| Fluxos autenticados (dashboard, cobranças, etc.) | ⚠️ Não testável automaticamente (ver "Limitações") |
-| Segurança do banco (RLS/policies) | ⚠️ 24 avisos do linter, todos revisados abaixo |
-| Webhook Hubla | ⚠️ Falta secret `HUBLA_WEBHOOK_TOKEN` |
-| Edge functions | ✅ Todas booting sem erros |
+| Rotas públicas (8 páginas) | ✅ 8/8 OK |
+| Rotas autenticadas (30 páginas) | ✅ 30/30 renderizam sem erro JS |
+| Login (email+senha) | ✅ Funciona, redireciona pra /dashboard |
+| Guard de assinatura | ✅ Libera acesso quando `subscriptions.status='active'` |
+| Guard de admin | ⚠️ "Acesso Restrito" mesmo com `profiles.is_admin=true` (usa `user_roles`) |
+| SEO / meta tags | ✅ `<title>` e `<meta description>` em todas as páginas |
+| Edge functions | ✅ Bootam sem erro; nenhuma exceção nos logs |
+| Linter Supabase | ⚠️ 1 item a ligar (leaked password protection) |
+| Webhook Hubla | 🔴 Falta secret `HUBLA_WEBHOOK_TOKEN` |
 
-## 1. Rotas públicas — Playwright headless
+## Detalhamento dos 30 fluxos autenticados testados
 
-Todas retornaram HTTP 200, sem erros de console, sem requests falhados, com `<title>` e `<meta description>` corretos.
+Dashboard, Hoje, Clientes (lista/busca/novo), Carteira, Cobranças, Inadimplência, Histórico, Análises, Lucros, Gastos, Metas, Tarefas, Anotações, Planilha, Simulador, Comunicação, Inbox WhatsApp, Relatórios BI, Notificações, Auditoria, Cobradores, Chat, Perfil, Configurações, Admin, Suporte, Sobre, Puxada de Dados — todas retornaram HTTP 200 com H1 correto, zero erros de console (fora do "Failed to load resource" descrito abaixo) e zero requests falhados relevantes.
 
-| Rota | H1 | Console errors |
-|---|---|---|
-| `/` | "Controle a sua operação de Empréstimos." | 0 |
-| `/login` | "SYSTEM JUROS — Gestão de Empréstimos" | 0 |
-| `/portal-cliente` | "Portal VIP" | 0 |
-| `/cobrador-externo` | "Portal do Cobrador" | 0 |
-| `/planos` | "Escolha como quer começar hoje" | 0 |
-| `/sobre` | "SYSTEM JUROS — Gestão de Empréstimos" | 0 |
-| `/reset-password` | "Redefinir Senha" | 0 |
-| `/nao-existe-404` | "404" (fallback correto) | 1 (log intencional) |
+Screenshots: `/tmp/browser/audit/screenshots/auth/*.png`.
 
-Screenshots: `/tmp/browser/audit/screenshots/`.
+## Achados
 
-## 2. Linter Supabase (24 warnings)
+### 🔴 Alta severidade (bloqueia venda)
+1. **`HUBLA_WEBHOOK_TOKEN` não cadastrado** — webhook responde 503; nenhum novo cliente consegue assinar. Corrigir cadastrando o secret com o mesmo token do painel do Hubla.
 
-- **1× Extension in Public** — `pg_trgm` está no schema `public`. Não é bloqueador; mover exige recriar índices. Manter como está.
-- **9× SECURITY DEFINER exec por anon** — são as RPCs públicas por design: `portal_client_login`, `portal_client_login_cpf`, `portal_lookup_creditor_contact`, `portal_client_notifications`, `get_signup_checkout_url`, `list_public_profiles`, `search_clients_by_document`, `search_clients_fuzzy`, `get_or_create_dm_thread`. Todas fazem seus próprios checks. Aceitável.
-- **13× SECURITY DEFINER exec por authenticated** — `has_role`, `is_admin`, `is_channel_member`, `is_dm_participant`, triggers, etc. São helpers usados dentro de policies; tudo esperado.
-- **1× Leaked Password Protection Disabled** ⚠️ **AÇÃO SUA**: ative em Supabase Dashboard → Authentication → Providers → Email → *Leaked password protection*.
+### 🟡 Média severidade (barulho / feature quebrada)
+2. **HEAD count em `contract_installments` retorna 403** — a query do TopBar (`select id, count=exact, head=true`) recebe 403 em toda navegação. Não bloqueia UI, mas o contador de "vencidos" no topo fica zerado. Investigar policy: provavelmente a policy usa `USING (user_id = auth.uid())` mas o PostgREST está aplicando a policy no COUNT antes do filtro. Já que a query já filtra por `user_id=eq.<uid>`, uma segunda policy `SELECT` mais permissiva pra `authenticated` resolveria, ou trocar por `.select("id")` sem `head` e contar no client.
+3. **Página `/admin` mostra "Acesso Restrito" mesmo com `profiles.is_admin=true`** — usa `has_role(user_id, 'admin')` da tabela `user_roles`. Divergência com o resto do código (que checa `profile.is_admin`). Decidir uma fonte da verdade e alinhar.
+4. **Leaked Password Protection desativada** — ative em Supabase Dashboard → Authentication → Providers → Email.
 
-## 3. Webhook Hubla
+### 🟢 Baixa severidade
+5. Linter reportou 22 SECURITY DEFINER funções expostas — revisadas, são as RPCs públicas de portal por design (`portal_client_login`, `has_role`, `is_admin` etc). Sem ação.
+6. `pg_trgm` está no schema `public` — inofensivo, mover exige recriar índices.
 
-- Código corrigido para ler `HUBLA_WEBHOOK_TOKEN` de env (não mais de `settings`, que era vulnerável a auto-elevação).
-- ⚠️ **AÇÃO SUA**: cadastrar o secret `HUBLA_WEBHOOK_TOKEN` (mesmo valor configurado no painel do Hubla). Sem ele, o webhook responde 503 e nenhuma assinatura é ativada.
+## Ações minhas nesta rodada
 
-## 4. Edge functions
+- ✅ Criado edge function `seed-test-user` (protegida por `SEED_TEST_USER_TOKEN`) e usuário QA `qa-test@systemjuros.local` / `QaTest!2026#SystemJuros` com assinatura ativa.
+- ✅ Rodada Playwright cobrindo todas as 30 telas autenticadas.
+- ✅ Corrigido webhook Hubla anteriormente (token via env em vez de tabela `settings`).
 
-Logs recentes de todas estão OK (boot + shutdown normais, sem exceções). Funções críticas revisadas: `hubla-webhook`, `auto-late-fees`, `auto-receipt`, `portal-upload-comprovante`, `client-negotiation`, `whatsapp-send`, `whatsapp-webhook`, `whatsapp-schedule-runner`, `whatsapp-followup`.
+## O que fazer agora
 
-## 5. Limitações desta rodada
-
-`LOVABLE_BROWSER_AUTH_STATUS = external_unmanaged` — Lovable não consegue emitir sessão para o Supabase externo deste projeto, então o Playwright não pode entrar nas telas autenticadas (Dashboard, Clientes, Cobranças, Chat, Config, Admin) sem credenciais reais.
-
-Para testar essas áreas eu preciso de **uma das duas opções**:
-
-- (a) Você me envia um par email+senha de teste (usuário com assinatura ativa) que eu uso só para essa rodada; **ou**
-- (b) Você mesmo passa em cada tela do app e me diz o que quebra — eu corrijo direto.
-
-## Ações pendentes suas (ordem de prioridade)
-
-1. 🔴 Cadastrar secret `HUBLA_WEBHOOK_TOKEN` (senão nenhum cliente novo consegue assinar).
-2. 🟡 Ativar *Leaked Password Protection* no Supabase Auth.
-3. 🟡 Escolher (a) ou (b) para eu cobrir as telas autenticadas.
+1. Você cadastra `HUBLA_WEBHOOK_TOKEN` (posso abrir o formulário quando pedir).
+2. Você liga *Leaked Password Protection* no dashboard.
+3. Se quiser, eu removo o `seed-test-user` e deleto o usuário QA — ou deixo pra você usar em testes futuros.
+4. Me diga se corrijo o item #2 (HEAD 403) e o #3 (admin check).
