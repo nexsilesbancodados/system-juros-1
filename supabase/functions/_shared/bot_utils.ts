@@ -419,16 +419,37 @@ export function validatePixReply(input: PixReplyValidationInput): PixReplyValida
   // 2. Conjunto de valores permitidos (com tolerância)
   const allowed: number[] = [];
   const pushIf = (n: number) => { if (Number.isFinite(n) && n > 0) allowed.push(+n.toFixed(2)); };
+  const overdueAmts: number[] = [];
+  const dueTodayAmts: number[] = [];
   for (const i of input.installments || []) {
     pushIf(Number(i.amount));
     pushIf(Number(i.amount) + Number(i.late_fee || 0));
   }
-  for (const i of input.overdue || []) pushIf(Number(i.amount) + Number(i.late_fee || 0));
-  for (const i of input.dueToday || []) pushIf(Number(i.amount));
+  for (const i of input.overdue || []) {
+    const v = Number(i.amount) + Number(i.late_fee || 0);
+    pushIf(v);
+    overdueAmts.push(+v.toFixed(2));
+  }
+  for (const i of input.dueToday || []) {
+    pushIf(Number(i.amount));
+    dueTodayAmts.push(+Number(i.amount).toFixed(2));
+  }
   pushIf(input.totalOverdue);
   pushIf(input.totalDueToday);
   pushIf(input.totalOverdue + input.totalDueToday);
   for (const r of input.rolloverOptions || []) pushIf(Number(r.interestOnly));
+
+  // Somas de subconjuntos (até 5 itens) — cliente pode negociar 2/3 parcelas
+  const allAmts = [...overdueAmts, ...dueTodayAmts];
+  const maxSubset = Math.min(allAmts.length, 5);
+  const subsetSums = new Set<number>();
+  const enumerate = (start: number, sum: number, depth: number) => {
+    if (depth > 0) subsetSums.add(+sum.toFixed(2));
+    if (depth >= maxSubset) return;
+    for (let i = start; i < allAmts.length; i++) enumerate(i + 1, sum + allAmts[i], depth + 1);
+  };
+  if (allAmts.length && allAmts.length <= 8) enumerate(0, 0, 0);
+  for (const s of subsetSums) pushIf(s);
 
   const moneyMatches = [...reply.matchAll(MONEY_RE)];
   const invented: string[] = [];
