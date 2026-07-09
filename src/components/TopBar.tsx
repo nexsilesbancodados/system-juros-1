@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import NotificationsBell from "./NotificationsBell";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { fetchAll } from "@/lib/fetchAll";
 
 interface TopBarProps {
@@ -188,6 +189,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           </button>
         )}
 
+        <LanguageSwitcher />
         <NotificationsBell />
 
         {!isMobile && <UserMenu profile={profile} theme={theme} toggleTheme={toggleTheme} onSignOut={handleSignOut} navigate={navigate} isAdmin={!!profile?.is_admin} />}
