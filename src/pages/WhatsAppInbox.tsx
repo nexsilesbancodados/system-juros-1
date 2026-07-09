@@ -788,6 +788,11 @@ export default function WhatsAppInbox() {
                   disabled={selected.blocked || sending} onClick={() => fileInputRef.current?.click()}>
                   <Paperclip className="h-4 w-4" />
                 </Button>
+                <VoiceRecorder
+                  className="self-end h-10 w-10"
+                  onTranscribed={(t) => setDraft((d) => (d ? d + " " : "") + t)}
+                  title="Ditar mensagem"
+                />
                 <Textarea value={draft} onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) { e.preventDefault(); send(); }
@@ -811,6 +816,11 @@ export default function WhatsAppInbox() {
             <div className="flex gap-2">
               <Textarea value={newNote} onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Anotação privada (não enviada ao cliente)..." rows={3} />
+              <VoiceRecorder
+                className="self-start"
+                onTranscribed={(t) => setNewNote((n) => (n ? n + " " : "") + t)}
+                title="Ditar nota"
+              />
             </div>
             <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Adicionar nota</Button>
             <div className="max-h-72 overflow-y-auto space-y-2 pt-2 border-t">

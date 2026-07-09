@@ -62,6 +62,7 @@ const Hoje = lazy(() => import("./pages/Hoje"));
 const Planos = lazy(() => import("./pages/Planos"));
 const Comunicacao = lazy(() => import("./pages/Comunicacao"));
 const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
+const BotPerformance = lazy(() => import("./pages/BotPerformance"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -150,6 +151,7 @@ const App = () => (
                     <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
                     <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
                     <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
+                    <Route path="/bot-performance" element={<ErrorBoundary><BotPerformance /></ErrorBoundary>} />
                     <Route path="/automacoes" element={<Navigate to="/configuracoes?tab=bot" replace />} />
                     <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
                     <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
