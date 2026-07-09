@@ -145,8 +145,8 @@ export default function BotPerformance() {
               {recent.map((r) => (
                 <li key={r.id} className="text-xs flex items-center justify-between p-2 rounded-lg bg-muted/20">
                   <span className="flex items-center gap-2">
-                    {r.status === "error" ? <XCircle className="h-3 w-3 text-red-500" /> : <CheckCircle2 className="h-3 w-3 text-green-500" />}
-                    {r.action_type || "ação"}
+                    {r.success === false ? <XCircle className="h-3 w-3 text-red-500" /> : <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                    {r.tool_name || "ação"}
                   </span>
                   <span className="text-muted-foreground">{new Date(r.created_at).toLocaleTimeString("pt-BR")}</span>
                 </li>
