@@ -1,5 +1,8 @@
 import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createIDBPersister } from "@/lib/offlineCache";
+import { I18nProvider } from "@/lib/i18n";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -98,8 +101,14 @@ const PageLoader = () => (
   </SuspenseWatchdog>
 );
 
+const idbPersister = createIDBPersister();
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 * 3, buster: "sj-v1" }}
+  >
+    <I18nProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -170,7 +179,8 @@ const App = () => (
         </WhiteLabelProvider>
       </AuthProvider>
     </TooltipProvider>
-  </QueryClientProvider>
+    </I18nProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;

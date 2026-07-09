@@ -74,12 +74,45 @@ export function usePushNotifications() {
               };
             }
           }
+
+          // Badge no título quando aba não está focada
+          if (document.hidden) {
+            const baseTitle = document.title.replace(/^\(\d+\)\s*/, "");
+            const match = document.title.match(/^\((\d+)\)/);
+            const count = match ? Number(match[1]) + 1 : 1;
+            document.title = `(${count}) ${baseTitle}`;
+          }
+
+          // Som suave (respeita mute do navegador)
+          try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.28);
+          } catch { /* noop */ }
         },
       )
       .subscribe();
 
+    // Limpa badge do título quando volta a olhar a aba
+    const onFocus = () => {
+      document.title = document.title.replace(/^\(\d+\)\s*/, "");
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) onFocus();
+    });
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener("focus", onFocus);
     };
   }, [user, settings?.push_notifications_enabled]);
 }
