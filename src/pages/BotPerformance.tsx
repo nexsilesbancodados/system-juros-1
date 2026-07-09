@@ -36,7 +36,7 @@ export default function BotPerformance() {
 
       const [actionsQ, auditQ, criticalQ, convosQ] = await Promise.all([
         supabase.from("bot_actions_log")
-          .select("id, action_type, status, response_time_ms, created_at, metadata")
+          .select("id, tool_name, success, error_message, created_at, tool_input, tool_output")
           .eq("user_id", user.id).gte("created_at", since)
           .order("created_at", { ascending: false }).limit(1000),
         supabase.from("audit_logs")
@@ -53,25 +53,25 @@ export default function BotPerformance() {
       ]);
 
       if (cancelled) return;
-      const actions = actionsQ.data || [];
-      const audits = auditQ.data || [];
+      const actions: any[] = actionsQ.data || [];
+      const audits: any[] = auditQ.data || [];
       const paidAfter = (convosQ.data || []).filter(
-        (i) => i.status === "paid" && i.paid_at && i.last_collected_at && new Date(i.paid_at) > new Date(i.last_collected_at),
+        (i: any) => i.status === "paid" && i.paid_at && i.last_collected_at && new Date(i.paid_at) > new Date(i.last_collected_at),
       ).length;
       const autoCol = audits.filter((a) => a.entity_type === "auto_collection" && a.action === "message_sent").length;
-      const rt = actions.map((a) => Number(a.response_time_ms || 0)).filter((n) => n > 0);
-      const avg = rt.length ? Math.round(rt.reduce((s, n) => s + n, 0) / rt.length / 100) / 10 : null;
-      const conv = autoCol ? Math.round((paidAfter / autoCol) * 100) : 0;
 
       setKpis({
         totalMsgs: actions.length,
-        aiMsgs: actions.filter((a) => (a.action_type || "").includes("ai")).length,
+        aiMsgs: actions.filter((a) => String(a.tool_name || "").toLowerCase().includes("ai")).length,
         autoCollections: autoCol,
         paidAfterCollect: paidAfter,
         criticalAlerts: (criticalQ.data || []).length,
-        escalations: actions.filter((a) => (a.action_type || "").includes("escalat") || (a.action_type || "").includes("handoff")).length,
-        avgResponseSec: avg,
-        conversionPct: conv,
+        escalations: actions.filter((a) => {
+          const t = String(a.tool_name || "").toLowerCase();
+          return t.includes("escalat") || t.includes("handoff") || t.includes("human");
+        }).length,
+        avgResponseSec: null,
+        conversionPct: autoCol ? Math.round((paidAfter / autoCol) * 100) : 0,
       });
       setRecent(actions.slice(0, 15));
       setCriticals(criticalQ.data || []);
