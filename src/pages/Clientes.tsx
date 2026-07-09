@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { fetchAll } from "@/lib/fetchAll";
+import RiskBadge from "@/components/clients/RiskBadge";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
 type ScoreBand = "all" | "high" | "mid" | "low";
@@ -571,7 +572,10 @@ const Clientes = () => {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ring-1 ${scoreColor(c.credit_score || 0)}`}>{c.credit_score || 0}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ring-1 ${scoreColor(c.credit_score || 0)}`}>{c.credit_score || 0}</span>
+                          <RiskBadge score={c.credit_score} compact />
+                        </div>
                       </td>
                       <td className="px-5 py-3">
                         <Badge variant="outline" className={c.status === "Ativo" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>{c.status}</Badge>
