@@ -218,6 +218,9 @@ const Perfil = () => {
         />
       </div>
 
+      {/* 2FA (TOTP) */}
+      <MFACard />
+
       {/* Zona LGPD: exportar / apagar conta */}
       <DangerZone />
 
