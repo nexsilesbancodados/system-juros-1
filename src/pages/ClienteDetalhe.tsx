@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import VoiceRecorder from "@/components/VoiceRecorder";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1114,7 +1115,10 @@ const ClienteDetalhe = () => {
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
-                <textarea value={loanNotes} onChange={e => setLoanNotes(e.target.value)} className={INPUT + " min-h-[60px]"} placeholder="Opcional" />
+                <div className="flex gap-2 items-start">
+                  <textarea value={loanNotes} onChange={e => setLoanNotes(e.target.value)} className={INPUT + " min-h-[60px] flex-1"} placeholder="Opcional (ou dite pelo microfone)" />
+                  <VoiceRecorder onTranscribed={(t) => setLoanNotes(n => (n ? n + " " : "") + t)} title="Ditar observação" />
+                </div>
               </div>
             </div>
             {loanCalc && (

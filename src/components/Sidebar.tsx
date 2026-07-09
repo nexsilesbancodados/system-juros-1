@@ -66,6 +66,7 @@ const sections: MenuSection[] = [
     items: [
       { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox", module: "comunicacao_inbox" },
+      { label: "Performance do Bot", icon: Bot, path: "/bot-performance" },
       { label: "Chat interno", icon: MessageCircle, path: "/chat", module: "chat_interno" },
     ],
   },
