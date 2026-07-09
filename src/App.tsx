@@ -101,8 +101,14 @@ const PageLoader = () => (
   </SuspenseWatchdog>
 );
 
+const idbPersister = createIDBPersister();
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 * 3, buster: "sj-v1" }}
+  >
+    <I18nProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -173,7 +179,8 @@ const App = () => (
         </WhiteLabelProvider>
       </AuthProvider>
     </TooltipProvider>
-  </QueryClientProvider>
+    </I18nProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;
