@@ -8,6 +8,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { formatBR } from "@/lib/dateUtils";
 import { getSignedUploadUrl } from "@/lib/storage";
 import DangerZone from "@/components/perfil/DangerZone";
+import MFACard from "@/components/perfil/MFACard";
 
 const Perfil = () => {
   const { user, profile, signOut } = useAuth();
