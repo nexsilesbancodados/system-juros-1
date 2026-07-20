@@ -12,8 +12,8 @@ const LandingPricing = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("settings")
-        .select("hubla_checkout_url")
-        .not("hubla_checkout_url", "is", null)
+        .select("mercadopago_checkout_url, hubla_checkout_url")
+        .or("mercadopago_checkout_url.not.is.null,hubla_checkout_url.not.is.null")
         .limit(1)
         .maybeSingle();
       if (error) {
@@ -25,8 +25,9 @@ const LandingPricing = () => {
   });
 
   const handleCheckout = () => {
-    if (settings?.hubla_checkout_url) {
-      window.location.href = settings.hubla_checkout_url;
+    const url = (settings as any)?.mercadopago_checkout_url || (settings as any)?.hubla_checkout_url;
+    if (url) {
+      window.location.href = url;
     } else {
       navigate("/login?plan=paid");
     }

@@ -874,6 +874,7 @@ const AdminLogs = () => {
     maintenance_mode: false,
     default_trial_days: 3,
     allow_new_registrations: true,
+    mercadopago_checkout_url: "",
     hubla_checkout_url: "",
     hubla_webhook_token: "",
     global_announcement: "",
@@ -884,9 +885,10 @@ const AdminLogs = () => {
       const { data } = await supabase.from("settings").select("*").single();
       if (data) {
         setForm({
-          maintenance_mode: false, // These aren't in the DB yet, but we'll show them
+          maintenance_mode: false,
           default_trial_days: 3,
           allow_new_registrations: true,
+          mercadopago_checkout_url: (data as any).mercadopago_checkout_url || "",
           hubla_checkout_url: data.hubla_checkout_url || "",
           hubla_webhook_token: data.hubla_webhook_token || "",
           global_announcement: "",
@@ -905,25 +907,23 @@ const AdminLogs = () => {
         .eq("user_id", user?.id)
         .maybeSingle();
 
+      const payload: any = {
+        mercadopago_checkout_url: form.mercadopago_checkout_url,
+        hubla_checkout_url: form.hubla_checkout_url,
+        hubla_webhook_token: form.hubla_webhook_token,
+      };
+
       if (currentSettings) {
         const { error } = await supabase
           .from("settings")
-          .update({
-            hubla_checkout_url: form.hubla_checkout_url,
-            hubla_webhook_token: form.hubla_webhook_token,
-          })
+          .update(payload)
           .eq("id", currentSettings.id);
 
         if (error) throw error;
       } else {
-        // Create if doesn't exist
         const { error } = await supabase
           .from("settings")
-          .insert({
-            user_id: user?.id,
-            hubla_checkout_url: form.hubla_checkout_url,
-            hubla_webhook_token: form.hubla_webhook_token,
-          });
+          .insert({ user_id: user?.id, ...payload });
         if (error) throw error;
       }
 
@@ -972,25 +972,39 @@ const AdminLogs = () => {
 
           <div className="space-y-1.5 p-3 rounded-xl bg-primary/10 border border-primary/20">
             <p className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard size={14} className="text-primary" /> Checkout Hubla (URL)
+              <CreditCard size={14} className="text-primary" /> Checkout Mercado Pago (URL)
             </p>
-            <input 
-              type="text" 
-              value={form.hubla_checkout_url}
-              onChange={(e) => setForm({...form, hubla_checkout_url: e.target.value})}
-              placeholder="https://pay.hubla.com/..."
+            <input
+              type="text"
+              value={form.mercadopago_checkout_url}
+              onChange={(e) => setForm({ ...form, mercadopago_checkout_url: e.target.value })}
+              placeholder="https://mpago.la/... ou link de assinatura MP"
               className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
             />
-            <p className="text-[10px] text-muted-foreground italic">Link para onde os usuários serão redirecionados para pagar</p>
+            <p className="text-[10px] text-muted-foreground italic">Link principal — Mercado Pago é o gateway ativo. Configure o webhook em: <code>/functions/v1/mercadopago-webhook</code></p>
           </div>
 
           <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
-            <p className="text-sm font-semibold">Token de Webhook Hubla</p>
-            <input 
-              type="password" 
+            <p className="text-sm font-semibold flex items-center gap-2">
+              <CreditCard size={14} className="text-muted-foreground" /> Checkout Hubla (fallback)
+            </p>
+            <input
+              type="text"
+              value={form.hubla_checkout_url}
+              onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })}
+              placeholder="https://pay.hubla.com/..."
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground italic">Usado apenas se o Mercado Pago estiver vazio</p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
+            <p className="text-sm font-semibold">Token de Webhook Hubla (legado)</p>
+            <input
+              type="password"
               value={form.hubla_webhook_token}
-              onChange={(e) => setForm({...form, hubla_webhook_token: e.target.value})}
-              placeholder="Token para validar notificações da Hubla"
+              onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
+              placeholder="Somente se ainda usar Hubla"
               className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
