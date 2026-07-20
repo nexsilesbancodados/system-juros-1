@@ -41,6 +41,9 @@ serve(async (req) => {
   const extraEmail: string | undefined = payload?.email;
   const extraName: string | undefined = payload?.name;
   const deviceId: string | undefined = payload?.deviceId;
+  const extraDocType: string | undefined = payload?.docType; // "CPF" | "CNPJ"
+  const extraDoc: string | undefined = payload?.doc; // digits only
+  const extraWhats: string | undefined = payload?.whatsapp; // digits only
 
   if (!formData) return json({ error: "missing_form_data" }, 400);
 
@@ -48,6 +51,11 @@ serve(async (req) => {
   const payerEmail: string = payerIn.email ?? extraEmail ?? "";
   const firstName = payerIn.first_name ?? (extraName ? extraName.split(" ")[0] : undefined);
   const lastName = payerIn.last_name ?? (extraName ? extraName.split(" ").slice(1).join(" ") || undefined : undefined);
+  const identification = payerIn.identification ?? (extraDoc && extraDocType ? { type: extraDocType, number: extraDoc } : undefined);
+  let phone: { area_code: string; number: string } | undefined;
+  if (extraWhats && extraWhats.length >= 10) {
+    phone = { area_code: extraWhats.slice(0, 2), number: extraWhats.slice(2) };
+  }
 
   // Corpo /v1/payments conforme docs oficiais MP
   const body: Record<string, unknown> = {
@@ -57,7 +65,7 @@ serve(async (req) => {
     statement_descriptor: "CREDMAIS",
     binary_mode: false,
     capture: true,
-    metadata: { plan: PLAN.id, email: payerEmail || null },
+    metadata: { plan: PLAN.id, email: payerEmail || null, whatsapp: extraWhats || null, doc_type: extraDocType || null, doc: extraDoc || null },
     notification_url: `${Deno.env.get("SUPABASE_URL") ?? ""}/functions/v1/mercadopago-webhook`,
     // additional_info aumenta a taxa de aprovação (docs MP)
     additional_info: {
@@ -74,6 +82,7 @@ serve(async (req) => {
       payer: {
         first_name: firstName,
         last_name: lastName,
+        ...(phone ? { phone } : {}),
       },
     },
   };
@@ -103,8 +112,9 @@ serve(async (req) => {
     email: payerEmail || "cliente@credmaisapp.com",
     first_name: firstName,
     last_name: lastName,
-    identification: payerIn.identification,
+    identification,
     address: payerIn.address,
+    ...(phone ? { phone } : {}),
   };
 
   try {

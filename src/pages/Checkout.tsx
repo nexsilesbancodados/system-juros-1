@@ -60,12 +60,58 @@ export default function Checkout() {
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [docType, setDocType] = useState<"CPF" | "CNPJ">("CPF");
+  const [doc, setDoc] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const [brickReady, setBrickReady] = useState(false);
   const [brickLoading, setBrickLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qr: string; qrBase64: string } | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const brickControllerRef = useRef<any>(null);
   const brickContainerId = "credmais-payment-brick";
+
+  const onlyDigits = (v: string) => v.replace(/\D/g, "");
+  const maskCPF = (v: string) => onlyDigits(v).slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  const maskCNPJ = (v: string) => onlyDigits(v).slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+  const maskPhone = (v: string) => {
+    const d = onlyDigits(v).slice(0, 11);
+    if (d.length <= 10) return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
+    return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+  };
+  const isValidCPF = (v: string) => {
+    const c = onlyDigits(v);
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    let s = 0; for (let i = 0; i < 9; i++) s += parseInt(c[i]) * (10 - i);
+    let d1 = (s * 10) % 11; if (d1 === 10) d1 = 0; if (d1 !== parseInt(c[9])) return false;
+    s = 0; for (let i = 0; i < 10; i++) s += parseInt(c[i]) * (11 - i);
+    let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0; return d2 === parseInt(c[10]);
+  };
+  const isValidCNPJ = (v: string) => {
+    const c = onlyDigits(v);
+    if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+    const calc = (base: string, weights: number[]) => {
+      const s = weights.reduce((acc, w, i) => acc + parseInt(base[i]) * w, 0);
+      const r = s % 11; return r < 2 ? 0 : 11 - r;
+    };
+    const w1 = [5,4,3,2,9,8,7,6,5,4,3,2];
+    const w2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    const d1 = calc(c.slice(0, 12), w1);
+    const d2 = calc(c.slice(0, 12) + d1, w2);
+    return d1 === parseInt(c[12]) && d2 === parseInt(c[13]);
+  };
+  const validDoc = docType === "CPF" ? isValidCPF(doc) : isValidCNPJ(doc);
+  const validPhone = onlyDigits(whatsapp).length >= 10;
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validName = name.trim().length >= 2;
+  const canContinue = validName && validEmail && validDoc && validPhone;
 
   useEffect(() => {
     document.title = `Checkout — ${brand}`;
@@ -81,10 +127,12 @@ export default function Checkout() {
   }, []);
 
   const initBrick = async () => {
-    if (!email || !email.includes("@")) {
-      toast.error("Informe um e-mail válido para continuar");
+    if (!canContinue) {
+      setFormError("Preencha nome, e-mail, CPF/CNPJ e WhatsApp corretamente");
+      toast.error("Confira os dados antes de continuar");
       return;
     }
+    setFormError(null);
     setBrickLoading(true);
     try {
       // 1) Busca a public key
@@ -113,6 +161,10 @@ export default function Checkout() {
             email,
             firstName: firstName || undefined,
             lastName: lastName || undefined,
+            identification: {
+              type: docType,
+              number: onlyDigits(doc),
+            },
           },
         },
         customization: {
@@ -147,7 +199,7 @@ export default function Checkout() {
             try {
               const deviceId = window.MP_DEVICE_SESSION_ID;
               const { data, error } = await supabase.functions.invoke("mercadopago-process-payment", {
-                body: { selectedPaymentMethod, formData, email, name, deviceId },
+                body: { selectedPaymentMethod, formData, email, name, deviceId, docType, doc: onlyDigits(doc), whatsapp: onlyDigits(whatsapp) },
               });
               if (error) throw error;
               if ((data as any)?.error) throw new Error((data as any)?.message || "Pagamento recusado");
@@ -270,15 +322,16 @@ export default function Checkout() {
           {!brickReady && (
             <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">Seu nome</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">Nome completo *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Como você quer ser chamado"
+                  placeholder="Seu nome completo"
                   className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/[0.07] transition-all"
                 />
               </div>
+
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">E-mail *</label>
                 <input
@@ -292,11 +345,53 @@ export default function Checkout() {
                 <p className="text-[11px] text-white/40 mt-2">Após o pagamento você receberá um link mágico neste e-mail para acessar sua conta.</p>
               </div>
 
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">CPF ou CNPJ *</label>
+                <div className="flex gap-2">
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                    {(["CPF", "CNPJ"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => { setDocType(t); setDoc(""); }}
+                        className={`px-4 text-xs font-bold tracking-wider transition-all ${docType === t ? "bg-blue-500 text-white" : "text-white/50 hover:text-white"}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    inputMode="numeric"
+                    value={doc}
+                    onChange={(e) => setDoc(docType === "CPF" ? maskCPF(e.target.value) : maskCNPJ(e.target.value))}
+                    placeholder={docType === "CPF" ? "000.000.000-00" : "00.000.000/0000-00"}
+                    className={`flex-1 px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${doc && !validDoc ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
+                  />
+                </div>
+                {doc && !validDoc && (
+                  <p className="text-[11px] text-red-400 mt-2">{docType} inválido</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">WhatsApp *</label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(maskPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className={`w-full px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${whatsapp && !validPhone ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
+                />
+              </div>
+
+              {formError && <p className="text-xs text-red-400">{formError}</p>}
+
               <button
                 type="button"
                 onClick={initBrick}
-                disabled={brickLoading}
-                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                disabled={brickLoading || !canContinue}
+                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {brickLoading ? (<><Loader2 size={18} className="animate-spin" /> Carregando pagamento...</>) : ("Continuar para pagamento")}
               </button>
