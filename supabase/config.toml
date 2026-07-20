@@ -1,3 +1,9 @@
 project_id = "bnupitnrxyferelwroas"
 [functions.mercadopago-create-preference]
 verify_jwt = false
+
+[functions.mercadopago-config]
+verify_jwt = false
+
+[functions.mercadopago-process-payment]
+verify_jwt = false
