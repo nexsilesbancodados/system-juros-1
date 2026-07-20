@@ -15,7 +15,7 @@ const FEATURES: { title: string; desc: string }[] = [
   { title: "Suporte prioritário", desc: "Time dedicado por WhatsApp em horário comercial." },
 ];
 
-const PLAN_AMOUNT = 79.0;
+const PLAN_AMOUNT = 99.9;
 const MP_SDK_SRC = "https://sdk.mercadopago.com/js/v2";
 const MP_SECURITY_SRC = "https://www.mercadopago.com/v2/security.js";
 
