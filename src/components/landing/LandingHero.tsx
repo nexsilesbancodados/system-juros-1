@@ -59,15 +59,7 @@ const LandingHero = () => {
               className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start"
             >
               <button
-                onClick={async () => {
-                  const { data: settings } = await supabase.from("settings").select("mercadopago_checkout_url, hubla_checkout_url").maybeSingle();
-                  const url = (settings as any)?.mercadopago_checkout_url || (settings as any)?.hubla_checkout_url;
-                  if (url) {
-                    window.location.href = url;
-                  } else {
-                    navigate("/login");
-                  }
-                }}
+                onClick={() => navigate("/checkout")}
                 className="w-full sm:w-auto px-10 py-4 rounded-full bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 group shadow-xl shadow-white/10"
               >
                 ASSINAR AGORA
