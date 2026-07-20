@@ -193,8 +193,8 @@ serve(async (req) => {
     // Send activation email
     if (subscriptionStatus === "active") {
       let actionLink: string | null = null;
+      const siteUrl = Deno.env.get("SITE_URL") || "https://credmaisapp.com.br";
       try {
-        const siteUrl = Deno.env.get("SITE_URL") || "https://systemjuros.com.br";
         const { data: linkData } = await (supabase as any).auth.admin.generateLink({
           type: userData ? "magiclink" : "invite",
           email,
@@ -206,27 +206,30 @@ serve(async (req) => {
       }
 
       const displayName = (userData as any)?.name || email.split("@")[0];
-      const ctaUrl = actionLink || "https://systemjuros.com.br";
+      const ctaUrl = actionLink || siteUrl;
       const subject = userData
-        ? "Assinatura ativa! Acesse sua conta 🎉"
-        : "Bem-vindo! Crie sua conta no System Juros 🎉";
+        ? "Assinatura ativa! Acesse sua conta — CredMais App 🎉"
+        : "Bem-vindo ao CredMais App! Ative sua conta 🎉";
       const intro = userData
-        ? "Seu pagamento foi aprovado e sua assinatura está <strong>Ativa</strong>! Clique no botão abaixo para acessar o sistema sem precisar de senha."
-        : "Seu pagamento foi aprovado! Clique no botão abaixo para criar sua senha e acessar o System Juros.";
+        ? "Seu pagamento foi aprovado e sua assinatura está <strong>Ativa</strong>! Clique no botão abaixo para entrar sem precisar de senha."
+        : "Seu pagamento foi aprovado! Clique no botão abaixo para criar sua senha e acessar o <strong>CredMais App</strong>.";
 
       await sendEmail({
         to: [{ email, name: displayName }],
         subject,
         htmlContent: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px;">
-            <h2 style="color: #111;">Olá, ${displayName}!</h2>
-            <p style="color: #444; line-height: 1.6;">${intro}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 16px;">
+            <div style="text-align:center; margin-bottom:24px;">
+              <div style="display:inline-block; padding:8px 16px; background:#EFF6FF; color:#1D4ED8; border-radius:999px; font-weight:700; font-size:12px; letter-spacing:1px;">CREDMAIS APP</div>
+            </div>
+            <h2 style="color: #0F172A; margin:0 0 12px;">Olá, ${displayName}!</h2>
+            <p style="color: #475569; line-height: 1.6; font-size:15px;">${intro}</p>
             <div style="margin: 32px 0; text-align: center;">
-              <a href="${ctaUrl}" style="background: #009ee3; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              <a href="${ctaUrl}" style="background: #3B82F6; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size:15px;">
                 ${userData ? "Acessar Dashboard" : "Ativar minha conta"}
               </a>
             </div>
-            <p style="font-size: 12px; color: #888;">Este link é único e expira em breve. Se precisar de ajuda, responda este e-mail.</p>
+            <p style="font-size: 12px; color: #94A3B8; text-align:center;">Este link é único e expira em breve. Se precisar de ajuda, responda este e-mail.</p>
           </div>
         `,
       });
