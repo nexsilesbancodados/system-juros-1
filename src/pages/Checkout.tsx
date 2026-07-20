@@ -204,15 +204,18 @@ export default function Checkout() {
               if (error) throw error;
               if ((data as any)?.error) throw new Error((data as any)?.message || "Pagamento recusado");
               const status = (data as any)?.status;
+              const pmId = (data as any)?.payment_method_id;
               const poi = (data as any)?.point_of_interaction?.transaction_data;
               const boleto = (data as any)?.transaction_details?.external_resource_url;
 
-              if (selectedPaymentMethod === "pix" && poi?.qr_code) {
+              // Pix: MP retorna selectedPaymentMethod="bank_transfer" e payment_method_id="pix"
+              if ((pmId === "pix" || selectedPaymentMethod === "pix" || selectedPaymentMethod === "bank_transfer") && poi?.qr_code) {
                 setPixData({ qr: poi.qr_code, qrBase64: poi.qr_code_base64 });
                 toast.success("Pix gerado! Escaneie ou copie o código.");
                 return;
               }
-              if ((selectedPaymentMethod === "ticket" || selectedPaymentMethod === "bolbradesco") && boleto) {
+              // Boleto
+              if ((pmId === "bolbradesco" || selectedPaymentMethod === "ticket" || selectedPaymentMethod === "bolbradesco") && boleto) {
                 setBoletoUrl(boleto);
                 toast.success("Boleto gerado com sucesso!");
                 return;
