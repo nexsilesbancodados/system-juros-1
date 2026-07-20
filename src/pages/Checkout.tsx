@@ -93,8 +93,8 @@ export default function Checkout() {
       const publicKey = (cfg as any)?.publicKey;
       if (!publicKey) throw new Error("Public key do Mercado Pago não configurada.");
 
-      // 2) Carrega SDK v2
-      await loadMPSdk();
+      // 2) Carrega SDK v2 + security.js em paralelo (device fingerprint p/ maior aprovação)
+      await Promise.all([loadMPSdk(), loadMPSecurity().catch(() => null)]);
 
       // 3) Inicializa Mercado Pago e renderiza Payment Brick
       const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
@@ -103,18 +103,25 @@ export default function Checkout() {
       // limpa controlador anterior se houver
       try { brickControllerRef.current?.unmount?.(); } catch { /* noop */ }
 
+      const [firstName, ...rest] = (name || "").trim().split(/\s+/);
+      const lastName = rest.join(" ");
+
       const settings = {
         initialization: {
           amount: PLAN_AMOUNT,
-          payer: { email },
+          payer: {
+            email,
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+          },
         },
         customization: {
           paymentMethods: {
             creditCard: "all",
             debitCard: "all",
-            bankTransfer: "all", // habilita Pix
-            ticket: "all",       // habilita Boleto
-            maxInstallments: 1,
+            bankTransfer: ["pix"],
+            ticket: ["bolbradesco"],
+            maxInstallments: 12,
           },
           visual: {
             style: {
@@ -138,10 +145,12 @@ export default function Checkout() {
           },
           onSubmit: async ({ selectedPaymentMethod, formData }: any) => {
             try {
+              const deviceId = window.MP_DEVICE_SESSION_ID;
               const { data, error } = await supabase.functions.invoke("mercadopago-process-payment", {
-                body: { selectedPaymentMethod, formData, email, name },
+                body: { selectedPaymentMethod, formData, email, name, deviceId },
               });
               if (error) throw error;
+              if ((data as any)?.error) throw new Error((data as any)?.message || "Pagamento recusado");
               const status = (data as any)?.status;
               const poi = (data as any)?.point_of_interaction?.transaction_data;
               const boleto = (data as any)?.transaction_details?.external_resource_url;
