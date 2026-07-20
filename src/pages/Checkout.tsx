@@ -19,29 +19,38 @@ const FEATURES = [
 
 const PLAN_AMOUNT = 79.0;
 const MP_SDK_SRC = "https://sdk.mercadopago.com/js/v2";
+const MP_SECURITY_SRC = "https://www.mercadopago.com/v2/security.js";
 
 declare global {
   interface Window {
     MercadoPago?: any;
+    MP_DEVICE_SESSION_ID?: string;
   }
 }
 
-function loadMPSdk(): Promise<void> {
+function loadScript(src: string, attrs: Record<string, string> = {}): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.MercadoPago) return resolve();
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${MP_SDK_SRC}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
     if (existing) {
+      if ((existing as any)._loaded) return resolve();
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("Falha ao carregar SDK do Mercado Pago")));
+      existing.addEventListener("error", () => reject(new Error(`Falha ao carregar ${src}`)));
       return;
     }
     const s = document.createElement("script");
-    s.src = MP_SDK_SRC;
+    s.src = src;
     s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Falha ao carregar SDK do Mercado Pago"));
+    Object.entries(attrs).forEach(([k, v]) => s.setAttribute(k, v));
+    s.onload = () => { (s as any)._loaded = true; resolve(); };
+    s.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
     document.head.appendChild(s);
   });
+}
+
+function loadMPSdk() { return loadScript(MP_SDK_SRC); }
+function loadMPSecurity() {
+  // security.js gera window.MP_DEVICE_SESSION_ID (device fingerprint)
+  return loadScript(MP_SECURITY_SRC, { view: "checkout", output: "deviceId" });
 }
 
 export default function Checkout() {
