@@ -60,9 +60,10 @@ const LandingHero = () => {
             >
               <button
                 onClick={async () => {
-                  const { data: settings } = await supabase.from("settings").select("hubla_checkout_url").maybeSingle();
-                  if (settings?.hubla_checkout_url) {
-                    window.location.href = settings.hubla_checkout_url;
+                  const { data: settings } = await supabase.from("settings").select("mercadopago_checkout_url, hubla_checkout_url").maybeSingle();
+                  const url = (settings as any)?.mercadopago_checkout_url || (settings as any)?.hubla_checkout_url;
+                  if (url) {
+                    window.location.href = url;
                   } else {
                     navigate("/login");
                   }
