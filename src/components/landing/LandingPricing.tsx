@@ -33,9 +33,6 @@ const LandingPricing = () => {
     }
   };
 
-  const handleTrial = () => {
-    navigate("/login?plan=trial");
-  };
 
   const features = [
     "Clientes ilimitados",

@@ -80,10 +80,10 @@ const LandingNavbar = () => {
             Entrar
           </Link>
           <Link
-            to="/login?plan=trial"
+            to="/checkout"
             className="px-6 py-2.5 rounded-full text-sm font-bold bg-white text-black hover:bg-white/90 transition-all shadow-lg shadow-white/10"
           >
-            TESTE GRÁTIS
+            ASSINAR
           </Link>
         </div>
 
@@ -136,11 +136,11 @@ const LandingNavbar = () => {
                   Entrar
                 </Link>
                 <Link
-                  to="/login?plan=trial"
+                  to="/checkout"
                   className="text-center py-3 rounded-xl bg-white text-black font-bold"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  TESTE GRÁTIS
+                  ASSINAR
                 </Link>
               </div>
             </div>
