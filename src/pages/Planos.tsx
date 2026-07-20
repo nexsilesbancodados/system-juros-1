@@ -9,12 +9,8 @@ import ConstellationBackground from "@/components/ConstellationBackground";
 
 const faqs = [
   {
-    q: "Como funciona o teste grátis de 3 dias?",
-    a: "Você cria sua conta sem informar cartão de crédito e recebe acesso completo a todas as funcionalidades por 3 dias. Após esse período, basta assinar para continuar usando — todos os seus dados ficam preservados.",
-  },
-  {
     q: "Posso cancelar quando quiser?",
-    a: "Sim. A assinatura é mensal e sem fidelidade. Cancele com 1 clique na sua área de perfil ou pelo Hubla a qualquer momento.",
+    a: "Sim. A assinatura é mensal e sem fidelidade. Cancele com 1 clique na sua área de perfil ou pelo Mercado Pago a qualquer momento.",
   },
   {
     q: "O que está incluído no plano?",
@@ -22,7 +18,7 @@ const faqs = [
   },
   {
     q: "Como recebo acesso após pagar?",
-    a: "Logo após a confirmação do pagamento pelo Hubla, você recebe automaticamente um e-mail com um link mágico para entrar no sistema sem precisar de senha.",
+    a: "Logo após a confirmação do pagamento pelo Mercado Pago, você recebe automaticamente um e-mail com um link mágico para entrar no sistema sem precisar de senha.",
   },
   {
     q: "Posso usar no celular?",
