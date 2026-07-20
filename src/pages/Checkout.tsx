@@ -367,7 +367,7 @@ export default function Checkout() {
               <h1 className="text-4xl font-bold text-white mb-5" style={heading}>Acesso Ilimitado</h1>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium opacity-80">R$</span>
-                <span className="text-5xl font-bold" style={{ ...heading, color: c.gold }}>79,00</span>
+                <span className="text-5xl font-bold" style={{ ...heading, color: c.gold }}>99,90</span>
                 <span className="text-lg font-medium opacity-80">/mês</span>
               </div>
               <p className="text-sm mt-3 leading-relaxed" style={{ color: c.inkSoft }}>
