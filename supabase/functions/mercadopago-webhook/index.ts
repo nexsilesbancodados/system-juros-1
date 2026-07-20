@@ -192,27 +192,77 @@ serve(async (req) => {
 
     // Send activation email
     if (subscriptionStatus === "active") {
-      let actionLink: string | null = null;
       const siteUrl = Deno.env.get("SITE_URL") || "https://credmaisapp.com.br";
-      try {
-        const { data: linkData } = await (supabase as any).auth.admin.generateLink({
-          type: userData ? "magiclink" : "invite",
-          email,
-          options: { redirectTo: `${siteUrl}/dashboard` },
-        });
-        actionLink = linkData?.properties?.action_link || null;
-      } catch (e) {
-        console.error("magic link generation failed:", e);
+      let ctaUrl = `${siteUrl}/auth`;
+      let generatedPassword: string | null = null;
+      const displayName = (userData as any)?.name || email.split("@")[0];
+
+      // If user doesn't exist yet, create it with a random password
+      if (!userData) {
+        try {
+          // Strong random password: 12 chars, letters + digits (no ambiguous)
+          const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+          const rand = new Uint32Array(12);
+          crypto.getRandomValues(rand);
+          generatedPassword = Array.from(rand, (n) => alphabet[n % alphabet.length]).join("") + "!";
+
+          const { data: created, error: createErr } = await (supabase as any).auth.admin.createUser({
+            email,
+            password: generatedPassword,
+            email_confirm: true,
+            user_metadata: { name: displayName, source: "mercadopago_checkout" },
+          });
+          if (createErr) {
+            console.error("createUser failed:", createErr);
+            generatedPassword = null;
+          } else {
+            // Link subscription row to the newly created user
+            await supabase
+              .from("subscriptions")
+              .update({ user_id: created?.user?.id || null })
+              .eq("email", email);
+          }
+        } catch (e) {
+          console.error("createUser exception:", e);
+          generatedPassword = null;
+        }
       }
 
-      const displayName = (userData as any)?.name || email.split("@")[0];
-      const ctaUrl = actionLink || siteUrl;
-      const subject = userData
-        ? "Assinatura ativa! Acesse sua conta — CredMais App 🎉"
-        : "Bem-vindo ao CredMais App! Ative sua conta 🎉";
-      const intro = userData
-        ? "Seu pagamento foi aprovado e sua assinatura está <strong>Ativa</strong>! Clique no botão abaixo para entrar sem precisar de senha."
-        : "Seu pagamento foi aprovado! Clique no botão abaixo para criar sua senha e acessar o <strong>CredMais App</strong>.";
+      // Fallback link for existing users (magic link) — never blocks the email
+      let magicLink: string | null = null;
+      if (userData) {
+        try {
+          const { data: linkData } = await (supabase as any).auth.admin.generateLink({
+            type: "magiclink",
+            email,
+            options: { redirectTo: `${siteUrl}/dashboard` },
+          });
+          magicLink = linkData?.properties?.action_link || null;
+        } catch (e) {
+          console.error("magic link generation failed:", e);
+        }
+      }
+
+      const subject = "🎉 Bem-vindo ao CredMais App — Seus dados de acesso";
+      const credentialsBlock = generatedPassword
+        ? `
+          <div style="margin:24px 0; padding:20px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px;">
+            <p style="margin:0 0 10px; font-size:12px; letter-spacing:1px; color:#64748B; font-weight:700;">SEUS DADOS DE ACESSO</p>
+            <p style="margin:4px 0; color:#0F172A; font-size:15px;"><strong>E-mail:</strong> ${email}</p>
+            <p style="margin:4px 0; color:#0F172A; font-size:15px;"><strong>Senha provisória:</strong>
+              <code style="background:#0F172A; color:#F8FAFC; padding:4px 10px; border-radius:6px; font-size:15px; letter-spacing:1px;">${generatedPassword}</code>
+            </p>
+            <p style="margin:12px 0 0; font-size:12px; color:#DC2626;">⚠️ Por segurança, altere sua senha no primeiro acesso em <em>Configurações → Conta</em>.</p>
+          </div>`
+        : `
+          <div style="margin:24px 0; padding:20px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px;">
+            <p style="margin:0 0 10px; font-size:12px; letter-spacing:1px; color:#64748B; font-weight:700;">SEU LOGIN</p>
+            <p style="margin:4px 0; color:#0F172A; font-size:15px;"><strong>E-mail:</strong> ${email}</p>
+            <p style="margin:12px 0 0; font-size:13px; color:#475569;">Use a senha que você já cadastrou. Se esqueceu, use "Esqueci a senha" na tela de login${magicLink ? " ou o botão abaixo para entrar sem senha" : ""}.</p>
+          </div>`;
+
+      const ctaLabel = generatedPassword ? "Fazer login agora" : (magicLink ? "Entrar sem senha" : "Acessar minha conta");
+      const finalCta = magicLink || ctaUrl;
 
       await sendEmail({
         to: [{ email, name: displayName }],
@@ -222,18 +272,22 @@ serve(async (req) => {
             <div style="text-align:center; margin-bottom:24px;">
               <div style="display:inline-block; padding:8px 16px; background:#EFF6FF; color:#1D4ED8; border-radius:999px; font-weight:700; font-size:12px; letter-spacing:1px;">CREDMAIS APP</div>
             </div>
-            <h2 style="color: #0F172A; margin:0 0 12px;">Olá, ${displayName}!</h2>
-            <p style="color: #475569; line-height: 1.6; font-size:15px;">${intro}</p>
-            <div style="margin: 32px 0; text-align: center;">
-              <a href="${ctaUrl}" style="background: #3B82F6; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size:15px;">
-                ${userData ? "Acessar Dashboard" : "Ativar minha conta"}
+            <h2 style="color: #0F172A; margin:0 0 12px;">Olá, ${displayName}! 👋</h2>
+            <p style="color: #475569; line-height: 1.6; font-size:15px;">
+              Seu pagamento foi aprovado e sua assinatura está <strong style="color:#059669;">Ativa</strong>. Abaixo estão seus dados de acesso ao <strong>CredMais App</strong>.
+            </p>
+            ${credentialsBlock}
+            <div style="margin: 28px 0; text-align: center;">
+              <a href="${finalCta}" style="background: #3B82F6; color: #fff; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size:15px;">
+                ${ctaLabel}
               </a>
             </div>
-            <p style="font-size: 12px; color: #94A3B8; text-align:center;">Este link é único e expira em breve. Se precisar de ajuda, responda este e-mail.</p>
+            <p style="font-size: 12px; color: #94A3B8; text-align:center; margin-top:24px;">Precisa de ajuda? Responda este e-mail que nosso time atende você.</p>
           </div>
         `,
       });
     }
+
 
     return new Response(
       JSON.stringify({ message: "Webhook processed", status: subscriptionStatus }),
