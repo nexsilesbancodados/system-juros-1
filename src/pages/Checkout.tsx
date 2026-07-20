@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, Loader2, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
 import { toast } from "sonner";
 
-const FEATURES = [
-  "Clientes e contratos ilimitados",
-  "Agente de IA no WhatsApp",
-  "Cálculo automático de multas e juros",
-  "Portal do Cliente white-label",
-  "Relatórios financeiros avançados",
-  "Automações de cobrança",
-  "App PWA (Android/iPhone)",
-  "Suporte prioritário",
+const FEATURES: { title: string; desc: string }[] = [
+  { title: "Clientes e contratos ilimitados", desc: "Sem tetos por plano, escale sua carteira sem custo extra." },
+  { title: "Agente de IA no WhatsApp", desc: "Cobrança automática 24/7 com respostas humanizadas." },
+  { title: "Cálculo automático de multas e juros", desc: "Regras aplicadas todo dia sem trabalho manual." },
+  { title: "Portal do Cliente white-label", desc: "Área do cliente com sua marca, sem menção externa." },
+  { title: "Relatórios financeiros avançados", desc: "Lucro gerado, fluxo, inadimplência em tempo real." },
+  { title: "Suporte prioritário", desc: "Time dedicado por WhatsApp em horário comercial." },
 ];
 
 const PLAN_AMOUNT = 79.0;
@@ -49,7 +47,6 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 function loadMPSdk() { return loadScript(MP_SDK_SRC); }
 function loadMPSecurity() {
-  // security.js gera window.MP_DEVICE_SESSION_ID (device fingerprint)
   return loadScript(MP_SECURITY_SRC, { view: "checkout", output: "deviceId" });
 }
 
@@ -117,9 +114,17 @@ export default function Checkout() {
     document.title = `Checkout — ${brand}`;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", `Assine o ${brand} com checkout seguro do Mercado Pago.`);
+    // Inject Outfit + Figtree fonts for this page
+    const linkId = "credmais-checkout-fonts";
+    if (!document.getElementById(linkId)) {
+      const l = document.createElement("link");
+      l.id = linkId;
+      l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(l);
+    }
   }, [brand]);
 
-  // Destroi brick ao desmontar
   useEffect(() => {
     return () => {
       try { brickControllerRef.current?.unmount?.(); } catch { /* noop */ }
@@ -135,20 +140,16 @@ export default function Checkout() {
     setFormError(null);
     setBrickLoading(true);
     try {
-      // 1) Busca a public key
       const { data: cfg, error: cfgErr } = await supabase.functions.invoke("mercadopago-config");
       if (cfgErr) throw cfgErr;
       const publicKey = (cfg as any)?.publicKey;
       if (!publicKey) throw new Error("Public key do Mercado Pago não configurada.");
 
-      // 2) Carrega SDK v2 + security.js em paralelo (device fingerprint p/ maior aprovação)
       await Promise.all([loadMPSdk(), loadMPSecurity().catch(() => null)]);
 
-      // 3) Inicializa Mercado Pago e renderiza Payment Brick
       const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
       const bricksBuilder = mp.bricks();
 
-      // limpa controlador anterior se houver
       try { brickControllerRef.current?.unmount?.(); } catch { /* noop */ }
 
       const [firstName, ...rest] = (name || "").trim().split(/\s+/);
@@ -177,14 +178,11 @@ export default function Checkout() {
           },
           visual: {
             style: {
-              theme: "dark",
+              theme: "default",
               customVariables: {
-                baseColor: "#3b82f6",
+                baseColor: "#0d7a5f",
                 borderRadiusMedium: "12px",
                 borderRadiusLarge: "16px",
-                formInputsTextColor: "#ffffff",
-                inputBackgroundColor: "rgba(255,255,255,0.05)",
-                formBackgroundColor: "transparent",
               },
             },
           },
@@ -208,13 +206,11 @@ export default function Checkout() {
               const poi = (data as any)?.point_of_interaction?.transaction_data;
               const boleto = (data as any)?.transaction_details?.external_resource_url;
 
-              // Pix: MP retorna selectedPaymentMethod="bank_transfer" e payment_method_id="pix"
               if ((pmId === "pix" || selectedPaymentMethod === "pix" || selectedPaymentMethod === "bank_transfer") && poi?.qr_code) {
                 setPixData({ qr: poi.qr_code, qrBase64: poi.qr_code_base64 });
                 toast.success("Pix gerado! Escaneie ou copie o código.");
                 return;
               }
-              // Boleto
               if ((pmId === "bolbradesco" || selectedPaymentMethod === "ticket" || selectedPaymentMethod === "bolbradesco") && boleto) {
                 setBoletoUrl(boleto);
                 toast.success("Boleto gerado com sucesso!");
@@ -258,188 +254,256 @@ export default function Checkout() {
     }
   };
 
+  // Local design tokens (Emerald Prestige) — scoped to this checkout page
+  const c = {
+    bg: "#f5f0e0",
+    ink: "#064e3b",
+    inkSoft: "#0d7a5f",
+    gold: "#c9a84c",
+    goldSoft: "#f0d78c",
+    cream: "#f5f0e0",
+  };
+
+  const heading: React.CSSProperties = { fontFamily: "'Outfit', system-ui, sans-serif" };
+  const body: React.CSSProperties = { fontFamily: "'Figtree', system-ui, sans-serif" };
+
+  const inputBase =
+    "w-full px-4 py-3 bg-white border rounded-xl outline-none transition-all text-[#064e3b] placeholder:text-gray-400 focus:ring-2 focus:ring-[#c9a84c]/30";
+
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-blue-500/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-400/5 rounded-full blur-[120px]" />
-      </div>
-
-      <header className="container mx-auto px-6 py-6 flex items-center justify-between">
-        <button onClick={() => navigate("/")} className="text-sm font-bold tracking-wider text-white/80 hover:text-white flex items-center gap-2">
-          <ArrowLeft size={16} /> {brand}
-        </button>
-        <div className="flex items-center gap-2 text-xs text-white/50">
-          <Lock size={14} /> Checkout transparente · Mercado Pago
+    <div className="min-h-screen w-full flex items-start justify-center py-6 px-4 md:px-8" style={{ backgroundColor: c.bg, ...body }}>
+      <div className="w-full max-w-6xl">
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-6 text-xs" style={{ color: c.ink }}>
+          <button onClick={() => navigate("/")} className="inline-flex items-center gap-2 font-semibold hover:opacity-70 transition-opacity">
+            <ArrowLeft size={14} /> Voltar
+          </button>
+          <div className="inline-flex items-center gap-2 opacity-70">
+            <Lock size={13} /> Checkout transparente · Mercado Pago
+          </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-6 pb-24 pt-6 grid lg:grid-cols-[1fr_1.15fr] gap-8 max-w-6xl">
-        {/* Resumo */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative p-8 md:p-10 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl h-fit"
+          className="w-full bg-white rounded-3xl overflow-hidden shadow-[0_32px_64px_-16px_rgba(6,78,59,0.18)] flex flex-col md:flex-row"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[11px] font-bold uppercase tracking-widest mb-6">
-            <Sparkles size={12} /> Plano recomendado
-          </div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-3">Acesso Ilimitado</h1>
-          <p className="text-white/50 leading-relaxed mb-8">Toda a plataforma {brand} liberada. Sem limites de clientes, contratos ou automações.</p>
+          {/* Left — Plan summary */}
+          <aside
+            className="w-full md:w-5/12 p-8 md:p-12 flex flex-col relative overflow-hidden"
+            style={{ backgroundColor: c.ink, color: c.cream }}
+          >
+            <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: c.inkSoft }} />
 
-          <div className="flex items-baseline gap-2 mb-8">
-            <span className="text-white/40 text-lg">R$</span>
-            <span className="text-6xl font-bold tracking-tight">79</span>
-            <span className="text-white/40 text-lg">,00</span>
-            <span className="text-white/40 text-sm ml-2">/mês</span>
-          </div>
-
-          <ul className="grid sm:grid-cols-2 gap-3 mb-8">
-            {FEATURES.map((f) => (
-              <li key={f} className="flex items-center gap-3 text-sm text-white/80">
-                <span className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <Check size={12} className="text-blue-300" />
-                </span>
-                {f}
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex items-center gap-4 pt-6 border-t border-white/10 text-xs text-white/50">
-            <div className="flex items-center gap-2"><ShieldCheck size={14} className="text-emerald-400" /> Criptografia SSL</div>
-            <div className="flex items-center gap-2"><Lock size={14} className="text-blue-300" /> Cancele quando quiser</div>
-          </div>
-        </motion.section>
-
-        {/* Formulário + Brick */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="p-8 md:p-10 rounded-[2rem] bg-white/[0.04] border border-white/10 backdrop-blur-xl"
-        >
-          <h2 className="text-xl font-bold mb-2">Pagamento seguro</h2>
-          <p className="text-sm text-white/50 mb-8">Cartão, Pix ou Boleto — tudo processado sem sair do {brand}.</p>
-
-          {/* Identificação */}
-          {!brickReady && (
-            <div className="space-y-5">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">Nome completo *</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/[0.07] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">E-mail *</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@empresa.com"
-                  className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/[0.07] transition-all"
-                />
-                <p className="text-[11px] text-white/40 mt-2">Após o pagamento você receberá um link mágico neste e-mail para acessar sua conta.</p>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">CPF ou CNPJ *</label>
-                <div className="flex gap-2">
-                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
-                    {(["CPF", "CNPJ"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => { setDocType(t); setDoc(""); }}
-                        className={`px-4 text-xs font-bold tracking-wider transition-all ${docType === t ? "bg-blue-500 text-white" : "text-white/50 hover:text-white"}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    inputMode="numeric"
-                    value={doc}
-                    onChange={(e) => setDoc(docType === "CPF" ? maskCPF(e.target.value) : maskCNPJ(e.target.value))}
-                    placeholder={docType === "CPF" ? "000.000.000-00" : "00.000.000/0000-00"}
-                    className={`flex-1 px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${doc && !validDoc ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
-                  />
+            <div className="relative z-10 mb-10">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: c.gold }}>
+                  <div className="w-4 h-4 border-2 rotate-45" style={{ borderColor: c.ink }} />
                 </div>
-                {doc && !validDoc && (
-                  <p className="text-[11px] text-red-400 mt-2">{docType} inválido</p>
+                <span className="text-2xl font-bold tracking-tight text-white" style={heading}>{brand}</span>
+              </div>
+
+              <p className="font-semibold uppercase tracking-widest text-[11px] mb-2" style={{ color: c.inkSoft }}>Você está assinando</p>
+              <h1 className="text-4xl font-bold text-white mb-5" style={heading}>Acesso Ilimitado</h1>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium opacity-80">R$</span>
+                <span className="text-5xl font-bold" style={{ ...heading, color: c.gold }}>79,00</span>
+                <span className="text-lg font-medium opacity-80">/mês</span>
+              </div>
+              <p className="text-sm mt-3 leading-relaxed" style={{ color: c.inkSoft }}>
+                Cobrança recorrente mensal · Cancele quando quiser
+              </p>
+            </div>
+
+            <div className="relative z-10 space-y-5 flex-grow">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="flex gap-4 items-start">
+                  <div className="mt-1 shrink-0 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: c.inkSoft }}>
+                    <Check size={12} strokeWidth={3} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-[15px]">{f.title}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: c.inkSoft }}>{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="relative z-10 mt-10 pt-6 border-t flex items-center justify-between text-[11px]" style={{ borderColor: `${c.inkSoft}55`, color: c.inkSoft }}>
+              <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Criptografia SSL</span>
+              <span className="italic">Processado por Mercado Pago</span>
+            </div>
+          </aside>
+
+          {/* Right — Form + Brick */}
+          <main className="w-full md:w-7/12 p-8 md:p-12 overflow-y-auto">
+            {!brickReady && (
+              <>
+                <header className="mb-8">
+                  <div className="flex items-center gap-2 mb-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: c.inkSoft }}>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px]" style={{ backgroundColor: c.ink }}>1</span>
+                    Etapa 1 de 2
+                  </div>
+                  <h2 className="text-2xl font-bold" style={{ ...heading, color: c.ink }}>Identificação</h2>
+                  <p className="text-sm text-gray-500 mt-1">Preencha seus dados para liberar o formulário de pagamento.</p>
+                </header>
+
+                <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); initBrick(); }}>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: c.ink }}>Nome completo *</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Como no seu documento"
+                      className={`${inputBase} border-gray-200 focus:border-[#0d7a5f]`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: c.ink }}>E-mail *</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="voce@empresa.com"
+                        className={`${inputBase} border-gray-200 focus:border-[#0d7a5f]`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: c.ink }}>WhatsApp *</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(maskPhone(e.target.value))}
+                        placeholder="(11) 99999-9999"
+                        className={`${inputBase} ${whatsapp && !validPhone ? "border-red-400" : "border-gray-200 focus:border-[#0d7a5f]"}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider" style={{ color: c.ink }}>Documento *</label>
+                      <div className="flex bg-gray-100 p-1 rounded-lg">
+                        {(["CPF", "CNPJ"] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => { setDocType(t); setDoc(""); }}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                              docType === t ? "bg-white shadow-sm" : "text-gray-400"
+                            }`}
+                            style={docType === t ? { color: c.ink } : undefined}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <input
+                      inputMode="numeric"
+                      value={doc}
+                      onChange={(e) => setDoc(docType === "CPF" ? maskCPF(e.target.value) : maskCNPJ(e.target.value))}
+                      placeholder={docType === "CPF" ? "000.000.000-00" : "00.000.000/0000-00"}
+                      className={`${inputBase} ${doc && !validDoc ? "border-red-400" : "border-gray-200 focus:border-[#0d7a5f]"}`}
+                    />
+                    {doc && !validDoc && (
+                      <p className="text-[11px] text-red-500 mt-2">{docType} inválido</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-dashed p-4 text-[12px] text-gray-500 leading-relaxed" style={{ borderColor: "#e5e0d0", backgroundColor: "#fbf8ee" }}>
+                    Após a confirmação do pagamento você receberá um link mágico em <strong style={{ color: c.ink }}>{email || "seu e-mail"}</strong> para acessar a conta imediatamente.
+                  </div>
+
+                  {formError && <p className="text-xs text-red-500">{formError}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={brickLoading || !canContinue}
+                    className="w-full py-4 rounded-xl font-bold text-[15px] transition-all shadow-[0_8px_20px_-4px_rgba(201,168,76,0.5)] hover:brightness-95 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                    style={{ ...heading, backgroundColor: c.gold, color: c.ink }}
+                  >
+                    {brickLoading ? (
+                      <><Loader2 size={18} className="animate-spin" /> Carregando pagamento...</>
+                    ) : (
+                      <>Continuar para pagamento <ArrowRight size={18} strokeWidth={2.5} /></>
+                    )}
+                  </button>
+
+                  <p className="text-center text-[11px] text-gray-400 pt-1">
+                    Ao continuar você concorda com nossos{" "}
+                    <a href="/privacidade" className="underline hover:text-[#064e3b]">Termos e Política de Privacidade</a>.
+                  </p>
+                </form>
+              </>
+            )}
+
+            {brickReady && (
+              <>
+                <header className="mb-8">
+                  <div className="flex items-center gap-2 mb-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: c.inkSoft }}>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px]" style={{ backgroundColor: c.gold, color: c.ink }}>2</span>
+                    Etapa 2 de 2
+                  </div>
+                  <h2 className="text-2xl font-bold" style={{ ...heading, color: c.ink }}>Forma de Pagamento</h2>
+                  <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                    <span>Pagando como <strong style={{ color: c.ink }}>{email}</strong></span>
+                    <button
+                      onClick={() => { brickControllerRef.current?.unmount?.(); setBrickReady(false); setPixData(null); setBoletoUrl(null); }}
+                      className="underline hover:text-[#064e3b]"
+                    >
+                      alterar
+                    </button>
+                  </div>
+                </header>
+
+                <div id={brickContainerId} className="min-h-[300px] rounded-2xl" />
+
+                {pixData && (
+                  <div className="mt-8 p-6 rounded-2xl border" style={{ borderColor: `${c.inkSoft}33`, backgroundColor: "#f0faf5" }}>
+                    <div className="text-sm font-bold mb-3" style={{ color: c.ink }}>Pague com Pix</div>
+                    {pixData.qrBase64 && (
+                      <img src={`data:image/png;base64,${pixData.qrBase64}`} alt="QR Code Pix" className="w-56 h-56 mx-auto rounded-xl bg-white p-2 border border-gray-100" />
+                    )}
+                    <button
+                      onClick={copyPix}
+                      className="w-full mt-4 py-3 rounded-xl font-bold text-sm transition-all hover:brightness-95"
+                      style={{ backgroundColor: c.ink, color: "#fff", ...heading }}
+                    >
+                      Copiar código Pix
+                    </button>
+                    <p className="text-[11px] text-gray-500 mt-3 text-center">
+                      A confirmação é automática. Assim que pago, você recebe o acesso por e-mail.
+                    </p>
+                  </div>
                 )}
-              </div>
 
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">WhatsApp *</label>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(maskPhone(e.target.value))}
-                  placeholder="(11) 99999-9999"
-                  className={`w-full px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${whatsapp && !validPhone ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
-                />
-              </div>
-
-              {formError && <p className="text-xs text-red-400">{formError}</p>}
-
-              <button
-                type="button"
-                onClick={initBrick}
-                disabled={brickLoading || !canContinue}
-                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                {brickLoading ? (<><Loader2 size={18} className="animate-spin" /> Carregando pagamento...</>) : ("Continuar para pagamento")}
-              </button>
-            </div>
-          )}
-
-          {/* Brick container */}
-          <div className={brickReady ? "block" : "hidden"}>
-            <div className="mb-4 flex items-center justify-between text-xs text-white/50">
-              <span>Pagando como <strong className="text-white/80">{email}</strong></span>
-              <button onClick={() => { brickControllerRef.current?.unmount?.(); setBrickReady(false); setPixData(null); setBoletoUrl(null); }} className="hover:text-white underline">alterar</button>
-            </div>
-            <div id={brickContainerId} className="min-h-[300px]" />
-          </div>
-
-          {/* Resultado Pix */}
-          {pixData && (
-            <div className="mt-8 p-6 rounded-2xl bg-emerald-500/5 border border-emerald-400/20">
-              <div className="text-sm font-bold text-emerald-300 mb-3">Pague com Pix</div>
-              {pixData.qrBase64 && (
-                <img src={`data:image/png;base64,${pixData.qrBase64}`} alt="QR Code Pix" className="w-56 h-56 mx-auto rounded-xl bg-white p-2" />
-              )}
-              <button onClick={copyPix} className="w-full mt-4 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all">
-                Copiar código Pix
-              </button>
-              <p className="text-[11px] text-white/50 mt-3 text-center">A confirmação é automática. Assim que pago, você recebe o acesso por e-mail.</p>
-            </div>
-          )}
-
-          {/* Resultado Boleto */}
-          {boletoUrl && (
-            <div className="mt-8 p-6 rounded-2xl bg-yellow-500/5 border border-yellow-400/20 text-center">
-              <div className="text-sm font-bold text-yellow-300 mb-3">Boleto gerado</div>
-              <a href={boletoUrl} target="_blank" rel="noreferrer" className="inline-block px-6 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-white/90 transition-all">
-                Abrir boleto para pagamento
-              </a>
-              <p className="text-[11px] text-white/50 mt-3">Compensação em até 2 dias úteis. Você receberá o acesso por e-mail assim que confirmado.</p>
-            </div>
-          )}
-
-          <p className="text-[11px] text-white/30 text-center leading-relaxed mt-8">
-            Ao continuar você concorda com os <a href="/privacidade" className="underline hover:text-white/60">Termos e Política de Privacidade</a>.
-          </p>
-        </motion.section>
-      </main>
+                {boletoUrl && (
+                  <div className="mt-8 p-6 rounded-2xl border text-center" style={{ borderColor: `${c.gold}55`, backgroundColor: "#fdfaf0" }}>
+                    <div className="text-sm font-bold mb-3" style={{ color: c.ink }}>Boleto gerado</div>
+                    <a
+                      href={boletoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block px-6 py-3 rounded-xl font-bold text-sm transition-all hover:brightness-95"
+                      style={{ backgroundColor: c.gold, color: c.ink, ...heading }}
+                    >
+                      Abrir boleto para pagamento
+                    </a>
+                    <p className="text-[11px] text-gray-500 mt-3">
+                      Compensação em até 2 dias úteis. Você receberá o acesso por e-mail assim que confirmado.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </main>
+        </motion.div>
+      </div>
     </div>
   );
 }
