@@ -31,7 +31,7 @@ const LandingCTA = () => {
             transition={{ delay: 0.1 }}
             className="text-white/40 mb-12 max-w-xl mx-auto leading-relaxed"
           >
-            Teste grátis por 7 dias e descubra como o CredMais App pode levar seu negócio para o próximo nível com automação e IA.
+            Assine agora e descubra como o CredMais App pode levar seu negócio para o próximo nível com automação e IA.
           </motion.p>
 
           <motion.div
@@ -53,12 +53,7 @@ const LandingCTA = () => {
               }}
               className="w-full sm:w-auto px-10 py-4 rounded-full bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all shadow-xl shadow-white/10"
             >
-              TESTE GRÁTIS POR 7 DIAS
-            </button>
-            <button
-              className="w-full sm:w-auto px-10 py-4 rounded-full border border-white/20 text-white font-bold text-sm tracking-wide hover:bg-white/5 transition-all"
-            >
-              OU AGENDE UMA DEMONSTRAÇÃO
+              ASSINAR AGORA
             </button>
           </motion.div>
         </div>

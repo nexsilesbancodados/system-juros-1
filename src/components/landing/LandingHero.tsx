@@ -70,15 +70,8 @@ const LandingHero = () => {
                 }}
                 className="w-full sm:w-auto px-10 py-4 rounded-full bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 transition-all flex items-center justify-center gap-2 group shadow-xl shadow-white/10"
               >
-                TESTE GRÁTIS POR 7 DIAS
+                ASSINAR AGORA
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-              
-              <button
-                className="w-full sm:w-auto px-10 py-4 rounded-full border border-white/20 text-white font-bold text-sm tracking-wide hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Play size={18} fill="white" />
-                AGENDAR DEMONSTRAÇÃO
               </button>
             </motion.div>
 
@@ -90,7 +83,7 @@ const LandingHero = () => {
             >
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-white/70" />
-                <span className="text-xs text-white/70">Sem cartão de crédito</span>
+                <span className="text-xs text-white/70">Pagamento seguro</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-white/70" />

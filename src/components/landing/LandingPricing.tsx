@@ -33,9 +33,6 @@ const LandingPricing = () => {
     }
   };
 
-  const handleTrial = () => {
-    navigate("/login?plan=trial");
-  };
 
   const features = [
     "Clientes ilimitados",
@@ -115,15 +112,8 @@ const LandingPricing = () => {
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
 
-              <button
-                onClick={handleTrial}
-                className="w-full mt-3 py-3.5 rounded-2xl border border-white/15 text-white/80 font-semibold text-sm tracking-wide hover:bg-white/5 hover:border-white/30 transition-all"
-              >
-                Testar 3 dias grátis
-              </button>
-
               <p className="text-[10px] text-white/20 mt-4 leading-relaxed">
-                Pagamento seguro via Mercado Pago.<br />Sem cartão no teste · Cancele quando quiser.
+                Pagamento seguro via Mercado Pago.<br />Cancele quando quiser.
               </p>
             </div>
           </motion.div>
