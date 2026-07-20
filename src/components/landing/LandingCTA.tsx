@@ -31,7 +31,7 @@ const LandingCTA = () => {
             transition={{ delay: 0.1 }}
             className="text-white/40 mb-12 max-w-xl mx-auto leading-relaxed"
           >
-            Teste grátis por 7 dias e descubra como o System Juros pode levar seu negócio para o próximo nível com automação e IA.
+            Teste grátis por 7 dias e descubra como o CredMais App pode levar seu negócio para o próximo nível com automação e IA.
           </motion.p>
 
           <motion.div

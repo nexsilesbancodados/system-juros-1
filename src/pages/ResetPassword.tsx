@@ -119,7 +119,7 @@ const ResetPassword = () => {
   const { toast } = useToast();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
-  const brandTitle = config.loginTitle || config.companyName || "SYSTEM JUROS";
+  const brandTitle = config.loginTitle || config.companyName || "CREDMAIS APP";
 
   const [mode, setMode] = useState<Mode>("request");
   const [email, setEmail] = useState("");

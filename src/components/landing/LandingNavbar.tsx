@@ -12,7 +12,7 @@ const LandingNavbar = () => {
   const { config } = useWhiteLabel();
 
   const logoSrc = config.companyLogo || eagleLogo;
-  const brandTitle = config.companyName || "SYSTEM JUROS";
+  const brandTitle = config.companyName || "CREDMAIS APP";
 
   useEffect(() => {
     const handleScroll = () => {

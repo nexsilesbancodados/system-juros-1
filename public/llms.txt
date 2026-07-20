@@ -1,8 +1,8 @@
-# System Juros
+# CredMais App
 
 > Sistema white-label de gestão profissional de empréstimos pessoais, cobranças automatizadas e portais para clientes e cobradores externos.
 
-System Juros centraliza emissão de contratos, cálculo de parcelas (price/percentual), agenda de vencimentos, multas automáticas, mensagens via WhatsApp e relatórios financeiros em um único painel.
+CredMais App centraliza emissão de contratos, cálculo de parcelas (price/percentual), agenda de vencimentos, multas automáticas, mensagens via WhatsApp e relatórios financeiros em um único painel.
 
 ## Pages
 

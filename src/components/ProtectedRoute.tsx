@@ -152,7 +152,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           <div className="space-y-2">
             <h1 className="text-xl font-bold text-foreground">Assinatura necessária</h1>
             <p className="text-sm text-muted-foreground">
-              Para acessar o System Juros é preciso ter uma assinatura ativa. Finalize seu pagamento para liberar o acesso imediatamente.
+              Para acessar o CredMais App é preciso ter uma assinatura ativa. Finalize seu pagamento para liberar o acesso imediatamente.
             </p>
           </div>
           <div className="flex flex-col gap-2">

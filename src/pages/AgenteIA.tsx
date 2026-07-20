@@ -194,7 +194,7 @@ const AgenteIA = () => {
   const [tab, setTab] = useState<TabType>("chat");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Como posso ajudar?", timestamp: new Date() },
+    { role: "assistant", content: "Olá! Sou o assistente IA do CredMais App. Como posso ajudar?", timestamp: new Date() },
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -801,7 +801,7 @@ const AgenteIA = () => {
 
   const clearChat = () => {
     setMessages([
-      { role: "assistant", content: "Olá! Sou o assistente IA do System Juros. Como posso ajudar?", timestamp: new Date() },
+      { role: "assistant", content: "Olá! Sou o assistente IA do CredMais App. Como posso ajudar?", timestamp: new Date() },
     ]);
   };
 

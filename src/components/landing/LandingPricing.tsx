@@ -29,7 +29,7 @@ const LandingPricing = () => {
     if (url) {
       window.location.href = url;
     } else {
-      navigate("/login?plan=paid");
+      navigate("/checkout");
     }
   };
 
@@ -123,7 +123,7 @@ const LandingPricing = () => {
               </button>
 
               <p className="text-[10px] text-white/20 mt-4 leading-relaxed">
-                Pagamento seguro via Hubla.<br />Sem cartão no teste · Cancele quando quiser.
+                Pagamento seguro via Mercado Pago.<br />Sem cartão no teste · Cancele quando quiser.
               </p>
             </div>
           </motion.div>

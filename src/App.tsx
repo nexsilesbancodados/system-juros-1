@@ -63,6 +63,10 @@ const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
 const Hoje = lazy(() => import("./pages/Hoje"));
 const Planos = lazy(() => import("./pages/Planos"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const CheckoutSucesso = lazy(() => import("./pages/CheckoutSucesso"));
+const CheckoutErro = lazy(() => import("./pages/CheckoutErro"));
+const CheckoutPendente = lazy(() => import("./pages/CheckoutPendente"));
 const Comunicacao = lazy(() => import("./pages/Comunicacao"));
 const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
 const BotPerformance = lazy(() => import("./pages/BotPerformance"));
@@ -125,6 +129,10 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/planos" element={<Planos />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/checkout/sucesso" element={<CheckoutSucesso />} />
+                  <Route path="/checkout/erro" element={<CheckoutErro />} />
+                  <Route path="/checkout/pendente" element={<CheckoutPendente />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/portal-cliente" element={<PortalCliente />} />
                   <Route path="/privacidade" element={<Privacidade />} />

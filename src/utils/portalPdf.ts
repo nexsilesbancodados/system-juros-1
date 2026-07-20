@@ -19,7 +19,7 @@ export const generatePortalReceiptPdf = (client: any, installment: any, company:
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(company?.name || "System Juros", 20, 50);
+  doc.text(company?.name || "CredMais App", 20, 50);
   doc.setFont("helvetica", "normal");
   doc.text(`Chave PIX: ${company?.pix_key || "Não informada"}`, 20, 55);
 

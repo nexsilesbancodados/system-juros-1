@@ -118,7 +118,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
   const { profile, signOut, user } = useAuth();
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
-  const brandName = config.companyName || "SYSTEM JUROS";
+  const brandName = config.companyName || "CREDMAIS APP";
   const isSuperAdmin = isSuperAdminEmail(user?.email);
   const chatUnread = useChatUnread();
 

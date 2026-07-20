@@ -54,7 +54,7 @@ const Index = () => {
               <div className="flex flex-col lg:flex-row items-center gap-16">
                  <div className="flex-1">
                     <h2 className="text-4xl font-display font-bold mb-8">
-                       Por que escolher o <span className="text-gradient-gold">System Juros?</span>
+                       Por que escolher o <span className="text-gradient-gold">CredMais App?</span>
                     </h2>
                     <div className="space-y-8">
                        {[

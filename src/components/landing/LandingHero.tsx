@@ -8,7 +8,7 @@ import eagleLogo from "@/assets/eagle-logo.webp";
 const LandingHero = () => {
   const navigate = useNavigate();
   const { config } = useWhiteLabel();
-  const brandTitle = config.companyName || "SYSTEM JUROS";
+  const brandTitle = config.companyName || "CREDMAIS APP";
 
   return (
     <section id="home" className="relative min-h-screen pt-32 pb-20 overflow-hidden flex items-center">
