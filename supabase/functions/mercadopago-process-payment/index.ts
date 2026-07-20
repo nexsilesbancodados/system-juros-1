@@ -40,17 +40,42 @@ serve(async (req) => {
   const selected: string = payload?.selectedPaymentMethod ?? formData?.payment_method_id ?? "";
   const extraEmail: string | undefined = payload?.email;
   const extraName: string | undefined = payload?.name;
+  const deviceId: string | undefined = payload?.deviceId;
 
   if (!formData) return json({ error: "missing_form_data" }, 400);
 
-  // Monta corpo /v1/payments conforme docs (cartão, PIX ou boleto)
+  const payerIn = formData.payer ?? {};
+  const payerEmail: string = payerIn.email ?? extraEmail ?? "";
+  const firstName = payerIn.first_name ?? (extraName ? extraName.split(" ")[0] : undefined);
+  const lastName = payerIn.last_name ?? (extraName ? extraName.split(" ").slice(1).join(" ") || undefined : undefined);
+
+  // Corpo /v1/payments conforme docs oficiais MP
   const body: Record<string, unknown> = {
     transaction_amount: Number(formData.transaction_amount ?? PLAN.amount),
     description: PLAN.title,
     external_reference: PLAN.id,
     statement_descriptor: "CREDMAIS",
-    metadata: { plan: PLAN.id, email: formData?.payer?.email ?? extraEmail ?? null },
+    binary_mode: false,
+    capture: true,
+    metadata: { plan: PLAN.id, email: payerEmail || null },
     notification_url: `${Deno.env.get("SUPABASE_URL") ?? ""}/functions/v1/mercadopago-webhook`,
+    // additional_info aumenta a taxa de aprovação (docs MP)
+    additional_info: {
+      items: [
+        {
+          id: PLAN.id,
+          title: PLAN.title,
+          description: "Assinatura mensal recorrente - CredMais App",
+          category_id: "services",
+          quantity: 1,
+          unit_price: PLAN.amount,
+        },
+      ],
+      payer: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    },
   };
 
   const method = (formData.payment_method_id ?? selected ?? "").toString();
@@ -63,38 +88,45 @@ serve(async (req) => {
     if (formData.issuer_id) body.issuer_id = formData.issuer_id;
   } else if (method === "pix" || selected === "pix") {
     body.payment_method_id = "pix";
-  } else if (method === "bolbradesco" || selected === "bolbradesco" || method === "boleto") {
+    // Pix: expira em 30 minutos
+    (body as any).date_of_expiration = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  } else if (method === "bolbradesco" || selected === "bolbradesco" || method === "boleto" || selected === "ticket") {
     body.payment_method_id = "bolbradesco";
+    // Boleto: vence em 3 dias
+    (body as any).date_of_expiration = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
   } else if (method) {
     body.payment_method_id = method;
   }
 
-  // Payer é obrigatório
-  const payerIn = formData.payer ?? {};
+  // Payer é obrigatório (docs MP: email + identification.type/number para Pix/Boleto)
   body.payer = {
-    email: payerIn.email ?? extraEmail ?? "cliente@credmaisapp.com",
-    first_name: payerIn.first_name ?? (extraName ? extraName.split(" ")[0] : undefined),
-    last_name: payerIn.last_name ?? (extraName ? extraName.split(" ").slice(1).join(" ") || undefined : undefined),
+    email: payerEmail || "cliente@credmaisapp.com",
+    first_name: firstName,
+    last_name: lastName,
     identification: payerIn.identification,
+    address: payerIn.address,
   };
 
   try {
+    const mpHeaders: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": crypto.randomUUID(),
+    };
+    // Device fingerprint recomendado pela doc MP para melhor aprovação em cartão
+    if (deviceId) mpHeaders["X-meli-session-id"] = deviceId;
+
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": crypto.randomUUID(),
-      },
+      headers: mpHeaders,
       body: JSON.stringify(body),
     });
     const data = await mpRes.json();
     if (!mpRes.ok) {
       console.error("MP /v1/payments error:", data);
-      return json({ error: "mp_error", details: data }, 502);
+      return json({ error: "mp_error", message: data?.message, details: data }, 502);
     }
 
-    // Retorna dados úteis: PIX (qr_code/qr_base64), boleto (external_resource_url), cartão (status)
     return json({
       id: data.id,
       status: data.status,
