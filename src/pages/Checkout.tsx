@@ -283,6 +283,66 @@ export default function Checkout() {
           </div>
         </div>
 
+        {/* Banner Premium */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative w-full mb-6 rounded-3xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(6,78,59,0.35)]"
+          style={{ background: `linear-gradient(115deg, ${c.ink} 0%, ${c.inkSoft} 55%, ${c.ink} 100%)` }}
+        >
+          {/* Decorative glows */}
+          <div className="pointer-events-none absolute -top-24 -left-16 w-72 h-72 rounded-full opacity-30 blur-3xl" style={{ backgroundColor: c.gold }} />
+          <div className="pointer-events-none absolute -bottom-32 -right-10 w-80 h-80 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: c.goldSoft }} />
+          {/* Grid pattern */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
+              backgroundSize: "42px 42px",
+            }}
+          />
+
+          <div className="relative z-10 px-6 md:px-12 py-8 md:py-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+            <div className="flex-1">
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] mb-4"
+                style={{ backgroundColor: `${c.gold}25`, color: c.goldSoft, border: `1px solid ${c.gold}55` }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: c.gold }} />
+                Oferta de Lançamento · Vagas Limitadas
+              </div>
+              <h1
+                className="text-2xl md:text-4xl font-bold leading-tight text-white mb-2"
+                style={heading}
+              >
+                Automatize sua carteira e{" "}
+                <span style={{ color: c.goldSoft }}>multiplique seus lucros</span>
+              </h1>
+              <p className="text-sm md:text-base max-w-xl" style={{ color: `${c.cream}cc` }}>
+                Cobrança inteligente 24/7, cálculo automático de juros e portal white-label — tudo em um só sistema.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 md:gap-6 md:pl-8 md:border-l" style={{ borderColor: `${c.goldSoft}33` }}>
+              <div className="flex flex-col items-center">
+                <ShieldCheck size={22} style={{ color: c.goldSoft }} />
+                <span className="mt-1 text-[10px] uppercase tracking-widest font-semibold" style={{ color: c.cream }}>Seguro</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Lock size={22} style={{ color: c.goldSoft }} />
+                <span className="mt-1 text-[10px] uppercase tracking-widest font-semibold" style={{ color: c.cream }}>SSL 256</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Check size={22} style={{ color: c.goldSoft }} />
+                <span className="mt-1 text-[10px] uppercase tracking-widest font-semibold" style={{ color: c.cream }}>Mercado Pago</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
