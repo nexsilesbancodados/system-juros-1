@@ -199,7 +199,7 @@ export default function Checkout() {
             try {
               const deviceId = window.MP_DEVICE_SESSION_ID;
               const { data, error } = await supabase.functions.invoke("mercadopago-process-payment", {
-                body: { selectedPaymentMethod, formData, email, name, deviceId },
+                body: { selectedPaymentMethod, formData, email, name, deviceId, docType, doc: onlyDigits(doc), whatsapp: onlyDigits(whatsapp) },
               });
               if (error) throw error;
               if ((data as any)?.error) throw new Error((data as any)?.message || "Pagamento recusado");
