@@ -60,12 +60,58 @@ export default function Checkout() {
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [docType, setDocType] = useState<"CPF" | "CNPJ">("CPF");
+  const [doc, setDoc] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const [brickReady, setBrickReady] = useState(false);
   const [brickLoading, setBrickLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qr: string; qrBase64: string } | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const brickControllerRef = useRef<any>(null);
   const brickContainerId = "credmais-payment-brick";
+
+  const onlyDigits = (v: string) => v.replace(/\D/g, "");
+  const maskCPF = (v: string) => onlyDigits(v).slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  const maskCNPJ = (v: string) => onlyDigits(v).slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+  const maskPhone = (v: string) => {
+    const d = onlyDigits(v).slice(0, 11);
+    if (d.length <= 10) return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
+    return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+  };
+  const isValidCPF = (v: string) => {
+    const c = onlyDigits(v);
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    let s = 0; for (let i = 0; i < 9; i++) s += parseInt(c[i]) * (10 - i);
+    let d1 = (s * 10) % 11; if (d1 === 10) d1 = 0; if (d1 !== parseInt(c[9])) return false;
+    s = 0; for (let i = 0; i < 10; i++) s += parseInt(c[i]) * (11 - i);
+    let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0; return d2 === parseInt(c[10]);
+  };
+  const isValidCNPJ = (v: string) => {
+    const c = onlyDigits(v);
+    if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+    const calc = (base: string, weights: number[]) => {
+      const s = weights.reduce((acc, w, i) => acc + parseInt(base[i]) * w, 0);
+      const r = s % 11; return r < 2 ? 0 : 11 - r;
+    };
+    const w1 = [5,4,3,2,9,8,7,6,5,4,3,2];
+    const w2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    const d1 = calc(c.slice(0, 12), w1);
+    const d2 = calc(c.slice(0, 12) + d1, w2);
+    return d1 === parseInt(c[12]) && d2 === parseInt(c[13]);
+  };
+  const validDoc = docType === "CPF" ? isValidCPF(doc) : isValidCNPJ(doc);
+  const validPhone = onlyDigits(whatsapp).length >= 10;
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validName = name.trim().length >= 2;
+  const canContinue = validName && validEmail && validDoc && validPhone;
 
   useEffect(() => {
     document.title = `Checkout — ${brand}`;
