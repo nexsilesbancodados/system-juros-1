@@ -322,15 +322,16 @@ export default function Checkout() {
           {!brickReady && (
             <div className="space-y-5">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">Seu nome</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">Nome completo *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Como você quer ser chamado"
+                  placeholder="Seu nome completo"
                   className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-400/60 focus:bg-white/[0.07] transition-all"
                 />
               </div>
+
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">E-mail *</label>
                 <input
@@ -344,11 +345,53 @@ export default function Checkout() {
                 <p className="text-[11px] text-white/40 mt-2">Após o pagamento você receberá um link mágico neste e-mail para acessar sua conta.</p>
               </div>
 
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">CPF ou CNPJ *</label>
+                <div className="flex gap-2">
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                    {(["CPF", "CNPJ"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => { setDocType(t); setDoc(""); }}
+                        className={`px-4 text-xs font-bold tracking-wider transition-all ${docType === t ? "bg-blue-500 text-white" : "text-white/50 hover:text-white"}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    inputMode="numeric"
+                    value={doc}
+                    onChange={(e) => setDoc(docType === "CPF" ? maskCPF(e.target.value) : maskCNPJ(e.target.value))}
+                    placeholder={docType === "CPF" ? "000.000.000-00" : "00.000.000/0000-00"}
+                    className={`flex-1 px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${doc && !validDoc ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
+                  />
+                </div>
+                {doc && !validDoc && (
+                  <p className="text-[11px] text-red-400 mt-2">{docType} inválido</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2 block">WhatsApp *</label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(maskPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className={`w-full px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] transition-all ${whatsapp && !validPhone ? "border-red-400/60" : "border-white/10 focus:border-blue-400/60"}`}
+                />
+              </div>
+
+              {formError && <p className="text-xs text-red-400">{formError}</p>}
+
               <button
                 type="button"
                 onClick={initBrick}
-                disabled={brickLoading}
-                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                disabled={brickLoading || !canContinue}
+                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-base tracking-wide hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {brickLoading ? (<><Loader2 size={18} className="animate-spin" /> Carregando pagamento...</>) : ("Continuar para pagamento")}
               </button>
