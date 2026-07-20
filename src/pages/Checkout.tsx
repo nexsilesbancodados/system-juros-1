@@ -127,10 +127,12 @@ export default function Checkout() {
   }, []);
 
   const initBrick = async () => {
-    if (!email || !email.includes("@")) {
-      toast.error("Informe um e-mail válido para continuar");
+    if (!canContinue) {
+      setFormError("Preencha nome, e-mail, CPF/CNPJ e WhatsApp corretamente");
+      toast.error("Confira os dados antes de continuar");
       return;
     }
+    setFormError(null);
     setBrickLoading(true);
     try {
       // 1) Busca a public key
