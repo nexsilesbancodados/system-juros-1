@@ -112,8 +112,9 @@ serve(async (req) => {
     email: payerEmail || "cliente@credmaisapp.com",
     first_name: firstName,
     last_name: lastName,
-    identification: payerIn.identification,
+    identification,
     address: payerIn.address,
+    ...(phone ? { phone } : {}),
   };
 
   try {
