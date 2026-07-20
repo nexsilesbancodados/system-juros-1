@@ -82,6 +82,7 @@ serve(async (req) => {
       payer: {
         first_name: firstName,
         last_name: lastName,
+        ...(phone ? { phone } : {}),
       },
     },
   };
