@@ -161,6 +161,10 @@ export default function Checkout() {
             email,
             firstName: firstName || undefined,
             lastName: lastName || undefined,
+            identification: {
+              type: docType,
+              number: onlyDigits(doc),
+            },
           },
         },
         customization: {
