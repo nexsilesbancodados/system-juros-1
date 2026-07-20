@@ -68,7 +68,7 @@ const Planos = () => {
             transition={{ delay: 0.2 }}
             className="text-white/50 text-lg leading-relaxed"
           >
-            Teste sem cartão por 3 dias ou assine agora e tenha acesso imediato a todas as ferramentas.
+            Assine agora e tenha acesso imediato a todas as ferramentas.
           </motion.p>
         </div>
       </section>
