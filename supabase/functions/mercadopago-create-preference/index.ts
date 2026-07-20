@@ -9,7 +9,7 @@ const corsHeaders = {
 const PLAN = {
   id: "credmais-mensal",
   title: "CredMais App — Acesso Ilimitado (Mensal)",
-  price: 79.0,
+  price: 99.9,
   currency: "BRL",
 };
 
