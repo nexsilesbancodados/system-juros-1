@@ -65,7 +65,7 @@ serve(async (req) => {
     statement_descriptor: "CREDMAIS",
     binary_mode: false,
     capture: true,
-    metadata: { plan: PLAN.id, email: payerEmail || null },
+    metadata: { plan: PLAN.id, email: payerEmail || null, whatsapp: extraWhats || null, doc_type: extraDocType || null, doc: extraDoc || null },
     notification_url: `${Deno.env.get("SUPABASE_URL") ?? ""}/functions/v1/mercadopago-webhook`,
     // additional_info aumenta a taxa de aprovação (docs MP)
     additional_info: {
