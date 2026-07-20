@@ -260,7 +260,7 @@ const Cobrancas = () => {
       .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
       .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
       .replace(/\{portal\}|\[Portal\]/g, portalUrl)
-      .replace(/\[Nome da Empresa\]/g, "System Juros").replace(/Sr\(a\)\s*/g, "");
+      .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
     const pix = (profile as any)?.pix_key;
     if (opts.includePix && pix && !/PIX/i.test(base)) {
       base += `\n\n💸 Pague via PIX:\nChave: ${pix}\nValor: R$ ${Number(inst.amount).toFixed(2)}`;

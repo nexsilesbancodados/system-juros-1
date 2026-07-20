@@ -20,7 +20,7 @@ const stats = [
 const Sobre = () => {
   const { config } = useWhiteLabel();
   const logoSrc = config.companyLogo || eagleLogo;
-  const brandName = config.companyName || "SYSTEM JUROS";
+  const brandName = config.companyName || "CREDMAIS APP";
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">

@@ -34,7 +34,7 @@ const LandingDashboardPreview = () => {
                   <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40" />
                </div>
                <div className="mx-auto bg-white/5 rounded-full px-4 py-1 text-[10px] text-white/40 border border-white/5">
-                  systemjuros.com.br/dashboard
+                  credmaisapp.com.br/dashboard
                </div>
             </div>
             

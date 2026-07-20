@@ -576,7 +576,7 @@ const Configuracoes = () => {
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome do Sistema</label>
 
-                <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
+                <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="CREDMAIS APP" className={inputCls} />
                 <p className="text-[10px] text-muted-foreground mt-1">Aparece no menu lateral, topbar, login e título do navegador</p>
               </div>
 
@@ -708,7 +708,7 @@ const Configuracoes = () => {
                         {form.company_logo_url && <img src={form.company_logo_url} alt="" className="w-full h-full object-cover" />}
                       </div>
                       <p className="text-[9px] font-bold truncate" style={{ background: `linear-gradient(135deg, ${form.primary_color}, ${form.accent_color})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        {form.company_name || "SYSTEM JUROS"}
+                        {form.company_name || "CREDMAIS APP"}
                       </p>
                     </div>
                     {[
@@ -823,7 +823,7 @@ const Configuracoes = () => {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Título Principal</label>
-                  <input value={form.login_title} onChange={(e) => setForm({ ...form, login_title: e.target.value })} placeholder="SYSTEM JUROS" className={inputCls} />
+                  <input value={form.login_title} onChange={(e) => setForm({ ...form, login_title: e.target.value })} placeholder="CREDMAIS APP" className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Subtítulo</label>
@@ -839,7 +839,7 @@ const Configuracoes = () => {
               </p>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Texto do Rodapé</label>
-                <input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} placeholder="© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS" className={inputCls} />
+                <input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} placeholder="© 2025 CREDMAIS APP · TODOS OS DIREITOS RESERVADOS" className={inputCls} />
                 <p className="text-[10px] text-muted-foreground mt-1">Aparece no login e no portal do cliente</p>
               </div>
             </div>
@@ -1915,7 +1915,7 @@ const Configuracoes = () => {
                 <div className="p-4 rounded-2xl bg-primary/5 border border-border/10 space-y-3">
                    <p className="text-xs font-medium text-foreground">Exemplo de Roteiro Gerado pela IA:</p>
                  <div className="p-3 rounded-xl bg-background/50 border border-border/5 text-[11px] italic text-muted-foreground leading-relaxed">
-                   "Olá Cliente, aqui é o assistente virtual da {form.company_name || 'System Juros'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
+                   "Olá Cliente, aqui é o assistente virtual da {form.company_name || 'CredMais App'}. Notei que sua parcela de R$ 450,00 está pendente há 3 dias. Quero te ajudar a não acumular juros. Podemos fechar um acordo via PIX agora?"
                  </div>
                 </div>
 

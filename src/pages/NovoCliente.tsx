@@ -640,7 +640,7 @@ const NovoCliente = () => {
       startDate,
       lateFeePercent: parseFloat(lateFeePercent),
       dailyInterestPercent: parseFloat(dailyInterestPercent),
-      companyName: settings?.company_name || "SYSTEM JUROS",
+      companyName: settings?.company_name || "CREDMAIS APP",
       companyCnpj: settings?.company_cnpj || "",
       companyLogoUrl: settings?.company_logo_url || undefined,
       customTemplate: (settings as any)?.custom_contract_template || null,
@@ -670,7 +670,7 @@ const NovoCliente = () => {
         toast({ title: "Sem e-mail", description: "Cadastre um e-mail para enviar.", variant: "destructive" });
         return;
       }
-      window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Contrato — ${settings?.company_name || "SYSTEM JUROS"}`)}&body=${encodeURIComponent(shareMessage)}`;
+      window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Contrato — ${settings?.company_name || "CREDMAIS APP"}`)}&body=${encodeURIComponent(shareMessage)}`;
     };
 
     return (

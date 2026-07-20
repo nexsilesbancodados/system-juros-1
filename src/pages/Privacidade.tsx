@@ -4,9 +4,9 @@ import { ArrowLeft, Shield, Lock, FileText, Trash2, Download, Mail } from "lucid
 
 const Privacidade = () => {
   useEffect(() => {
-    document.title = "Política de Privacidade — SYSTEM JUROS";
+    document.title = "Política de Privacidade — CREDMAIS APP";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Política de privacidade e tratamento de dados pessoais do SYSTEM JUROS conforme a LGPD.");
+    if (meta) meta.setAttribute("content", "Política de privacidade e tratamento de dados pessoais do CREDMAIS APP conforme a LGPD.");
   }, []);
 
   const Section = ({ icon: Icon, title, children }: any) => (
@@ -39,7 +39,7 @@ const Privacidade = () => {
         </header>
 
         <p className="text-sm text-muted-foreground">
-          Esta página descreve como o <strong className="text-foreground">SYSTEM JUROS</strong> coleta, usa,
+          Esta página descreve como o <strong className="text-foreground">CREDMAIS APP</strong> coleta, usa,
           armazena e protege seus dados pessoais e os dados dos seus clientes. Ela é mantida pela
           equipe do produto e reflete as práticas atuais visíveis no aplicativo.
         </p>
@@ -98,7 +98,7 @@ const Privacidade = () => {
             Dúvidas, solicitações ou reclamações relacionadas ao tratamento dos seus dados:
           </p>
           <p>
-            E-mail: <a href="mailto:privacidade@systemjuros.com.br" className="text-primary hover:underline">privacidade@systemjuros.com.br</a>
+            E-mail: <a href="mailto:privacidade@credmaisapp.com.br" className="text-primary hover:underline">privacidade@credmaisapp.com.br</a>
           </p>
           <p>
             Responderemos em até <strong>15 dias corridos</strong> conforme prazo previsto pela ANPD.
@@ -106,7 +106,7 @@ const Privacidade = () => {
         </Section>
 
         <p className="text-xs text-muted-foreground text-center pt-4">
-          Ao continuar usando o SYSTEM JUROS você concorda com esta política. Alterações significativas serão comunicadas por e-mail.
+          Ao continuar usando o CREDMAIS APP você concorda com esta política. Alterações significativas serão comunicadas por e-mail.
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// System Juros Service Worker — offline-aware
+// CredMais App Service Worker — offline-aware
 // - NetworkFirst para navegações HTML, com fallback /offline.html
 // - StaleWhileRevalidate para JS/CSS/imagens
 // - Nunca cacheia Supabase, APIs ou rotas internas (~oauth)

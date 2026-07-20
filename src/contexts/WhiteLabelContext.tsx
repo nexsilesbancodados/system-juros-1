@@ -40,16 +40,16 @@ interface WhiteLabelContextType {
 }
 
 const defaults: WhiteLabelConfig = {
-  companyName: "SYSTEM JUROS",
+  companyName: "CREDMAIS APP",
   companyLogo: null,
   faviconUrl: null,
   primaryColor: "#4a86c8",
   accentColor: "#6ba3d6",
   themeMode: "dark",
   sidebarStyle: "default",
-  loginTitle: "SYSTEM JUROS",
+  loginTitle: "CREDMAIS APP",
   loginSubtitle: "SISTEMA DE GESTÃO DE EMPRÉSTIMOS",
-  footerText: "© 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS",
+  footerText: "© 2025 CREDMAIS APP · TODOS OS DIREITOS RESERVADOS",
   borderRadius: "16",
   fontFamily: "default",
   modulesEnabled: DEFAULT_MODULES,

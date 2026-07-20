@@ -14,7 +14,7 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Bem-vindo ao SYSTEM JUROS! 👋",
+    title: "Bem-vindo ao CREDMAIS APP! 👋",
     description: "Vamos fazer um tour rápido pelas funcionalidades principais. Leva menos de 1 minuto.",
     placement: "center",
   },

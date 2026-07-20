@@ -4,7 +4,7 @@ import { Mail, Phone, MapPin, Globe, Share2, Info } from "lucide-react";
 
 const LandingFooter = () => {
   const { config } = useWhiteLabel();
-  const brandTitle = config.companyName || "SYSTEM JUROS";
+  const brandTitle = config.companyName || "CREDMAIS APP";
 
   return (
     <footer id="contact" className="pt-20 pb-10 bg-black border-t border-white/5">
@@ -68,7 +68,7 @@ const LandingFooter = () => {
               </li>
               <li className="flex items-center gap-3 text-white/70 text-sm">
                 <Mail size={16} className="text-white/60" />
-                contato@systemjuros.com.br
+                contato@credmaisapp.com.br
               </li>
               <li className="flex items-center gap-3 text-white/70 text-sm">
                 <MapPin size={16} className="text-white/60" />

@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: "Posso usar no celular?",
-    a: "Sim! O System Juros é um PWA — instale como app no Android/iPhone diretamente do navegador, sem precisar baixar da loja.",
+    a: "Sim! O CredMais App é um PWA — instale como app no Android/iPhone diretamente do navegador, sem precisar baixar da loja.",
   },
 ];
 
@@ -135,7 +135,7 @@ const Planos = () => {
       </section>
 
       <footer className="py-10 text-center text-white/30 text-xs tracking-wider">
-        © 2025 SYSTEM JUROS · TODOS OS DIREITOS RESERVADOS
+        © 2025 CREDMAIS APP · TODOS OS DIREITOS RESERVADOS
       </footer>
     </div>
   );
