@@ -7,3 +7,9 @@ verify_jwt = false
 
 [functions.mercadopago-process-payment]
 verify_jwt = false
+
+[functions.mercadopago-check-status]
+verify_jwt = false
+
+[functions.mercadopago-webhook]
+verify_jwt = false

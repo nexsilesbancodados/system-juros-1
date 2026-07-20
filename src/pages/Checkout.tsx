@@ -148,12 +148,14 @@ export default function Checkout() {
                 return;
               }
 
+              const paymentId = (data as any)?.id;
+              const qs = paymentId ? `?id=${paymentId}&email=${encodeURIComponent(email)}` : "";
               if (status === "approved") {
-                navigate("/checkout/sucesso");
+                navigate(`/checkout/sucesso${qs}`);
               } else if (status === "in_process" || status === "pending") {
-                navigate("/checkout/pendente");
+                navigate(`/checkout/pendente${qs}`);
               } else {
-                navigate("/checkout/erro");
+                navigate(`/checkout/erro${qs}`);
               }
             } catch (err: any) {
               console.error(err);
