@@ -1276,6 +1276,7 @@ export type Database = {
           id: string
           login_subtitle: string | null
           login_title: string | null
+          mercadopago_checkout_url: string | null
           modules_enabled: Json
           n8n_webhook_url: string | null
           portal_contact_email: string | null
@@ -1338,6 +1339,7 @@ export type Database = {
           id?: string
           login_subtitle?: string | null
           login_title?: string | null
+          mercadopago_checkout_url?: string | null
           modules_enabled?: Json
           n8n_webhook_url?: string | null
           portal_contact_email?: string | null
@@ -1400,6 +1402,7 @@ export type Database = {
           id?: string
           login_subtitle?: string | null
           login_title?: string | null
+          mercadopago_checkout_url?: string | null
           modules_enabled?: Json
           n8n_webhook_url?: string | null
           portal_contact_email?: string | null
@@ -1465,7 +1468,9 @@ export type Database = {
           hubla_order_id: string | null
           hubla_subscription_id: string | null
           id: string
+          mercadopago_payment_id: string | null
           plan_name: string | null
+          provider: string | null
           status: string
           updated_at: string | null
           user_id: string | null
@@ -1478,7 +1483,9 @@ export type Database = {
           hubla_order_id?: string | null
           hubla_subscription_id?: string | null
           id?: string
+          mercadopago_payment_id?: string | null
           plan_name?: string | null
+          provider?: string | null
           status?: string
           updated_at?: string | null
           user_id?: string | null
@@ -1491,7 +1498,9 @@ export type Database = {
           hubla_order_id?: string | null
           hubla_subscription_id?: string | null
           id?: string
+          mercadopago_payment_id?: string | null
           plan_name?: string | null
+          provider?: string | null
           status?: string
           updated_at?: string | null
           user_id?: string | null
