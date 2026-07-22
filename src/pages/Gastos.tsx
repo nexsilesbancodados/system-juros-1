@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchAll } from "@/lib/fetchAll";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { friendlyError } from "@/lib/friendlyError";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
@@ -88,12 +89,12 @@ const Gastos = () => {
     if (editingId) {
       const { error } = await supabase.from("expenses").update(payload).eq("id", editingId);
       setSaving(false);
-      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (error) toast({ ...friendlyError(error), variant: "destructive" });
       else { toast({ title: "✓ Gasto atualizado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["gastos-data"] }); }
     } else {
       const { error } = await supabase.from("expenses").insert({ ...payload, user_id: user.id });
       setSaving(false);
-      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (error) toast({ ...friendlyError(error), variant: "destructive" });
       else { toast({ title: "✓ Gasto registrado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["gastos-data"] }); }
     }
   };

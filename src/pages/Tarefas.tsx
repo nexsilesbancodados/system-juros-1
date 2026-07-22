@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { friendlyError } from "@/lib/friendlyError";
 
 const Tarefas = () => {
   const confirm = useConfirm();
@@ -36,7 +37,7 @@ const Tarefas = () => {
     if (!user || !newTask.trim()) return;
     const { error } = await supabase.from("todos").insert({ user_id: user.id, task: newTask.trim() });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error), variant: "destructive" });
     } else {
       setNewTask("");
       fetchTodos();

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { friendlyError } from "@/lib/friendlyError";
 
 const Metas = () => {
   const confirm = useConfirm();
@@ -45,7 +46,7 @@ const Metas = () => {
       user_id: user.id, description: desc.trim(), target_amount: parseFloat(target), frequency,
     });
     setSaving(false);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error), variant: "destructive" });
     else { toast({ title: "✓ Meta criada!" }); setDesc(""); setTarget(""); setFrequency("Mensal"); setShowForm(false); fetchGoals(); }
   };
 
