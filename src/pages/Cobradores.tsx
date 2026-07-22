@@ -20,6 +20,7 @@ import {
 import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Cobradores = () => {
   const { user } = useAuth();
