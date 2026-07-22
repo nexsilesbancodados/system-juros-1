@@ -171,6 +171,48 @@ const ClienteDetalhe = () => {
     return { totalCapital, lifetimeCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst, ltvPct, ticketMedio, latePayRate, nextDueInst, activeContracts };
   }, [contracts, installments, profits]);
 
+  // ===== Documentos & Anexos (Storage) =====
+  const docsFolder = id ? `client-docs/${id}` : "";
+  const { data: clientDocs = [] } = useQuery({
+    queryKey: ["client-docs", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage.from("uploads").list(docsFolder, {
+        limit: 100, sortBy: { column: "created_at", order: "desc" },
+      });
+      if (error) return [];
+      return (data || []).filter((f: any) => f.name && !f.name.startsWith("."));
+    },
+  });
+  const [docUploading, setDocUploading] = useState(false);
+  const uploadDoc = async (file: File) => {
+    if (!file || !id) return;
+    setDocUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${docsFolder}/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
+      const { error } = await supabase.storage.from("uploads").upload(path, file, {
+        upsert: false, contentType: file.type,
+      });
+      if (error) throw error;
+      toast({ title: "Documento anexado" });
+      inv("client-docs");
+    } catch (e: any) {
+      toast({ title: "Falha ao anexar", description: e.message, variant: "destructive" });
+    } finally { setDocUploading(false); }
+  };
+  const deleteDoc = async (name: string) => {
+    if (!confirm("Remover este documento?")) return;
+    const { error } = await supabase.storage.from("uploads").remove([`${docsFolder}/${name}`]);
+    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    toast({ title: "Documento removido" });
+    inv("client-docs");
+  };
+  const signedUrl = async (name: string) => {
+    const { data } = await supabase.storage.from("uploads").createSignedUrl(`${docsFolder}/${name}`, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
 
   const groupedInstallments = useMemo(() => {
     const groups: Record<string, any[]> = {};
