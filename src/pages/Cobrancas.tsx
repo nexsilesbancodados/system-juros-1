@@ -99,6 +99,10 @@ const Cobrancas = () => {
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
+  const [simpleMode, setSimpleMode] = useState<boolean>(() => {
+    try { const v = localStorage.getItem("cobrancas_simple_mode"); return v === null ? true : v === "1"; } catch { return true; }
+  });
+  useEffect(() => { try { localStorage.setItem("cobrancas_simple_mode", simpleMode ? "1" : "0"); } catch {} }, [simpleMode]);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("collapsed");
@@ -696,49 +700,58 @@ const Cobrancas = () => {
 
   return (
     <div className="space-y-5 pb-24">
-      {/* Premium hero */}
+      {/* Hero enxuto */}
       <div className="page-hero animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)] shrink-0">
-              <Receipt size={22} className="text-primary" />
+            <div className="w-11 h-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+              <Receipt size={20} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Cobranças</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
+              <h1 className="text-display text-2xl md:text-3xl font-bold text-foreground tracking-tight">Cobranças</h1>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {simpleMode ? "Modo simples — só o essencial" : "Modo avançado — todas as ferramentas"}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
-                focoDia
-                  ? "bg-destructive/15 border-destructive/40 text-destructive"
-                  : "bg-card border-border text-foreground hover:bg-accent"
+              onClick={() => setSimpleMode(v => !v)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold transition-colors focus-ring ${
+                simpleMode ? "bg-primary/10 border-primary/30 text-primary" : "bg-card border-border text-muted-foreground hover:text-foreground"
               }`}
-              title="Mostra apenas atrasadas + vencendo hoje"
+              title={simpleMode ? "Mostrar mais opções" : "Voltar ao modo simples"}
             >
-              <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
-              {focoDia ? "Foco do dia ativo" : "Foco do dia"}
-              {(stats.overdue + dueTodayStats.count) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-background/40">{stats.overdue + dueTodayStats.count}</span>
-              )}
-            </button>
-            <button
-              onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
-              title="Selecionar uma data e ver tudo a cobrar até ela"
-            >
-              <CalendarIcon size={14} className="text-primary" /> Cobrar até…
+              <SlidersHorizontal size={13} /> {simpleMode ? "Ver tudo" : "Modo simples"}
             </button>
             {stats.overdue > 0 && selected.size === 0 && (
               <button onClick={() => handleBulk("whatsapp")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
                 <MessageSquare size={14} /> Cobrar atrasadas ({stats.overdue})
               </button>
             )}
+            {!simpleMode && (
+              <>
+                <button
+                  onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
+                    focoDia ? "bg-destructive/15 border-destructive/40 text-destructive" : "bg-card border-border text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
+                  {focoDia ? "Foco do dia ativo" : "Foco do dia"}
+                </button>
+                <button
+                  onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
+                >
+                  <CalendarIcon size={14} className="text-primary" /> Cobrar até…
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
 
       {/* Tabs: Parcelas & Cobranças  |  Inadimplência (por cliente) */}
       <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border w-fit">
@@ -770,12 +783,12 @@ const Cobrancas = () => {
         <InadimplenciaPanel />
       ) : (
         <>
-      {/* Métricas de cobranças automáticas */}
-      <CollectionMetrics />
+      {/* Métricas de cobranças automáticas — só no modo avançado */}
+      {!simpleMode && <CollectionMetrics />}
 
 
-      {/* Reminder schedule card */}
-      {reminderSettings && (
+      {/* Reminder schedule card — só no modo avançado */}
+      {!simpleMode && reminderSettings && (
         <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${reminderSettings.bot_auto_send ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
@@ -816,34 +829,38 @@ const Cobrancas = () => {
 
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
+      <div className={`grid grid-cols-2 ${simpleMode ? "" : "sm:grid-cols-4"} gap-3 stagger-fade-in`}>
 
-        {[
-          { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
-          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
-          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
-          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
-        ].map((s: any) => (
-          <button
-            key={s.label}
-            onClick={s.onClick}
-            className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
-              filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
-                <s.icon size={14} className={s.color} />
+        {(() => {
+          const all = [
+            { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
+            { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
+            { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
+            { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
+          ];
+          return (simpleMode ? all.slice(0, 2) : all).map((s: any) => (
+            <button
+              key={s.label}
+              onClick={s.onClick}
+              className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
+                filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
+                  <s.icon size={14} className={s.color} />
+                </div>
               </div>
-            </div>
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
-            {s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
-          </button>
-        ))}
+              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
+              {s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
+            </button>
+          ));
+        })()}
       </div>
 
-      {/* Bucket de atraso */}
+      {/* Bucket de atraso — só no modo avançado */}
+      {!simpleMode && (
       <div className="flex items-center gap-2 flex-wrap animate-fade-in">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Atraso</span>
         {([
@@ -866,8 +883,10 @@ const Cobrancas = () => {
           </button>
         ))}
       </div>
+      )}
 
-      {/* View switcher */}
+      {/* View switcher — só no modo avançado */}
+      {!simpleMode && (
       <div className="flex items-center gap-2 animate-fade-in">
 
         <div className="pill-tabs">
@@ -903,6 +922,7 @@ const Cobrancas = () => {
           </div>
         )}
       </div>
+      )}
 
 
       {/* Search + Filters + select all */}
@@ -930,6 +950,7 @@ const Cobrancas = () => {
             </div>
           </div>
 
+          {!simpleMode && (
           <button
             onClick={() => setShowFilters(v => !v)}
             className={`relative shrink-0 px-3.5 py-2.5 rounded-2xl border transition-all ${activeFilters > 0 ? "border-primary/40 bg-primary/5 text-primary" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
@@ -940,6 +961,8 @@ const Cobrancas = () => {
               <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold rounded-full bg-primary text-primary-foreground flex items-center justify-center">{activeFilters}</span>
             )}
           </button>
+          )}
+
 
           <div className="pill-tabs">
             {([
@@ -975,6 +998,7 @@ const Cobrancas = () => {
           </div>
 
 
+          {!simpleMode && (
           <button
             onClick={toggleSelectAll}
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors focus-ring"
@@ -983,6 +1007,7 @@ const Cobrancas = () => {
             {selected.size > 0 ? <CheckSquare size={14} className="text-primary" /> : <Square size={14} />}
             <span className="hidden sm:inline">{selected.size > 0 ? `${selected.size}` : "Selecionar"}</span>
           </button>
+          )}
         </div>
 
         {showFilters && (
