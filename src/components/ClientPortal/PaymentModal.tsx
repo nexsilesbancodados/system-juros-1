@@ -29,6 +29,8 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(installment?.receipt_url || null);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   const isOverdue = installment?.status === "overdue" ||
