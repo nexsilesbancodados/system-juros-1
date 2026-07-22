@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Landmark, Wallet, TrendingUp, CheckCircle2, Clock, Shield, HelpCircle,
-  Copy, Calendar, ArrowRight,
+  Copy, Calendar, ArrowRight, Download,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { generateInvestorStatementPdf } from "@/utils/investorPdf";
 
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtDate = (d?: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "-");
