@@ -628,7 +628,7 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
         aiResp = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 1800, temperature: 0.4, top_p: 0.9, system: systemPrompt, messages: anthMessages }),
+          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 2200, temperature: 0.25, top_p: 0.85, system: systemPrompt, messages: anthMessages }),
         });
         if (aiResp.ok) break;
         aiErrBody = await aiResp.text();
