@@ -2196,6 +2196,10 @@ export type Database = {
       }
     }
     Functions: {
+      delete_client_cascade: {
+        Args: { _client_id: string }
+        Returns: undefined
+      }
       get_or_create_dm_thread: {
         Args: { _other_user: string }
         Returns: string
