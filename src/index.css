@@ -140,6 +140,19 @@
     --warning-foreground: 222 30% 5%;
     --info: 199 89% 60%;
     --info-foreground: 0 0% 100%;
+
+    /* Vivid action tokens (Fase 1 UX) — dark */
+    --primary-vivid: 224 96% 66%;
+    --success-vivid: 152 76% 50%;
+    --warning-vivid: 32 96% 60%;
+    --destructive-vivid: 0 88% 65%;
+    --gradient-action: linear-gradient(135deg, hsl(224 96% 62%), hsl(217 91% 72%));
+    --gradient-success: linear-gradient(135deg, hsl(152 76% 44%), hsl(160 72% 54%));
+    --gradient-warning: linear-gradient(135deg, hsl(32 96% 58%), hsl(24 94% 64%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 88% 62%), hsl(348 84% 66%));
+    --shadow-action: 0 12px 28px -8px hsl(224 96% 62% / 0.55), 0 2px 6px hsl(224 96% 62% / 0.25);
+    --shadow-action-success: 0 12px 28px -8px hsl(152 76% 50% / 0.5);
+    --shadow-action-danger: 0 12px 28px -8px hsl(0 88% 62% / 0.5);
   }
 }
 
