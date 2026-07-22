@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
+import { computeLateFeeBreakdown } from "@/lib/lateFee";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 const relTime = (iso: string) => {
