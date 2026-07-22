@@ -1221,8 +1221,11 @@ const Cobrancas = () => {
                                 </div>
                                 {agg.overdueCount > 0 ? (
                                   <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1.5">
-                                    <p className="text-[9px] uppercase tracking-wide text-destructive/80">{agg.overdueCount} atrasada{agg.overdueCount === 1 ? "" : "s"}</p>
-                                    <p className="text-xs font-bold text-destructive tabular-nums">+R$ {fmt(agg.overdueFees)} multa</p>
+                                    <p className="text-[9px] uppercase tracking-wide text-destructive/80">{agg.overdueCount} atrasada{agg.overdueCount === 1 ? "" : "s"} · a receber</p>
+                                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                                      <p className="text-xs font-bold text-foreground tabular-nums">R$ {fmt(agg.overdueAmount)}</p>
+                                      <p className="text-[10px] font-semibold text-destructive tabular-nums">c/ multa R$ {fmt(agg.overdueAmount + agg.overdueFees)}</p>
+                                    </div>
                                   </div>
                                 ) : (
                                   <div className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5">
@@ -1230,6 +1233,7 @@ const Cobrancas = () => {
                                     <p className="text-xs font-bold text-success tabular-nums">Em dia</p>
                                   </div>
                                 )}
+
                               </div>
                             );
                           })()}
