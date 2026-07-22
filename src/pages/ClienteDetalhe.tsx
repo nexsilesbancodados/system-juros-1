@@ -987,314 +987,92 @@ const ClienteDetalhe = () => {
       {/* ===== MODALS ===== */}
 
       {editMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditMode(false)}>
-          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Editar Cliente</h2>
-              <button onClick={() => setEditMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            {[{ k: "name", l: "Nome", t: "text" }, { k: "phone", l: "Telefone", t: "tel" }, { k: "whatsapp", l: "WhatsApp", t: "tel" }, { k: "email", l: "E-mail", t: "email" }, { k: "cpf_cnpj", l: "CPF/CNPJ", t: "text" }].map(f => (
-              <div key={f.k}>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">{f.l}</label>
-                <input type={f.t} value={editData[f.k] || ""} onChange={e => setEditData({ ...editData, [f.k]: e.target.value })} className={INPUT} />
-              </div>
-            ))}
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={saveEdit} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
-            </div>
-          </div>
-        </div>
+        <EditClienteModal
+          editData={editData}
+          setEditData={setEditData}
+          onClose={() => setEditMode(false)}
+          onSave={saveEdit}
+        />
       )}
 
       {editAddressMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditAddressMode(false)}>
-          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Editar Endereço</h2>
-              <button onClick={() => setEditAddressMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
-                <input type="text" placeholder="00000-000" value={addrData.cep || ""} onChange={e => setAddrData({ ...addrData, cep: e.target.value })} className={INPUT} />
-              </div>
-              <button onClick={buscarCep} className="self-end px-3 py-2.5 rounded-lg bg-accent border border-border text-foreground hover:bg-accent/70 transition-colors"><Search size={16} /></button>
-            </div>
-            {[{ k: "street", l: "Rua" }, { k: "number", l: "Número" }, { k: "neighborhood", l: "Bairro" }, { k: "city", l: "Cidade" }, { k: "state", l: "Estado" }].map(f => (
-              <div key={f.k}>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">{f.l}</label>
-                <input type="text" value={addrData[f.k] || ""} onChange={e => setAddrData({ ...addrData, [f.k]: e.target.value })} className={INPUT} />
-              </div>
-            ))}
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditAddressMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={saveAddress} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>Salvar</button>
-            </div>
-          </div>
-        </div>
+        <EditAddressModal
+          addrData={addrData}
+          setAddrData={setAddrData}
+          onClose={() => setEditAddressMode(false)}
+          onSave={saveAddress}
+          onBuscarCep={buscarCep}
+        />
       )}
 
       {newLoanMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setNewLoanMode(false)}>
-          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Novo Empréstimo</h2>
-              <button onClick={() => setNewLoanMode(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <p className="text-xs text-muted-foreground">Para: <strong className="text-foreground">{client.name}</strong></p>
-
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de Empréstimo</label>
-              <div className="grid grid-cols-2 gap-2">
-                {LOAN_MODES.map(m => (
-                  <button key={m.v} type="button" onClick={() => setLoanMode(m.v)}
-                    className={`flex items-start gap-2 p-2.5 rounded-xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
-                    <m.Icon size={16} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
-                    <div className="min-w-0">
-                      <p className={`text-[11px] font-semibold leading-tight ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{m.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {loanMode === "grace" && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Períodos de carência (sem pagar)</label>
-                <input type="number" value={loanGracePeriods} onChange={e => setLoanGracePeriods(e.target.value)} placeholder="2" className={INPUT} min={1} />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
-                <input type="number" value={loanCapital} onChange={e => setLoanCapital(e.target.value)} placeholder="1000" className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  {loanMode === "bullet" ? "Nº Períodos até vencer" : "Nº Parcelas"}
-                </label>
-                <input type="number" value={loanInstallments} onChange={e => setLoanInstallments(e.target.value)} placeholder={loanMode === "bullet" ? "3" : "12"} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa (%)</label>
-                <input type="number" step="0.1" value={loanInterestRate} onChange={e => setLoanInterestRate(e.target.value)} className={INPUT} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Frequência</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {Object.entries(FREQ).map(([v, l]) => (
-                    <button key={v} onClick={() => setLoanFreq(v)}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${loanFreq === v ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-accent"}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Início</label>
-                <input type="date" value={loanStartDate} onChange={e => setLoanStartDate(e.target.value)} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
-                <input type="date" value={loanStart} onChange={e => setLoanStart(e.target.value)} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
-                <input type="number" step="0.01" value={loanDailyFee} onChange={e => setLoanDailyFee(e.target.value)} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
-                <input type="number" step="0.1" value={loanLateFee} onChange={e => setLoanLateFee(e.target.value)} className={INPUT} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
-                <div className="flex gap-2 items-start">
-                  <textarea value={loanNotes} onChange={e => setLoanNotes(e.target.value)} className={INPUT + " min-h-[60px] flex-1"} placeholder="Opcional (ou dite pelo microfone)" />
-                  <VoiceRecorder onTranscribed={(t) => setLoanNotes(n => (n ? n + " " : "") + t)} title="Ditar observação" />
-                </div>
-              </div>
-            </div>
-            {loanCalc && (
-              <div className="space-y-2">
-                <div className="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-3 text-sm">
-                  <div><p className="text-[10px] text-muted-foreground">Juros</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.totalInterest)}</p></div>
-                  <div><p className="text-[10px] text-muted-foreground">Total</p><p className="font-semibold text-foreground">R$ {fmt(loanCalc.total)}</p></div>
-                  <div><p className="text-[10px] text-muted-foreground">{loanMode === "bullet" ? "Pagamento" : "Parcela"}</p><p className="font-semibold text-primary">R$ {fmt(loanCalc.installmentAmount)}</p></div>
-                </div>
-                {loanCalc.schedule.length > 1 && loanCalc.schedule.some(v => v !== loanCalc.schedule[0]) && (
-                  <div className="max-h-32 overflow-y-auto rounded-lg border border-border p-2 text-[11px] space-y-0.5">
-                    {loanCalc.schedule.map((v, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span className="text-muted-foreground">#{i + 1}</span>
-                        <span className="font-medium text-foreground">R$ {fmt(v)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setNewLoanMode(false)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={handleCreateLoan} disabled={loanLoading || !loanCalc}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-                {loanLoading ? "Criando..." : "Criar Empréstimo"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <NovoEmprestimoModal
+          clientName={client.name}
+          loanMode={loanMode}
+          setLoanMode={setLoanMode}
+          loanGracePeriods={loanGracePeriods}
+          setLoanGracePeriods={setLoanGracePeriods}
+          loanCapital={loanCapital}
+          setLoanCapital={setLoanCapital}
+          loanInstallments={loanInstallments}
+          setLoanInstallments={setLoanInstallments}
+          loanInterestRate={loanInterestRate}
+          setLoanInterestRate={setLoanInterestRate}
+          loanFreq={loanFreq}
+          setLoanFreq={setLoanFreq}
+          loanStartDate={loanStartDate}
+          setLoanStartDate={setLoanStartDate}
+          loanStart={loanStart}
+          setLoanStart={setLoanStart}
+          loanDailyFee={loanDailyFee}
+          setLoanDailyFee={setLoanDailyFee}
+          loanLateFee={loanLateFee}
+          setLoanLateFee={setLoanLateFee}
+          loanNotes={loanNotes}
+          setLoanNotes={setLoanNotes}
+          loanCalc={loanCalc}
+          loanLoading={loanLoading}
+          onClose={() => setNewLoanMode(false)}
+          onSubmit={handleCreateLoan}
+        />
       )}
 
       {editContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditContract(null)}>
-          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Editar Empréstimo</h2>
-              <button onClick={() => setEditContract(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Capital (R$)</label>
-                <input type="number" step="0.01" value={editContractForm.capital} onChange={e => setEditContractForm({ ...editContractForm, capital: e.target.value })} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Taxa (%)</label>
-                <input type="number" step="0.1" value={editContractForm.interest_rate} onChange={e => setEditContractForm({ ...editContractForm, interest_rate: e.target.value })} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Parcelas</label>
-                <input type="number" value={editContractForm.num_installments} onChange={e => setEditContractForm({ ...editContractForm, num_installments: e.target.value })} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor parcela (R$)</label>
-                <input type="number" step="0.01" value={editContractForm.installment_amount} onChange={e => setEditContractForm({ ...editContractForm, installment_amount: e.target.value })} className={INPUT} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Frequência</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {Object.entries(FREQ).map(([v, l]) => (
-                    <button key={v} type="button" onClick={() => setEditContractForm({ ...editContractForm, frequency: v })}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${editContractForm.frequency === v ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-accent"}`}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">1º Vencimento</label>
-                <input type="date" value={editContractForm.start_date} onChange={e => setEditContractForm({ ...editContractForm, start_date: e.target.value })} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Diária (%)</label>
-                <input type="number" step="0.01" value={editContractForm.daily_interest_percent} onChange={e => setEditContractForm({ ...editContractForm, daily_interest_percent: e.target.value })} className={INPUT} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Multa Mensal (%)</label>
-                <input type="number" step="0.1" value={editContractForm.late_fee_percent} onChange={e => setEditContractForm({ ...editContractForm, late_fee_percent: e.target.value })} className={INPUT} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
-                <textarea value={editContractForm.notes} onChange={e => setEditContractForm({ ...editContractForm, notes: e.target.value })} className={INPUT + " min-h-[60px]"} />
-              </div>
-            </div>
-            <label className="flex items-start gap-2 p-3 rounded-xl border border-border bg-muted/20 cursor-pointer">
-              <input type="checkbox" checked={editContractRegen} onChange={e => setEditContractRegen(e.target.checked)} className="mt-0.5" />
-              <span className="text-xs text-foreground">
-                <strong>Regenerar parcelas pendentes</strong>
-                <span className="block text-muted-foreground mt-0.5">Mantém as parcelas já pagas e recria as restantes com os novos valores e datas.</span>
-              </span>
-            </label>
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditContract(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={handleSaveContract} disabled={editContractSaving}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-                {editContractSaving ? "Salvando..." : "Salvar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditContratoModal
+          form={editContractForm}
+          setForm={setEditContractForm}
+          regen={editContractRegen}
+          setRegen={setEditContractRegen}
+          saving={editContractSaving}
+          onClose={() => setEditContract(null)}
+          onSave={handleSaveContract}
+        />
       )}
 
       {editInst && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditInst(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Editar Parcela #{editInst.installment_number}</h2>
-              <button onClick={() => setEditInst(null)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor (R$)</label>
-              <input type="number" step="0.01" value={editInstForm.amount} onChange={e => setEditInstForm({ ...editInstForm, amount: e.target.value })} className={INPUT} autoFocus />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Vencimento</label>
-              <input type="date" value={editInstForm.due_date} onChange={e => setEditInstForm({ ...editInstForm, due_date: e.target.value })} className={INPUT} />
-            </div>
-            {editInst.status === "paid" && (
-              <p className="text-[11px] text-amber-500">Atenção: esta parcela já está paga. A alteração não estorna o pagamento.</p>
-            )}
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setEditInst(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={handleSaveInst} disabled={editInstSaving}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-                {editInstSaving ? "Salvando..." : "Salvar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditParcelaModal
+          inst={editInst}
+          form={editInstForm}
+          setForm={setEditInstForm}
+          saving={editInstSaving}
+          onClose={() => setEditInst(null)}
+          onSave={handleSaveInst}
+        />
       )}
 
-
       {partialPayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Pagamento</h2>
-              <button onClick={() => { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">Parcela #{partialPayModal.installment_number}</p>
-              <p className="text-lg font-bold text-foreground">R$ {fmt(Number(partialPayModal.amount))}</p>
-              {Number(partialPayModal.paid_amount || 0) > 0 && <p className="text-xs text-success">Já pago: R$ {fmt(Number(partialPayModal.paid_amount))}</p>}
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Valor (R$)</label>
-              <input type="number" step="0.01" value={partialAmount} onChange={e => setPartialAmount(e.target.value)} placeholder={fmt(Number(partialPayModal.amount))} className={INPUT} autoFocus />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setPartialAmount(String(partialPayModal.amount))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Total</button>
-              <button onClick={() => setPartialAmount(String(Number(partialPayModal.amount) / 2))} className="flex-1 px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent">Metade</button>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Forma de pagamento</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { v: "pix", l: "PIX" },
-                  { v: "dinheiro", l: "Dinheiro" },
-                  { v: "transferencia", l: "Transf." },
-                  { v: "outro", l: "Outro" },
-                ].map(opt => (
-                  <button key={opt.v} type="button" onClick={() => setPayMethod(opt.v)}
-                    className={`px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${payMethod === opt.v ? "bg-primary/15 border-primary text-foreground" : "border-border text-muted-foreground hover:bg-accent"}`}>
-                    {opt.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Comprovante (opcional)</label>
-              <input type="file" accept="image/*,application/pdf" onChange={e => setPayReceiptFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-muted-foreground file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-border file:bg-card file:text-xs file:font-medium file:text-foreground file:cursor-pointer" />
-              {payReceiptFile && <p className="text-[10px] text-muted-foreground mt-1 truncate">📎 {payReceiptFile.name}</p>}
-            </div>
-            <button onClick={handlePartialPay} disabled={!partialAmount || parseFloat(partialAmount) <= 0 || payUploading}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-button)" }}>
-              {payUploading ? "Enviando..." : "Confirmar"}
-            </button>
-          </div>
-        </div>
+        <PagamentoModal
+          inst={partialPayModal}
+          amount={partialAmount}
+          setAmount={setPartialAmount}
+          method={payMethod}
+          setMethod={setPayMethod}
+          receiptFile={payReceiptFile}
+          setReceiptFile={setPayReceiptFile}
+          uploading={payUploading}
+          onClose={() => { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); }}
+          onSubmit={handlePartialPay}
+        />
       )}
 
 
