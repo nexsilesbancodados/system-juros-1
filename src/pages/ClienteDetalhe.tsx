@@ -10,6 +10,7 @@ import NovoEmprestimoModal from "@/components/cliente-detalhe/modals/NovoEmprest
 import EditContratoModal from "@/components/cliente-detalhe/modals/EditContratoModal";
 import EditParcelaModal from "@/components/cliente-detalhe/modals/EditParcelaModal";
 import PagamentoModal from "@/components/cliente-detalhe/modals/PagamentoModal";
+import RenegociarModal, { type RenegotiationPayload } from "@/components/cliente-detalhe/modals/RenegociarModal";
 import { LOAN_MODES, fmt, FREQ, INPUT } from "@/components/cliente-detalhe/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,7 @@ const ClienteDetalhe = () => {
   const [editInst, setEditInst] = useState<any>(null);
   const [editInstForm, setEditInstForm] = useState<{ amount: string; due_date: string }>({ amount: "", due_date: "" });
   const [editInstSaving, setEditInstSaving] = useState(false);
+  const [renegotiating, setRenegotiating] = useState<any>(null);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
