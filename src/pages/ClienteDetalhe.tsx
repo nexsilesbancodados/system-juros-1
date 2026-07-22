@@ -372,6 +372,9 @@ const ClienteDetalhe = () => {
     } catch (err: any) {
       toast({ ...friendlyError(err, "Não foi possível concluir a renegociação."), variant: "destructive" });
     }
+  };
+
+
 
   const openEditContract = (c: any) => {
     setEditContract(c);
