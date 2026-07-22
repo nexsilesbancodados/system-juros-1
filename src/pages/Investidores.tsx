@@ -163,7 +163,7 @@ export default function Investidores() {
                     <li key={inv.id}>
                       <button
                         onClick={() => setSelectedId(inv.id)}
-                        onDoubleClick={() => nav(`/investidores/${inv.id}`)}
+                        onDoubleClick={() => setExpandedId(inv.id)}
                         className={`w-full rounded-xl border p-3 text-left transition ${
                           active ? "border-primary bg-primary/10" : "border-white/5 hover:bg-white/5"
                         }`}
@@ -206,7 +206,7 @@ export default function Investidores() {
                     {selected.email && <p className="text-xs text-muted-foreground">{selected.email}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => nav(`/investidores/${selected.id}`)} className="gap-1.5">
+                    <Button size="sm" onClick={() => setExpandedId(selected.id)} className="gap-1.5">
                       <ExternalLink className="h-3.5 w-3.5" /> Abrir perfil
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => copyPortal(selected.access_token)} className="gap-1.5">
