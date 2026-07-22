@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import InstallmentRow from "@/components/cobrancas/InstallmentRow";
+import PayModal from "@/components/cobrancas/PayModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import InadimplenciaPanel from "@/components/cobrancas/InadimplenciaPanel";
 import {
