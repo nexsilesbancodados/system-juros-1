@@ -124,7 +124,13 @@ serve(async (req) => {
         });
       }
       const payment = await res.json();
-      email = payment?.payer?.email;
+      // Prefer the email the customer typed in checkout (metadata) over payer.email,
+      // which MP may return as a masked/test address that fails validation.
+      const metaEmail = payment?.metadata?.email;
+      const payerEmail = payment?.payer?.email;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      email = [metaEmail, payerEmail].find((e) => typeof e === "string" && emailRegex.test(e));
+      console.log(`MP payment emails -> metadata:${metaEmail ?? "-"} payer:${payerEmail ?? "-"} chosen:${email ?? "-"}`);
       subscriptionStatus = statusFromMP(payment?.status, payment?.status_detail);
       amountPaid = Number(payment?.transaction_amount ?? 0);
       planName = payment?.description ?? payment?.additional_info?.items?.[0]?.title;
