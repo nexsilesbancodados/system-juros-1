@@ -15,6 +15,7 @@ import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { friendlyError } from "@/lib/friendlyError";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
