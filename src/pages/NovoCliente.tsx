@@ -15,6 +15,7 @@ import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 import { getSignedUploadUrl } from "@/lib/storage";
 import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
+import InvestorAllocationSelect from "@/components/InvestorAllocationSelect";
 
 
 
@@ -159,6 +160,7 @@ const NovoCliente = () => {
   const [guarantorCpf, setGuarantorCpf] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
   const [attachments, setAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [investorLoanId, setInvestorLoanId] = useState<string | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [requireSignature, setRequireSignature] = useState(false);
 
@@ -554,6 +556,7 @@ const NovoCliente = () => {
         guarantor_cpf: guarantorCpf.replace(/\D/g, "") || null,
         guarantor_phone: guarantorPhone.replace(/\D/g, "") || null,
         attachments: attachments,
+        investor_loan_id: investorLoanId,
         signature_status: requireSignature ? "pending" : "not_required",
         signature_token: requireSignature ? crypto.randomUUID() : null,
       } as any).select().single();
@@ -1498,6 +1501,10 @@ const NovoCliente = () => {
                   </div>
                 </button>
               </div>
+
+              {/* Alocação de capital (opcional) */}
+              <InvestorAllocationSelect value={investorLoanId} onChange={setInvestorLoanId} />
+
 
               {/* Garantia / Aval */}
               <div className="space-y-3 pt-3 border-t border-border">

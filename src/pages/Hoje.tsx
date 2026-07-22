@@ -11,6 +11,7 @@ import {
   UserPlus, FileText, Wallet, Cake, CalendarDays, Flame, History, DollarSign
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
+import AtivoPassivoCard from "@/components/dashboard/AtivoPassivoCard";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import { fetchAll } from "@/lib/fetchAll";
 
@@ -317,6 +318,10 @@ const Hoje = () => {
           </div>
         ))}
       </div>
+
+      {/* Balanço Ativo × Passivo (aparece se houver investidores) */}
+      <AtivoPassivoCard />
+
 
       {/* Primeiro nível: Cobranças + painel lateral */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
