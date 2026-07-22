@@ -98,6 +98,7 @@ const Chat = () => {
   const recordTimer = useRef<number | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const presenceChannel = useRef<any>(null);
@@ -262,7 +263,8 @@ const Chat = () => {
         }, 3000);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    msgChannelRef.current = ch;
+    return () => { msgChannelRef.current = null; supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, memberships]);
 
@@ -437,9 +439,15 @@ const Chat = () => {
     setRecordSec(0);
   };
 
+  const lastTypingSentRef = useRef<number>(0);
   const broadcastTyping = () => {
     if (!user || !profile || !scope) return;
-    const ch = supabase.channel(`chat-msgs-${scope.id}`);
+    const ch = msgChannelRef.current;
+    if (!ch) return;
+    // Throttle: 1 broadcast per 1.5s
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
     ch.send({ type: "broadcast", event: "typing", payload: { user_id: user.id, user_name: profile.name } });
   };
 
