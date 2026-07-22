@@ -164,11 +164,12 @@ const App = () => (
                     <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
-                    <Route path="/comunicacao" element={<ErrorBoundary><Comunicacao /></ErrorBoundary>} />
+                    <Route path="/comunicacao" element={<ErrorBoundary><CentralBot /></ErrorBoundary>} />
+                    <Route path="/central" element={<Navigate to="/comunicacao" replace />} />
                     <Route path="/comunicacao/inbox" element={<ErrorBoundary><WhatsAppInbox /></ErrorBoundary>} />
                     <Route path="/agente-ia" element={<Navigate to="/comunicacao?tab=agente" replace />} />
-                    <Route path="/bot-performance" element={<ErrorBoundary><BotPerformance /></ErrorBoundary>} />
-                    <Route path="/automacoes" element={<Navigate to="/configuracoes?tab=bot" replace />} />
+                    <Route path="/bot-performance" element={<Navigate to="/comunicacao?tab=performance" replace />} />
+                    <Route path="/automacoes" element={<Navigate to="/comunicacao?tab=automacoes" replace />} />
                     <Route path="/configuracoes/whatsapp" element={<Navigate to="/comunicacao?tab=whatsapp" replace />} />
                     <Route path="/auditoria" element={<ErrorBoundary><Auditoria /></ErrorBoundary>} />
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
