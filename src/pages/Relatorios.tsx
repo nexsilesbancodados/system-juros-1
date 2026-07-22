@@ -101,7 +101,8 @@ const Relatorios = () => {
       .channel("realtime-relatorios")
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "profits", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${user.id}` }, () => fetchReport())
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "installments", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contract_installments", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contracts", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
