@@ -265,7 +265,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         fixed left-0 top-0 h-screen flex flex-col z-50
         transition-[width] duration-300 ease-out
         border-r border-border/10 shadow-2xl shadow-black/40
-        ${collapsed ? "w-[68px]" : "w-[232px]"}
+        ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
       style={{
         background: sidebarBg || "hsl(var(--card) / 0.45)",
