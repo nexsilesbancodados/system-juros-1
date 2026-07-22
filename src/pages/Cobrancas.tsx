@@ -700,49 +700,58 @@ const Cobrancas = () => {
 
   return (
     <div className="space-y-5 pb-24">
-      {/* Premium hero */}
+      {/* Hero enxuto */}
       <div className="page-hero animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.2)] shrink-0">
-              <Receipt size={22} className="text-primary" />
+            <div className="w-11 h-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+              <Receipt size={20} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-display text-3xl md:text-4xl font-bold text-foreground tracking-tight">Cobranças</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Gerencie parcelas e envie cobranças via WhatsApp.</p>
+              <h1 className="text-display text-2xl md:text-3xl font-bold text-foreground tracking-tight">Cobranças</h1>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {simpleMode ? "Modo simples — só o essencial" : "Modo avançado — todas as ferramentas"}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
-                focoDia
-                  ? "bg-destructive/15 border-destructive/40 text-destructive"
-                  : "bg-card border-border text-foreground hover:bg-accent"
+              onClick={() => setSimpleMode(v => !v)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold transition-colors focus-ring ${
+                simpleMode ? "bg-primary/10 border-primary/30 text-primary" : "bg-card border-border text-muted-foreground hover:text-foreground"
               }`}
-              title="Mostra apenas atrasadas + vencendo hoje"
+              title={simpleMode ? "Mostrar mais opções" : "Voltar ao modo simples"}
             >
-              <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
-              {focoDia ? "Foco do dia ativo" : "Foco do dia"}
-              {(stats.overdue + dueTodayStats.count) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-background/40">{stats.overdue + dueTodayStats.count}</span>
-              )}
-            </button>
-            <button
-              onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
-              title="Selecionar uma data e ver tudo a cobrar até ela"
-            >
-              <CalendarIcon size={14} className="text-primary" /> Cobrar até…
+              <SlidersHorizontal size={13} /> {simpleMode ? "Ver tudo" : "Modo simples"}
             </button>
             {stats.overdue > 0 && selected.size === 0 && (
               <button onClick={() => handleBulk("whatsapp")} className="btn-premium" style={{ background: "linear-gradient(135deg, hsl(var(--success)), hsl(152 65% 55%))" }}>
                 <MessageSquare size={14} /> Cobrar atrasadas ({stats.overdue})
               </button>
             )}
+            {!simpleMode && (
+              <>
+                <button
+                  onClick={() => { setFocoDia(v => !v); setFilter("all"); setPeriod("all"); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors focus-ring ${
+                    focoDia ? "bg-destructive/15 border-destructive/40 text-destructive" : "bg-card border-border text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Flame size={14} className={focoDia ? "text-destructive" : "text-warning"} />
+                  {focoDia ? "Foco do dia ativo" : "Foco do dia"}
+                </button>
+                <button
+                  onClick={() => { setCobrarAteDate(todayISO); setCobrarAteSelected(new Set()); setCobrarAteOpen(true); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors focus-ring"
+                >
+                  <CalendarIcon size={14} className="text-primary" /> Cobrar até…
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
 
       {/* Tabs: Parcelas & Cobranças  |  Inadimplência (por cliente) */}
       <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border w-fit">
