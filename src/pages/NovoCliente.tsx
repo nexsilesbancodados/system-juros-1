@@ -555,6 +555,7 @@ const NovoCliente = () => {
         guarantor_cpf: guarantorCpf.replace(/\D/g, "") || null,
         guarantor_phone: guarantorPhone.replace(/\D/g, "") || null,
         attachments: attachments,
+        investor_loan_id: investorLoanId,
         signature_status: requireSignature ? "pending" : "not_required",
         signature_token: requireSignature ? crypto.randomUUID() : null,
       } as any).select().single();
