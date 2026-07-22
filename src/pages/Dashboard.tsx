@@ -16,6 +16,7 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
 import PeriodComparison from "@/components/dashboard/PeriodComparison";
 import NarrativeHero from "@/components/dashboard/NarrativeHero";
+import ExecutiveKPIs from "@/components/dashboard/ExecutiveKPIs";
 import BentoKPI from "@/components/dashboard/BentoKPI";
 import { formatBR } from "@/lib/dateUtils";
 import { fetchAll } from "@/lib/fetchAll";
