@@ -526,6 +526,9 @@ const Relatorios = () => {
           </div>
         </>
       )}
+
+      {/* Central de Exportação — CSVs por entidade com date range */}
+      <ExportCenter />
     </div>
   );
 };
