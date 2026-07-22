@@ -62,7 +62,7 @@ const Relatorios = () => {
       fetchAll((f, t) => supabase.from("profits").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
       fetchAll((f, t) => supabase.from("expenses").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
       fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user.id).range(f, t)),
-      fetchAll((f, t) => supabase.from("installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate).range(f, t)),
+      fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate).range(f, t)),
     ]);
 
     const totalProfit = profitData.reduce((a: number, p: any) => a + Number(p.amount), 0);

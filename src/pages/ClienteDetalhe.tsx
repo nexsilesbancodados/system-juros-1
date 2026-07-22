@@ -794,7 +794,7 @@ const ClienteDetalhe = () => {
     if (!(await confirm("Excluir este cliente e todos os dados?"))) return;
     await supabase.from("contract_installments").delete().eq("client_id", id!);
     await supabase.from("contracts").delete().eq("client_id", id!);
-    await supabase.from("installments").delete().eq("client_id", id!);
+    
     await supabase.from("transactions").delete().eq("client_id", id!);
     await supabase.from("clients").delete().eq("id", id!);
     toast({ title: "Cliente excluído!" }); navigate("/clientes");
