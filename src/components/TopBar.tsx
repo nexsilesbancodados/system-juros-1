@@ -70,7 +70,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <header className="h-14 border-b border-border/30 bg-card/60 glass-strong flex items-center justify-between px-3 lg:px-6 gap-2">
+    <header className="sticky top-0 z-40 h-16 border-b border-border/40 bg-card/70 glass-strong flex items-center justify-between px-3 lg:px-8 gap-2">
       {isMobile ? (
         <button onClick={() => navigate("/perfil")} className="flex items-center gap-2 micro-bounce min-w-0 max-w-[60%]">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shrink-0">
