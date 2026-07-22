@@ -935,13 +935,13 @@ const ClienteDetalhe = () => {
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="relative group shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-lg font-bold text-primary overflow-hidden ring-1 ring-primary/20">
-                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-primary/5 flex items-center justify-center text-2xl font-bold text-primary overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/10">
+                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
-              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100" style={{ background: "var(--gradient-button)" }}>
-                <Camera size={10} className="text-white" />
+              <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 shadow-md" style={{ background: "var(--gradient-button)" }}>
+                <Camera size={11} className="text-white" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -960,11 +960,14 @@ const ClienteDetalhe = () => {
               </label>
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-foreground truncate">{client.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground truncate tracking-tight">{client.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
                 <span className="text-xs text-muted-foreground font-mono">{client.cpf_cnpj || "Sem CPF"}</span>
-                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
-                <span className={`text-xs font-bold ${scoreClr}`}>Score: {client.credit_score || 0}</span>
+                <span className="text-muted-foreground/40">·</span>
+                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/15 text-success border-success/30 text-[10px] font-semibold" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
+                <span className={`text-xs font-bold ${scoreClr} inline-flex items-center gap-1`}>
+                  <Star size={11} className="fill-current" /> {client.credit_score || 0}
+                </span>
                 <AICreditScore clientId={id!} currentScore={client.credit_score || 0} onApplyScore={() => inv("client-detail")} />
               </div>
             </div>
@@ -1305,74 +1308,79 @@ const ClienteDetalhe = () => {
       {/* ===== CONTENT ===== */}
 
       {/* Contact */}
-      <div className="bg-card border border-border rounded-2xl p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="glass-card rounded-2xl p-5 hover-lift transition-all">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { Icon: Phone, label: "Telefone", value: client.phone },
-            { Icon: Mail, label: "E-mail", value: client.email },
-            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp },
-            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null },
+            { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20" },
+            { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20" },
+            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20" },
+            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20" },
           ].map(item => (
-            <div key={item.label} className="flex items-start gap-2">
-              <item.Icon size={14} className="text-muted-foreground mt-0.5 shrink-0" />
+            <div key={item.label} className="flex items-start gap-3">
+              <div className={`w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
+                <item.Icon size={15} />
+              </div>
               <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
-                <p className="text-xs text-foreground font-medium truncate">{item.value || "—"}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{item.label}</p>
+                <p className="text-sm text-foreground font-semibold truncate">{item.value || "—"}</p>
               </div>
             </div>
           ))}
         </div>
         {address?.street && (
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-            <MapPin size={12} className="inline mr-1" />
+          <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/40 flex items-center gap-1.5">
+            <MapPin size={12} className="text-primary" />
             {address.street}{address.number ? `, ${address.number}` : ""} - {address.neighborhood} · {address.city}/{address.state}
           </p>
         )}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border flex-wrap">
-          <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Phone size={13} /> Ligar</button>
-          <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 text-success text-xs font-medium hover:bg-success/20 transition-colors"><MessageSquare size={13} /> WhatsApp</button>
-          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Send size={13} /> Enviar Portal</button>
-          <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"><Mail size={13} /> E-mail</button>
-          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs font-medium hover:bg-accent transition-colors ml-auto"><MapPin size={13} /> Editar Endereço</button>
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 flex-wrap">
+          <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-400/20 text-xs font-semibold hover:bg-sky-500/20 hover:-translate-y-0.5 transition-all"><Phone size={13} /> Ligar</button>
+          <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/20 text-xs font-semibold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all"><MessageSquare size={13} /> WhatsApp</button>
+          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-semibold hover:bg-primary/20 hover:-translate-y-0.5 transition-all"><Send size={13} /> Enviar Portal</button>
+          <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-400/20 text-xs font-semibold hover:bg-amber-500/20 hover:-translate-y-0.5 transition-all"><Mail size={13} /> E-mail</button>
+          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border/60 text-muted-foreground text-xs font-semibold hover:bg-accent hover:text-foreground transition-all ml-auto"><MapPin size={13} /> Editar Endereço</button>
         </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { Icon: DollarSign, label: "Capital na Rua", value: `R$ ${fmt(kpis.totalCapital)}`, color: "text-foreground", bg: "bg-primary/10" },
-          { Icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, color: "text-success", bg: "bg-success/10" },
-          { Icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(kpis.totalOverdue)}`, color: "text-destructive", bg: "bg-destructive/10" },
-          { Icon: Wallet, label: "Restante", value: `R$ ${fmt(kpis.remaining)}`, color: "text-primary", bg: "bg-primary/10" },
+          { Icon: DollarSign, label: "Capital na Rua", value: `R$ ${fmt(kpis.totalCapital)}`, color: "text-foreground", ring: "ring-primary/25", iconTint: "text-primary bg-primary/15", accent: "from-primary/10 to-transparent" },
+          { Icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, color: "text-success", ring: "ring-emerald-400/25", iconTint: "text-emerald-400 bg-emerald-500/15", accent: "from-emerald-500/10 to-transparent" },
+          { Icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(kpis.totalOverdue)}`, color: "text-destructive", ring: "ring-rose-400/25", iconTint: "text-rose-400 bg-rose-500/15", accent: "from-rose-500/10 to-transparent" },
+          { Icon: Wallet, label: "Restante", value: `R$ ${fmt(kpis.remaining)}`, color: "text-primary", ring: "ring-sky-400/25", iconTint: "text-sky-400 bg-sky-500/15", accent: "from-sky-500/10 to-transparent" },
         ].map(s => (
-          <div key={s.label} className="bg-card border border-border rounded-2xl p-3.5">
-            <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}><s.Icon size={16} className={s.color} /></div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
-            <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+          <div key={s.label} className={`relative overflow-hidden glass-card rounded-2xl p-4 ring-1 ${s.ring} hover-lift transition-all`}>
+            <div className={`absolute inset-0 bg-gradient-to-br ${s.accent} pointer-events-none`} />
+            <div className="relative">
+              <div className={`w-10 h-10 rounded-xl ${s.iconTint} flex items-center justify-center mb-3 shadow-sm`}><s.Icon size={18} /></div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{s.label}</p>
+              <p className={`text-2xl font-bold ${s.color} mt-1 tracking-tight`}>{s.value}</p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => navigate(`/clientes/novo?clientId=${id}`)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold text-primary-foreground" style={{ background: "var(--gradient-button)" }}>
-          <Plus size={15} /> Novo Empréstimo
+        <button onClick={() => navigate(`/clientes/novo?clientId=${id}`)} className="flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-primary/40 transition-all" style={{ background: "var(--gradient-button)" }}>
+          <Plus size={16} /> Novo Empréstimo
         </button>
-        <button onClick={payAllPending} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-success/10 text-success border border-success/20 text-sm font-medium hover:bg-success/20 transition-colors">
-          <CheckCircle size={15} /> Quitar Todas
+        <button onClick={payAllPending} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/30 text-sm font-bold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all">
+          <CheckCircle size={16} /> Quitar Todas
         </button>
         {kpis.overdueInst.length > 0 && (
-          <button onClick={sendAllOverdue} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 text-sm font-medium hover:bg-destructive/20 transition-colors">
-            <Send size={15} /> Cobrar ({kpis.overdueInst.length})
+          <button onClick={sendAllOverdue} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-rose-500/10 text-rose-300 border border-rose-400/30 text-sm font-bold hover:bg-rose-500/20 hover:-translate-y-0.5 transition-all">
+            <Send size={16} /> Cobrar ({kpis.overdueInst.length})
           </button>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-muted/50 rounded-2xl p-1">
+      <div className="flex gap-1 glass-card rounded-2xl p-1.5">
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.key ? "bg-primary/15 text-primary ring-1 ring-primary/30 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}>
             <tab.Icon size={14} /> {tab.label}
           </button>
         ))}
@@ -1381,13 +1389,20 @@ const ClienteDetalhe = () => {
       {/* Tab: Resumo */}
       {activeTab === "resumo" && (
         <div className="space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
-            <div className="grid grid-cols-4 gap-3 text-center">
-              <div><p className="text-2xl font-bold text-foreground">{contracts.length}</p><p className="text-[10px] text-muted-foreground uppercase">Contratos</p></div>
-              <div><p className="text-2xl font-bold text-success">{kpis.paidInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pagas</p></div>
-              <div><p className="text-2xl font-bold text-destructive">{kpis.overdueInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Atrasadas</p></div>
-              <div><p className="text-2xl font-bold text-foreground">{kpis.pendingInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pendentes</p></div>
+          <div className="glass-card rounded-2xl p-5">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { n: contracts.length, l: "Contratos", c: "text-foreground", tint: "from-primary/10" },
+                { n: kpis.paidInst.length, l: "Pagas", c: "text-success", tint: "from-emerald-500/10" },
+                { n: kpis.overdueInst.length, l: "Atrasadas", c: "text-destructive", tint: "from-rose-500/10" },
+                { n: kpis.pendingInst.length, l: "Pendentes", c: "text-foreground", tint: "from-sky-500/10" },
+              ].map(k => (
+                <div key={k.l} className={`relative overflow-hidden rounded-xl p-3 text-center bg-gradient-to-br ${k.tint} to-transparent ring-1 ring-border/30`}>
+                  <p className={`text-3xl font-bold ${k.c} tracking-tight`}>{k.n}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold mt-1">{k.l}</p>
+                </div>
+              ))}
             </div>
           </div>
           {contracts.map((c: any) => {
