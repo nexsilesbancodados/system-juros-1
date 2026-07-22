@@ -60,13 +60,12 @@ const sections: MenuSection[] = [
     ],
   },
   {
-    title: "Comunicação",
+    title: "Bot & Automações",
     collapsible: true,
     defaultOpen: true,
     items: [
-      { label: "Comunicação & IA", icon: Bot, path: "/comunicacao", highlight: true },
+      { label: "Central de Bot & Automações", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox", module: "comunicacao_inbox" },
-      { label: "Performance do Bot", icon: Bot, path: "/bot-performance" },
       { label: "Chat interno", icon: MessageCircle, path: "/chat", module: "chat_interno" },
     ],
   },
