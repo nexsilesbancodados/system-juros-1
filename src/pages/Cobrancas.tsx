@@ -7,7 +7,9 @@ import {
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
   Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame,
   History, Bell, Send
+  , ChevronDown, ChevronRight, Layers, ListTree
 } from "lucide-react";
+import { computeLateFee } from "@/lib/lateFee";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +78,11 @@ const Cobrancas = () => {
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("expanded");
+  const toggleGroupCollapse = useCallback((cid: string) => {
+    setCollapsed(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
+  }, []);
   const [historyFor, setHistoryFor] = useState<{ installmentId: string; clientName: string } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -472,14 +479,20 @@ const Cobrancas = () => {
   }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
+    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; totalWithFees: number; totalFees: number; minDue: string }>();
     filtered.forEach((inst: any) => {
       if (!map.has(inst.client_id)) {
-        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, minDue: inst.due_date });
+        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, totalWithFees: 0, totalFees: 0, minDue: inst.due_date });
       }
       const g = map.get(inst.client_id)!;
       g.items.push(inst);
-      if (inst.status !== "paid") g.total += Number(inst.amount);
+      if (inst.status !== "paid") {
+        const base = Number(inst.amount) || 0;
+        const fee = computeLateFee(inst);
+        g.total += base;
+        g.totalFees += fee;
+        g.totalWithFees += base + fee;
+      }
       if (inst.due_date < g.minDue) g.minDue = inst.due_date;
     });
     const groups = Array.from(map.values());
@@ -813,6 +826,24 @@ const Cobrancas = () => {
             </button>
           ))}
         </div>
+        {view === "list" && (
+          <div className="pill-tabs" title="Modo de agrupamento">
+            <button
+              onClick={() => { setGroupMode("expanded"); setCollapsed(new Set()); }}
+              className={`pill-tab ${groupMode === "expanded" ? "pill-tab-active" : "pill-tab-inactive"}`}
+              aria-label="Mostrar parcelas separadas"
+            >
+              <ListTree size={12} /> Parcelas
+            </button>
+            <button
+              onClick={() => { setGroupMode("collapsed"); setCollapsed(new Set()); }}
+              className={`pill-tab ${groupMode === "collapsed" ? "pill-tab-active" : "pill-tab-inactive"}`}
+              aria-label="Mostrar somente totais por cliente"
+            >
+              <Layers size={12} /> Totais
+            </button>
+          </div>
+        )}
       </div>
 
 
@@ -1001,11 +1032,13 @@ const Cobrancas = () => {
             const someSelected = groupSelectedCount > 0 && !allSelected;
             const hasUnpaid = groupSelectable.length > 0;
             const unpaidCount = groupSelectable.length;
+            const isCollapsed = groupMode === "collapsed" ? !collapsed.has(group.client_id) : collapsed.has(group.client_id);
+            const showHeader = group.items.length > 1 && hasUnpaid;
             return (
               <div key={group.client_id} className="space-y-1">
-                {group.items.length > 1 && hasUnpaid && (
+                {showHeader && (
                   <div className="flex items-center justify-between gap-2 px-1 py-1.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <button
                         aria-label="Selecionar todas as parcelas do cliente"
                         onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
@@ -1018,9 +1051,30 @@ const Cobrancas = () => {
                             ? <MinusSquare size={18} className="text-primary" />
                             : <Square size={18} className="text-muted-foreground" />}
                       </button>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{group.client_name}</p>
-                        <p className="text-xs text-muted-foreground">{unpaidCount} parcelas pendentes · Total R$ {fmt(group.total)}</p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleGroupCollapse(group.client_id); }}
+                        className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring text-muted-foreground"
+                        title={isCollapsed ? "Mostrar parcelas" : "Ocultar parcelas"}
+                        aria-label="Alternar exibição das parcelas"
+                      >
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{group.client_name}</p>
+                        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <span>{unpaidCount} parcelas pendentes</span>
+                          <span>·</span>
+                          <span>Total <span className="font-semibold text-foreground">R$ {fmt(group.total)}</span></span>
+                          {group.totalFees > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-destructive">
+                                Com multas <span className="font-semibold">R$ {fmt(group.totalWithFees)}</span>
+                                <span className="ml-1 text-[10px] opacity-80">(+R$ {fmt(group.totalFees)})</span>
+                              </span>
+                            </>
+                          )}
+                        </p>
                       </div>
                     </div>
                     <button
@@ -1032,7 +1086,7 @@ const Cobrancas = () => {
                     </button>
                   </div>
                 )}
-                {group.items.map((inst: any) => renderRow(inst))}
+                {(!showHeader || !isCollapsed) && group.items.map((inst: any) => renderRow(inst))}
               </div>
             );
           })}
