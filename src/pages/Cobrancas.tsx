@@ -783,8 +783,8 @@ const Cobrancas = () => {
         <InadimplenciaPanel />
       ) : (
         <>
-      {/* Métricas de cobranças automáticas */}
-      <CollectionMetrics />
+      {/* Métricas de cobranças automáticas — só no modo avançado */}
+      {!simpleMode && <CollectionMetrics />}
 
 
       {/* Reminder schedule card */}
