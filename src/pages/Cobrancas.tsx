@@ -542,11 +542,11 @@ const Cobrancas = () => {
 
   // Aggregate per-client contract facts using ALL installments (unfiltered) so numbers are stable
   const clientAggregates = useMemo(() => {
-    const m = new Map<string, { loaned: number; totalInstallments: number; grossExpected: number; overdueCount: number; overdueFees: number }>();
+    const m = new Map<string, { loaned: number; totalInstallments: number; grossExpected: number; overdueCount: number; overdueFees: number; overdueAmount: number }>();
     const seenContracts = new Map<string, Set<string>>();
     for (const inst of installments as any[]) {
       const cid = inst.client_id;
-      if (!m.has(cid)) { m.set(cid, { loaned: 0, totalInstallments: 0, grossExpected: 0, overdueCount: 0, overdueFees: 0 }); seenContracts.set(cid, new Set()); }
+      if (!m.has(cid)) { m.set(cid, { loaned: 0, totalInstallments: 0, grossExpected: 0, overdueCount: 0, overdueFees: 0, overdueAmount: 0 }); seenContracts.set(cid, new Set()); }
       const agg = m.get(cid)!;
       const set = seenContracts.get(cid)!;
       if (inst.contract_id && !set.has(inst.contract_id)) {
@@ -558,9 +558,11 @@ const Cobrancas = () => {
       agg.grossExpected += Number(inst.amount || 0);
       if (inst.status === "overdue") {
         agg.overdueCount += 1;
+        agg.overdueAmount += Number(inst.amount || 0);
         agg.overdueFees += computeLateFee(inst);
       }
     }
+
     return m;
   }, [installments]);
 
@@ -1219,8 +1221,11 @@ const Cobrancas = () => {
                                 </div>
                                 {agg.overdueCount > 0 ? (
                                   <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1.5">
-                                    <p className="text-[9px] uppercase tracking-wide text-destructive/80">{agg.overdueCount} atrasada{agg.overdueCount === 1 ? "" : "s"}</p>
-                                    <p className="text-xs font-bold text-destructive tabular-nums">+R$ {fmt(agg.overdueFees)} multa</p>
+                                    <p className="text-[9px] uppercase tracking-wide text-destructive/80">{agg.overdueCount} atrasada{agg.overdueCount === 1 ? "" : "s"} · a receber</p>
+                                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                                      <p className="text-xs font-bold text-foreground tabular-nums">R$ {fmt(agg.overdueAmount)}</p>
+                                      <p className="text-[10px] font-semibold text-destructive tabular-nums">c/ multa R$ {fmt(agg.overdueAmount + agg.overdueFees)}</p>
+                                    </div>
                                   </div>
                                 ) : (
                                   <div className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5">
@@ -1228,6 +1233,7 @@ const Cobrancas = () => {
                                     <p className="text-xs font-bold text-success tabular-nums">Em dia</p>
                                   </div>
                                 )}
+
                               </div>
                             );
                           })()}
