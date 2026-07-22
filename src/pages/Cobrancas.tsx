@@ -35,6 +35,27 @@ const relTime = (iso: string) => {
   return `${days}d`;
 };
 
+// Frase humana para a próxima parcela do grupo (ou a mais atrasada)
+const humanDueLabel = (items: any[]): { text: string; tone: "danger" | "warn" | "ok" | "muted" } => {
+  const unpaid = items.filter((i: any) => i.status !== "paid");
+  if (!unpaid.length) return { text: "Tudo em dia", tone: "ok" };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const withDates = unpaid.map((i: any) => ({ i, d: parseLocalDate(i.due_date) })).filter((x: any) => x.d);
+  if (!withDates.length) return { text: `${unpaid.length} pendente(s)`, tone: "muted" };
+  const overdue = withDates.filter((x: any) => x.d!.getTime() < today.getTime());
+  if (overdue.length) {
+    const maxDays = Math.max(...overdue.map((x: any) => Math.floor((today.getTime() - x.d!.getTime()) / 86400000)));
+    return { text: overdue.length === 1 ? `há ${maxDays} dia${maxDays === 1 ? "" : "s"} em atraso` : `${overdue.length} parcelas em atraso · até ${maxDays}d`, tone: "danger" };
+  }
+  withDates.sort((a: any, b: any) => a.d!.getTime() - b.d!.getTime());
+  const next = withDates[0];
+  const diffDays = Math.round((next.d!.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return { text: "vence hoje", tone: "warn" };
+  if (diffDays === 1) return { text: "vence amanhã", tone: "warn" };
+  if (diffDays <= 7) return { text: `vence em ${diffDays} dias`, tone: "warn" };
+  return { text: `vence em ${diffDays} dias`, tone: "muted" };
+};
+
 type StatusFilter = "all" | "pending" | "overdue" | "paid";
 type PeriodFilter = "all" | "today" | "7d" | "30d" | "future";
 type SortKey = "due_asc" | "due_desc" | "amount_desc" | "amount_asc" | "overdue_days";
