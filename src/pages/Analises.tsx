@@ -670,7 +670,8 @@ const Analises = () => {
           />
 
           {/* ─── EMPRÉSTIMOS ─── */}
-          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
+          <Section title="💸 Empréstimos no período" subtitle="Quanto dinheiro saiu do seu caixa e quanto ele vai render de volta">
+
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Emprestado no período", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true, hint: "capital dos contratos criados no período" }} />
               <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro previsto (período)", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true, hint: "total − capital dos contratos do período" }} />
