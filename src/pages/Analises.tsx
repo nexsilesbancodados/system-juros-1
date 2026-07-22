@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PredictiveAnalytics } from "@/components/analises/PredictiveAnalytics";
+import AnaliseNarrative from "@/components/dashboard/AnaliseNarrative";
 import { fetchAll } from "@/lib/fetchAll";
 
 type DetailColumn = { label: string; key: string; align?: "left" | "right"; format?: (v: any, row: any) => string };
@@ -654,8 +655,23 @@ const Analises = () => {
             </div>
           </div>
 
+          {/* ─── Narrativa: o que aconteceu neste período ─── */}
+          <AnaliseNarrative
+            periodLabel={periodLabel}
+            totalReceived={m.totalReceived}
+            totalProfit={m.lucroPeriodo}
+            deltaReceived={m.deltaReceived}
+            deltaProfit={m.deltaProfit}
+            paidCount={m.paidCount}
+            newContracts={m.newContracts}
+            overdueAmount={m.overdueAmount}
+            overdueCount={m.overdueCount}
+            forecast30={m.forecastAmount}
+          />
+
           {/* ─── EMPRÉSTIMOS ─── */}
-          <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
+          <Section title="💸 Empréstimos no período" subtitle="Quanto dinheiro saiu do seu caixa e quanto ele vai render de volta">
+
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLent)} s={{ label: "Emprestado no período", value: fmtBRL(m.totalLent), tone: "info", icon: HandCoins, delta: m.deltaLent, positiveIsGood: true, hint: "capital dos contratos criados no período" }} />
               <StatCard onClick={() => setDetail(m.details.totalProfitExpected)} s={{ label: "Lucro previsto (período)", value: fmtBRL(m.totalProfitExpected), tone: "success", icon: PiggyBank, delta: m.deltaProfit, positiveIsGood: true, hint: "total − capital dos contratos do período" }} />
@@ -666,7 +682,7 @@ const Analises = () => {
           </Section>
 
           {/* ─── RECEBIMENTOS ─── */}
-          <Section title="Recebimentos no período" subtitle="Quanto entrou no caixa">
+          <Section title="💰 Recebimentos no período" subtitle="Tudo que entrou no seu caixa vindo das parcelas pagas">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalReceived)} s={{ label: "Total recebido", value: fmtBRL(m.totalReceived), tone: "success", icon: Wallet, delta: m.deltaReceived, positiveIsGood: true }} />
               <StatCard onClick={() => setDetail(m.details.paidCount)} s={{ label: "Parcelas pagas", value: fmtNum(m.paidCount), tone: "success", icon: CheckCircle2, delta: m.deltaPaidCount, positiveIsGood: true }} />
@@ -676,7 +692,7 @@ const Analises = () => {
           </Section>
 
           {/* ─── ATRASO (snapshot atual) ─── */}
-          <Section title="Inadimplência (saldo atual)" subtitle="Independente do período selecionado">
+          <Section title="⚠️ Inadimplência (agora)" subtitle="Situação atual das parcelas atrasadas — não depende do período escolhido">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.overdue)} s={{ label: "Total em atraso", value: fmtBRL(m.overdueAmount), tone: "danger", icon: AlertTriangle, hint: `${m.overdueCount} parcela(s)` }} />
               <StatCard onClick={() => setDetail(m.details.overdueClients)} s={{ label: "Clientes inadimplentes", value: fmtNum(m.overdueClients), tone: "danger", icon: Users }} />
@@ -706,7 +722,7 @@ const Analises = () => {
           </Section>
 
           {/* ─── CAPITAL EMPRESTADO ─── */}
-          <Section title="Capital emprestado" subtitle="Quanto já saiu, quanto ainda está na rua e o lucro esperado">
+          <Section title="🏦 Capital emprestado" subtitle="Quanto já saiu do caixa, quanto está trabalhando na rua e quanto ainda vai render">
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard onClick={() => setDetail(m.details.totalLentHistory)} s={{ label: "Total emprestado (histórico)", value: fmtBRL(m.totalLentHistory), tone: "info", icon: HandCoins, hint: `${data?.contracts.length ?? 0} contrato(s) — soma do capital de TODOS os contratos` }} />
               <StatCard onClick={() => setDetail(m.details.outstandingCapital)} s={{ label: "Capital na rua (agora)", value: fmtBRL(m.outstandingCapital), tone: "warning", icon: Wallet, hint: "capital histórico − principal já recuperado" }} />
@@ -715,7 +731,7 @@ const Analises = () => {
           </Section>
 
           {/* ─── CARTEIRA ─── */}
-          <Section title="Carteira atual" subtitle="Visão geral do negócio agora">
+          <Section title="📊 Carteira agora" subtitle="Fotografia do seu negócio neste momento">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.aReceber)} s={{ label: "A receber (todas pendentes)", value: fmtBRL(m.aReceberTotal), tone: "default", icon: HandCoins, hint: "inclui atrasadas + futuras" }} />
               <StatCard onClick={() => setDetail(m.details.activeContracts)} s={{ label: "Contratos ativos", value: fmtNum(m.activeCount), tone: "default", icon: FileSignature }} />
@@ -728,7 +744,7 @@ const Analises = () => {
           </Section>
 
           {/* ─── PREVISÃO ─── */}
-          <Section title="Previsão de recebimento" subtitle="Parcelas pendentes que ainda vão vencer">
+          <Section title="🔮 Previsão de recebimento" subtitle="Quanto está previsto entrar de acordo com os vencimentos futuros">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard onClick={() => setDetail(m.details.forecast7)} s={{ label: "Próximos 7 dias", value: fmtBRL(m.forecast7Amount), tone: "info", icon: Clock, hint: `${m.upcoming7Count} parcela(s)` }} />
               <StatCard onClick={() => setDetail(m.details.forecast30)} s={{ label: "Próximos 30 dias", value: fmtBRL(m.forecastAmount), tone: "info", icon: Clock, hint: `${m.upcomingCount} parcela(s)` }} />
