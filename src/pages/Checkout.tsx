@@ -235,8 +235,14 @@ export default function Checkout() {
         },
       };
 
-      brickControllerRef.current = await bricksBuilder.create("payment", brickContainerId, settings);
+      // Renderiza o container ANTES de criar o Brick (senão o SDK não acha o #id)
       setBrickReady(true);
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      // Garantia extra: espera até o elemento existir no DOM
+      for (let i = 0; i < 20 && !document.getElementById(brickContainerId); i++) {
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      brickControllerRef.current = await bricksBuilder.create("payment", brickContainerId, settings);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Erro ao carregar o checkout");
