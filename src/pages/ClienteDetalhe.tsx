@@ -23,7 +23,7 @@ import {
   CheckCircle, AlertTriangle, Clock, Edit, Trash2, Plus, Send, Copy,
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera,
-  Hash, Coins, TrendingDown, Target, PauseCircle, Wrench, Repeat, PhoneCall, StickyNote,
+  Wrench, Repeat, PhoneCall, StickyNote,
   Info,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
