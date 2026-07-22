@@ -214,37 +214,38 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       : true;
 
     return (
-      <div key={section.title} className={index > 0 ? "mt-3" : ""}>
+      <div key={section.title} className={index > 0 ? "mt-4" : ""}>
         {!collapsed && (
           <button
             type="button"
             onClick={isCollapsible ? () => toggleSection(section.title) : undefined}
             className={`
-              w-full flex items-center gap-2 px-3 py-1 mb-0.5 rounded-md
-              ${isCollapsible ? "hover:bg-accent/20 cursor-pointer" : "cursor-default"}
+              w-full flex items-center gap-2 px-3 py-1.5 mb-1 rounded-md
+              ${isCollapsible ? "hover:bg-accent/25 cursor-pointer" : "cursor-default"}
             `}
           >
-            <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${sectionHasActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${sectionHasActive ? "text-primary/80" : "text-muted-foreground/50"}`}>
               {section.title}
             </p>
-            <div className="flex-1" />
+            <div className="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent ml-1" />
             {isCollapsible && (
               <ChevronDown
                 size={11}
-                className={`text-muted-foreground/40 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`}
+                className={`text-muted-foreground/50 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`}
               />
             )}
           </button>
         )}
 
         {isOpen && (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {section.items.map(renderItem)}
           </div>
         )}
       </div>
     );
   };
+
 
   const handleSignOut = async () => {
     await signOut();
