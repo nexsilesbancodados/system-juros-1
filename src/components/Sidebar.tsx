@@ -57,7 +57,7 @@ const sections: MenuSection[] = [
       { label: "Lucros", icon: TrendingUp, path: "/lucros", module: "lucros" },
       { label: "Gastos", icon: DollarSign, path: "/gastos", module: "gastos" },
       { label: "Relatórios", icon: FileText, path: "/relatorios", module: "relatorios" },
-      { label: "Histórico (quitados)", icon: Archive, path: "/historico-financeiro" },
+      { label: "Histórico financeiro", icon: Archive, path: "/historico-financeiro", highlight: true },
     ],
   },
   {
