@@ -100,7 +100,7 @@ const Cobrancas = () => {
   const [focoDia, setFocoDia] = useState(false);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("expanded");
+  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("collapsed");
   const toggleGroupCollapse = useCallback((cid: string) => {
     setCollapsed(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
   }, []);
