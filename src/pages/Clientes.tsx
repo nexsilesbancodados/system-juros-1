@@ -380,7 +380,7 @@ const Clientes = () => {
               {search ? (
                 <>
                   <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
-                  <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
+                <button onClick={() => setSearch("")} aria-label="Limpar busca" className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
                 </>
               ) : (
                 <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-md border border-border/40 bg-muted/40 text-[10px] font-mono text-muted-foreground">/</kbd>
@@ -392,6 +392,7 @@ const Clientes = () => {
             onClick={() => setShowFilters(v => !v)}
             className={`relative shrink-0 px-3.5 py-3.5 rounded-2xl border transition-all ${activeFilters > 0 ? "border-primary/40 bg-primary/5 text-primary" : "border-border/10 bg-card/30 text-muted-foreground hover:text-foreground"}`}
             title="Filtros e ordenação"
+            aria-label="Filtros e ordenação"
           >
             <SlidersHorizontal size={16} />
             {activeFilters > 0 && (
@@ -402,12 +403,12 @@ const Clientes = () => {
           <div className="flex items-center bg-card/30 backdrop-blur-md border border-border/10 rounded-2xl p-1 shrink-0">
             <button onClick={() => toggleView("list")}
               className={`p-2.5 rounded-xl transition-colors ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title="Lista">
+              title="Lista" aria-label="Ver como lista" aria-pressed={viewMode === "list"}>
               <List size={16} />
             </button>
             <button onClick={() => toggleView("cards")}
               className={`p-2.5 rounded-xl transition-colors ${viewMode === "cards" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title="Cards">
+              title="Cards" aria-label="Ver como cards" aria-pressed={viewMode === "cards"}>
               <LayoutGrid size={16} />
             </button>
           </div>
