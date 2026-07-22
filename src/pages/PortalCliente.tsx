@@ -541,6 +541,23 @@ const PortalCliente = () => {
               </div>
               <div className="flex items-center gap-2">
                 <NotificationsBell cpf={onlyDigits(portalData.client.cpf_cnpj || cpf)} />
+                <button
+                  onClick={() => {
+                    try {
+                      generatePortalStatementPdf(portalData.client, portalData.contracts || [], {
+                        name: portalData.branding?.company_name || portalData.owner?.name || "CredMais",
+                        pix_key: portalData.owner?.pix_key,
+                      });
+                      toast({ title: "Extrato baixado", description: "PDF gerado com sucesso." });
+                    } catch (e: any) {
+                      toast({ title: "Erro ao gerar extrato", description: e.message, variant: "destructive" });
+                    }
+                  }}
+                  className="portal-chip hover:brightness-125"
+                  title="Baixar extrato completo em PDF"
+                >
+                  <Download size={12} /> Extrato PDF
+                </button>
                 <button onClick={handleLogout} className="portal-chip warn hover:brightness-125">
                   <LogOut size={12} /> Sair com segurança
                 </button>
