@@ -9,7 +9,7 @@ import {
   History, Bell, Send
   , ChevronDown, ChevronRight, Layers, ListTree
 } from "lucide-react";
-import { computeLateFee } from "@/lib/lateFee";
+import { computeLateFee, computeLateFeeBreakdown } from "@/lib/lateFee";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
