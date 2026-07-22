@@ -159,6 +159,7 @@ const NovoCliente = () => {
   const [guarantorCpf, setGuarantorCpf] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
   const [attachments, setAttachments] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [investorLoanId, setInvestorLoanId] = useState<string | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [requireSignature, setRequireSignature] = useState(false);
 
