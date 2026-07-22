@@ -540,6 +540,30 @@ const Cobrancas = () => {
     return arr;
   }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
+  // Aggregate per-client contract facts using ALL installments (unfiltered) so numbers are stable
+  const clientAggregates = useMemo(() => {
+    const m = new Map<string, { loaned: number; totalInstallments: number; grossExpected: number; overdueCount: number; overdueFees: number }>();
+    const seenContracts = new Map<string, Set<string>>();
+    for (const inst of installments as any[]) {
+      const cid = inst.client_id;
+      if (!m.has(cid)) { m.set(cid, { loaned: 0, totalInstallments: 0, grossExpected: 0, overdueCount: 0, overdueFees: 0 }); seenContracts.set(cid, new Set()); }
+      const agg = m.get(cid)!;
+      const set = seenContracts.get(cid)!;
+      if (inst.contract_id && !set.has(inst.contract_id)) {
+        set.add(inst.contract_id);
+        const c = inst.contracts || {};
+        agg.loaned += Number(c.capital || 0);
+        agg.totalInstallments += Number(c.num_installments || 0);
+      }
+      agg.grossExpected += Number(inst.amount || 0);
+      if (inst.status === "overdue") {
+        agg.overdueCount += 1;
+        agg.overdueFees += computeLateFee(inst);
+      }
+    }
+    return m;
+  }, [installments]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; totalWithFees: number; totalFees: number; minDue: string }>();
     filtered.forEach((inst: any) => {
@@ -557,6 +581,7 @@ const Cobrancas = () => {
       }
       if (inst.due_date < g.minDue) g.minDue = inst.due_date;
     });
+
     const groups = Array.from(map.values());
     const key = (g: any) => {
       if (sort === "amount_desc") return -g.total;
