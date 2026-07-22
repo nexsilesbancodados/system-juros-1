@@ -58,17 +58,22 @@ const Dashboard = () => {
     const { contracts, installments, clients, goals, profits } = data;
     const now = new Date();
 
+    // ⚡ FOCO: apenas contratos ativos (exclui "completed"/quitados).
+    // O histórico de contratos encerrados vive em /historico-financeiro.
     const activeContracts = contracts.filter((c: any) => c.status === "active" || c.status === "overdue");
-    const capitalNaRua = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
-    const completedContracts = contracts.filter((c: any) => c.status === "completed");
-    const lucroRecebido = completedContracts.reduce((s: number, c: any) => s + Number(c.total_interest), 0);
-    const lucroAReceber = activeContracts.reduce((s: number, c: any) => s + Number(c.total_interest), 0);
+    const activeIds = new Set(activeContracts.map((c: any) => c.id));
+    const activeInstallments = installments.filter((i: any) => activeIds.has(i.contract_id));
 
-    const totalInstallments = installments.length;
-    const overdueInstallments = installments.filter(
+    const capitalNaRua = activeContracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const lucroAReceber = activeContracts.reduce((s: number, c: any) => s + Number(c.total_interest), 0);
+    // Lucro já recebido dentro de contratos AINDA ATIVOS
+    const lucroRecebido = 0;
+
+    const totalInstallments = activeInstallments.length;
+    const overdueInstallments = activeInstallments.filter(
       (i: any) => i.status === "pending" && new Date(i.due_date) < now
     );
-    const paidInstallments = installments.filter((i: any) => i.status === "paid");
+    const paidInstallments = activeInstallments.filter((i: any) => i.status === "paid");
     const taxaInadimplencia = totalInstallments > 0
       ? (overdueInstallments.length / totalInstallments) * 100
       : 0;
@@ -77,12 +82,12 @@ const Dashboard = () => {
     const totalOverdueAmount = overdueInstallments.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
     const todayStr = now.toISOString().split("T")[0];
-    const vencendoHoje = installments.filter(
+    const vencendoHoje = activeInstallments.filter(
       (i: any) => i.status === "pending" && i.due_date.startsWith(todayStr)
     );
 
     const in7days = new Date(now.getTime() + 7 * 86400000);
-    const proximos7 = installments.filter((i: any) => {
+    const proximos7 = activeInstallments.filter((i: any) => {
       if (i.status !== "pending") return false;
       const d = new Date(i.due_date);
       return d > now && d <= in7days;
@@ -110,22 +115,21 @@ const Dashboard = () => {
     const paidToday = paidInstallments.filter((p: any) => p.paid_at?.startsWith(todayStr));
     const paidTodayAmount = paidToday.reduce((s: number, p: any) => s + Number(p.paid_amount || p.amount), 0);
 
-    const profitsTableAmount = profits.reduce((s: number, p: any) => s + Number(p.amount), 0);
+    // Lucro operacional considera SÓ contratos ativos (juros já recebidos deles)
     const totalCapitalReturned = paidInstallments.reduce((s: number, i: any) => {
-      const contract = contracts.find((c: any) => c.id === i.contract_id);
+      const contract = activeContracts.find((c: any) => c.id === i.contract_id);
       if (!contract) return s;
       const capitalPerInstallment = Number(contract.capital) / Number(contract.num_installments);
       return s + capitalPerInstallment;
     }, 0);
-    const interestEarned = totalReceived - totalCapitalReturned;
-    const totalProfitAmount = Math.max(profitsTableAmount, interestEarned > 0 ? interestEarned : 0);
+    const interestEarned = Math.max(0, totalReceived - totalCapitalReturned);
+    const totalProfitAmount = interestEarned;
 
-    const totalCapitalEver = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
-    const roi = totalCapitalEver > 0 ? ((totalProfitAmount / totalCapitalEver) * 100) : 0;
+    const roi = capitalNaRua > 0 ? ((totalProfitAmount / capitalNaRua) * 100) : 0;
 
-    // Totais de contratos (histórico) e pendências
-    const totalLent = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
-    const pendingReceivable = installments
+    // Totais mostrados agora refletem só o que está NA RUA
+    const totalLent = capitalNaRua;
+    const pendingReceivable = activeInstallments
       .filter((i: any) => i.status === "pending" || i.status === "overdue" || (i.status !== "paid" && !i.paid_at))
       .reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
 
@@ -135,12 +139,12 @@ const Dashboard = () => {
       totalLent, pendingReceivable,
       contratosAtivos: activeContracts.length,
       contratosAtraso: contracts.filter((c: any) => c.status === "overdue").length,
-      totalContratos: contracts.length,
+      totalContratos: activeContracts.length,
       totalClientes: clients.length,
       overdueCount: overdueInstallments.length,
       vencendoHoje: vencendoHoje.length,
       proximos7: proximos7.length,
-      overdueList, recentPayments, goals, contracts,
+      overdueList, recentPayments, goals, contracts: activeContracts,
       weeklyActivity, maxActivity, paidTodayAmount, totalProfitAmount,
     };
   }, [data]);
