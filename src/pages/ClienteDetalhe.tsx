@@ -27,6 +27,7 @@ import { getSignedUploadUrl } from "@/lib/storage";
 import ClientToolsPanel, { type ToolGroup } from "@/components/clients/ClientToolsPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { computeLateFee } from "@/lib/lateFee";
+import { friendlyError } from "@/lib/friendlyError";
 
 const LOAN_MODES: { v: LoanMode; label: string; desc: string; Icon: any }[] = [
   { v: "installments", label: "Por Parcelas", desc: "Parcelas iguais (juros simples)", Icon: Hash },
@@ -211,7 +212,7 @@ const ClienteDetalhe = () => {
 
   const saveEdit = async () => {
     const { error } = await supabase.from("clients").update(editData).eq("id", id!);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ ...friendlyError(error, "Não foi possível salvar o cliente."), variant: "destructive" }); return; }
     toast({ title: "Cliente atualizado!" }); setEditMode(false); inv("client-detail");
   };
 
@@ -455,7 +456,7 @@ const ClienteDetalhe = () => {
     const path = `${user.id}/receipts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: false });
     if (error) {
-      toast({ title: "Erro ao enviar comprovante", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível enviar o comprovante."), variant: "destructive" });
       return null;
     }
     return await getSignedUploadUrl(path);
@@ -470,7 +471,7 @@ const ClienteDetalhe = () => {
     const { error } = await supabase.from("contract_installments").update(patch).eq("id", instId);
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
-      toast({ title: "Erro ao quitar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível quitar a parcela."), variant: "destructive" });
       return;
     }
 
@@ -511,7 +512,7 @@ const ClienteDetalhe = () => {
       const { error } = await supabase.from("contract_installments").update(patch).eq("id", partialPayModal.id);
       if (error) {
         qc.setQueryData(["client-installments", id], snapshot);
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        toast({ ...friendlyError(error, "Não foi possível registrar o pagamento."), variant: "destructive" });
       } else {
         await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name} (${payMethod})`, client_id: id, contract_id: partialPayModal.contract_id });
         invAll();
@@ -530,7 +531,7 @@ const ClienteDetalhe = () => {
     const { error } = await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
-      toast({ title: "Erro ao estornar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível estornar o pagamento."), variant: "destructive" });
       return;
     }
     invAll();

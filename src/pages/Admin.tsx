@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { isSuperAdminEmail } from "@/lib/admin";
+import { friendlyError } from "@/lib/friendlyError";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
@@ -149,7 +150,7 @@ const Admin = () => {
   // ============ ACTIONS ============
   const handleToggleBlock = async (userId: string, current: boolean) => {
     const { error } = await supabase.from("profiles").update({ is_blocked: !current }).eq("id", userId);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error, "Não foi possível atualizar o usuário."), variant: "destructive" });
     else toast({ title: current ? "Usuário desbloqueado" : "Usuário bloqueado" });
   };
 
@@ -929,7 +930,7 @@ const AdminLogs = () => {
 
       toast({ title: "Configurações salvas", description: "As mudanças globais foram aplicadas." });
     } catch (error: any) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível salvar as configurações."), variant: "destructive" });
     } finally {
       setSaving(false);
     }
