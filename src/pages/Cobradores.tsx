@@ -172,6 +172,7 @@ const Cobradores = () => {
   };
 
   const handleRevokeToken = async (tokenId: string) => {
+    if (!(await confirm("Revogar este token de acesso? O cobrador perderá o acesso ao portal."))) return;
     await supabase.from("collector_tokens").delete().eq("id", tokenId);
     inv("collector-tokens");
     toast({ title: "Token revogado" });
