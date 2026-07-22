@@ -35,6 +35,7 @@ const Lucros = lazy(() => import("./pages/Lucros"));
 const Gastos = lazy(() => import("./pages/Gastos"));
 const Metas = lazy(() => import("./pages/Metas"));
 const Simulador = lazy(() => import("./pages/Simulador"));
+const Ferramentas = lazy(() => import("./pages/Ferramentas"));
 const Tarefas = lazy(() => import("./pages/Tarefas"));
 const Anotacoes = lazy(() => import("./pages/Anotacoes"));
 const Planilha = lazy(() => import("./pages/Planilha"));
