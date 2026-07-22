@@ -70,7 +70,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <header className="h-14 border-b border-border/30 bg-card/60 glass-strong flex items-center justify-between px-3 lg:px-6 gap-2">
+    <header className="sticky top-0 z-40 h-16 border-b border-border/40 bg-card/70 glass-strong flex items-center justify-between px-3 lg:px-8 gap-2">
       {isMobile ? (
         <button onClick={() => navigate("/perfil")} className="flex items-center gap-2 micro-bounce min-w-0 max-w-[60%]">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shrink-0">
@@ -102,35 +102,36 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
       {/* Financial indicators — pill compacto unificado */}
       {!isMobile && (
-        <div className="hidden md:flex items-center gap-1.5">
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => navigate("/carteira")}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+            className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-muted/40 border border-border/40 hover:border-primary/50 hover:bg-primary/8 transition-all duration-200 hover-lift"
             title="Ver Carteira"
           >
-            <Wallet size={13} className="text-primary/60 group-hover:text-primary transition-colors" />
-            <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">R$ {fmt(financials?.carteira ?? 0)}</span>
+            <Wallet size={14} className="text-primary/70 group-hover:text-primary transition-colors" />
+            <span className="text-[12px] font-semibold tracking-tight text-muted-foreground group-hover:text-foreground transition-colors">R$ {fmt(financials?.carteira ?? 0)}</span>
           </button>
           <button
             onClick={() => navigate("/lucros")}
-            className="hidden lg:flex group items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/5 border border-success/10 hover:border-success/40 hover:bg-success/10 transition-all duration-200"
+            className="hidden lg:flex group items-center gap-2 px-3.5 py-2 rounded-full bg-success/8 border border-success/20 hover:border-success/50 hover:bg-success/12 transition-all duration-200 hover-lift"
             title="Ver Lucros"
           >
-            <TrendingUp size={13} className="text-success/70 group-hover:text-success transition-colors" />
-            <span className="text-[11px] font-semibold text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
+            <TrendingUp size={14} className="text-success/80 group-hover:text-success transition-colors" />
+            <span className="text-[12px] font-semibold tracking-tight text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
           </button>
           {(financials?.overdue ?? 0) > 0 && (
             <button
               onClick={() => navigate("/cobrancas?tab=aging")}
-              className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-destructive/5 border border-destructive/15 hover:border-destructive/40 hover:bg-destructive/10 transition-all duration-200"
+              className="group flex items-center gap-2 px-3 py-2 rounded-full bg-destructive/8 border border-destructive/25 hover:border-destructive/50 hover:bg-destructive/12 transition-all duration-200 hover-lift"
               title="Ver Inadimplência"
             >
-              <AlertTriangle size={13} className="text-destructive/70 group-hover:text-destructive transition-colors" />
-              <span className="text-[11px] font-semibold text-destructive">{financials?.overdue}</span>
+              <AlertTriangle size={14} className="text-destructive/80 group-hover:text-destructive transition-colors" />
+              <span className="text-[12px] font-bold tracking-tight text-destructive">{financials?.overdue}</span>
             </button>
           )}
         </div>
       )}
+
 
       {/* Quick Add Menu */}
       {!isMobile && (

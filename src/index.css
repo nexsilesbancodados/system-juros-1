@@ -241,20 +241,72 @@
   /* Glassmorphism — refined */
   .glass {
     background: var(--gradient-glass);
-    border: 1px solid hsl(0 0% 100% / 0.08);
+    border: 1px solid hsl(var(--border) / 0.4);
+    backdrop-filter: saturate(140%) blur(14px);
   }
 
   .glass-card {
-    background: hsl(var(--card) / 0.92);
+    background: hsl(var(--card) / 0.75);
     border: 1px solid hsl(var(--border) / 0.5);
     box-shadow: var(--shadow-card);
     border-radius: 1.25rem;
+    backdrop-filter: saturate(150%) blur(18px);
   }
 
   .glass-strong {
-    background: hsl(var(--card) / 0.96);
-    border: 1px solid hsl(var(--border) / 0.6);
+    background: hsl(var(--card) / 0.72);
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+    backdrop-filter: saturate(160%) blur(20px);
+    -webkit-backdrop-filter: saturate(160%) blur(20px);
   }
+
+  /* Refined surface card — primary content container */
+  .surface-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border) / 0.6);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .surface-card:hover {
+    border-color: hsl(var(--primary) / 0.28);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Subtle lift on hover for interactive cards/rows */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .hover-lift:hover { transform: translateY(-2px); }
+
+  /* Typographic rhythm helpers */
+  .section-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 1.375rem;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
+  }
+  .section-subtitle {
+    font-size: 0.8125rem;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.5;
+  }
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: hsl(var(--muted-foreground) / 0.75);
+  }
+
+  /* Soft divider */
+  .divider-soft {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.6), transparent);
+  }
+
 
   /* Premium card with subtle gradient */
   .premium-card {

@@ -153,23 +153,26 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`
-          group relative w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[13px] font-medium
-          transition-colors duration-200
+          group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+          transition-all duration-200
           ${active
-            ? "bg-primary/15 text-foreground"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+            ? "text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.25)]"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
           }
           ${collapsed ? "justify-center px-2" : ""}
         `}
+        style={active ? {
+          background: "linear-gradient(90deg, hsl(var(--primary)/0.18), hsl(var(--primary)/0.04))",
+        } : undefined}
       >
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-6 rounded-r-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.5)]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-gradient-to-b from-primary to-primary-glow shadow-[0_0_10px_hsl(var(--primary)/0.6)]" />
         )}
 
-        <div className={`relative shrink-0 ${active ? "text-primary" : ""}`}>
-          <Icon size={16} strokeWidth={active ? 2.4 : 1.9} />
+        <div className={`relative shrink-0 transition-transform duration-200 ${active ? "text-primary scale-[1.08]" : "group-hover:scale-105"}`}>
+          <Icon size={17} strokeWidth={active ? 2.4 : 1.9} />
           {item.highlight && !active && !collapsed && (
-            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_hsl(45_95%_55%/0.8)]" />
           )}
           {badge > 0 && collapsed && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-card">
@@ -179,23 +182,24 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         </div>
 
         {!collapsed && (
-          <span className="truncate flex-1 text-left">{item.label}</span>
+          <span className={`truncate flex-1 text-left ${active ? "font-semibold tracking-tight" : ""}`}>{item.label}</span>
         )}
 
         {!collapsed && badge > 0 && (
-          <span className="min-w-[18px] h-4 px-1.5 rounded-full bg-destructive/90 text-destructive-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
+          <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_2px_6px_hsl(var(--destructive)/0.4)]">
             {badge > 99 ? "99+" : badge}
           </span>
         )}
 
         {collapsed && (
-          <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-popover border border-border/40 text-[12px] text-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl z-50">
+          <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-popover border border-border/60 text-[12px] text-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl z-50">
             {item.label}
           </div>
         )}
       </button>
     );
   };
+
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const toggleSection = (title: string) =>
@@ -210,37 +214,38 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       : true;
 
     return (
-      <div key={section.title} className={index > 0 ? "mt-3" : ""}>
+      <div key={section.title} className={index > 0 ? "mt-4" : ""}>
         {!collapsed && (
           <button
             type="button"
             onClick={isCollapsible ? () => toggleSection(section.title) : undefined}
             className={`
-              w-full flex items-center gap-2 px-3 py-1 mb-0.5 rounded-md
-              ${isCollapsible ? "hover:bg-accent/20 cursor-pointer" : "cursor-default"}
+              w-full flex items-center gap-2 px-3 py-1.5 mb-1 rounded-md
+              ${isCollapsible ? "hover:bg-accent/25 cursor-pointer" : "cursor-default"}
             `}
           >
-            <p className={`text-[10px] font-bold uppercase tracking-[0.14em] ${sectionHasActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${sectionHasActive ? "text-primary/80" : "text-muted-foreground/50"}`}>
               {section.title}
             </p>
-            <div className="flex-1" />
+            <div className="flex-1 h-px bg-gradient-to-r from-border/40 to-transparent ml-1" />
             {isCollapsible && (
               <ChevronDown
                 size={11}
-                className={`text-muted-foreground/40 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`}
+                className={`text-muted-foreground/50 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`}
               />
             )}
           </button>
         )}
 
         {isOpen && (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {section.items.map(renderItem)}
           </div>
         )}
       </div>
     );
   };
+
 
   const handleSignOut = async () => {
     await signOut();
