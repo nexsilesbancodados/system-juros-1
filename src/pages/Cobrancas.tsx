@@ -35,6 +35,27 @@ const relTime = (iso: string) => {
   return `${days}d`;
 };
 
+// Frase humana para a próxima parcela do grupo (ou a mais atrasada)
+const humanDueLabel = (items: any[]): { text: string; tone: "danger" | "warn" | "ok" | "muted" } => {
+  const unpaid = items.filter((i: any) => i.status !== "paid");
+  if (!unpaid.length) return { text: "Tudo em dia", tone: "ok" };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const withDates = unpaid.map((i: any) => ({ i, d: parseLocalDate(i.due_date) })).filter((x: any) => x.d);
+  if (!withDates.length) return { text: `${unpaid.length} pendente(s)`, tone: "muted" };
+  const overdue = withDates.filter((x: any) => x.d!.getTime() < today.getTime());
+  if (overdue.length) {
+    const maxDays = Math.max(...overdue.map((x: any) => Math.floor((today.getTime() - x.d!.getTime()) / 86400000)));
+    return { text: overdue.length === 1 ? `há ${maxDays} dia${maxDays === 1 ? "" : "s"} em atraso` : `${overdue.length} parcelas em atraso · até ${maxDays}d`, tone: "danger" };
+  }
+  withDates.sort((a: any, b: any) => a.d!.getTime() - b.d!.getTime());
+  const next = withDates[0];
+  const diffDays = Math.round((next.d!.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return { text: "vence hoje", tone: "warn" };
+  if (diffDays === 1) return { text: "vence amanhã", tone: "warn" };
+  if (diffDays <= 7) return { text: `vence em ${diffDays} dias`, tone: "warn" };
+  return { text: `vence em ${diffDays} dias`, tone: "muted" };
+};
+
 type StatusFilter = "all" | "pending" | "overdue" | "paid";
 type PeriodFilter = "all" | "today" | "7d" | "30d" | "future";
 type SortKey = "due_asc" | "due_desc" | "amount_desc" | "amount_asc" | "overdue_days";
@@ -60,7 +81,7 @@ const Cobrancas = () => {
 
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [period, setPeriod] = useState<PeriodFilter>("all");
-  const [sort, setSort] = useState<SortKey>("due_asc");
+  const [sort, setSort] = useState<SortKey>("amount_desc");
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
   const dSearch = useDebounced(search, 180);
@@ -79,7 +100,7 @@ const Cobrancas = () => {
   const [focoDia, setFocoDia] = useState(false);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("expanded");
+  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("collapsed");
   const toggleGroupCollapse = useCallback((cid: string) => {
     setCollapsed(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
   }, []);
@@ -561,8 +582,8 @@ const Cobrancas = () => {
     return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); setBucket("all"); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "amount_desc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("amount_desc"); setFocoDia(false); setBucket("all"); };
 
   const copyPix = async (inst: any) => {
     const pix = (profile as any)?.pix_key;
@@ -1025,7 +1046,10 @@ const Cobrancas = () => {
         />
       ) : (
         <div className="space-y-2 stagger-fade-in">
-          {grouped.map((group: any) => {
+          {(() => null)()}
+          {(() => {
+            const maxTotalWithFees = Math.max(1, ...grouped.map((g: any) => g.totalWithFees || g.total || 0));
+            return grouped.map((group: any) => {
             const groupSelectable = group.items.filter((i: any) => i.status !== "paid");
             const groupSelectedCount = groupSelectable.filter((i: any) => selected.has(i.id)).length;
             const allSelected = groupSelectable.length > 0 && groupSelectedCount === groupSelectable.length;
@@ -1033,63 +1057,112 @@ const Cobrancas = () => {
             const hasUnpaid = groupSelectable.length > 0;
             const unpaidCount = groupSelectable.length;
             const isCollapsed = groupMode === "collapsed" ? !collapsed.has(group.client_id) : collapsed.has(group.client_id);
-            const showHeader = group.items.length > 1 && hasUnpaid;
+            const showHeader = hasUnpaid;
+            const dueInfo = humanDueLabel(group.items);
+            const toneClass =
+              dueInfo.tone === "danger" ? "bg-destructive/15 text-destructive border-destructive/30"
+              : dueInfo.tone === "warn" ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+              : dueInfo.tone === "ok" ? "bg-success/15 text-success border-success/30"
+              : "bg-muted/40 text-muted-foreground border-border";
+            const barPct = Math.min(100, Math.round(((group.totalWithFees || group.total) / maxTotalWithFees) * 100));
+            const firstUnpaid = groupSelectable[0];
             return (
-              <div key={group.client_id} className="space-y-1">
+              <div key={group.client_id} className="rounded-2xl border border-border bg-card/50 hover:bg-card transition-colors overflow-hidden">
                 {showHeader && (
-                  <div className="flex items-center justify-between gap-2 px-1 py-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <button
-                        aria-label="Selecionar todas as parcelas do cliente"
-                        onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
-                        className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
-                        title="Selecionar todas"
-                      >
-                        {allSelected
-                          ? <CheckSquare size={18} className="text-primary" />
-                          : someSelected
-                            ? <MinusSquare size={18} className="text-primary" />
-                            : <Square size={18} className="text-muted-foreground" />}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleGroupCollapse(group.client_id); }}
-                        className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring text-muted-foreground"
-                        title={isCollapsed ? "Mostrar parcelas" : "Ocultar parcelas"}
-                        aria-label="Alternar exibição das parcelas"
-                      >
-                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-foreground truncate">{group.client_name}</p>
-                        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <span>{unpaidCount} parcelas pendentes</span>
-                          <span>·</span>
-                          <span>Total <span className="font-semibold text-foreground">R$ {fmt(group.total)}</span></span>
-                          {group.totalFees > 0 && (
-                            <>
-                              <span>·</span>
-                              <span className="text-destructive">
-                                Com multas <span className="font-semibold">R$ {fmt(group.totalWithFees)}</span>
-                                <span className="ml-1 text-[10px] opacity-80">(+R$ {fmt(group.totalFees)})</span>
+                  <div className="px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <button
+                          aria-label="Selecionar todas as parcelas do cliente"
+                          onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
+                          className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
+                          title="Selecionar todas"
+                        >
+                          {allSelected
+                            ? <CheckSquare size={18} className="text-primary" />
+                            : someSelected
+                              ? <MinusSquare size={18} className="text-primary" />
+                              : <Square size={18} className="text-muted-foreground" />}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleGroupCollapse(group.client_id); }}
+                          className="min-w-0 flex-1 text-left focus-ring rounded-lg px-1"
+                          title={isCollapsed ? "Mostrar parcelas" : "Ocultar parcelas"}
+                          aria-label="Alternar exibição das parcelas"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate">{group.client_name}</p>
+                            <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${toneClass}`}>
+                              {dueInfo.text}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                            <span className="text-lg font-black text-foreground tabular-nums">
+                              R$ {fmt(group.totalWithFees || group.total)}
+                            </span>
+                            {group.totalFees > 0 && (
+                              <span className="text-[11px] text-destructive font-medium">
+                                +R$ {fmt(group.totalFees)} multa
                               </span>
-                            </>
-                          )}
-                        </p>
+                            )}
+                            <span className="text-[11px] text-muted-foreground">
+                              · {unpaidCount} parcela{unpaidCount === 1 ? "" : "s"}
+                            </span>
+                            <span className="ml-auto text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                              {isCollapsed ? <><ChevronRight size={12} /> ver parcelas</> : <><ChevronDown size={12} /> ocultar</>}
+                            </span>
+                          </div>
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleWhatsAppGroup(group); }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-success text-success-foreground text-xs font-medium hover:opacity-90 transition-all focus-ring"
-                      title="Cobrar todas via WhatsApp"
-                    >
-                      <MessageSquare size={12} /> Cobrar tudo
-                    </button>
+
+                    {/* Barra visual de ranking (relativa ao maior devedor) */}
+                    <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${dueInfo.tone === "danger" ? "bg-destructive" : dueInfo.tone === "warn" ? "bg-amber-500" : "bg-primary"}`}
+                        style={{ width: `${barPct}%` }}
+                      />
+                    </div>
+
+                    {/* Ações grandes e óbvias */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleWhatsAppGroup(group); }}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-success text-success-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all focus-ring"
+                        title="Cobrar via WhatsApp"
+                      >
+                        <MessageSquare size={15} /> Cobrar
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (unpaidCount === 1 && firstUnpaid) setConfirmPayId(firstUnpaid.id);
+                          else toggleGroupCollapse(group.client_id);
+                        }}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all focus-ring"
+                        title={unpaidCount === 1 ? "Marcar como paga" : "Ver parcelas para pagar"}
+                      >
+                        <Check size={15} /> {unpaidCount === 1 ? "Pagar" : "Parcelas"}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${group.client_id}`); }}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-accent hover:bg-accent/70 text-foreground text-sm font-semibold active:scale-[0.98] transition-all focus-ring"
+                        title="Abrir cliente"
+                      >
+                        <Receipt size={15} /> Cliente
+                      </button>
+                    </div>
                   </div>
                 )}
-                {(!showHeader || !isCollapsed) && group.items.map((inst: any) => renderRow(inst))}
+                {(!showHeader || !isCollapsed) && (
+                  <div className={showHeader ? "border-t border-border bg-background/40 px-2 py-2 space-y-1.5" : ""}>
+                    {group.items.map((inst: any) => renderRow(inst))}
+                  </div>
+                )}
               </div>
             );
-          })}
+          });
+          })()}
         </div>
       )}
       </>)}
