@@ -787,8 +787,8 @@ const Cobrancas = () => {
       {!simpleMode && <CollectionMetrics />}
 
 
-      {/* Reminder schedule card */}
-      {reminderSettings && (
+      {/* Reminder schedule card — só no modo avançado */}
+      {!simpleMode && reminderSettings && (
         <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${reminderSettings.bot_auto_send ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
