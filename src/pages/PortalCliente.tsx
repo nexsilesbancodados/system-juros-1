@@ -169,8 +169,9 @@ const PortalCliente = () => {
         { event: "*", schema: "public", table: "contract_installments", filter: `client_id=eq.${clientId}` },
         () => {
           const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
-          if (cleanCpf) {
-            void doLogin(cleanCpf, true);
+          const b = portalData.client.birth_date || birthDate;
+          if (cleanCpf && b) {
+            void doLogin(cleanCpf, true, b);
 
           }
         },
