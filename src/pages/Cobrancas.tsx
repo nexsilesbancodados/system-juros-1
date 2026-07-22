@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import InstallmentRow from "@/components/cobrancas/InstallmentRow";
+import PayModal from "@/components/cobrancas/PayModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import InadimplenciaPanel from "@/components/cobrancas/InadimplenciaPanel";
 import {
@@ -9,7 +10,7 @@ import {
   History, Bell, Send
   , ChevronDown, ChevronRight, Layers, ListTree
 } from "lucide-react";
-import { computeLateFee } from "@/lib/lateFee";
+import { computeLateFee, computeLateFeeBreakdown } from "@/lib/lateFee";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -205,10 +206,11 @@ const Cobrancas = () => {
   };
 
 
-  const markPaidOne = async (inst: any) => {
+  const markPaidOne = async (inst: any, paidValue?: number) => {
     if (!user) return;
+    const paid = Number(paidValue ?? inst.amount);
     const { error } = await supabase.from("contract_installments").update({
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount,
+      status: "paid", paid_at: new Date().toISOString(), paid_amount: paid,
     }).eq("id", inst.id);
     if (error) throw error;
 
@@ -225,7 +227,7 @@ const Cobrancas = () => {
       }
     }
     await supabase.from("transactions").insert({
-      user_id: user.id, amount: Number(inst.amount), type: "payment",
+      user_id: user.id, amount: paid, type: "payment",
       description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
       client_id: inst.client_id, contract_id: inst.contract_id,
     });
@@ -234,6 +236,21 @@ const Cobrancas = () => {
     if (remaining && remaining.length === 0) {
       await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }
+  };
+
+  const markPaidPartial = async (inst: any, amount: number) => {
+    if (!user) return;
+    const prev = Number(inst.paid_amount || 0);
+    const next = Math.round((prev + amount) * 100) / 100;
+    const { error } = await supabase.from("contract_installments").update({
+      paid_amount: next,
+    }).eq("id", inst.id);
+    if (error) throw error;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount, type: "payment",
+      description: `Pagamento parcial parcela #${inst.installment_number} - ${inst.client_name}`,
+      client_id: inst.client_id, contract_id: inst.contract_id,
+    });
   };
 
   const optimisticMarkPaid = (ids: string[]) => {
@@ -249,19 +266,39 @@ const Cobrancas = () => {
     return prev;
   };
 
-  const handleMarkPaid = async (id: string) => {
+  const handleMarkPaid = async (id: string, paidValue?: number) => {
     const inst = installments.find((i: any) => i.id === id);
     if (!inst) return;
-    const snapshot = optimisticMarkPaid([id]);
+    const { withFees } = computeLateFeeBreakdown(inst);
+    const totalDue = Math.round(withFees * 100) / 100;
+    const alreadyPaid = Number(inst.paid_amount || 0);
+    const remaining = Math.max(0, Math.round((totalDue - alreadyPaid) * 100) / 100);
+    const value = Math.max(0, Number(paidValue ?? remaining));
+    if (value <= 0) { toast({ title: "Informe um valor válido", variant: "destructive" }); return; }
+
+    const isFull = value + 0.005 >= remaining;
     setConfirmPayId(null);
-    toast({ title: "✓ Parcela marcada como paga!" });
-    try {
-      await markPaidOne(inst);
-      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
-      qc.invalidateQueries({ queryKey: ["dashboard-data"] });
-    } catch (e: any) {
-      qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
-      toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" });
+
+    if (isFull) {
+      const snapshot = optimisticMarkPaid([id]);
+      toast({ title: "✓ Parcela quitada!" });
+      try {
+        await markPaidOne(inst, alreadyPaid + value);
+        qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+        qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+      } catch (e: any) {
+        qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
+        toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" });
+      }
+    } else {
+      try {
+        await markPaidPartial(inst, value);
+        qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+        qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+        toast({ title: "✓ Pagamento parcial registrado", description: `Restam R$ ${fmt(remaining - value)}` });
+      } catch (e: any) {
+        toast({ title: "Erro ao registrar pagamento parcial", description: e.message, variant: "destructive" });
+      }
     }
   };
 
@@ -1169,32 +1206,27 @@ const Cobrancas = () => {
       </>)}
 
 
-      {/* Payment Confirmation Modal */}
-      {confirmPayId && (
-        <div className="modal-backdrop" onClick={() => setConfirmPayId(null)}>
-          <div className="modal-content max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle size={28} className="text-success" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground">Confirmar Pagamento?</h3>
-              {(() => {
-                const inst = installments.find((i: any) => i.id === confirmPayId);
-                return inst ? (
-                  <div className="mt-2">
-                    <p className="text-sm font-medium text-foreground">{inst.client_name}</p>
-                    <p className="text-sm text-muted-foreground">Parcela #{inst.installment_number} · R$ {fmt(Number(inst.amount))}</p>
-                  </div>
-                ) : null;
-              })()}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={() => handleMarkPaid(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Payment Confirmation Modal (com pagamento parcial) */}
+      {confirmPayId && (() => {
+        const inst = installments.find((i: any) => i.id === confirmPayId);
+        if (!inst) return null;
+        const fee = computeLateFeeBreakdown(inst);
+        const alreadyPaid = Number(inst.paid_amount || 0);
+        const totalDue = Math.round(fee.withFees * 100) / 100;
+        const remaining = Math.max(0, Math.round((totalDue - alreadyPaid) * 100) / 100);
+        const dueDate = parseLocalDate(inst.due_date);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const daysLate = dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / 86400000) : 0;
+        return <PayModal
+          inst={inst}
+          fee={fee}
+          alreadyPaid={alreadyPaid}
+          remaining={remaining}
+          daysLate={daysLate}
+          onCancel={() => setConfirmPayId(null)}
+          onConfirm={(value) => handleMarkPaid(confirmPayId, value)}
+        />;
+      })()}
 
       {/* Bulk WhatsApp preview modal */}
       {bulkPreview && (
