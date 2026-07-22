@@ -162,8 +162,8 @@ export default function Investidores() {
                   return (
                     <li key={inv.id}>
                       <button
-                        onClick={() => setSelectedId(inv.id)}
-                        onDoubleClick={() => setExpandedId(inv.id)}
+                        onClick={() => setExpandedId(inv.id)}
+
                         className={`w-full rounded-xl border p-3 text-left transition ${
                           active ? "border-primary bg-primary/10" : "border-white/5 hover:bg-white/5"
                         }`}
