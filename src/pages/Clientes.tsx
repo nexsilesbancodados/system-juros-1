@@ -15,6 +15,8 @@ import { useConfirm } from "@/components/ConfirmProvider";
 import { fetchAll } from "@/lib/fetchAll";
 import { friendlyError } from "@/lib/friendlyError";
 import RiskBadge from "@/components/clients/RiskBadge";
+import { ClientRow } from "@/components/clients/ClientRow";
+import { ClientCard } from "@/components/clients/ClientCard";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
 type ScoreBand = "all" | "high" | "mid" | "low";
