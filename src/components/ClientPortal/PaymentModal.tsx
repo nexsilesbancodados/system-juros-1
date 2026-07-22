@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   CreditCard, Copy, Check, QrCode, Receipt, Calendar,
-  Download, Info, Loader2, MessageCircle, X
+  Download, Info, Loader2, MessageCircle, X, Upload
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
