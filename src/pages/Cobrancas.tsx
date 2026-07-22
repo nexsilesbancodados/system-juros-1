@@ -1046,10 +1046,10 @@ const Cobrancas = () => {
         />
       ) : (
         <div className="space-y-2 stagger-fade-in">
-          {(() => { return null; })()}
-          {(() => { /* noop */ return null; })()}
-          {grouped.map((group: any, gIdx: number) => {
+          {(() => null)()}
+          {(() => {
             const maxTotalWithFees = Math.max(1, ...grouped.map((g: any) => g.totalWithFees || g.total || 0));
+            return grouped.map((group: any) => {
             const groupSelectable = group.items.filter((i: any) => i.status !== "paid");
             const groupSelectedCount = groupSelectable.filter((i: any) => selected.has(i.id)).length;
             const allSelected = groupSelectable.length > 0 && groupSelectedCount === groupSelectable.length;
