@@ -771,8 +771,39 @@ const Cobrancas = () => {
         </div>
       </div>
 
+      {/* Tabs: Parcelas & Cobranças  |  Inadimplência (por cliente) */}
+      <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border w-fit">
+        <button
+          onClick={() => setActiveTab("parcelas")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "parcelas"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          <Receipt size={14} className="inline mr-1.5 -mt-0.5" />
+          Parcelas & Cobranças
+        </button>
+        <button
+          onClick={() => setActiveTab("aging")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "aging"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          <AlertTriangle size={14} className="inline mr-1.5 -mt-0.5" />
+          Inadimplência (por cliente)
+        </button>
+      </div>
+
+      {activeTab === "aging" ? (
+        <InadimplenciaPanel />
+      ) : (
+        <>
       {/* Métricas de cobranças automáticas */}
       <CollectionMetrics />
+
 
       {/* Reminder schedule card */}
       {reminderSettings && (
