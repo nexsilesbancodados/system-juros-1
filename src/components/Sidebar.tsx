@@ -240,10 +240,11 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         )}
 
         {isOpen && (
-          <div className="space-y-1">
+          <div className="space-y-1 animate-fade-in">
             {section.items.map(renderItem)}
           </div>
         )}
+
       </div>
     );
   };
