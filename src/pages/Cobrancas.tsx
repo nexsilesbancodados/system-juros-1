@@ -826,6 +826,24 @@ const Cobrancas = () => {
             </button>
           ))}
         </div>
+        {view === "list" && (
+          <div className="pill-tabs" title="Modo de agrupamento">
+            <button
+              onClick={() => { setGroupMode("expanded"); setCollapsed(new Set()); }}
+              className={`pill-tab ${groupMode === "expanded" ? "pill-tab-active" : "pill-tab-inactive"}`}
+              aria-label="Mostrar parcelas separadas"
+            >
+              <ListTree size={12} /> Parcelas
+            </button>
+            <button
+              onClick={() => { setGroupMode("collapsed"); setCollapsed(new Set()); }}
+              className={`pill-tab ${groupMode === "collapsed" ? "pill-tab-active" : "pill-tab-inactive"}`}
+              aria-label="Mostrar somente totais por cliente"
+            >
+              <Layers size={12} /> Totais
+            </button>
+          </div>
+        )}
       </div>
 
 
