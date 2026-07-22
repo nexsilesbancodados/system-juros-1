@@ -191,6 +191,7 @@ const Cobradores = () => {
   };
 
   const handleRemoveAssignment = async (id: string) => {
+    if (!(await confirm("Remover esta atribuição de cliente?"))) return;
     await supabase.from("collector_assignments").delete().eq("id", id);
     inv("collector-assignments");
     inv("all-installments-collectors");
