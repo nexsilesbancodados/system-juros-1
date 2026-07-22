@@ -542,11 +542,21 @@ const Cobrancas = () => {
 
   // Aggregate per-client contract facts using ALL installments (unfiltered) so numbers are stable
   const clientAggregates = useMemo(() => {
+    // Which contracts still have any non-paid installment (active contracts only)
+    const contractHasOpen = new Map<string, boolean>();
+    for (const inst of installments as any[]) {
+      if (!inst.contract_id) continue;
+      if (inst.status !== "paid") contractHasOpen.set(inst.contract_id, true);
+      else if (!contractHasOpen.has(inst.contract_id)) contractHasOpen.set(inst.contract_id, false);
+    }
     const m = new Map<string, { loaned: number; totalInstallments: number; grossExpected: number; overdueCount: number; overdueFees: number; overdueAmount: number }>();
     const seenContracts = new Map<string, Set<string>>();
     for (const inst of installments as any[]) {
       const cid = inst.client_id;
+      // Skip installments of fully-paid / finished contracts
+      if (inst.contract_id && !contractHasOpen.get(inst.contract_id)) continue;
       if (!m.has(cid)) { m.set(cid, { loaned: 0, totalInstallments: 0, grossExpected: 0, overdueCount: 0, overdueFees: 0, overdueAmount: 0 }); seenContracts.set(cid, new Set()); }
+
       const agg = m.get(cid)!;
       const set = seenContracts.get(cid)!;
       if (inst.contract_id && !set.has(inst.contract_id)) {
