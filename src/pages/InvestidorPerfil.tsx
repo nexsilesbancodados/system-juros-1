@@ -38,10 +38,13 @@ type Payment = {
   method: string | null; notes: string | null;
 };
 
-export default function InvestidorPerfil() {
-  const { id } = useParams<{ id: string }>();
+export default function InvestidorPerfil({ investorId, onBack }: { investorId?: string; onBack?: () => void } = {}) {
+  const params = useParams<{ id: string }>();
+  const id = investorId ?? params.id;
   const nav = useNavigate();
+  const goBack = onBack ?? (() => nav("/investidores"));
   const { user } = useAuth();
+
   const [investor, setInvestor] = useState<Investor | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
