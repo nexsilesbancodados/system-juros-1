@@ -316,6 +316,7 @@ const PortalCliente = () => {
     // Limpa estado local do React primeiro para UI responsiva
     setPortalData(null);
     setCpf("");
+    setBirthDate("");
     setSelectedInstallment(null);
     setPaymentOpen(false);
     // Limpeza completa: supabase signOut + storage + cookies + caches
