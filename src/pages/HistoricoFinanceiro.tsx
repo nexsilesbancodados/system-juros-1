@@ -115,7 +115,7 @@ export default function HistoricoFinanceiro() {
       {/* Lista */}
       {filtered.length === 0 ? (
         <EmptyState
-          icon={<Archive size={40} />}
+          icon={Archive}
           title="Nada arquivado ainda"
           description="Quando um contrato for quitado, ele aparece aqui junto do lucro realizado."
         />
