@@ -155,6 +155,7 @@ export default function Investidores() {
                     <li key={inv.id}>
                       <button
                         onClick={() => setSelectedId(inv.id)}
+                        onDoubleClick={() => nav(`/investidores/${inv.id}`)}
                         className={`w-full rounded-xl border p-3 text-left transition ${
                           active ? "border-primary bg-primary/10" : "border-white/5 hover:bg-white/5"
                         }`}
