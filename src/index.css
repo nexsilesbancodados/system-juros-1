@@ -1154,3 +1154,64 @@ div[style*="Edit with Lovable"],
   }
   .shield-pulse { animation: shieldPulse 2.4s ease-out infinite; }
 }
+
+@layer components {
+  /* Checkbox refinado — reusável */
+  .check-premium {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 6px;
+    border: 1.5px solid hsl(var(--border));
+    background: hsl(var(--card) / 0.6);
+    cursor: pointer;
+    position: relative;
+    transition: all .18s ease;
+    flex-shrink: 0;
+  }
+  .check-premium:hover {
+    border-color: hsl(var(--primary) / 0.6);
+    background: hsl(var(--primary) / 0.08);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+  }
+  .check-premium:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+    border-color: hsl(var(--primary));
+  }
+  .check-premium:checked {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow, var(--primary))));
+    border-color: hsl(var(--primary));
+    box-shadow: 0 2px 8px hsl(var(--primary) / 0.35);
+  }
+  .check-premium:checked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='3.5 8.5 6.5 11.5 12.5 5'/></svg>");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 82%;
+    animation: checkPop .18s ease-out;
+  }
+  .check-premium:indeterminate {
+    background: hsl(var(--primary) / 0.9);
+    border-color: hsl(var(--primary));
+  }
+  .check-premium:indeterminate::after {
+    content: "";
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    top: 46%;
+    height: 2px;
+    border-radius: 2px;
+    background: white;
+  }
+  @keyframes checkPop {
+    0%   { transform: scale(.5); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
