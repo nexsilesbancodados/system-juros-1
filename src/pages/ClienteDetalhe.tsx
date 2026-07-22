@@ -25,7 +25,7 @@ import {
   MessageSquare, Star, Ban, RotateCcw, Download, TrendingUp,
   Calendar, Receipt, Activity, Search, X, Percent, Wallet, Printer, Camera,
   Wrench, Repeat, PhoneCall, StickyNote,
-  Info,
+  Info, UploadCloud, File as FileIcon, ImageIcon, ShieldCheck, Sparkles,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
@@ -150,7 +150,9 @@ const ClienteDetalhe = () => {
   });
 
   const kpis = useMemo(() => {
-    const totalCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const activeContracts = contracts.filter((c: any) => c.status === "active");
+    const totalCapital = activeContracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const lifetimeCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
     const totalAmount = contracts.reduce((s: number, c: any) => s + Number(c.total_amount || 0), 0);
     const paidInst = installments.filter((i: any) => i.status === "paid");
     const overdueInst = installments.filter((i: any) => i.status === "overdue");
@@ -159,8 +161,58 @@ const ClienteDetalhe = () => {
     const totalOverdue = overdueInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const totalPending = pendingInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const totalProfit = profits.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
-    return { totalCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst };
+    const ltvPct = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
+    const ticketMedio = contracts.length > 0 ? lifetimeCapital / contracts.length : 0;
+    const totalDueInst = paidInst.length + overdueInst.length;
+    const latePayRate = totalDueInst > 0 ? Math.round((overdueInst.length / totalDueInst) * 100) : 0;
+    const nextDueInst = pendingInst
+      .slice()
+      .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+    return { totalCapital, lifetimeCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst, ltvPct, ticketMedio, latePayRate, nextDueInst, activeContracts };
   }, [contracts, installments, profits]);
+
+  // ===== Documentos & Anexos (Storage) =====
+  const docsFolder = id ? `client-docs/${id}` : "";
+  const { data: clientDocs = [] } = useQuery({
+    queryKey: ["client-docs", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage.from("uploads").list(docsFolder, {
+        limit: 100, sortBy: { column: "created_at", order: "desc" },
+      });
+      if (error) return [];
+      return (data || []).filter((f: any) => f.name && !f.name.startsWith("."));
+    },
+  });
+  const [docUploading, setDocUploading] = useState(false);
+  const uploadDoc = async (file: File) => {
+    if (!file || !id) return;
+    setDocUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${docsFolder}/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
+      const { error } = await supabase.storage.from("uploads").upload(path, file, {
+        upsert: false, contentType: file.type,
+      });
+      if (error) throw error;
+      toast({ title: "Documento anexado" });
+      inv("client-docs");
+    } catch (e: any) {
+      toast({ title: "Falha ao anexar", description: e.message, variant: "destructive" });
+    } finally { setDocUploading(false); }
+  };
+  const deleteDoc = async (name: string) => {
+    if (!confirm("Remover este documento?")) return;
+    const { error } = await supabase.storage.from("uploads").remove([`${docsFolder}/${name}`]);
+    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    toast({ title: "Documento removido" });
+    inv("client-docs");
+  };
+  const signedUrl = async (name: string) => {
+    const { data } = await supabase.storage.from("uploads").createSignedUrl(`${docsFolder}/${name}`, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
 
   const groupedInstallments = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -997,22 +1049,36 @@ const ClienteDetalhe = () => {
   ];
 
 
+  const daysAsClient = client.created_at ? Math.max(1, Math.floor((Date.now() - new Date(client.created_at).getTime()) / 86400000)) : 0;
+  const clientSince = client.created_at ? new Date(client.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).toUpperCase() : "—";
+  const riskLabel = (client.credit_score || 0) >= 750 ? "Baixo Risco" : (client.credit_score || 0) >= 600 ? "Risco Moderado" : (client.credit_score || 0) >= 400 ? "Risco Elevado" : "Risco Alto";
+  const riskTone = (client.credit_score || 0) >= 750 ? "text-emerald-400 border-emerald-400/30 bg-emerald-500/10" : (client.credit_score || 0) >= 600 ? "text-amber-300 border-amber-400/30 bg-amber-500/10" : "text-rose-400 border-rose-400/30 bg-rose-500/10";
+
   return (
-    <div className="max-w-4xl mx-auto space-y-5 pb-24">
-      {/* Premium hero header */}
-      <div className="page-hero animate-fade-in">
-        <div className="page-hero-content flex items-center gap-3">
-        <button onClick={() => navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-24" style={{ fontFamily: "'Manrope', 'Inter', sans-serif" }}>
+      {/* ===== Editorial Dossier Hero ===== */}
+      <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-background via-card/60 to-background p-6 md:p-8">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-24 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-6">
+            <button onClick={() => navigate("/clientes")} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" aria-label="Voltar">
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.3em] text-muted-foreground uppercase">
+              <Sparkles size={12} className="text-primary" />
+              Dossiê de Crédito · Cliente desde {clientSince}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-center">
+            {/* Avatar */}
             <div className="relative group shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-primary/5 flex items-center justify-center text-2xl font-bold text-primary overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/10">
-                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br from-primary/40 via-primary/20 to-amber-500/10 flex items-center justify-center text-4xl font-bold text-primary overflow-hidden ring-2 ring-primary/30 shadow-xl shadow-primary/20" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>
+                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-full h-full object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
-              <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 shadow-md" style={{ background: "var(--gradient-button)" }}>
-                <Camera size={11} className="text-primary-foreground" />
+              <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-lg" style={{ background: "var(--gradient-button)" }} title="Trocar foto">
+                <Camera size={13} className="text-primary-foreground" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -1020,8 +1086,8 @@ const ClienteDetalhe = () => {
                   const path = `${user!.id}/client-avatars/${id}.${ext}`;
                   const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
                   if (!upErr) {
-                    const signedUrl = await getSignedUploadUrl(path);
-                    if (signedUrl) await supabase.from("clients").update({ avatar_url: signedUrl }).eq("id", id);
+                    const url = await getSignedUploadUrl(path);
+                    if (url) await supabase.from("clients").update({ avatar_url: url }).eq("id", id);
                     inv("client-detail");
                     toast({ title: "✓ Foto atualizada!" });
                   } else {
@@ -1030,37 +1096,70 @@ const ClienteDetalhe = () => {
                 }} className="hidden" />
               </label>
             </div>
+
+            {/* Nome & Tags */}
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-foreground truncate tracking-tight">{client.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap mt-1">
-                <span className="text-xs text-muted-foreground font-mono">{client.cpf_cnpj || "Sem CPF"}</span>
-                <span className="text-muted-foreground/40">·</span>
-                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/15 text-success border-success/30 text-[10px] font-semibold" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
-                <span className={`text-xs font-bold ${scoreClr} inline-flex items-center gap-1`}>
-                  <Star size={11} className="fill-current" /> {client.credit_score || 0}
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-[0.95] mb-3" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif", letterSpacing: "-0.02em" }}>
+                {client.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${client.status === "Ativo" ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${client.status === "Ativo" ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
+                  {client.status}
                 </span>
-                <AICreditScore clientId={id!} currentScore={client.credit_score || 0} onApplyScore={() => inv("client-detail")} />
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${riskTone}`}>
+                  <ShieldCheck size={11} /> {riskLabel}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-muted-foreground border border-border font-mono">
+                  {client.cpf_cnpj || "SEM CPF"}
+                </span>
+                {kpis.activeContracts.length > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30">
+                    <FileText size={11} /> {kpis.activeContracts.length} Contrato{kpis.activeContracts.length > 1 ? "s" : ""} Ativo{kpis.activeContracts.length > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Ações principais */}
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all" style={{ background: "var(--gradient-button)" }}>
+                <Plus size={14} /> Novo Empréstimo
+              </button>
+              <ClientToolsPanel
+                open={showMoreActions}
+                onOpenChange={setShowMoreActions}
+                groups={toolGroups}
+                trigger={
+                  <button className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors">
+                    <Wrench size={13} /> Ferramentas
+                  </button>
+                }
+              />
+              <button onClick={startEdit} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors" title="Editar dados">
+                <Edit size={13} /> Editar
+              </button>
+            </div>
+          </div>
+
+          {/* Financeiro Consolidado strip */}
+          <div className="mt-8 pt-6 border-t border-border/40 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { label: "Capital Ativo", value: `R$ ${fmt(kpis.totalCapital)}`, sub: `${kpis.activeContracts.length} contrato(s)`, tone: "text-foreground" },
+              { label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, sub: `${kpis.ltvPct}% do total`, tone: "text-emerald-400" },
+              { label: "Lucro Gerado", value: `R$ ${fmt(kpis.totalProfit)}`, sub: `Ticket médio R$ ${fmt(kpis.ticketMedio)}`, tone: "text-amber-300" },
+              { label: "Próximo Vencto.", value: kpis.nextDueInst ? formatBR(kpis.nextDueInst.due_date) : "—", sub: kpis.nextDueInst ? `R$ ${fmt(Number(kpis.nextDueInst.amount))}` : "Sem pendências", tone: kpis.overdueInst.length > 0 ? "text-rose-400" : "text-sky-300" },
+            ].map(k => (
+              <div key={k.label}>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1.5">{k.label}</p>
+                <p className={`text-xl md:text-2xl font-bold tracking-tight ${k.tone}`} style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>{k.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{k.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar" aria-label="Editar"><Edit size={16} /></button>
-        <ClientToolsPanel
-          open={showMoreActions}
-          onOpenChange={setShowMoreActions}
-          groups={toolGroups}
-          trigger={
-            <button
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-button)" }}
-              title="Abrir ferramentas" aria-label="Abrir ferramentas"
-            >
-              <Wrench size={14} /> Ferramentas
-            </button>
-          }
-        />
-        </div>
-      </div>
+      </header>
+
 
       {/* ===== MODALS ===== */}
 
@@ -1203,39 +1302,21 @@ const ClienteDetalhe = () => {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { Icon: DollarSign, label: "Capital na Rua", value: `R$ ${fmt(kpis.totalCapital)}`, color: "text-foreground", ring: "ring-primary/25", iconTint: "text-primary bg-primary/15", accent: "from-primary/10 to-transparent" },
-          { Icon: CheckCircle, label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, color: "text-success", ring: "ring-emerald-400/25", iconTint: "text-emerald-400 bg-emerald-500/15", accent: "from-emerald-500/10 to-transparent" },
-          { Icon: AlertTriangle, label: "Em Atraso", value: `R$ ${fmt(kpis.totalOverdue)}`, color: "text-destructive", ring: "ring-rose-400/25", iconTint: "text-rose-400 bg-rose-500/15", accent: "from-rose-500/10 to-transparent" },
-          { Icon: Wallet, label: "Restante", value: `R$ ${fmt(kpis.remaining)}`, color: "text-primary", ring: "ring-sky-400/25", iconTint: "text-sky-400 bg-sky-500/15", accent: "from-sky-500/10 to-transparent" },
-        ].map(s => (
-          <div key={s.label} className={`relative overflow-hidden glass-card rounded-2xl p-4 ring-1 ${s.ring} hover-lift transition-all`}>
-            <div className={`absolute inset-0 bg-gradient-to-br ${s.accent} pointer-events-none`} />
-            <div className="relative">
-              <div className={`w-10 h-10 rounded-xl ${s.iconTint} flex items-center justify-center mb-3 shadow-sm`}><s.Icon size={18} /></div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.color} mt-1 tracking-tight`}>{s.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => navigate(`/clientes/novo?clientId=${id}`)} className="flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-primary/40 transition-all" style={{ background: "var(--gradient-button)" }}>
-          <Plus size={16} /> Novo Empréstimo
-        </button>
-        <button onClick={payAllPending} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/30 text-sm font-bold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all">
-          <CheckCircle size={16} /> Quitar Todas
-        </button>
-        {kpis.overdueInst.length > 0 && (
-          <button onClick={sendAllOverdue} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-rose-500/10 text-rose-300 border border-rose-400/30 text-sm font-bold hover:bg-rose-500/20 hover:-translate-y-0.5 transition-all">
-            <Send size={16} /> Cobrar ({kpis.overdueInst.length})
-          </button>
-        )}
-      </div>
+      {/* Quick actions bar */}
+      {(kpis.pendingInst.length > 0 || kpis.overdueInst.length > 0) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {kpis.pendingInst.length > 0 && (
+            <button onClick={payAllPending} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/30 text-xs font-bold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all">
+              <CheckCircle size={14} /> Quitar Todas
+            </button>
+          )}
+          {kpis.overdueInst.length > 0 && (
+            <button onClick={sendAllOverdue} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-400/30 text-xs font-bold hover:bg-rose-500/20 hover:-translate-y-0.5 transition-all">
+              <Send size={14} /> Cobrar Atrasadas ({kpis.overdueInst.length})
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 glass-card rounded-2xl p-1.5">
@@ -1247,42 +1328,208 @@ const ClienteDetalhe = () => {
         ))}
       </div>
 
-      {/* Tab: Resumo */}
-      {activeTab === "resumo" && (
-        <div className="space-y-4">
-          <div className="glass-card rounded-2xl p-5">
-            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { n: contracts.length, l: "Contratos", c: "text-foreground", tint: "from-primary/10" },
-                { n: kpis.paidInst.length, l: "Pagas", c: "text-success", tint: "from-emerald-500/10" },
-                { n: kpis.overdueInst.length, l: "Atrasadas", c: "text-destructive", tint: "from-rose-500/10" },
-                { n: kpis.pendingInst.length, l: "Pendentes", c: "text-foreground", tint: "from-sky-500/10" },
-              ].map(k => (
-                <div key={k.l} className={`relative overflow-hidden rounded-xl p-3 text-center bg-gradient-to-br ${k.tint} to-transparent ring-1 ring-border/30`}>
-                  <p className={`text-3xl font-bold ${k.c} tracking-tight`}>{k.n}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold mt-1">{k.l}</p>
+      {/* Tab: Resumo — Editorial Magazine Layout */}
+      {activeTab === "resumo" && (() => {
+        const score = client.credit_score || 0;
+        const scoreMax = 1000;
+        const scorePct = Math.min(100, (score / scoreMax) * 100);
+        const scoreColor = score >= 750 ? "#10b981" : score >= 600 ? "#f59e0b" : score >= 400 ? "#f97316" : "#ef4444";
+        const r = 54, C = 2 * Math.PI * r;
+        // Timeline mini (últimos 6 eventos)
+        const timelineEvents: any[] = [];
+        contracts.forEach((c: any) => timelineEvents.push({ id: `c-${c.id}`, date: c.created_at, title: `Contrato · R$ ${fmt(Number(c.capital))}`, icon: FileText, tone: "text-primary bg-primary/10" }));
+        installments.filter((i: any) => i.status === "paid" && i.paid_at).forEach((i: any) => timelineEvents.push({ id: `i-${i.id}`, date: i.paid_at, title: `Parcela #${i.installment_number} paga · R$ ${fmt(Number(i.paid_amount || i.amount))}`, icon: CheckCircle, tone: "text-emerald-400 bg-emerald-500/10" }));
+        profits.forEach((p: any) => timelineEvents.push({ id: `p-${p.id}`, date: p.date, title: `Lucro · R$ ${fmt(Number(p.amount))}`, icon: TrendingUp, tone: "text-amber-300 bg-amber-500/10" }));
+        const sortedEvents = timelineEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 6);
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* ===== LEFT COLUMN — main story ===== */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Contato & Endereço */}
+              <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground">Contato & Endereço</h2>
+                  <button onClick={startEditAddress} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:underline">Editar endereço</button>
                 </div>
-              ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20" },
+                    { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20" },
+                    { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20" },
+                    { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20" },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-start gap-3">
+                      <div className={`w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
+                        <item.Icon size={15} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{item.label}</p>
+                        <p className="text-sm text-foreground font-semibold truncate">{item.value || "—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {address?.street && (
+                  <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/40 flex items-center gap-1.5">
+                    <MapPin size={12} className="text-primary" />
+                    {address.street}{address.number ? `, ${address.number}` : ""} · {address.neighborhood} · {address.city}/{address.state}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 flex-wrap">
+                  <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-400/20 text-[11px] font-semibold hover:bg-sky-500/20 transition-all"><Phone size={12} /> Ligar</button>
+                  <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-400/20 text-[11px] font-semibold hover:bg-emerald-500/20 transition-all"><MessageSquare size={12} /> WhatsApp</button>
+                  <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-[11px] font-semibold hover:bg-primary/20 transition-all"><Send size={12} /> Enviar Portal</button>
+                  <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-400/20 text-[11px] font-semibold hover:bg-amber-500/20 transition-all"><Mail size={12} /> E-mail</button>
+                </div>
+              </section>
+
+              {/* Timeline de Atividade */}
+              <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground">Timeline de Atividade</h2>
+                  <button onClick={() => setActiveTab("historico")} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:underline">Ver histórico completo</button>
+                </div>
+                {sortedEvents.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-6">Nenhuma atividade registrada</p>
+                ) : (
+                  <div className="relative pl-5 space-y-3">
+                    <div className="absolute left-[9px] top-2 bottom-2 w-px bg-border" />
+                    {sortedEvents.map(ev => (
+                      <div key={ev.id} className="relative flex items-center gap-3">
+                        <div className={`absolute -left-[13px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${ev.tone.split(" ")[1]} border-2 border-background`} />
+                        <div className={`w-8 h-8 rounded-lg ${ev.tone} flex items-center justify-center shrink-0`}>
+                          <ev.icon size={13} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate font-medium">{ev.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{formatBR(ev.date)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Documentos & Anexos */}
+              <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground">Documentos & Anexos</h2>
+                  <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-[11px] font-semibold cursor-pointer hover:bg-primary/20 transition-all ${docUploading ? "opacity-60 pointer-events-none" : ""}`}>
+                    <UploadCloud size={12} /> {docUploading ? "Enviando..." : "Anexar"}
+                    <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc(f); e.currentTarget.value = ""; }} />
+                  </label>
+                </div>
+                {clientDocs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileIcon size={28} className="mx-auto text-muted-foreground/40 mb-2" />
+                    <p className="text-xs text-muted-foreground">Nenhum documento anexado</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">RG, comprovante de renda, contrato assinado...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {clientDocs.map((d: any) => {
+                      const isImg = /\.(png|jpe?g|gif|webp|heic)$/i.test(d.name);
+                      return (
+                        <div key={d.name} className="group relative flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-background/40 hover:border-primary/40 transition-colors">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isImg ? "bg-violet-500/10 text-violet-400" : "bg-sky-500/10 text-sky-400"}`}>
+                            {isImg ? <ImageIcon size={14} /> : <FileIcon size={14} />}
+                          </div>
+                          <button onClick={() => signedUrl(d.name)} className="flex-1 min-w-0 text-left">
+                            <p className="text-[11px] text-foreground font-semibold truncate">{d.name.replace(/^\d+-/, "")}</p>
+                            <p className="text-[9px] text-muted-foreground">{d.metadata?.size ? `${Math.round(d.metadata.size / 1024)} KB` : ""}</p>
+                          </button>
+                          <button onClick={() => deleteDoc(d.name)} className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-destructive/10 text-destructive transition-opacity" title="Remover">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* ===== RIGHT COLUMN — sidebar dossier ===== */}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Score & Risco */}
+              <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-card/60 to-background p-5">
+                <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground mb-4">Score & Risco</h2>
+                <div className="flex items-center justify-center relative">
+                  <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90">
+                    <circle cx="70" cy="70" r={r} stroke="hsl(var(--border))" strokeWidth="10" fill="none" />
+                    <circle cx="70" cy="70" r={r} stroke={scoreColor} strokeWidth="10" fill="none"
+                      strokeDasharray={C} strokeDashoffset={C - (C * scorePct) / 100} strokeLinecap="round"
+                      style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-4xl font-bold text-foreground" style={{ fontFamily: "'Sora', sans-serif", color: scoreColor }}>{score}</p>
+                    <p className="text-[9px] uppercase tracking-widest text-muted-foreground">de {scoreMax}</p>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${riskTone}`}>
+                    <ShieldCheck size={11} /> {riskLabel}
+                  </span>
+                </div>
+                <div className="mt-4 pt-4 border-t border-border/40">
+                  <AICreditScore clientId={id!} currentScore={score} onApplyScore={() => inv("client-detail")} />
+                </div>
+              </section>
+
+              {/* Estatísticas Rápidas */}
+              <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground mb-4">Estatísticas</h2>
+                <div className="space-y-3">
+                  {[
+                    { label: "Contratos totais", value: String(contracts.length), Icon: FileText },
+                    { label: "Parcelas pagas", value: `${kpis.paidInst.length}/${kpis.paidInst.length + kpis.overdueInst.length + kpis.pendingInst.length}`, Icon: CheckCircle },
+                    { label: "Taxa de atraso", value: `${kpis.latePayRate}%`, Icon: AlertTriangle, tone: kpis.latePayRate > 30 ? "text-rose-400" : kpis.latePayRate > 10 ? "text-amber-300" : "text-emerald-400" },
+                    { label: "Ticket médio", value: `R$ ${fmt(kpis.ticketMedio)}`, Icon: DollarSign },
+                    { label: "Cliente há", value: `${daysAsClient} dia(s)`, Icon: Calendar },
+                  ].map(s => (
+                    <div key={s.label} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <s.Icon size={13} />
+                        <span>{s.label}</span>
+                      </div>
+                      <span className={`font-bold ${s.tone || "text-foreground"}`}>{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Contratos Overview compacto */}
+              {contracts.length > 0 && (
+                <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground">Contratos</h2>
+                    <button onClick={() => setActiveTab("contratos")} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:underline">Ver todos</button>
+                  </div>
+                  <div className="space-y-2">
+                    {contracts.slice(0, 3).map((c: any) => {
+                      const cInst = installments.filter((i: any) => i.contract_id === c.id);
+                      const cPaid = cInst.filter((i: any) => i.status === "paid").length;
+                      const pct = Math.round((cPaid / (c.num_installments || 1)) * 100);
+                      return (
+                        <button key={c.id} onClick={() => setActiveTab("parcelas")} className="w-full text-left rounded-xl border border-border/60 bg-background/40 p-3 hover:border-primary/40 transition-colors">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-xs font-bold text-foreground">R$ {fmt(Number(c.capital))} · {c.num_installments}x</p>
+                            <Badge variant="outline" className={c.status === "active" ? "bg-success/10 text-success border-success/20 text-[9px]" : "bg-muted text-muted-foreground text-[9px]"}>{c.status === "active" ? "Ativo" : c.status}</Badge>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} /></div>
+                          <p className="text-[10px] text-muted-foreground mt-1">{cPaid}/{c.num_installments} · {pct}%</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
-          {contracts.map((c: any) => {
-            const cInst = installments.filter((i: any) => i.contract_id === c.id);
-            const cPaid = cInst.filter((i: any) => i.status === "paid").length;
-            const pct = Math.round((cPaid / (c.num_installments || 1)) * 100);
-            return (
-              <div key={c.id} className="bg-card border border-border rounded-2xl p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setActiveTab("parcelas")}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-foreground">R$ {fmt(Number(c.capital))} · {c.num_installments}x</p>
-                  <Badge variant="outline" className={c.status === "active" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{c.status === "active" ? "Ativo" : c.status}</Badge>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} /></div>
-                <p className="text-[10px] text-muted-foreground mt-1">{cPaid}/{c.num_installments} pagas · {pct}%</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        );
+      })()}
+
 
       {/* Tab: Contratos */}
       {activeTab === "contratos" && (
