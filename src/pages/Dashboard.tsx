@@ -123,11 +123,19 @@ const Dashboard = () => {
     const totalCapitalEver = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
     const roi = totalCapitalEver > 0 ? ((totalProfitAmount / totalCapitalEver) * 100) : 0;
 
+    // Totais de contratos (histórico) e pendências
+    const totalLent = contracts.reduce((s: number, c: any) => s + Number(c.capital), 0);
+    const pendingReceivable = installments
+      .filter((i: any) => i.status === "pending" || i.status === "overdue" || (i.status !== "paid" && !i.paid_at))
+      .reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
+
     return {
       capitalNaRua, lucroRecebido, lucroAReceber, taxaInadimplencia,
       totalReceived, totalOverdueAmount, roi,
+      totalLent, pendingReceivable,
       contratosAtivos: activeContracts.length,
       contratosAtraso: contracts.filter((c: any) => c.status === "overdue").length,
+      totalContratos: contracts.length,
       totalClientes: clients.length,
       overdueCount: overdueInstallments.length,
       vencendoHoje: vencendoHoje.length,
