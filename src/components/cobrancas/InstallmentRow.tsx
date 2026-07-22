@@ -93,6 +93,21 @@ const InstallmentRowInner = ({
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
           <span className="font-semibold text-foreground">R$ {fmt(Number(inst.amount))}</span>
+          {showFee && (
+            <span
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20 text-[10px] font-semibold"
+              title={`Base R$ ${fmt(fee.base)} + Multa R$ ${fmt(fee.multa)}${fee.multaPct ? ` (${fee.multaPct}%)` : ""} + Juros R$ ${fmt(fee.juros)}${fee.jurosPct ? ` (${fee.jurosPct}%/dia × ${fee.daysLate}d)` : ""} = R$ ${fmt(fee.withFees)}`}
+            >
+              +R$ {fmt(fee.total)}
+              {fee.multa > 0 && <span className="opacity-80 font-normal">· multa R$ {fmt(fee.multa)}</span>}
+              {fee.juros > 0 && <span className="opacity-80 font-normal">· juros R$ {fmt(fee.juros)}{fee.daysLate ? ` (${fee.daysLate}d)` : ""}</span>}
+            </span>
+          )}
+          {showFee && (
+            <span className="text-foreground font-semibold" title="Total com multa e juros">
+              = R$ {fmt(fee.withFees)}
+            </span>
+          )}
           <span className="flex items-center gap-1"><CalendarDays size={10} /> {formatBR(inst.due_date)}</span>
           {inst.contract_id && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono text-[10px]" title={`Contrato ${inst.client_id}`}>
