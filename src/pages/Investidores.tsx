@@ -40,9 +40,11 @@ export default function Investidores() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newLoanOpen, setNewLoanOpen] = useState(false);
   const [payOpen, setPayOpen] = useState<string | null>(null);
+
 
   const load = async () => {
     if (!user?.id) return;
