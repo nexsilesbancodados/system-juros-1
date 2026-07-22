@@ -935,13 +935,13 @@ const ClienteDetalhe = () => {
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="relative group shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-lg font-bold text-primary overflow-hidden ring-1 ring-primary/20">
-                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-primary/5 flex items-center justify-center text-2xl font-bold text-primary overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/10">
+                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
-              <label className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100" style={{ background: "var(--gradient-button)" }}>
-                <Camera size={10} className="text-white" />
+              <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 shadow-md" style={{ background: "var(--gradient-button)" }}>
+                <Camera size={11} className="text-white" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -960,11 +960,14 @@ const ClienteDetalhe = () => {
               </label>
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-foreground truncate">{client.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground truncate tracking-tight">{client.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
                 <span className="text-xs text-muted-foreground font-mono">{client.cpf_cnpj || "Sem CPF"}</span>
-                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/10 text-success border-success/20 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
-                <span className={`text-xs font-bold ${scoreClr}`}>Score: {client.credit_score || 0}</span>
+                <span className="text-muted-foreground/40">·</span>
+                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/15 text-success border-success/30 text-[10px] font-semibold" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
+                <span className={`text-xs font-bold ${scoreClr} inline-flex items-center gap-1`}>
+                  <Star size={11} className="fill-current" /> {client.credit_score || 0}
+                </span>
                 <AICreditScore clientId={id!} currentScore={client.credit_score || 0} onApplyScore={() => inv("client-detail")} />
               </div>
             </div>
