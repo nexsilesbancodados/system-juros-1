@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
