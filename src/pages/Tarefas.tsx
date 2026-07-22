@@ -37,7 +37,7 @@ const Tarefas = () => {
     if (!user || !newTask.trim()) return;
     const { error } = await supabase.from("todos").insert({ user_id: user.id, task: newTask.trim() });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error), variant: "destructive" });
     } else {
       setNewTask("");
       fetchTodos();
