@@ -205,10 +205,11 @@ const Cobrancas = () => {
   };
 
 
-  const markPaidOne = async (inst: any) => {
+  const markPaidOne = async (inst: any, paidValue?: number) => {
     if (!user) return;
+    const paid = Number(paidValue ?? inst.amount);
     const { error } = await supabase.from("contract_installments").update({
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: inst.amount,
+      status: "paid", paid_at: new Date().toISOString(), paid_amount: paid,
     }).eq("id", inst.id);
     if (error) throw error;
 
@@ -225,7 +226,7 @@ const Cobrancas = () => {
       }
     }
     await supabase.from("transactions").insert({
-      user_id: user.id, amount: Number(inst.amount), type: "payment",
+      user_id: user.id, amount: paid, type: "payment",
       description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
       client_id: inst.client_id, contract_id: inst.contract_id,
     });
@@ -234,6 +235,21 @@ const Cobrancas = () => {
     if (remaining && remaining.length === 0) {
       await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }
+  };
+
+  const markPaidPartial = async (inst: any, amount: number) => {
+    if (!user) return;
+    const prev = Number(inst.paid_amount || 0);
+    const next = Math.round((prev + amount) * 100) / 100;
+    const { error } = await supabase.from("contract_installments").update({
+      paid_amount: next,
+    }).eq("id", inst.id);
+    if (error) throw error;
+    await supabase.from("transactions").insert({
+      user_id: user.id, amount, type: "payment",
+      description: `Pagamento parcial parcela #${inst.installment_number} - ${inst.client_name}`,
+      client_id: inst.client_id, contract_id: inst.contract_id,
+    });
   };
 
   const optimisticMarkPaid = (ids: string[]) => {
@@ -249,19 +265,39 @@ const Cobrancas = () => {
     return prev;
   };
 
-  const handleMarkPaid = async (id: string) => {
+  const handleMarkPaid = async (id: string, paidValue?: number) => {
     const inst = installments.find((i: any) => i.id === id);
     if (!inst) return;
-    const snapshot = optimisticMarkPaid([id]);
+    const { withFees } = computeLateFeeBreakdown(inst);
+    const totalDue = Math.round(withFees * 100) / 100;
+    const alreadyPaid = Number(inst.paid_amount || 0);
+    const remaining = Math.max(0, Math.round((totalDue - alreadyPaid) * 100) / 100);
+    const value = Math.max(0, Number(paidValue ?? remaining));
+    if (value <= 0) { toast({ title: "Informe um valor válido", variant: "destructive" }); return; }
+
+    const isFull = value + 0.005 >= remaining;
     setConfirmPayId(null);
-    toast({ title: "✓ Parcela marcada como paga!" });
-    try {
-      await markPaidOne(inst);
-      qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
-      qc.invalidateQueries({ queryKey: ["dashboard-data"] });
-    } catch (e: any) {
-      qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
-      toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" });
+
+    if (isFull) {
+      const snapshot = optimisticMarkPaid([id]);
+      toast({ title: "✓ Parcela quitada!" });
+      try {
+        await markPaidOne(inst, alreadyPaid + value);
+        qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+        qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+      } catch (e: any) {
+        qc.setQueryData(["cobrancas-installments", user?.id], snapshot);
+        toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" });
+      }
+    } else {
+      try {
+        await markPaidPartial(inst, value);
+        qc.invalidateQueries({ queryKey: ["cobrancas-installments"] });
+        qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+        toast({ title: "✓ Pagamento parcial registrado", description: `Restam R$ ${fmt(remaining - value)}` });
+      } catch (e: any) {
+        toast({ title: "Erro ao registrar pagamento parcial", description: e.message, variant: "destructive" });
+      }
     }
   };
 
