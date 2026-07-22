@@ -510,82 +510,105 @@ const Clientes = () => {
       ) : viewMode === "list" ? (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block rounded-3xl border border-border/10 overflow-hidden bg-card/30 backdrop-blur-xl shadow-2xl">
+          <div className="hidden md:block rounded-3xl border border-border/10 overflow-hidden bg-gradient-to-b from-card/40 to-card/10 backdrop-blur-xl shadow-2xl">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="w-10 px-4 py-3">
+                <tr className="border-b border-border/40 bg-gradient-to-r from-muted/40 via-muted/20 to-transparent">
+                  <th className="w-10 px-4 py-3.5">
                     <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible}
                       className="w-4 h-4 rounded border-border/40 bg-card text-primary focus:ring-primary/40 cursor-pointer" />
                   </th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Contato</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Contratos</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Score</th>
-                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-right px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
+                  <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Cliente</th>
+                  <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Contato</th>
+                  <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Contratos</th>
+                  <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Score</th>
+                  <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Status</th>
+                  <th className="text-right px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {visible.map((c: any) => {
+                {visible.map((c: any, idx: number) => {
                   const summary = contractMap[c.id] || { contracts: 0, active: 0, overdue: 0 };
                   const isSel = selected.has(c.id);
+                  const sc = Number(c.credit_score || 0);
+                  const initial = (c.name?.charAt(0) || "?").toUpperCase();
+                  // Palette by initial for pleasant colored avatars
+                  const palettes = [
+                    "from-violet-500/25 to-fuchsia-500/10 text-violet-300 ring-violet-400/20",
+                    "from-sky-500/25 to-cyan-500/10 text-sky-300 ring-sky-400/20",
+                    "from-emerald-500/25 to-teal-500/10 text-emerald-300 ring-emerald-400/20",
+                    "from-amber-500/25 to-orange-500/10 text-amber-300 ring-amber-400/20",
+                    "from-rose-500/25 to-pink-500/10 text-rose-300 ring-rose-400/20",
+                    "from-indigo-500/25 to-blue-500/10 text-indigo-300 ring-indigo-400/20",
+                  ];
+                  const pal = palettes[(initial.charCodeAt(0) || 0) % palettes.length];
                   return (
                     <tr key={c.id} onClick={() => navigate(`/clientes/${c.id}`)}
-                      className={`border-t border-border/60 hover:bg-accent/30 cursor-pointer transition-colors ${isSel ? "bg-primary/5" : ""}`}>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      className={`group border-t border-border/30 hover:bg-primary/[0.04] cursor-pointer transition-colors ${isSel ? "bg-primary/[0.06]" : idx % 2 === 1 ? "bg-muted/[0.04]" : ""}`}>
+                      <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={isSel} onChange={() => toggleOne(c.id)}
                           className="w-4 h-4 rounded border-border/40 bg-card text-primary focus:ring-primary/40 cursor-pointer" />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                            {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-9 h-9 rounded-2xl object-cover" /> : c.name?.charAt(0)?.toUpperCase()}
+                          <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${pal} ring-1 flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform group-hover:scale-105`}>
+                            {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-2xl object-cover" /> : initial}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-foreground truncate">{c.name}</p>
-                            {c.cpf_cnpj && <p className="text-[11px] text-muted-foreground font-mono">{c.cpf_cnpj}</p>}
+                            <p className="font-semibold text-foreground truncate text-[13.5px] leading-tight">{c.name}</p>
+                            {c.cpf_cnpj && <p className="text-[11px] text-muted-foreground/70 font-mono mt-0.5">{c.cpf_cnpj}</p>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">
+                      <td className="px-5 py-3.5 text-muted-foreground">
                         <div className="space-y-0.5">
-                          {(c.phone || c.whatsapp) && <p className="text-xs">{c.phone || c.whatsapp}</p>}
-                          {c.email && <p className="text-[11px] truncate max-w-[200px]">{c.email}</p>}
-                          {!c.phone && !c.whatsapp && !c.email && <span className="text-xs">—</span>}
+                          {(c.phone || c.whatsapp) && <p className="text-[12.5px] text-foreground/85">{c.phone || c.whatsapp}</p>}
+                          {c.email && <p className="text-[11px] text-muted-foreground/70 truncate max-w-[200px]">{c.email}</p>}
+                          {!c.phone && !c.whatsapp && !c.email && <span className="text-xs text-muted-foreground/40">—</span>}
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3.5">
                         {summary.contracts === 0 ? (
-                          <span className="text-xs text-muted-foreground/60">—</span>
+                          <span className="text-xs text-muted-foreground/50">—</span>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/40 text-[11px] font-semibold text-foreground">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-[11px] font-bold text-primary ring-1 ring-primary/20">
                               <FileText size={10} /> {summary.contracts}
                             </span>
                             {summary.overdue > 0 && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[10px] font-bold ring-1 ring-destructive/20" title="Parcelas em atraso">
+                              <span className="inline-flex items-center px-1.5 py-1 rounded-lg bg-destructive/15 text-destructive text-[10px] font-bold ring-1 ring-destructive/30 animate-pulse" title="Parcelas em atraso">
                                 {summary.overdue} atras.
                               </span>
                             )}
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ring-1 ${scoreColor(c.credit_score || 0)}`}>{c.credit_score || 0}</span>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1 min-w-[54px]">
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md text-center ring-1 ${scoreColor(sc)}`}>{sc}</span>
+                            <div className="h-1 w-full rounded-full bg-muted/40 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${sc >= 80 ? "bg-emerald-400" : sc >= 50 ? "bg-amber-400" : "bg-rose-400"}`}
+                                style={{ width: `${Math.min(100, Math.max(4, sc))}%` }}
+                              />
+                            </div>
+                          </div>
                           <RiskBadge score={c.credit_score} compact />
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <Badge variant="outline" className={c.status === "Ativo" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>{c.status}</Badge>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ${c.status === "Ativo" ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/25" : "bg-muted/40 text-muted-foreground ring-border/40"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${c.status === "Ativo" ? "bg-emerald-400 shadow-[0_0_6px_hsl(152_76%_50%/0.8)]" : "bg-muted-foreground/50"}`} />
+                          {c.status}
+                        </span>
                       </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="p-2 rounded-lg hover:bg-accent text-muted-foreground" title="Ver">
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${c.id}`); }} className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors" title="Ver">
                             <Eye size={15} />
                           </button>
-                          <button onClick={(e) => handleDelete(c.id, e)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title="Excluir">
+                          <button onClick={(e) => handleDelete(c.id, e)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Excluir">
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -596,6 +619,7 @@ const Clientes = () => {
               </tbody>
             </table>
           </div>
+
 
           {/* Mobile List */}
           <div className="md:hidden space-y-2">
