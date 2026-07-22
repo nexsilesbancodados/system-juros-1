@@ -11,6 +11,7 @@ import {
   UserPlus, FileText, Wallet, Cake, CalendarDays, Flame, History, DollarSign
 } from "lucide-react";
 import SmartAlerts from "@/components/SmartAlerts";
+import AtivoPassivoCard from "@/components/dashboard/AtivoPassivoCard";
 import { formatBR, parseLocalDate } from "@/lib/dateUtils";
 import { fetchAll } from "@/lib/fetchAll";
 
