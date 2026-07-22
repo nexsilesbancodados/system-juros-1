@@ -542,6 +542,7 @@ const Admin = () => {
                             onClick={() => setDetailUser(u)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                             title="Ver detalhes"
+                            aria-label={`Ver detalhes de ${u.name}`}
                           >
                             <Eye size={15} />
                           </button>
@@ -551,6 +552,7 @@ const Admin = () => {
                             }}
                             className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
                             title="Visualizar como usuário"
+                            aria-label={`Visualizar como ${u.name}`}
                           >
                             <Globe size={15} />
                           </button>
@@ -570,12 +572,13 @@ const Admin = () => {
                                 : "text-destructive hover:bg-destructive/15"
                             }`}
                             title={u.is_blocked ? "Desbloquear" : "Bloquear"}
+                            aria-label={u.is_blocked ? `Desbloquear ${u.name}` : `Bloquear ${u.name}`}
                           >
                             {u.is_blocked ? <CheckCircle size={15} /> : <Ban size={15} />}
                           </button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                              <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" aria-label={`Mais ações para ${u.name}`}>
                                 <MoreVertical size={15} />
                               </button>
                             </DropdownMenuTrigger>
