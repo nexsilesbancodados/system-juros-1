@@ -138,6 +138,7 @@ const App = () => (
                   <Route path="/checkout/pendente" element={<CheckoutPendente />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/portal-cliente" element={<PortalCliente />} />
+                  <Route path="/investidor/:token" element={<PortalInvestidor />} />
                   <Route path="/privacidade" element={<Privacidade />} />
                   <Route path="/cobrador-externo" element={<CobradorExterno />} />
                   <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
