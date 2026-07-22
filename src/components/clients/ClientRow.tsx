@@ -101,22 +101,20 @@ function ClientRowImpl({ client: c, summary, isSel, striped, onToggle, onOpen, o
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); onOpen(c.id); }}
-            className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
-            title="Ver"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20 hover:bg-primary/20 text-[11px] font-semibold transition-colors"
             aria-label={`Abrir ${c.name || "cliente"}`}
           >
-            <Eye size={15} />
+            <Eye size={13} /> Ver
           </button>
           <button
             onClick={(e) => onDelete(c.id, e)}
-            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-            title="Excluir"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive ring-1 ring-destructive/20 hover:bg-destructive/20 text-[11px] font-semibold transition-colors"
             aria-label={`Excluir ${c.name || "cliente"}`}
           >
-            <Trash2 size={15} />
+            <Trash2 size={13} /> Excluir
           </button>
         </div>
       </td>
