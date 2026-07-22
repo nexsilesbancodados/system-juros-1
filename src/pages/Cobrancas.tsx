@@ -829,34 +829,38 @@ const Cobrancas = () => {
 
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade-in">
+      <div className={`grid grid-cols-2 ${simpleMode ? "" : "sm:grid-cols-4"} gap-3 stagger-fade-in`}>
 
-        {[
-          { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
-          { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
-          { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
-          { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
-        ].map((s: any) => (
-          <button
-            key={s.label}
-            onClick={s.onClick}
-            className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
-              filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
-                <s.icon size={14} className={s.color} />
+        {(() => {
+          const all = [
+            { label: "Vence hoje", value: dueTodayStats.count, sub: `R$ ${fmt(dueTodayStats.total)}`, icon: CalendarDays, color: "text-primary", bg: "bg-primary/8", border: dueTodayStats.count > 0 ? "border-primary/20" : "", filterKey: "all" as const, onClick: () => { setFocoDia(false); setPeriod("today"); setFilter("all"); } },
+            { label: "Atrasadas", value: stats.overdue, sub: `R$ ${fmt(stats.totalOverdue)}`, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/8", border: stats.overdue > 0 ? "border-destructive/20 danger-glow" : "", filterKey: "overdue" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("overdue"); } },
+            { label: "Pendentes", value: stats.pending, sub: `R$ ${fmt(stats.totalPending)}`, icon: Clock, color: "text-warning", bg: "bg-warning/8", border: "", filterKey: "pending" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("pending"); } },
+            { label: "Pagas", value: stats.paid, sub: `R$ ${fmt(stats.totalPaid)}`, icon: CheckCircle, color: "text-success", bg: "bg-success/8", border: "", filterKey: "paid" as const, onClick: () => { setFocoDia(false); setPeriod("all"); setFilter("paid"); } },
+          ];
+          return (simpleMode ? all.slice(0, 2) : all).map((s: any) => (
+            <button
+              key={s.label}
+              onClick={s.onClick}
+              className={`rounded-2xl border bg-card p-4 card-shine text-left transition-all focus-ring ${
+                filter === s.filterKey ? "border-primary/30 ring-1 ring-primary/20" : s.border || "border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
+                  <s.icon size={14} className={s.color} />
+                </div>
               </div>
-            </div>
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
-            {s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
-          </button>
-        ))}
+              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</p>
+              {s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
+            </button>
+          ));
+        })()}
       </div>
 
-      {/* Bucket de atraso */}
+      {/* Bucket de atraso — só no modo avançado */}
+      {!simpleMode && (
       <div className="flex items-center gap-2 flex-wrap animate-fade-in">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Atraso</span>
         {([
@@ -879,8 +883,10 @@ const Cobrancas = () => {
           </button>
         ))}
       </div>
+      )}
 
-      {/* View switcher */}
+      {/* View switcher — só no modo avançado */}
+      {!simpleMode && (
       <div className="flex items-center gap-2 animate-fade-in">
 
         <div className="pill-tabs">
@@ -916,6 +922,7 @@ const Cobrancas = () => {
           </div>
         )}
       </div>
+      )}
 
 
       {/* Search + Filters + select all */}
