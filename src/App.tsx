@@ -35,6 +35,7 @@ const Lucros = lazy(() => import("./pages/Lucros"));
 const Gastos = lazy(() => import("./pages/Gastos"));
 const Metas = lazy(() => import("./pages/Metas"));
 const Simulador = lazy(() => import("./pages/Simulador"));
+const Ferramentas = lazy(() => import("./pages/Ferramentas"));
 const Tarefas = lazy(() => import("./pages/Tarefas"));
 const Anotacoes = lazy(() => import("./pages/Anotacoes"));
 const Planilha = lazy(() => import("./pages/Planilha"));
@@ -150,6 +151,7 @@ const App = () => (
                     <Route path="/carteira" element={<ErrorBoundary><Carteira /></ErrorBoundary>} />
                     <Route path="/lucros" element={<ErrorBoundary><Lucros /></ErrorBoundary>} />
                     <Route path="/gastos" element={<ErrorBoundary><Gastos /></ErrorBoundary>} />
+                    <Route path="/ferramentas" element={<ErrorBoundary><Ferramentas /></ErrorBoundary>} />
                     <Route path="/ferramentas/metas" element={<ErrorBoundary><Metas /></ErrorBoundary>} />
                     <Route path="/ferramentas/simulador" element={<ErrorBoundary><Simulador /></ErrorBoundary>} />
                     <Route path="/ferramentas/tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>} />
