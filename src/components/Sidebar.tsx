@@ -47,7 +47,7 @@ const sections: MenuSection[] = [
     items: [
       { label: "Clientes", icon: Users, path: "/clientes" },
       { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
-      
+      { label: "Investidores", icon: Landmark, path: "/investidores", highlight: true },
       { label: "Carteira", icon: Wallet, path: "/carteira" },
     ],
   },
