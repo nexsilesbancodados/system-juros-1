@@ -971,7 +971,7 @@ const ClienteDetalhe = () => {
             </div>
           </div>
         </div>
-        <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar"><Edit size={16} /></button>
+        <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar" aria-label="Editar"><Edit size={16} /></button>
         <ClientToolsPanel
           open={showMoreActions}
           onOpenChange={setShowMoreActions}
@@ -980,7 +980,7 @@ const ClienteDetalhe = () => {
             <button
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-foreground"
               style={{ background: "var(--gradient-button)" }}
-              title="Abrir ferramentas"
+              title="Abrir ferramentas" aria-label="Abrir ferramentas"
             >
               <Wrench size={14} /> Ferramentas
             </button>
@@ -1576,7 +1576,7 @@ const ClienteDetalhe = () => {
                               <PopoverTrigger asChild>
                                 <button
                                   className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive"
-                                  title="Ver cálculo da multa e juros"
+                                  title="Ver cálculo da multa e juros" aria-label="Ver cálculo da multa e juros"
                                 >
                                   <Info size={14} />
                                 </button>
