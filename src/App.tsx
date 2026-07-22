@@ -45,6 +45,7 @@ const Perfil = lazy(() => import("./pages/Perfil"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Historico = lazy(() => import("./pages/Historico"));
+const HistoricoFinanceiro = lazy(() => import("./pages/HistoricoFinanceiro"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Cobradores = lazy(() => import("./pages/Cobradores"));
 const QRCodePage = lazy(() => import("./pages/QRCodePage"));
