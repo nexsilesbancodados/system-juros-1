@@ -953,6 +953,179 @@ export type Database = {
           },
         ]
       }
+      investor_loans: {
+        Row: {
+          created_at: string
+          due_date: string
+          frequency: string
+          id: string
+          interest_rate: number
+          investor_id: string
+          notes: string | null
+          paid_amount: number
+          paid_at: string | null
+          payment_method: string | null
+          principal: number
+          start_date: string
+          status: string
+          total_due: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          frequency?: string
+          id?: string
+          interest_rate?: number
+          investor_id: string
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          principal: number
+          start_date?: string
+          status?: string
+          total_due: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          frequency?: string
+          id?: string
+          interest_rate?: number
+          investor_id?: string
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          principal?: number
+          start_date?: string
+          status?: string
+          total_due?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_loans_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          investor_id: string
+          loan_id: string
+          method: string | null
+          notes: string | null
+          paid_at: string
+          receipt_url: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          investor_id: string
+          loan_id: string
+          method?: string | null
+          notes?: string | null
+          paid_at?: string
+          receipt_url?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          investor_id?: string
+          loan_id?: string
+          method?: string | null
+          notes?: string | null
+          paid_at?: string
+          receipt_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_payments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "investor_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investors: {
+        Row: {
+          access_token: string
+          avatar_url: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          access_token?: string
+          avatar_url?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          access_token?: string
+          avatar_url?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       message_templates: {
         Row: {
           content: string
@@ -2211,6 +2384,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      investor_portal_login: { Args: { _token: string }; Returns: Json }
+      investor_regenerate_token: {
+        Args: { _investor_id: string }
+        Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_channel_member: {

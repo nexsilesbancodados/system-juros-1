@@ -31,6 +31,8 @@ const Analises = lazy(() => import("./pages/Analises"));
 const Clientes = lazy(() => import("./pages/Clientes"));
 const Cobrancas = lazy(() => import("./pages/Cobrancas"));
 const Carteira = lazy(() => import("./pages/Carteira"));
+const Investidores = lazy(() => import("./pages/Investidores"));
+const PortalInvestidor = lazy(() => import("./pages/PortalInvestidor"));
 const Lucros = lazy(() => import("./pages/Lucros"));
 const Gastos = lazy(() => import("./pages/Gastos"));
 const Metas = lazy(() => import("./pages/Metas"));
@@ -136,6 +138,7 @@ const App = () => (
                   <Route path="/checkout/pendente" element={<CheckoutPendente />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/portal-cliente" element={<PortalCliente />} />
+                  <Route path="/investidor/:token" element={<PortalInvestidor />} />
                   <Route path="/privacidade" element={<Privacidade />} />
                   <Route path="/cobrador-externo" element={<CobradorExterno />} />
                   <Route path="/tv" element={<ProtectedRoute><TvMode /></ProtectedRoute>} />
@@ -150,6 +153,7 @@ const App = () => (
                     <Route path="/contratos/:id" element={<ContractRedirect />} />
                     <Route path="/cobrancas" element={<ErrorBoundary><Cobrancas /></ErrorBoundary>} />
                     <Route path="/carteira" element={<ErrorBoundary><Carteira /></ErrorBoundary>} />
+                    <Route path="/investidores" element={<ErrorBoundary><Investidores /></ErrorBoundary>} />
                     <Route path="/lucros" element={<ErrorBoundary><Lucros /></ErrorBoundary>} />
                     <Route path="/gastos" element={<ErrorBoundary><Gastos /></ErrorBoundary>} />
                     <Route path="/ferramentas" element={<ErrorBoundary><Ferramentas /></ErrorBoundary>} />
