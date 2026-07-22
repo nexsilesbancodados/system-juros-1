@@ -750,6 +750,7 @@ export type Database = {
           id: string
           installment_amount: number
           interest_rate: number
+          investor_loan_id: string | null
           late_fee_percent: number
           loan_mode: string
           max_interest_cap_percent: number | null
@@ -785,6 +786,7 @@ export type Database = {
           id?: string
           installment_amount: number
           interest_rate?: number
+          investor_loan_id?: string | null
           late_fee_percent?: number
           loan_mode?: string
           max_interest_cap_percent?: number | null
@@ -820,6 +822,7 @@ export type Database = {
           id?: string
           installment_amount?: number
           interest_rate?: number
+          investor_loan_id?: string | null
           late_fee_percent?: number
           loan_mode?: string
           max_interest_cap_percent?: number | null
@@ -842,6 +845,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_investor_loan_id_fkey"
+            columns: ["investor_loan_id"]
+            isOneToOne: false
+            referencedRelation: "investor_loans"
             referencedColumns: ["id"]
           },
         ]
@@ -2373,6 +2383,7 @@ export type Database = {
         Args: { _client_id: string }
         Returns: undefined
       }
+      get_ativo_passivo: { Args: never; Returns: Json }
       get_or_create_dm_thread: {
         Args: { _other_user: string }
         Returns: string
