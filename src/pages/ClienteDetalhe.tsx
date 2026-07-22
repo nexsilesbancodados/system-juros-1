@@ -1303,38 +1303,46 @@ const ClienteDetalhe = () => {
               : overdue > 0
               ? { label: `${overdue} em atraso`, cls: "bg-destructive/15 text-destructive border-destructive/30" }
               : { label: `${paid}/${total} pagas`, cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+            const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
+            const accent = isPaid ? "from-emerald-500/60 via-emerald-400/30" : overdue > 0 ? "from-destructive/60 via-destructive/30" : "from-primary/60 via-primary/20";
+            const barColor = isPaid ? "bg-emerald-500" : overdue > 0 ? "bg-destructive" : "bg-primary";
             return (
-            <div key={c.id} className="bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-colors">
+            <div key={c.id} className="group relative overflow-hidden bg-gradient-to-br from-card to-card/60 border border-border/60 rounded-2xl p-4 hover:border-primary/40 hover:shadow-[0_8px_24px_-12px_hsl(var(--primary)/0.3)] transition-all">
+              <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${accent} to-transparent`} />
               <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-foreground">R$ {fmt(Number(c.capital))}</p>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <p className="text-lg font-bold text-foreground tracking-tight tabular-nums">R$ {fmt(Number(c.capital))}</p>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${status.cls}`}>{status.label}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{c.num_installments}x R$ {fmt(Number(c.installment_amount))} · {FREQ[c.frequency] || c.frequency}</p>
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                    <span className="text-foreground/80 font-medium">{c.num_installments}×</span> R$ {fmt(Number(c.installment_amount))}
+                    <span className="mx-1.5 opacity-40">·</span>{FREQ[c.frequency] || c.frequency}
+                  </p>
                 </div>
-                <div className="text-right cursor-pointer" onClick={() => navigate(`/contratos/${c.id}`)}>
-                  <p className="text-xs text-muted-foreground">{formatBR(c.start_date)}</p>
-                  <p className="text-xs font-medium text-primary">Lucro: R$ {fmt(Number(c.total_interest))}</p>
+                <div className="text-right cursor-pointer shrink-0" onClick={() => navigate(`/contratos/${c.id}`)}>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{formatBR(c.start_date)}</p>
+                  <p className="text-sm font-bold text-primary tabular-nums mt-0.5">+R$ {fmt(Number(c.total_interest))}</p>
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lucro</p>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0 pl-2 border-l border-border/40">
                   <button
                     onClick={(e) => { e.stopPropagation(); exportContractPDF(c); }}
-                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                     title="Exportar contrato em PDF"
                   >
                     <Download size={14} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); sendContractWhatsApp(c); }}
-                    className="p-2 rounded-lg hover:bg-emerald-500/10 text-emerald-500/80 hover:text-emerald-500 transition-colors shrink-0"
+                    className="p-2 rounded-lg hover:bg-emerald-500/10 text-emerald-500/80 hover:text-emerald-500 transition-colors"
                     title="Enviar contrato por WhatsApp"
                   >
                     <MessageSquare size={14} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
-                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                     title="Editar empréstimo"
                   >
                     <Edit size={14} />
@@ -1342,7 +1350,7 @@ const ClienteDetalhe = () => {
                   {c.status === "active" && !isPaid && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setRenegotiating(c); }}
-                      className="p-2 rounded-lg hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-400 transition-colors shrink-0"
+                      className="p-2 rounded-lg hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-400 transition-colors"
                       title="Renegociar contrato"
                     >
                       <Repeat size={14} />
@@ -1350,13 +1358,21 @@ const ClienteDetalhe = () => {
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteContract(c.id); }}
-                    className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors shrink-0"
+                    className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors"
                     title="Excluir empréstimo"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
+              {total > 0 && (
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                    <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted-foreground tabular-nums shrink-0">{pct}%</span>
+                </div>
+              )}
             </div>
             );
           })}
