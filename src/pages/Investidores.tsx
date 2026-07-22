@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import {
   Landmark, Plus, Link as LinkIcon, RefreshCw, Wallet, TrendingUp,
-  CheckCircle2, Clock, ExternalLink, Trash2, Copy, DollarSign,
+  CheckCircle2, Clock, ExternalLink, Trash2, Copy, DollarSign, ArrowLeft,
 } from "lucide-react";
+import InvestidorPerfil from "./InvestidorPerfil";
+
 
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtDate = (d?: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "-");
@@ -34,14 +35,16 @@ type Loan = {
 
 export default function Investidores() {
   const { user } = useAuth();
-  const nav = useNavigate();
+
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newLoanOpen, setNewLoanOpen] = useState(false);
   const [payOpen, setPayOpen] = useState<string | null>(null);
+
 
   const load = async () => {
     if (!user?.id) return;
@@ -106,9 +109,14 @@ export default function Investidores() {
     void load();
   };
 
+  if (expandedId) {
+    return <InvestidorPerfil investorId={expandedId} onBack={() => { setExpandedId(null); void load(); }} />;
+  }
+
   return (
     <>
       <div className="space-y-6 p-4 md:p-6">
+
 
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -155,7 +163,7 @@ export default function Investidores() {
                     <li key={inv.id}>
                       <button
                         onClick={() => setSelectedId(inv.id)}
-                        onDoubleClick={() => nav(`/investidores/${inv.id}`)}
+                        onDoubleClick={() => setExpandedId(inv.id)}
                         className={`w-full rounded-xl border p-3 text-left transition ${
                           active ? "border-primary bg-primary/10" : "border-white/5 hover:bg-white/5"
                         }`}
@@ -198,7 +206,7 @@ export default function Investidores() {
                     {selected.email && <p className="text-xs text-muted-foreground">{selected.email}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => nav(`/investidores/${selected.id}`)} className="gap-1.5">
+                    <Button size="sm" onClick={() => setExpandedId(selected.id)} className="gap-1.5">
                       <ExternalLink className="h-3.5 w-3.5" /> Abrir perfil
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => copyPortal(selected.access_token)} className="gap-1.5">
