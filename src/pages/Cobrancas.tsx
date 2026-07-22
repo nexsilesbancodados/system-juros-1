@@ -998,6 +998,7 @@ const Cobrancas = () => {
           </div>
 
 
+          {!simpleMode && (
           <button
             onClick={toggleSelectAll}
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors focus-ring"
@@ -1006,7 +1007,7 @@ const Cobrancas = () => {
             {selected.size > 0 ? <CheckSquare size={14} className="text-primary" /> : <Square size={14} />}
             <span className="hidden sm:inline">{selected.size > 0 ? `${selected.size}` : "Selecionar"}</span>
           </button>
-        </div>
+          )}
 
         {showFilters && (
           <div className="rounded-2xl border border-border/30 bg-card/40 backdrop-blur-md p-4 space-y-3 animate-fade-in">
