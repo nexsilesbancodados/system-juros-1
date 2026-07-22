@@ -45,3 +45,37 @@ export function computeLateFee(inst: LateFeeInput, now: Date = new Date()): numb
 export function totalDue(inst: LateFeeInput, now?: Date): number {
   return Number(inst?.amount || 0) + computeLateFee(inst, now);
 }
+
+export interface LateFeeBreakdown {
+  daysLate: number;
+  base: number;
+  multaPct: number;
+  jurosPct: number;
+  multa: number;
+  juros: number;
+  total: number;   // multa + juros (o mesmo que computeLateFee)
+  withFees: number; // base + total
+}
+
+export function computeLateFeeBreakdown(inst: LateFeeInput, now: Date = new Date()): LateFeeBreakdown {
+  const base = Number(inst?.amount || 0);
+  const total = computeLateFee(inst, now);
+  const due = inst?.due_date ? new Date(inst.due_date) : null;
+  const daysLate = due && !isNaN(due.getTime()) ? Math.max(0, Math.floor((now.getTime() - due.getTime()) / 86400000)) : 0;
+  const multaPct = Number(inst?.late_fee_percent || 0);
+  const jurosPct = Number(inst?.daily_interest_percent || 0);
+  let multa = base * (multaPct / 100);
+  let juros = base * (jurosPct / 100) * daysLate;
+  // Se o total veio do valor persistido (fallback) e não bate com o cálculo, distribui proporcionalmente.
+  const computed = multa + juros;
+  if (computed > 0 && Math.abs(computed - total) > 0.01) {
+    const ratio = total / computed;
+    multa = Math.round(multa * ratio * 100) / 100;
+    juros = Math.round(juros * ratio * 100) / 100;
+  } else if (computed === 0 && total > 0) {
+    // sem config: exibe tudo como "multa" (fallback persistido)
+    multa = total;
+    juros = 0;
+  }
+  return { daysLate, base, multaPct, jurosPct, multa, juros, total, withFees: base + total };
+}
