@@ -666,7 +666,7 @@ const Clientes = () => {
                 {/* Top-left checkbox */}
                 <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <input type="checkbox" checked={isSel} onChange={() => toggleOne(c.id)}
-                    className="w-4 h-4 rounded border-border/40 bg-card text-primary focus:ring-primary/40 cursor-pointer" />
+                    className="check-premium" />
                 </div>
 
                 {/* Top-right delete */}
