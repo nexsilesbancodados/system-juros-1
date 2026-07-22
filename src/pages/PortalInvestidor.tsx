@@ -99,12 +99,20 @@ export default function PortalInvestidor() {
               <h1 className="font-heading text-lg font-bold">{company}</h1>
             </div>
           </div>
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10"
-          >
-            <HelpCircle className="h-3.5 w-3.5" /> Ajuda
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => data && generateInvestorStatementPdf(data as any)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs text-primary hover:bg-primary/20"
+            >
+              <Download className="h-3.5 w-3.5" /> Extrato PDF
+            </button>
+            <button
+              onClick={() => setHelpOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10"
+            >
+              <HelpCircle className="h-3.5 w-3.5" /> Ajuda
+            </button>
+          </div>
         </header>
 
         {/* Boas-vindas */}
