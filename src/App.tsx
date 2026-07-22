@@ -67,9 +67,8 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSucesso = lazy(() => import("./pages/CheckoutSucesso"));
 const CheckoutErro = lazy(() => import("./pages/CheckoutErro"));
 const CheckoutPendente = lazy(() => import("./pages/CheckoutPendente"));
-const Comunicacao = lazy(() => import("./pages/Comunicacao"));
+const CentralBot = lazy(() => import("./pages/CentralBot"));
 const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
-const BotPerformance = lazy(() => import("./pages/BotPerformance"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
