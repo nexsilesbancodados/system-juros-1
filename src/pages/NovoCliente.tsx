@@ -15,6 +15,7 @@ import LoanPreviewPanel from "@/components/loan/LoanPreviewPanel";
 import { calculateLoan, generateInstallmentSchedule, type LoanMode } from "@/lib/loanMath";
 import { getSignedUploadUrl } from "@/lib/storage";
 import { todayLocalISO, toDateInputValue, formatBR, localNoonISO, parseLocalDate } from "@/lib/dateUtils";
+import InvestorAllocationSelect from "@/components/InvestorAllocationSelect";
 
 
 
