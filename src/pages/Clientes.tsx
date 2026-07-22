@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { fetchAll } from "@/lib/fetchAll";
+import { friendlyError } from "@/lib/friendlyError";
 import RiskBadge from "@/components/clients/RiskBadge";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
