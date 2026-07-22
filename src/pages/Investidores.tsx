@@ -105,8 +105,9 @@ export default function Investidores() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <>
+      <div className="space-y-6 p-4 md:p-6">
+
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="flex items-center gap-3 font-heading text-3xl font-bold text-foreground">
