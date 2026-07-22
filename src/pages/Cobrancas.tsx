@@ -99,6 +99,10 @@ const Cobrancas = () => {
   const [cobrarAteDate, setCobrarAteDate] = useState<string>(todayISO);
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
+  const [simpleMode, setSimpleMode] = useState<boolean>(() => {
+    try { const v = localStorage.getItem("cobrancas_simple_mode"); return v === null ? true : v === "1"; } catch { return true; }
+  });
+  useEffect(() => { try { localStorage.setItem("cobrancas_simple_mode", simpleMode ? "1" : "0"); } catch {} }, [simpleMode]);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("collapsed");
