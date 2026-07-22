@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ type Loan = {
 
 export default function Investidores() {
   const { user } = useAuth();
+  const nav = useNavigate();
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,6 +155,7 @@ export default function Investidores() {
                     <li key={inv.id}>
                       <button
                         onClick={() => setSelectedId(inv.id)}
+                        onDoubleClick={() => nav(`/investidores/${inv.id}`)}
                         className={`w-full rounded-xl border p-3 text-left transition ${
                           active ? "border-primary bg-primary/10" : "border-white/5 hover:bg-white/5"
                         }`}
@@ -195,6 +198,9 @@ export default function Investidores() {
                     {selected.email && <p className="text-xs text-muted-foreground">{selected.email}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => nav(`/investidores/${selected.id}`)} className="gap-1.5">
+                      <ExternalLink className="h-3.5 w-3.5" /> Abrir perfil
+                    </Button>
                     <Button variant="secondary" size="sm" onClick={() => copyPortal(selected.access_token)} className="gap-1.5">
                       <Copy className="h-3.5 w-3.5" /> Copiar link
                     </Button>
