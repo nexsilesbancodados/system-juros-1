@@ -10,6 +10,7 @@ import NovoEmprestimoModal from "@/components/cliente-detalhe/modals/NovoEmprest
 import EditContratoModal from "@/components/cliente-detalhe/modals/EditContratoModal";
 import EditParcelaModal from "@/components/cliente-detalhe/modals/EditParcelaModal";
 import PagamentoModal from "@/components/cliente-detalhe/modals/PagamentoModal";
+import RenegociarModal, { type RenegotiationPayload } from "@/components/cliente-detalhe/modals/RenegociarModal";
 import { LOAN_MODES, fmt, FREQ, INPUT } from "@/components/cliente-detalhe/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,7 @@ const ClienteDetalhe = () => {
   const [editInst, setEditInst] = useState<any>(null);
   const [editInstForm, setEditInstForm] = useState<{ amount: string; due_date: string }>({ amount: "", due_date: "" });
   const [editInstSaving, setEditInstSaving] = useState(false);
+  const [renegotiating, setRenegotiating] = useState<any>(null);
 
   const inv = useCallback((key: string) => qc.invalidateQueries({ queryKey: [key, id] }), [qc, id]);
   const invAll = useCallback(() => {
@@ -297,6 +299,82 @@ const ClienteDetalhe = () => {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally { setLoanLoading(false); }
   };
+
+  const handleRenegotiate = async (payload: RenegotiationPayload) => {
+    if (!user || !renegotiating) return;
+    const old = renegotiating;
+    try {
+      // 1) Criar novo contrato
+      const { data: newContract, error: cErr } = await supabase.from("contracts").insert({
+        user_id: user.id,
+        client_id: id!,
+        capital: payload.totalCapital,
+        interest_rate: payload.interestRate,
+        num_installments: payload.numInstallments,
+        installment_amount: payload.installmentAmount,
+        frequency: payload.frequency,
+        start_date: new Date(payload.startDate + "T12:00:00").toISOString(),
+        late_fee_percent: payload.lateFeePercent,
+        daily_interest_percent: payload.dailyInterestPercent,
+        total_amount: payload.totalAmount,
+        total_interest: payload.totalInterest,
+        status: "active",
+        loan_mode: "installments",
+        notes: `Renegociação do contrato ${old.id}${payload.notes ? " — " + payload.notes : ""}`,
+      }).select().single();
+      if (cErr) throw cErr;
+
+      // 2) Gerar parcelas do novo contrato
+      const dueDates = generateDueDates(payload.startDate, payload.frequency, payload.numInstallments);
+      const { error: iErr } = await supabase.from("contract_installments").insert(
+        dueDates.map((dd, i) => ({
+          user_id: user.id,
+          contract_id: newContract.id,
+          client_id: id!,
+          installment_number: i + 1,
+          amount: payload.schedule[i] ?? payload.installmentAmount,
+          due_date: dd,
+          status: "pending",
+        }))
+      );
+      if (iErr) throw iErr;
+
+      // 3) Cancelar parcelas em aberto do contrato antigo
+      const { error: upErr } = await supabase
+        .from("contract_installments")
+        .update({ status: "cancelled" })
+        .eq("contract_id", old.id)
+        .neq("status", "paid");
+      if (upErr) throw upErr;
+
+      // 4) Encerrar contrato antigo como renegociado
+      const oldNotes = [old.notes, `Renegociado em ${new Date().toLocaleDateString("pt-BR")} → novo contrato ${newContract.id}`]
+        .filter(Boolean).join("\n");
+      await supabase.from("contracts")
+        .update({ status: "renegotiated", notes: oldNotes })
+        .eq("id", old.id);
+
+      // 5) Transação de auditoria (só do novo capital, se houver)
+      if (payload.addCapital > 0) {
+        await supabase.from("transactions").insert({
+          user_id: user.id,
+          amount: payload.addCapital,
+          type: "loan",
+          description: `Renegociação (${client?.name}) — novo capital de R$ ${payload.addCapital.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+          client_id: id,
+          contract_id: newContract.id,
+        });
+      }
+
+      toast({ title: "Contrato renegociado!", description: `${payload.numInstallments}x de R$ ${payload.installmentAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` });
+      setRenegotiating(null);
+      invAll();
+    } catch (err: any) {
+      toast({ ...friendlyError(err, "Não foi possível concluir a renegociação."), variant: "destructive" });
+    }
+  };
+
+
 
   const openEditContract = (c: any) => {
     setEditContract(c);
@@ -1075,6 +1153,18 @@ const ClienteDetalhe = () => {
         />
       )}
 
+      {renegotiating && (
+        <RenegociarModal
+          contract={renegotiating}
+          installments={installments.filter((i: any) => i.contract_id === renegotiating.id)}
+          clientName={client?.name || ""}
+          onClose={() => setRenegotiating(null)}
+          onConfirm={handleRenegotiate}
+        />
+      )}
+
+
+
 
       {/* ===== CONTENT ===== */}
 
@@ -1249,6 +1339,15 @@ const ClienteDetalhe = () => {
                   >
                     <Edit size={14} />
                   </button>
+                  {c.status === "active" && !isPaid && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRenegotiating(c); }}
+                      className="p-2 rounded-lg hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-400 transition-colors shrink-0"
+                      title="Renegociar contrato"
+                    >
+                      <Repeat size={14} />
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteContract(c.id); }}
                     className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors shrink-0"
