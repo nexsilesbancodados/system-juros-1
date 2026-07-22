@@ -121,7 +121,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           </button>
           {(financials?.overdue ?? 0) > 0 && (
             <button
-              onClick={() => navigate("/inadimplencia")}
+              onClick={() => navigate("/cobrancas?tab=aging")}
               className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-destructive/5 border border-destructive/15 hover:border-destructive/40 hover:bg-destructive/10 transition-all duration-200"
               title="Ver Inadimplência"
             >
