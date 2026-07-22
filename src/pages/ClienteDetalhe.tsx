@@ -150,7 +150,9 @@ const ClienteDetalhe = () => {
   });
 
   const kpis = useMemo(() => {
-    const totalCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const activeContracts = contracts.filter((c: any) => c.status === "active");
+    const totalCapital = activeContracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
+    const lifetimeCapital = contracts.reduce((s: number, c: any) => s + Number(c.capital || 0), 0);
     const totalAmount = contracts.reduce((s: number, c: any) => s + Number(c.total_amount || 0), 0);
     const paidInst = installments.filter((i: any) => i.status === "paid");
     const overdueInst = installments.filter((i: any) => i.status === "overdue");
@@ -159,8 +161,16 @@ const ClienteDetalhe = () => {
     const totalOverdue = overdueInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const totalPending = pendingInst.reduce((s: number, i: any) => s + Number(i.amount || 0), 0);
     const totalProfit = profits.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
-    return { totalCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst };
+    const ltvPct = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
+    const ticketMedio = contracts.length > 0 ? lifetimeCapital / contracts.length : 0;
+    const totalDueInst = paidInst.length + overdueInst.length;
+    const latePayRate = totalDueInst > 0 ? Math.round((overdueInst.length / totalDueInst) * 100) : 0;
+    const nextDueInst = pendingInst
+      .slice()
+      .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
+    return { totalCapital, lifetimeCapital, totalAmount, totalPaid, totalOverdue, totalPending, totalProfit, remaining: totalAmount - totalPaid, paidInst, overdueInst, pendingInst, ltvPct, ticketMedio, latePayRate, nextDueInst, activeContracts };
   }, [contracts, installments, profits]);
+
 
   const groupedInstallments = useMemo(() => {
     const groups: Record<string, any[]> = {};
