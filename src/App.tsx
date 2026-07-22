@@ -155,7 +155,7 @@ const App = () => (
                     <Route path="/cobrancas" element={<ErrorBoundary><Cobrancas /></ErrorBoundary>} />
                     <Route path="/carteira" element={<ErrorBoundary><Carteira /></ErrorBoundary>} />
                     <Route path="/investidores" element={<ErrorBoundary><Investidores /></ErrorBoundary>} />
-                    <Route path="/investidores/:id" element={<ErrorBoundary><InvestidorPerfil /></ErrorBoundary>} />
+                    
                     <Route path="/lucros" element={<ErrorBoundary><Lucros /></ErrorBoundary>} />
                     <Route path="/gastos" element={<ErrorBoundary><Gastos /></ErrorBoundary>} />
                     <Route path="/ferramentas" element={<ErrorBoundary><Ferramentas /></ErrorBoundary>} />
