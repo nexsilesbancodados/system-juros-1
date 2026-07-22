@@ -101,15 +101,17 @@ const CobrancasReguas = () => {
 
   const renderPreview = (tpl: string) => {
     const now = new Date();
-    return tpl
-      .replaceAll("{{cliente}}", "João Silva")
-      .replaceAll("{{valor}}", "R$ 480,00")
-      .replaceAll("{{valor_total}}", "R$ 528,50")
-      .replaceAll("{{vencimento}}", now.toLocaleDateString("pt-BR"))
-      .replaceAll("{{parcela}}", "3")
-      .replaceAll("{{empresa}}", meta.company)
-      .replaceAll("{{pix}}", meta.pix)
-      .replaceAll("{{whatsapp}}", meta.whatsapp);
+    const map: Record<string, string> = {
+      "{{cliente}}": "João Silva",
+      "{{valor}}": "R$ 480,00",
+      "{{valor_total}}": "R$ 528,50",
+      "{{vencimento}}": now.toLocaleDateString("pt-BR"),
+      "{{parcela}}": "3",
+      "{{empresa}}": meta.company,
+      "{{pix}}": meta.pix,
+      "{{whatsapp}}": meta.whatsapp,
+    };
+    return tpl.replace(/\{\{[a-z_]+\}\}/g, (m) => map[m] ?? m);
   };
 
   const dispatchNow = async () => {
