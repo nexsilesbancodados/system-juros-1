@@ -42,6 +42,8 @@ const InstallmentRowInner = ({
   const dueDate = parseLocalDate(inst.due_date) ?? new Date(inst.due_date);
   const daysDiff = Math.floor((now.getTime() - new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).getTime()) / 86400000);
   const daysText = isOverdue ? `${daysDiff}d atrasada` : !isPaid ? (daysDiff < 0 ? `em ${Math.abs(daysDiff)}d` : "hoje") : "";
+  const fee = computeLateFeeBreakdown(inst);
+  const showFee = !isPaid && fee.total > 0;
 
   const persistedAt = inst.last_collected_at;
   const persistedCh = inst.last_collected_channel;
