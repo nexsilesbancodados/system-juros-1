@@ -793,11 +793,8 @@ const ClienteDetalhe = () => {
 
   const handleDelete = async () => {
     if (!(await confirm("Excluir este cliente e todos os dados?"))) return;
-    await supabase.from("contract_installments").delete().eq("client_id", id!);
-    await supabase.from("contracts").delete().eq("client_id", id!);
-    
-    await supabase.from("transactions").delete().eq("client_id", id!);
-    await supabase.from("clients").delete().eq("id", id!);
+    const { error } = await supabase.rpc("delete_client_cascade", { _client_id: id! });
+    if (error) { toast({ ...friendlyError(error, "Não foi possível excluir o cliente."), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" }); navigate("/clientes");
   };
 

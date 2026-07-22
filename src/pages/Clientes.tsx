@@ -194,10 +194,7 @@ const Clientes = () => {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!(await confirm("Excluir este cliente e todos os seus dados?"))) return;
-    await supabase.from("contract_installments").delete().eq("client_id", id);
-    await supabase.from("contracts").delete().eq("client_id", id);
-    
-    const { error } = await supabase.from("clients").delete().eq("id", id);
+    const { error } = await supabase.rpc("delete_client_cascade", { _client_id: id });
     if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
@@ -207,11 +204,9 @@ const Clientes = () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     if (!(await confirm(`Excluir ${ids.length} cliente(s) e todos os dados associados?`))) return;
-    await supabase.from("contract_installments").delete().in("client_id", ids);
-    await supabase.from("contracts").delete().in("client_id", ids);
-    
-    const { error } = await supabase.from("clients").delete().in("id", ids);
-    if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
+    const results = await Promise.all(ids.map((cid) => supabase.rpc("delete_client_cascade", { _client_id: cid })));
+    const firstErr = results.find((r) => r.error)?.error;
+    if (firstErr) { toast({ ...friendlyError(firstErr), variant: "destructive" }); return; }
     toast({ title: `${ids.length} cliente(s) excluído(s)!` });
     clearSelection();
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
