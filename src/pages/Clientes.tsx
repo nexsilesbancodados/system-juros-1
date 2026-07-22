@@ -548,7 +548,7 @@ const Clientes = () => {
                       className={`group border-t border-border/30 hover:bg-primary/[0.04] cursor-pointer transition-colors ${isSel ? "bg-primary/[0.06]" : idx % 2 === 1 ? "bg-muted/[0.04]" : ""}`}>
                       <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={isSel} onChange={() => toggleOne(c.id)}
-                          className="w-4 h-4 rounded border-border/40 bg-card text-primary focus:ring-primary/40 cursor-pointer" />
+                          className="check-premium" />
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
