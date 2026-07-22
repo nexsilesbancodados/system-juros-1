@@ -50,8 +50,14 @@ const Tarefas = () => {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("todos").delete().eq("id", id);
+    if (!(await confirm("Excluir esta tarefa?"))) return;
+    const { error } = await supabase.from("todos").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Não foi possível excluir", description: "Tente novamente em instantes.", variant: "destructive" });
+      return;
+    }
     fetchTodos();
+    toast({ title: "Tarefa excluída" });
   };
 
   const handleClearDone = async () => {

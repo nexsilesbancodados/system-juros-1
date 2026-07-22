@@ -64,7 +64,7 @@ const sections: MenuSection[] = [
     collapsible: true,
     defaultOpen: true,
     items: [
-      { label: "Central de Bot & Automações", icon: Bot, path: "/comunicacao", highlight: true },
+      { label: "WhatsApp & Cobrança automática", icon: Bot, path: "/comunicacao", highlight: true },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox", module: "comunicacao_inbox" },
       { label: "Chat interno", icon: MessageCircle, path: "/chat", module: "chat_interno" },
     ],
@@ -75,7 +75,7 @@ const sections: MenuSection[] = [
     defaultOpen: false,
     items: [
       { label: "Cobradores", icon: UserCheck, path: "/cobradores", module: "cobradores" },
-      { label: "Portais", icon: QrCode, path: "/qrcode", module: "portais" },
+      { label: "QR Code de acesso", icon: QrCode, path: "/qrcode", module: "portais" },
     ],
   },
   {
@@ -88,7 +88,7 @@ const sections: MenuSection[] = [
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas", module: "tarefas" },
       { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes", module: "anotacoes" },
       { label: "Planilha", icon: Table, path: "/ferramentas/planilha", module: "planilha" },
-      { label: "Puxada de Dados", icon: Database, path: "/puxada-dados", module: "puxada_dados" },
+      { label: "Importar contratos", icon: Database, path: "/puxada-dados", module: "puxada_dados" },
     ],
   },
   {
