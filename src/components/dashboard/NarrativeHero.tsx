@@ -1,4 +1,4 @@
-import { Sparkles, TrendingUp, TrendingDown, AlertCircle, Landmark, Send, Clock, Wallet } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, AlertCircle, Landmark, Send, Clock, Wallet, type LucideIcon } from "lucide-react";
 
 type Props = {
   userName?: string;
