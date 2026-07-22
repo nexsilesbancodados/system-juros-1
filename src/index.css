@@ -181,6 +181,59 @@
     box-shadow: var(--shadow-glow);
   }
 
+  /* Action button surfaces (Fase 1 UX) */
+  .btn-action {
+    background: var(--gradient-action);
+    color: hsl(0 0% 100%);
+    box-shadow: var(--shadow-action);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .btn-action:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-action:active { transform: translateY(0); filter: brightness(0.98); }
+
+  .btn-action-success {
+    background: var(--gradient-success);
+    color: hsl(0 0% 100%);
+    box-shadow: var(--shadow-action-success);
+    font-weight: 700;
+    transition: transform 0.15s ease, filter 0.2s ease;
+  }
+  .btn-action-success:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .btn-action-danger {
+    background: var(--gradient-danger);
+    color: hsl(0 0% 100%);
+    box-shadow: var(--shadow-action-danger);
+    font-weight: 700;
+    transition: transform 0.15s ease, filter 0.2s ease;
+  }
+  .btn-action-danger:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  /* Soft pastel action (secondary emphasis) */
+  .btn-soft {
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.2);
+    font-weight: 600;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .btn-soft:hover { background: hsl(var(--primary) / 0.18); border-color: hsl(var(--primary) / 0.35); }
+
+  /* Colored icon chip (for action cards / list rows) */
+  .icon-chip {
+    @apply inline-flex items-center justify-center rounded-xl shrink-0;
+    width: 40px;
+    height: 40px;
+    background: hsl(var(--primary) / 0.14);
+    color: hsl(var(--primary));
+  }
+  .icon-chip-success { background: hsl(var(--success) / 0.16); color: hsl(var(--success)); }
+  .icon-chip-warning { background: hsl(var(--warning) / 0.18); color: hsl(var(--warning)); }
+  .icon-chip-danger  { background: hsl(var(--destructive) / 0.16); color: hsl(var(--destructive)); }
+
+
   .card-hover {
     @apply transition-colors duration-200;
   }
