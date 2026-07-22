@@ -1,6 +1,6 @@
 // Authenticated edge function to update sensitive secret columns
 // on `public.settings` that the frontend can no longer touch directly.
-// Allowed fields: whatsapp_api_key, hubla_webhook_token.
+// Allowed fields: whatsapp_api_key.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const allowed: Record<string, unknown> = {};
-    for (const key of ["whatsapp_api_key", "hubla_webhook_token"] as const) {
+    for (const key of ["whatsapp_api_key"] as const) {
       if (typeof body[key] === "string") {
         // Empty string = clear secret
         allowed[key] = body[key].trim().length === 0 ? null : body[key].trim();

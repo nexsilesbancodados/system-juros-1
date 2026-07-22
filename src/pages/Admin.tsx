@@ -988,30 +988,6 @@ const AdminLogs = () => {
             <p className="text-[10px] text-muted-foreground italic">Link principal — Mercado Pago é o gateway ativo. Configure o webhook em: <code>/functions/v1/mercadopago-webhook</code></p>
           </div>
 
-          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
-            <p className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard size={14} className="text-muted-foreground" /> Checkout Hubla (fallback)
-            </p>
-            <input
-              type="text"
-              value={form.hubla_checkout_url}
-              onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })}
-              placeholder="https://pay.hubla.com/..."
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
-            />
-            <p className="text-[10px] text-muted-foreground italic">Usado apenas se o Mercado Pago estiver vazio</p>
-          </div>
-
-          <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
-            <p className="text-sm font-semibold">Token de Webhook Hubla (legado)</p>
-            <input
-              type="password"
-              value={form.hubla_webhook_token}
-              onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
-              placeholder="Somente se ainda usar Hubla"
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
 
           <div className="space-y-1.5 p-3 rounded-xl bg-accent/20">
             <p className="text-sm font-semibold">Dias de Trial Padrão</p>
