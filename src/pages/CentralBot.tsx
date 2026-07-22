@@ -260,12 +260,15 @@ const CentralBot = () => {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-12 rounded-2xl bg-card border border-border p-1">
+        <TabsList className="grid w-full grid-cols-6 h-12 rounded-2xl bg-card border border-border p-1">
           <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold text-xs sm:text-sm flex items-center gap-1.5">
             <Activity size={14} /><span className="hidden sm:inline">Visão Geral</span>
           </TabsTrigger>
           <TabsTrigger value="bot" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold text-xs sm:text-sm flex items-center gap-1.5">
             <MessageCircle size={14} /><span className="hidden sm:inline">WhatsApp</span>
+          </TabsTrigger>
+          <TabsTrigger value="reguas" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold text-xs sm:text-sm flex items-center gap-1.5">
+            <CalendarClock size={14} /><span className="hidden sm:inline">Réguas</span>
           </TabsTrigger>
           <TabsTrigger value="automacoes" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold text-xs sm:text-sm flex items-center gap-1.5">
             <Zap size={14} /><span className="hidden sm:inline">Automações</span>
@@ -283,6 +286,9 @@ const CentralBot = () => {
         </TabsContent>
         <TabsContent value="bot" className="mt-5 focus-visible:outline-none">
           <Suspense fallback={<Fallback />}><WhatsAppConfig /></Suspense>
+        </TabsContent>
+        <TabsContent value="reguas" className="mt-5 focus-visible:outline-none">
+          <Suspense fallback={<Fallback />}><CobrancasReguas /></Suspense>
         </TabsContent>
         <TabsContent value="automacoes" className="mt-5 focus-visible:outline-none">
           <Suspense fallback={<Fallback />}><Automacoes /></Suspense>
