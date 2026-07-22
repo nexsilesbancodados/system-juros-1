@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { friendlyError } from "@/lib/friendlyError";
 
 const Metas = () => {
   const confirm = useConfirm();
