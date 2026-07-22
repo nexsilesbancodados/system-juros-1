@@ -286,7 +286,7 @@ export default function Investidores() {
           onPaid={() => { setPayOpen(null); void load(); }}
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }
 
