@@ -32,7 +32,7 @@ const Clientes = lazy(() => import("./pages/Clientes"));
 const Cobrancas = lazy(() => import("./pages/Cobrancas"));
 const Carteira = lazy(() => import("./pages/Carteira"));
 const Investidores = lazy(() => import("./pages/Investidores"));
-const InvestidorPerfil = lazy(() => import("./pages/InvestidorPerfil"));
+
 const PortalInvestidor = lazy(() => import("./pages/PortalInvestidor"));
 const Lucros = lazy(() => import("./pages/Lucros"));
 const Gastos = lazy(() => import("./pages/Gastos"));
