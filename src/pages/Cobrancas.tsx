@@ -81,7 +81,7 @@ const Cobrancas = () => {
 
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [period, setPeriod] = useState<PeriodFilter>("all");
-  const [sort, setSort] = useState<SortKey>("due_asc");
+  const [sort, setSort] = useState<SortKey>("amount_desc");
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
   const dSearch = useDebounced(search, 180);
