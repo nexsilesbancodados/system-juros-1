@@ -1327,6 +1327,15 @@ const ClienteDetalhe = () => {
                   >
                     <Edit size={14} />
                   </button>
+                  {c.status === "active" && !isPaid && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRenegotiating(c); }}
+                      className="p-2 rounded-lg hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-400 transition-colors shrink-0"
+                      title="Renegociar contrato"
+                    >
+                      <Repeat size={14} />
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteContract(c.id); }}
                     className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors shrink-0"
