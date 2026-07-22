@@ -139,7 +139,7 @@ const InstallmentRowInner = ({
               title="Cobrar via WhatsApp" aria-label="Cobrar via WhatsApp"
             >
               <MessageSquare size={14} />
-              <span className="hidden md:inline">WhatsApp</span>
+              <span>WhatsApp</span>
             </button>
             {hasPixKey && (
               <button
@@ -148,7 +148,7 @@ const InstallmentRowInner = ({
                 title="Copiar chave PIX" aria-label="Copiar chave PIX"
               >
                 <Copy size={14} />
-                <span className="hidden lg:inline">PIX</span>
+                <span>PIX</span>
               </button>
             )}
             {inst.client_email && (
@@ -158,16 +158,16 @@ const InstallmentRowInner = ({
                 title="Cobrar via E-mail" aria-label="Cobrar via E-mail"
               >
                 <Mail size={14} />
-                <span className="hidden lg:inline">E-mail</span>
+                <span>E-mail</span>
               </button>
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onMarkPaid(inst.id); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-accent transition-all active:scale-95 focus-ring"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success/10 text-success border border-success/20 text-xs font-medium hover:bg-success/20 transition-all active:scale-95 focus-ring"
               title="Marcar como paga" aria-label="Marcar como paga"
             >
               <Check size={14} />
-              <span className="hidden sm:inline">Paga</span>
+              <span>Paga</span>
             </button>
           </>
         )}

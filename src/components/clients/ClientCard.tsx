@@ -37,11 +37,10 @@ function ClientCardImpl({ client: c, summary, isSel, onToggle, onOpen, onDelete 
       </div>
       <button
         onClick={(e) => onDelete(c.id, e)}
-        className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-        title="Excluir"
+        className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-destructive/10 text-destructive ring-1 ring-destructive/20 hover:bg-destructive/20 text-[10px] font-semibold transition-colors"
         aria-label={`Excluir ${c.name || "cliente"}`}
       >
-        <Trash2 size={13} />
+        <Trash2 size={11} /> Excluir
       </button>
 
       {summary.overdue > 0 && (
