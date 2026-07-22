@@ -1008,6 +1008,7 @@ const Cobrancas = () => {
             <span className="hidden sm:inline">{selected.size > 0 ? `${selected.size}` : "Selecionar"}</span>
           </button>
           )}
+        </div>
 
         {showFilters && (
           <div className="rounded-2xl border border-border/30 bg-card/40 backdrop-blur-md p-4 space-y-3 animate-fade-in">
