@@ -793,7 +793,7 @@ const Chat = () => {
                   </button>
                 )}
                 {isAdmin && (
-                  <button onClick={clearAllMessages} title="Limpar histórico" className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition">
+                  <button onClick={clearAllMessages} title="Limpar histórico" aria-label="Limpar histórico" className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition">
                     <Trash2 size={14} />
                   </button>
                 )}
@@ -1079,7 +1079,7 @@ const Chat = () => {
                         {editingMsg ? <Check size={16} /> : <Send size={16} />}
                       </button>
                     ) : (
-                      <button onClick={startRecording} className="p-2.5 rounded-xl bg-primary/90 text-primary-foreground hover:bg-primary transition shrink-0" title="Gravar áudio">
+                      <button onClick={startRecording} className="p-2.5 rounded-xl bg-primary/90 text-primary-foreground hover:bg-primary transition shrink-0" title="Gravar áudio" aria-label="Gravar áudio">
                         <Mic size={16} />
                       </button>
                     )}
