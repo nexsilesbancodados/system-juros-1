@@ -2023,28 +2023,49 @@ const ClienteDetalhe = () => {
           });
         });
         const sorted = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return sorted.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento no histórico</p>
-        ) : (
-          <div className="relative pl-6 space-y-3">
-            <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
-            {sorted.map(ev => (
-              <div key={ev.id} className="relative">
-                <div className={`absolute -left-[18px] top-3 w-3 h-3 rounded-full ${ev.bg} border-2 border-background`} />
-                <div className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg ${ev.bg} flex items-center justify-center shrink-0`}>
-                    <ev.icon size={14} className={ev.color} />
+        const filters = [
+          { key: "all", label: "Tudo", count: sorted.length },
+          { key: "contract", label: "Contratos", count: sorted.filter(e => e.type === "contract").length },
+          { key: "payment", label: "Pagamentos", count: sorted.filter(e => e.type === "payment").length },
+          { key: "profit", label: "Lucros", count: sorted.filter(e => e.type === "profit").length },
+          { key: "note", label: "Notas", count: sorted.filter(e => e.type === "note").length },
+          { key: "contact", label: "Contatos", count: sorted.filter(e => e.type === "contact").length },
+        ] as const;
+        const filtered = historyFilter === "all" ? sorted : sorted.filter(e => e.type === historyFilter);
+        return (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {filters.map(f => (
+                <button key={f.key} onClick={() => setHistoryFilter(f.key as any)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${historyFilter === f.key ? "bg-primary/15 text-primary border-primary/40" : "bg-card/40 text-muted-foreground border-border/40 hover:text-foreground hover:border-border"}`}>
+                  {f.label} <span className="opacity-60 ml-1">{f.count}</span>
+                </button>
+              ))}
+            </div>
+            {filtered.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento nesta categoria</p>
+            ) : (
+              <div className="relative pl-6 space-y-3">
+                <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
+                {filtered.map(ev => (
+                  <div key={ev.id} className="relative">
+                    <div className={`absolute -left-[18px] top-3 w-3 h-3 rounded-full ${ev.bg} border-2 border-background`} />
+                    <div className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3 hover:border-primary/30 transition-colors">
+                      <div className={`w-8 h-8 rounded-lg ${ev.bg} flex items-center justify-center shrink-0`}>
+                        <ev.icon size={14} className={ev.color} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatBR(ev.date)} · {new Date(ev.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                      <p className={`text-sm font-bold ${ev.color} shrink-0`}>{ev.subtitle}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatBR(ev.date)} · {new Date(ev.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                  <p className={`text-sm font-bold ${ev.color} shrink-0`}>{ev.subtitle}</p>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         );
       })()}
