@@ -47,7 +47,7 @@ const sections: MenuSection[] = [
     items: [
       { label: "Clientes", icon: Users, path: "/clientes" },
       { label: "Cobranças", icon: Receipt, path: "/cobrancas" },
-      { label: "Inadimplência", icon: AlertTriangle, path: "/inadimplencia", module: "inadimplencia" },
+      
       { label: "Carteira", icon: Wallet, path: "/carteira" },
     ],
   },
