@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import InadimplenciaPanel from "@/components/cobrancas/InadimplenciaPanel";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
