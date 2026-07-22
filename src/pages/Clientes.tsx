@@ -309,7 +309,7 @@ const Clientes = () => {
     const { error } = await supabase.from("clients").insert(rows);
     setImporting(false);
     if (error) {
-      toast({ title: "Erro ao importar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível importar. Confira o arquivo."), variant: "destructive" });
       return;
     }
     toast({ title: `✓ ${rows.length} cliente(s) importado(s)!` });
