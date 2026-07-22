@@ -1531,6 +1531,185 @@ const ClienteDetalhe = () => {
         );
       })()}
 
+      {/* Tab: Score & Risco */}
+      {activeTab === "score" && (() => {
+        const score = client.credit_score || 0;
+        const scoreMax = 1000;
+        const scorePct = Math.min(100, (score / scoreMax) * 100);
+        const scoreColor = score >= 750 ? "#10b981" : score >= 600 ? "#f59e0b" : score >= 400 ? "#f97316" : "#ef4444";
+        const r = 78, C = 2 * Math.PI * r;
+
+        // Fatores comportamentais
+        const totalDue = kpis.paidInst.length + kpis.overdueInst.length;
+        const pontualidade = totalDue > 0 ? Math.round((kpis.paidInst.length / totalDue) * 100) : 100;
+        const paidOnTime = kpis.paidInst.filter((i: any) => {
+          if (!i.paid_at || !i.due_date) return true;
+          return new Date(i.paid_at).getTime() <= new Date(i.due_date).getTime() + 86400000;
+        }).length;
+        const pontualidadeReal = kpis.paidInst.length > 0 ? Math.round((paidOnTime / kpis.paidInst.length) * 100) : 100;
+        const tempoCasa = Math.min(100, Math.round((daysAsClient / 365) * 100));
+        const volume = Math.min(100, Math.round((kpis.lifetimeCapital / 10000) * 100));
+        const recorrencia = Math.min(100, contracts.length * 20);
+        const factors = [
+          { label: "Pontualidade de pagamento", value: pontualidadeReal, color: "bg-emerald-500", desc: `${paidOnTime}/${kpis.paidInst.length} parcelas em dia` },
+          { label: "Tempo de relacionamento", value: tempoCasa, color: "bg-sky-500", desc: `${daysAsClient} dias como cliente` },
+          { label: "Volume operado", value: volume, color: "bg-amber-500", desc: `R$ ${fmt(kpis.lifetimeCapital)} em histórico` },
+          { label: "Recorrência", value: recorrencia, color: "bg-violet-500", desc: `${contracts.length} contrato(s) tomado(s)` },
+          { label: "Adimplência atual", value: pontualidade, color: kpis.overdueInst.length > 0 ? "bg-rose-500" : "bg-emerald-500", desc: `${kpis.overdueInst.length} parcela(s) em atraso hoje` },
+        ];
+
+        // Evolução do saldo (mensal, últimos 12 meses)
+        const now = new Date();
+        const months: { label: string; saldo: number; date: Date }[] = [];
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          months.push({ label: d.toLocaleDateString("pt-BR", { month: "short" }), saldo: 0, date: d });
+        }
+        contracts.forEach((c: any) => {
+          const start = new Date(c.start_date || c.created_at);
+          const total = Number(c.total_amount || 0);
+          const cInsts = installments.filter((i: any) => i.contract_id === c.id);
+          months.forEach((m) => {
+            if (start > new Date(m.date.getFullYear(), m.date.getMonth() + 1, 0)) return;
+            const paidByMonth = cInsts
+              .filter((i: any) => i.status === "paid" && i.paid_at && new Date(i.paid_at) <= new Date(m.date.getFullYear(), m.date.getMonth() + 1, 0))
+              .reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+            m.saldo += Math.max(0, total - paidByMonth);
+          });
+        });
+        const maxSaldo = Math.max(1, ...months.map((m) => m.saldo));
+        const chartW = 640, chartH = 160, padL = 40, padR = 10, padT = 10, padB = 24;
+        const innerW = chartW - padL - padR, innerH = chartH - padT - padB;
+        const points = months.map((m, i) => ({
+          x: padL + (innerW * i) / Math.max(1, months.length - 1),
+          y: padT + innerH - (m.saldo / maxSaldo) * innerH,
+        }));
+        const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+        const areaD = `${pathD} L${points[points.length - 1].x},${padT + innerH} L${padL},${padT + innerH} Z`;
+
+        // Sugestões da IA (heurística)
+        const suggestions: { icon: any; tone: string; title: string; desc: string }[] = [];
+        if (score >= 750 && kpis.overdueInst.length === 0 && contracts.length >= 2) {
+          suggestions.push({ icon: Sparkles, tone: "emerald", title: "Elegível para aumento de limite", desc: "Cliente pontual e recorrente — oferecer ticket ~30% maior no próximo contrato." });
+        }
+        if (kpis.overdueInst.length >= 2) {
+          suggestions.push({ icon: AlertTriangle, tone: "rose", title: "Pausar novas concessões", desc: `${kpis.overdueInst.length} parcelas em atraso. Reforçar cobrança antes de novo empréstimo.` });
+        }
+        if (kpis.overdueInst.length > 0 && kpis.overdueInst.length <= 2 && score >= 500) {
+          suggestions.push({ icon: Repeat, tone: "amber", title: "Oferecer renegociação", desc: "Atraso pequeno + score razoável. Refi pode preservar o relacionamento." });
+        }
+        if (daysAsClient < 30 && contracts.length === 1) {
+          suggestions.push({ icon: Clock, tone: "sky", title: "Observar comportamento", desc: "Cliente novo. Aguardar 2-3 parcelas pagas antes de aumentar exposição." });
+        }
+        if (suggestions.length === 0) {
+          suggestions.push({ icon: Activity, tone: "sky", title: "Perfil estável", desc: "Nenhuma ação urgente. Manter monitoramento." });
+        }
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Gauge principal */}
+            <section className="lg:col-span-5 rounded-2xl border border-border/60 bg-gradient-to-br from-card/60 to-background p-6">
+              <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground mb-6 text-center">Score de Crédito</h2>
+              <div className="flex items-center justify-center relative">
+                <svg width="200" height="200" viewBox="0 0 200 200" className="-rotate-90">
+                  <circle cx="100" cy="100" r={r} stroke="hsl(var(--border))" strokeWidth="14" fill="none" />
+                  <circle cx="100" cy="100" r={r} stroke={scoreColor} strokeWidth="14" fill="none"
+                    strokeDasharray={C} strokeDashoffset={C - (C * scorePct) / 100} strokeLinecap="round"
+                    style={{ transition: "stroke-dashoffset 1s ease" }} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-6xl font-bold tracking-tight" style={{ fontFamily: "'Sora', sans-serif", color: scoreColor }}>{score}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">de {scoreMax}</p>
+                </div>
+              </div>
+              <div className="mt-6 text-center">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${riskTone}`}>
+                  <ShieldCheck size={13} /> {riskLabel}
+                </span>
+              </div>
+              <div className="mt-6 pt-6 border-t border-border/40">
+                <AICreditScore clientId={id!} currentScore={score} onApplyScore={() => inv("client-detail")} />
+              </div>
+            </section>
+
+            {/* Fatores */}
+            <section className="lg:col-span-7 rounded-2xl border border-border/60 bg-card/40 p-6">
+              <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground mb-4">Fatores comportamentais</h2>
+              <div className="space-y-4">
+                {factors.map((f) => (
+                  <div key={f.label}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-foreground">{f.label}</span>
+                      <span className="text-xs font-bold text-muted-foreground font-mono">{f.value}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className={`h-full rounded-full ${f.color} transition-all`} style={{ width: `${f.value}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Evolução do saldo devedor */}
+            <section className="lg:col-span-12 rounded-2xl border border-border/60 bg-card/40 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground">Evolução do saldo devedor (12 meses)</h2>
+                <span className="text-[10px] font-bold text-muted-foreground">Pico: R$ {fmt(maxSaldo)}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <svg width={chartW} height={chartH} className="w-full max-w-full" preserveAspectRatio="none" viewBox={`0 0 ${chartW} ${chartH}`}>
+                  <defs>
+                    <linearGradient id="saldoGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor={scoreColor} stopOpacity="0.35" />
+                      <stop offset="100%" stopColor={scoreColor} stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {[0, 0.5, 1].map((t) => (
+                    <line key={t} x1={padL} x2={chartW - padR} y1={padT + innerH * t} y2={padT + innerH * t} stroke="hsl(var(--border))" strokeDasharray="2 4" />
+                  ))}
+                  <path d={areaD} fill="url(#saldoGrad)" />
+                  <path d={pathD} fill="none" stroke={scoreColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  {points.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="3" fill={scoreColor}>
+                      <title>{`${months[i].label}: R$ ${fmt(months[i].saldo)}`}</title>
+                    </circle>
+                  ))}
+                  {months.map((m, i) => (
+                    <text key={i} x={padL + (innerW * i) / Math.max(1, months.length - 1)} y={chartH - 6} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">{m.label}</text>
+                  ))}
+                </svg>
+              </div>
+            </section>
+
+            {/* Sugestões da IA */}
+            <section className="lg:col-span-12 rounded-2xl border border-border/60 bg-card/40 p-6">
+              <h2 className="text-[10px] font-bold tracking-[0.24em] uppercase text-muted-foreground mb-4 flex items-center gap-2">
+                <Sparkles size={12} className="text-primary" /> Sugestões da IA
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {suggestions.map((s, i) => {
+                  const tint = s.tone === "emerald" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    : s.tone === "rose" ? "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                    : s.tone === "amber" ? "text-amber-300 bg-amber-500/10 border-amber-500/20"
+                    : "text-sky-300 bg-sky-500/10 border-sky-500/20";
+                  return (
+                    <div key={i} className={`flex items-start gap-3 p-4 rounded-xl border ${tint}`}>
+                      <div className="w-9 h-9 rounded-lg bg-background/40 flex items-center justify-center shrink-0">
+                        <s.icon size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground">{s.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        );
+      })()}
 
       {/* Tab: Contratos */}
       {activeTab === "contratos" && (
