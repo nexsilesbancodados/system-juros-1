@@ -225,7 +225,7 @@ const PortalCliente = () => {
     };
   }, [portalData]);
 
-  const doLogin = async (cleanCpf: string, silent = false) => {
+  const doLogin = async (cleanCpf: string, silent = false, birth?: string) => {
     if (!silent) {
       const block = isPortalLoginBlocked();
       if (block.blocked) {
@@ -237,10 +237,16 @@ const PortalCliente = () => {
         return;
       }
     }
+    const birthToUse = birth || birthDate;
+    if (!birthToUse) {
+      if (!silent) toast({ title: "Data de nascimento obrigatória", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("portal_client_login_cpf" as never, {
+      const { data, error } = await supabase.rpc("portal_client_login" as never, {
         _cpf: cleanCpf,
+        _birth_date: birthToUse,
       } as never);
 
       if (error) {
@@ -255,14 +261,14 @@ const PortalCliente = () => {
       if (!data) {
         if (!silent) {
           recordPortalLoginAttempt(false);
-          toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
+          toast({ title: "Acesso negado", description: "CPF ou data de nascimento não conferem.", variant: "destructive" });
         }
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, birth_date: birthToUse }));
       if (!silent) {
         recordPortalLoginAttempt(true);
         toast({ title: "Acesso autorizado!" });
@@ -297,7 +303,13 @@ const PortalCliente = () => {
       return;
     }
     setCpfError(null);
-    await doLogin(cleanCpf);
+    if (!birthDate) {
+      setBirthError("Informe sua data de nascimento.");
+      toast({ title: "Data de nascimento obrigatória", variant: "destructive" });
+      return;
+    }
+    setBirthError(null);
+    await doLogin(cleanCpf, false, birthDate);
   };
 
   const handleLogout = async () => {
