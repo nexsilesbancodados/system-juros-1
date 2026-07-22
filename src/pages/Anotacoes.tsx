@@ -38,7 +38,7 @@ const Anotacoes = () => {
   const handleAdd = async () => {
     if (!user || !title.trim()) return;
     const { error } = await supabase.from("notes").insert({ user_id: user.id, title: title.trim() });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error), variant: "destructive" });
     else { toast({ title: "✓ Anotação criada!" }); setTitle(""); setShowForm(false); fetchNotes(); }
   };
 
