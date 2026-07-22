@@ -153,26 +153,27 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         onClick={() => navigate(item.path)}
         title={collapsed ? item.label : undefined}
         className={`
-          group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
-          transition-all duration-200
+          group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium
+          transition-all duration-200 ease-out will-change-transform
+          hover:translate-x-0.5
           ${active
             ? "text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.25)]"
             : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
           }
-          ${collapsed ? "justify-center px-2" : ""}
+          ${collapsed ? "justify-center px-2 hover:translate-x-0" : ""}
         `}
         style={active ? {
           background: "linear-gradient(90deg, hsl(var(--primary)/0.18), hsl(var(--primary)/0.04))",
         } : undefined}
       >
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-gradient-to-b from-primary to-primary-glow shadow-[0_0_10px_hsl(var(--primary)/0.6)]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-8 rounded-r-full bg-gradient-to-b from-primary to-primary-glow shadow-[0_0_10px_hsl(var(--primary)/0.6)] animate-fade-in" />
         )}
 
-        <div className={`relative shrink-0 transition-transform duration-200 ${active ? "text-primary scale-[1.08]" : "group-hover:scale-105"}`}>
-          <Icon size={17} strokeWidth={active ? 2.4 : 1.9} />
+        <div className={`relative shrink-0 transition-all duration-200 ${active ? "text-primary scale-[1.12]" : "group-hover:scale-110 group-hover:text-foreground"}`}>
+          <Icon size={19} strokeWidth={active ? 2.4 : 1.9} />
           {item.highlight && !active && !collapsed && (
-            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_hsl(45_95%_55%/0.8)]" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_hsl(45_95%_55%/0.8)] animate-pulse" />
           )}
           {badge > 0 && collapsed && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-card">
@@ -186,7 +187,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         )}
 
         {!collapsed && badge > 0 && (
-          <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_2px_6px_hsl(var(--destructive)/0.4)]">
+          <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_2px_6px_hsl(var(--destructive)/0.4)]">
             {badge > 99 ? "99+" : badge}
           </span>
         )}
@@ -199,6 +200,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
       </button>
     );
   };
+
 
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -238,10 +240,11 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         )}
 
         {isOpen && (
-          <div className="space-y-1">
+          <div className="space-y-1 animate-fade-in">
             {section.items.map(renderItem)}
           </div>
         )}
+
       </div>
     );
   };
@@ -262,7 +265,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }: SidebarProps) => {
         fixed left-0 top-0 h-screen flex flex-col z-50
         transition-[width] duration-300 ease-out
         border-r border-border/10 shadow-2xl shadow-black/40
-        ${collapsed ? "w-[68px]" : "w-[232px]"}
+        ${collapsed ? "w-[76px]" : "w-[260px]"}
       `}
       style={{
         background: sidebarBg || "hsl(var(--card) / 0.45)",
