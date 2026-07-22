@@ -164,6 +164,7 @@ const App = () => (
                     <Route path="/admin" element={<ErrorBoundary><Admin /></ErrorBoundary>} />
                     <Route path="/relatorios" element={<ErrorBoundary><Relatorios /></ErrorBoundary>} />
                     <Route path="/historico" element={<ErrorBoundary><Historico /></ErrorBoundary>} />
+                    <Route path="/historico-financeiro" element={<ErrorBoundary><HistoricoFinanceiro /></ErrorBoundary>} />
                     <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
