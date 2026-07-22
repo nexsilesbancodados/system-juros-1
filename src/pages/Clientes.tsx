@@ -193,14 +193,23 @@ const Clientes = () => {
   };
   const clearSelection = () => setSelected(new Set());
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = useCallback(async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!(await confirm("Excluir este cliente e todos os seus dados?"))) return;
     const { error } = await supabase.rpc("delete_client_cascade", { _client_id: id });
     if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
-  };
+  }, [confirm, toast, qc, user?.id]);
+
+  const handleOpen = useCallback((id: string) => navigate(`/clientes/${id}`), [navigate]);
+  const handleToggleOne = useCallback((id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   const handleBulkDelete = async () => {
     const ids = Array.from(selected);
