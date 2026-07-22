@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   CreditCard, Copy, Check, QrCode, Receipt, Calendar,
-  Download, Info, Loader2, MessageCircle, X
+  Download, Info, Loader2, MessageCircle, X, Upload
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,8 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(installment?.receipt_url || null);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   const isOverdue = installment?.status === "overdue" ||
@@ -104,6 +106,43 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
       toast({ title: "Erro", description: "Não foi possível gerar o recibo agora.", variant: "destructive" });
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleUploadReceipt = async (file: File) => {
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      toast({ title: "Arquivo muito grande", description: "O limite é 6MB.", variant: "destructive" });
+      return;
+    }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Formato inválido", description: "Envie JPG, PNG, WEBP ou PDF.", variant: "destructive" });
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      const base64 = btoa(bin);
+      const { data, error } = await supabase.functions.invoke("portal-upload-receipt", {
+        body: {
+          cpf: (clientData?.cpf_cnpj || "").replace(/\D/g, ""),
+          installment_id: installment.id,
+          content_type: file.type,
+          filename: file.name,
+          file_base64: base64,
+        },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      setUploadedUrl((data as any).url);
+      toast({ title: "Comprovante enviado!", description: "O credor foi notificado e fará a conferência." });
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -227,6 +266,47 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                   Já paguei — avisar credor no WhatsApp
                 </Button>
               )}
+
+              <div className="rounded-2xl border border-border/60 bg-accent/20 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Upload size={16} className="text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wide">Enviar comprovante</span>
+                </div>
+                {uploadedUrl ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-success/30 bg-success/10 p-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Check size={16} className="text-success shrink-0" />
+                      <span className="text-xs text-success font-semibold truncate">Comprovante enviado</span>
+                    </div>
+                    <a href={uploadedUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-success underline shrink-0">Ver</a>
+                  </div>
+                ) : (
+                  <>
+                    <label
+                      htmlFor="portal-receipt-upload"
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-4 text-xs font-semibold text-primary transition hover:bg-primary/10 ${isUploading ? "pointer-events-none opacity-60" : ""}`}
+                    >
+                      {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      {isUploading ? "Enviando..." : "Anexar foto/PDF do comprovante"}
+                    </label>
+                    <input
+                      id="portal-receipt-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      disabled={isUploading}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadReceipt(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      JPG, PNG, WEBP ou PDF — até 6MB. O credor recebe o arquivo para conferir o pagamento.
+                    </p>
+                  </>
+                )}
+              </div>
 
               <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                 <Info size={14} className="text-primary shrink-0 mt-0.5" />
