@@ -253,7 +253,7 @@ function MiniStat({
   sub,
   tone,
 }: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   label: string;
   value: string;
   sub: string;
