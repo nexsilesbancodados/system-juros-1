@@ -540,6 +540,30 @@ const Cobrancas = () => {
     return arr;
   }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
+  // Aggregate per-client contract facts using ALL installments (unfiltered) so numbers are stable
+  const clientAggregates = useMemo(() => {
+    const m = new Map<string, { loaned: number; totalInstallments: number; grossExpected: number; overdueCount: number; overdueFees: number }>();
+    const seenContracts = new Map<string, Set<string>>();
+    for (const inst of installments as any[]) {
+      const cid = inst.client_id;
+      if (!m.has(cid)) { m.set(cid, { loaned: 0, totalInstallments: 0, grossExpected: 0, overdueCount: 0, overdueFees: 0 }); seenContracts.set(cid, new Set()); }
+      const agg = m.get(cid)!;
+      const set = seenContracts.get(cid)!;
+      if (inst.contract_id && !set.has(inst.contract_id)) {
+        set.add(inst.contract_id);
+        const c = inst.contracts || {};
+        agg.loaned += Number(c.capital || 0);
+        agg.totalInstallments += Number(c.num_installments || 0);
+      }
+      agg.grossExpected += Number(inst.amount || 0);
+      if (inst.status === "overdue") {
+        agg.overdueCount += 1;
+        agg.overdueFees += computeLateFee(inst);
+      }
+    }
+    return m;
+  }, [installments]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; totalWithFees: number; totalFees: number; minDue: string }>();
     filtered.forEach((inst: any) => {
@@ -557,6 +581,7 @@ const Cobrancas = () => {
       }
       if (inst.due_date < g.minDue) g.minDue = inst.due_date;
     });
+
     const groups = Array.from(map.values());
     const key = (g: any) => {
       if (sort === "amount_desc") return -g.total;
@@ -1168,12 +1193,44 @@ const Cobrancas = () => {
                               </span>
                             )}
                             <span className="text-[11px] text-muted-foreground">
-                              · {unpaidCount} parcela{unpaidCount === 1 ? "" : "s"}
+                              · {unpaidCount} parcela{unpaidCount === 1 ? "" : "s"} em aberto
                             </span>
                             <span className="ml-auto text-[10px] text-muted-foreground inline-flex items-center gap-1">
                               {isCollapsed ? <><ChevronRight size={12} /> ver parcelas</> : <><ChevronDown size={12} /> ocultar</>}
                             </span>
                           </div>
+                          {(() => {
+                            const agg = clientAggregates.get(group.client_id);
+                            if (!agg) return null;
+                            const profit = Math.max(0, (agg.grossExpected || 0) - (agg.loaned || 0));
+                            return (
+                              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                <div className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5">
+                                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Emprestado</p>
+                                  <p className="text-xs font-bold text-foreground tabular-nums">R$ {fmt(agg.loaned)}</p>
+                                </div>
+                                <div className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5">
+                                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Parcelas</p>
+                                  <p className="text-xs font-bold text-foreground tabular-nums">{agg.totalInstallments || group.items.length}</p>
+                                </div>
+                                <div className="rounded-lg border border-success/30 bg-success/10 px-2 py-1.5">
+                                  <p className="text-[9px] uppercase tracking-wide text-success/80">Lucro</p>
+                                  <p className="text-xs font-bold text-success tabular-nums">R$ {fmt(profit)}</p>
+                                </div>
+                                {agg.overdueCount > 0 ? (
+                                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1.5">
+                                    <p className="text-[9px] uppercase tracking-wide text-destructive/80">{agg.overdueCount} atrasada{agg.overdueCount === 1 ? "" : "s"}</p>
+                                    <p className="text-xs font-bold text-destructive tabular-nums">+R$ {fmt(agg.overdueFees)} multa</p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5">
+                                    <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Situação</p>
+                                    <p className="text-xs font-bold text-success tabular-nums">Em dia</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </button>
                       </div>
                     </div>
@@ -1195,6 +1252,7 @@ const Cobrancas = () => {
                       >
                         <MessageSquare size={15} /> Cobrar
                       </button>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
