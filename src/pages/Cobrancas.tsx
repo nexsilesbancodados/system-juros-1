@@ -7,7 +7,9 @@ import {
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
   Calendar as CalendarIcon, SlidersHorizontal, ArrowUpDown, Zap, Flame,
   History, Bell, Send
+  , ChevronDown, ChevronRight, Layers, ListTree
 } from "lucide-react";
+import { computeLateFee } from "@/lib/lateFee";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +78,11 @@ const Cobrancas = () => {
   const [cobrarAteSelected, setCobrarAteSelected] = useState<Set<string>>(new Set());
   const [focoDia, setFocoDia] = useState(false);
   const [bucket, setBucket] = useState<"all" | "today" | "1-7" | "8-30" | "30+">("all");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [groupMode, setGroupMode] = useState<"expanded" | "collapsed">("expanded");
+  const toggleGroupCollapse = useCallback((cid: string) => {
+    setCollapsed(prev => { const n = new Set(prev); n.has(cid) ? n.delete(cid) : n.add(cid); return n; });
+  }, []);
   const [historyFor, setHistoryFor] = useState<{ installmentId: string; clientName: string } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -472,14 +479,20 @@ const Cobrancas = () => {
   }, [installments, filter, period, sort, dSearch, focoDia, bucket]);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; minDue: string }>();
+    const map = new Map<string, { client_id: string; client_name: string; items: any[]; total: number; totalWithFees: number; totalFees: number; minDue: string }>();
     filtered.forEach((inst: any) => {
       if (!map.has(inst.client_id)) {
-        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, minDue: inst.due_date });
+        map.set(inst.client_id, { client_id: inst.client_id, client_name: inst.client_name, items: [], total: 0, totalWithFees: 0, totalFees: 0, minDue: inst.due_date });
       }
       const g = map.get(inst.client_id)!;
       g.items.push(inst);
-      if (inst.status !== "paid") g.total += Number(inst.amount);
+      if (inst.status !== "paid") {
+        const base = Number(inst.amount) || 0;
+        const fee = computeLateFee(inst);
+        g.total += base;
+        g.totalFees += fee;
+        g.totalWithFees += base + fee;
+      }
       if (inst.due_date < g.minDue) g.minDue = inst.due_date;
     });
     const groups = Array.from(map.values());
