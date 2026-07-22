@@ -27,7 +27,7 @@ const WhatsAppConfig = () => {
   const [settings, setSettings] = useState<any>(null);
 
   // Pre-populated data from user
-  const EVOLUTION_URL = "https://nexsiles-evolution-api.y7p1l4.easypanel.host/";
+  const EVOLUTION_URL = "https://credmiasapp-evolution-api.fqr8ne.easypanel.host/";
   const EVOLUTION_KEY = "429683C4C977415CAAFCCE10F7D57E11";
 
   useEffect(() => {

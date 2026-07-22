@@ -28,7 +28,7 @@ export const WhatsAppInstancesCard = () => {
   const [form, setForm] = useState({
     name: "",
     instance: "",
-    api_url: "https://nexsiles-evolution-api.y7p1l4.easypanel.host/",
+    api_url: "https://credmiasapp-evolution-api.fqr8ne.easypanel.host/",
     api_key: "",
   });
 
