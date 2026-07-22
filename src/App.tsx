@@ -175,7 +175,7 @@ const App = () => (
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
                     <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
                     <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
-                    <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
+                    <Route path="/inadimplencia" element={<Navigate to="/cobrancas?tab=aging" replace />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
