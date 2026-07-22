@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import {
   Landmark, Plus, Link as LinkIcon, RefreshCw, Wallet, TrendingUp,
-  CheckCircle2, Clock, ExternalLink, Trash2, Copy, DollarSign,
+  CheckCircle2, Clock, ExternalLink, Trash2, Copy, DollarSign, ArrowLeft,
 } from "lucide-react";
+import InvestidorPerfil from "./InvestidorPerfil";
+
 
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtDate = (d?: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "-");
