@@ -655,6 +655,20 @@ const Analises = () => {
             </div>
           </div>
 
+          {/* ─── Narrativa: o que aconteceu neste período ─── */}
+          <AnaliseNarrative
+            periodLabel={periodLabel}
+            totalReceived={m.totalReceived}
+            totalProfit={m.lucroPeriodo}
+            deltaReceived={m.deltaReceived}
+            deltaProfit={m.deltaProfit}
+            paidCount={m.paidCount}
+            newContracts={m.newContracts}
+            overdueAmount={m.overdueAmount}
+            overdueCount={m.overdueCount}
+            forecast30={m.forecastAmount}
+          />
+
           {/* ─── EMPRÉSTIMOS ─── */}
           <Section title="Empréstimos no período" subtitle="Quanto saiu do caixa e quanto vai render">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
