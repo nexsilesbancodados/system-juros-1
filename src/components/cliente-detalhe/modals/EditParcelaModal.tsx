@@ -12,8 +12,9 @@ type Props = {
 
 export default function EditParcelaModal({ inst, form, setForm, saving, onClose, onSave }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border bg-card p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200 pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={e => e.stopPropagation()}>
+        <div className="sm:hidden mx-auto -mt-2 mb-1 h-1.5 w-10 rounded-full bg-muted-foreground/30" />
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground">Editar Parcela #{inst.installment_number}</h2>
           <button onClick={onClose} aria-label="Fechar" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={18} /></button>
