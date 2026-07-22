@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ExportCenter from "@/components/relatorios/ExportCenter";
 import { FileText, Download, Calendar, TrendingUp, ArrowDownRight, Wallet, Users, Receipt, CheckCircle, AlertTriangle, Clock, BarChart3, FileDown, Sparkles, Loader2, Lightbulb, ShieldCheck, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -525,6 +526,9 @@ const Relatorios = () => {
           </div>
         </>
       )}
+
+      {/* Central de Exportação — CSVs por entidade com date range */}
+      <ExportCenter />
     </div>
   );
 };
