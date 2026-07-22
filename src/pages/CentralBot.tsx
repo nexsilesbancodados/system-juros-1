@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Bot, Zap, MessageCircle, Sparkles, Activity, BarChart3,
-  CheckCircle2, XCircle, AlertTriangle, Loader2, ArrowRight, Inbox,
+  CheckCircle2, XCircle, AlertTriangle, Loader2, ArrowRight, Inbox, CalendarClock,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
