@@ -211,18 +211,6 @@ const Automacoes = () => {
       entityType: "check_overdue",
     },
     {
-      id: "subscription",
-      name: "Assinaturas",
-      description: "Bloqueia contas com assinatura vencida e avisa quem vence em 7 dias",
-      icon: CreditCard,
-      color: "text-purple-500",
-      bg: "bg-purple-500/10",
-      fn: "auto-subscription-check",
-      category: "financeiro" as Category,
-      schedule: "Diário 02:00",
-      entityType: "auto_subscription_check",
-    },
-    {
       id: "credit-score",
       name: "Score de Crédito",
       description: "Recalcula o score de cada cliente baseado no histórico de pagamentos e atrasos",
@@ -584,7 +572,7 @@ const Automacoes = () => {
               Todas as automações rodam sozinhas no horário programado. Você pode executar manualmente a qualquer momento.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Assinaturas: 02:00</Badge>
+              
               <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Multas: 03:00</Badge>
               <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Backup: 04:00</Badge>
               <Badge variant="outline" className="text-[10px]"><Clock size={10} className="mr-1" /> Score: 05:00</Badge>
