@@ -1014,11 +1014,13 @@ const Cobrancas = () => {
             const someSelected = groupSelectedCount > 0 && !allSelected;
             const hasUnpaid = groupSelectable.length > 0;
             const unpaidCount = groupSelectable.length;
+            const isCollapsed = groupMode === "collapsed" ? !collapsed.has(group.client_id) : collapsed.has(group.client_id);
+            const showHeader = group.items.length > 1 && hasUnpaid;
             return (
               <div key={group.client_id} className="space-y-1">
-                {group.items.length > 1 && hasUnpaid && (
+                {showHeader && (
                   <div className="flex items-center justify-between gap-2 px-1 py-1.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <button
                         aria-label="Selecionar todas as parcelas do cliente"
                         onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
@@ -1031,9 +1033,30 @@ const Cobrancas = () => {
                             ? <MinusSquare size={18} className="text-primary" />
                             : <Square size={18} className="text-muted-foreground" />}
                       </button>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{group.client_name}</p>
-                        <p className="text-xs text-muted-foreground">{unpaidCount} parcelas pendentes · Total R$ {fmt(group.total)}</p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleGroupCollapse(group.client_id); }}
+                        className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring text-muted-foreground"
+                        title={isCollapsed ? "Mostrar parcelas" : "Ocultar parcelas"}
+                        aria-label="Alternar exibição das parcelas"
+                      >
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{group.client_name}</p>
+                        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <span>{unpaidCount} parcelas pendentes</span>
+                          <span>·</span>
+                          <span>Total <span className="font-semibold text-foreground">R$ {fmt(group.total)}</span></span>
+                          {group.totalFees > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-destructive">
+                                Com multas <span className="font-semibold">R$ {fmt(group.totalWithFees)}</span>
+                                <span className="ml-1 text-[10px] opacity-80">(+R$ {fmt(group.totalFees)})</span>
+                              </span>
+                            </>
+                          )}
+                        </p>
                       </div>
                     </div>
                     <button
@@ -1045,7 +1068,7 @@ const Cobrancas = () => {
                     </button>
                   </div>
                 )}
-                {group.items.map((inst: any) => renderRow(inst))}
+                {(!showHeader || !isCollapsed) && group.items.map((inst: any) => renderRow(inst))}
               </div>
             );
           })}
