@@ -58,18 +58,18 @@ const CobrancasReguas = () => {
     (async () => {
       const { data } = await supabase
         .from("settings")
-        .select("bot_escalation_rules, bot_enabled, company_name, whatsapp_contact")
+        .select("bot_escalation_rules, bot_enabled, company_name")
         .eq("user_id", user.id)
         .maybeSingle();
       const { data: profile } = await supabase
-        .from("profiles").select("pix_key").eq("id", user.id).maybeSingle();
-      const raw = (data?.bot_escalation_rules as any[]) || [];
+        .from("profiles").select("pix_key, whatsapp").eq("id", user.id).maybeSingle();
+      const raw = ((data as any)?.bot_escalation_rules as any[]) || [];
       setRules(raw.length ? raw.map((r) => ({ days: Number(r.days), template: r.template || "", active: r.active !== false })) : []);
-      setEnabled(!!data?.bot_enabled);
+      setEnabled(!!(data as any)?.bot_enabled);
       setMeta({
-        company: data?.company_name || "sua empresa",
+        company: (data as any)?.company_name || "sua empresa",
         pix: (profile as any)?.pix_key || "chave-pix",
-        whatsapp: (data as any)?.whatsapp_contact || "(11) 90000-0000",
+        whatsapp: (profile as any)?.whatsapp || "(11) 90000-0000",
       });
       setLoading(false);
     })();
