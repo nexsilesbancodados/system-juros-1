@@ -793,11 +793,8 @@ const ClienteDetalhe = () => {
 
   const handleDelete = async () => {
     if (!(await confirm("Excluir este cliente e todos os dados?"))) return;
-    await supabase.from("contract_installments").delete().eq("client_id", id!);
-    await supabase.from("contracts").delete().eq("client_id", id!);
-    
-    await supabase.from("transactions").delete().eq("client_id", id!);
-    await supabase.from("clients").delete().eq("id", id!);
+    const { error } = await supabase.rpc("delete_client_cascade", { _client_id: id! });
+    if (error) { toast({ ...friendlyError(error, "Não foi possível excluir o cliente."), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" }); navigate("/clientes");
   };
 
@@ -942,7 +939,7 @@ const ClienteDetalhe = () => {
                 {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
               <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 shadow-md" style={{ background: "var(--gradient-button)" }}>
-                <Camera size={11} className="text-white" />
+                <Camera size={11} className="text-primary-foreground" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -995,7 +992,7 @@ const ClienteDetalhe = () => {
       {/* ===== MODALS ===== */}
 
       {editMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditMode(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditMode(false)}>
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Editar Cliente</h2>
@@ -1016,7 +1013,7 @@ const ClienteDetalhe = () => {
       )}
 
       {editAddressMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditAddressMode(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditAddressMode(false)}>
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Editar Endereço</h2>
@@ -1044,7 +1041,7 @@ const ClienteDetalhe = () => {
       )}
 
       {newLoanMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setNewLoanMode(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setNewLoanMode(false)}>
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Novo Empréstimo</h2>
@@ -1156,7 +1153,7 @@ const ClienteDetalhe = () => {
       )}
 
       {editContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditContract(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditContract(null)}>
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Editar Empréstimo</h2>
@@ -1226,7 +1223,7 @@ const ClienteDetalhe = () => {
       )}
 
       {editInst && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditInst(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditInst(null)}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Editar Parcela #{editInst.installment_number}</h2>
@@ -1256,7 +1253,7 @@ const ClienteDetalhe = () => {
 
 
       {partialPayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => { if (!payUploading) { setPartialPayModal(null); setPayReceiptFile(null); setPayMethod("pix"); } }}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Pagamento</h2>

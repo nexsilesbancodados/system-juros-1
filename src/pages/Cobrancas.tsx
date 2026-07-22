@@ -935,7 +935,7 @@ const Cobrancas = () => {
               {search ? (
                 <>
                   <span className="text-[10px] text-muted-foreground">{filtered.length}</span>
-                  <button onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
+                  <button aria-label="Limpar busca" onClick={() => setSearch("")} className="p-1 rounded-md hover:bg-accent text-muted-foreground"><X size={14} /></button>
                 </>
               ) : (
                 <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-md border border-border/40 bg-muted/40 text-[10px] font-mono text-muted-foreground">/</kbd>
@@ -1109,6 +1109,7 @@ const Cobrancas = () => {
                   <div className="flex items-center justify-between gap-2 px-1 py-1.5">
                     <div className="flex items-center gap-2">
                       <button
+                        aria-label="Selecionar todas as parcelas do cliente"
                         onClick={(e) => { e.stopPropagation(); toggleGroupSelect(group); }}
                         className="shrink-0 p-1 rounded hover:bg-accent transition-colors focus-ring"
                         title="Selecionar todas"
@@ -1181,7 +1182,7 @@ const Cobrancas = () => {
                   {bulkPreview.groups.length} cliente(s) • {bulkPreview.totalItems} parcela(s){bulkPreview.skipped > 0 ? ` • ${bulkPreview.skipped} sem telefone` : ""}
                 </p>
               </div>
-              <button disabled={bulkSending} onClick={() => { setBulkPreview(null); setPreviewEditIdx(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+              <button aria-label="Fechar prévia" disabled={bulkSending} onClick={() => { setBulkPreview(null); setPreviewEditIdx(null); }} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
               {bulkPreview.groups.map((g, idx) => (
@@ -1202,6 +1203,7 @@ const Cobrancas = () => {
                         className="px-2 py-1 rounded-lg text-[11px] bg-primary/15 hover:bg-primary/25 text-primary"
                       >{previewEditIdx === idx ? "Pronto" : "Editar"}</button>
                       <button
+                        aria-label="Remover deste lote"
                         onClick={() => {
                           setBulkPreview((prev) => prev ? { ...prev, groups: prev.groups.filter((_, i) => i !== idx), totalItems: prev.totalItems - g.items.length } : prev);
                           if (previewEditIdx === idx) setPreviewEditIdx(null);
@@ -1335,7 +1337,7 @@ const Cobrancas = () => {
                     <p className="text-[11px] text-muted-foreground">Inclui atrasadas anteriores + vencendo até a data.</p>
                   </div>
                 </div>
-                <button onClick={() => setCobrarAteOpen(false)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
+                <button aria-label="Fechar" onClick={() => setCobrarAteOpen(false)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground"><X size={16} /></button>
               </div>
 
               {/* Date + presets */}

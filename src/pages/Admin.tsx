@@ -791,7 +791,7 @@ const AdminAutomacoesWrapper = () => {
           </div>
           <Button variant="ghost" size="sm" onClick={fetchData} className="h-8 text-xs">Atualizar</Button>
         </div>
-        <div className="p-4 bg-black/20 font-mono text-[11px] space-y-1.5 max-h-[400px] overflow-y-auto">
+        <div className="p-4 bg-muted/30 font-mono text-[11px] space-y-1.5 max-h-[400px] overflow-y-auto">
           {logs.map((log) => (
             <div key={log.id} className="flex gap-3 border-b border-border/5 py-1 last:border-0">
               <span className="text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleTimeString()}</span>
