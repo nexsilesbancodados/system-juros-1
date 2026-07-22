@@ -70,7 +70,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-border/40 bg-card/70 glass-strong flex items-center justify-between px-3 lg:px-8 gap-2">
+    <header className="sticky top-0 z-40 h-16 border-b border-border/40 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-2xl flex items-center justify-between px-3 lg:px-6 gap-3 shadow-[0_1px_0_hsl(var(--border)/0.4),0_8px_24px_-12px_hsl(0_0%_0%/0.4)]">
       {isMobile ? (
         <button onClick={() => navigate("/perfil")} className="flex items-center gap-2 micro-bounce min-w-0 max-w-[60%]">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shrink-0">
@@ -89,45 +89,56 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
         <button
           data-tour="topbar-search"
           onClick={onSearchClick}
-          className="group flex items-center gap-2.5 px-4 py-2 rounded-full bg-muted/40 border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-muted/60 transition-all duration-300"
+          className="group flex items-center gap-2.5 px-4 h-10 min-w-[260px] rounded-full bg-muted/30 border border-border/40 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-muted/50 hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.06)] transition-all duration-300"
         >
-          <Search size={14} className="text-muted-foreground/60 group-hover:text-primary transition-colors" />
-          <span className="hidden sm:inline text-[13px]">Buscar...</span>
-          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-background/60 font-mono ml-4 text-muted-foreground/50 border border-border/30">⌘K</kbd>
+          <Search size={15} className="text-muted-foreground/60 group-hover:text-primary transition-colors" />
+          <span className="hidden sm:inline text-[13px] flex-1 text-left">Buscar clientes, contratos...</span>
+          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md bg-background/60 font-mono text-muted-foreground/60 border border-border/40">⌘K</kbd>
         </button>
       )}
 
 
       <div className="flex-1" />
 
-      {/* Financial indicators — pill compacto unificado */}
+      {/* Financial indicators — grupo unificado */}
       {!isMobile && (
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-muted/25 border border-border/30 backdrop-blur-sm">
           <button
             onClick={() => navigate("/carteira")}
-            className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-muted/40 border border-border/40 hover:border-primary/50 hover:bg-primary/8 transition-all duration-200 hover-lift"
+            className="group flex items-center gap-2 pl-2 pr-3.5 h-8 rounded-full hover:bg-primary/10 transition-all duration-200"
             title="Ver Carteira"
           >
-            <Wallet size={14} className="text-primary/70 group-hover:text-primary transition-colors" />
-            <span className="text-[12px] font-semibold tracking-tight text-muted-foreground group-hover:text-foreground transition-colors">R$ {fmt(financials?.carteira ?? 0)}</span>
+            <span className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center ring-1 ring-primary/20 group-hover:scale-110 transition-transform">
+              <Wallet size={12} className="text-primary" />
+            </span>
+            <span className="text-[12.5px] font-bold tracking-tight text-foreground">R$ {fmt(financials?.carteira ?? 0)}</span>
           </button>
+          <div className="w-px h-4 bg-border/50" />
           <button
             onClick={() => navigate("/lucros")}
-            className="hidden lg:flex group items-center gap-2 px-3.5 py-2 rounded-full bg-success/8 border border-success/20 hover:border-success/50 hover:bg-success/12 transition-all duration-200 hover-lift"
+            className="hidden lg:flex group items-center gap-2 pl-2 pr-3.5 h-8 rounded-full hover:bg-emerald-500/10 transition-all duration-200"
             title="Ver Lucros"
           >
-            <TrendingUp size={14} className="text-success/80 group-hover:text-success transition-colors" />
-            <span className="text-[12px] font-semibold tracking-tight text-success">R$ {fmt(financials?.lucro ?? 0)}</span>
+            <span className="w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center ring-1 ring-emerald-500/25 group-hover:scale-110 transition-transform">
+              <TrendingUp size={12} className="text-emerald-400" />
+            </span>
+            <span className="text-[12.5px] font-bold tracking-tight text-emerald-400">R$ {fmt(financials?.lucro ?? 0)}</span>
           </button>
           {(financials?.overdue ?? 0) > 0 && (
-            <button
-              onClick={() => navigate("/cobrancas?tab=aging")}
-              className="group flex items-center gap-2 px-3 py-2 rounded-full bg-destructive/8 border border-destructive/25 hover:border-destructive/50 hover:bg-destructive/12 transition-all duration-200 hover-lift"
-              title="Ver Inadimplência"
-            >
-              <AlertTriangle size={14} className="text-destructive/80 group-hover:text-destructive transition-colors" />
-              <span className="text-[12px] font-bold tracking-tight text-destructive">{financials?.overdue}</span>
-            </button>
+            <>
+              <div className="w-px h-4 bg-border/50" />
+              <button
+                onClick={() => navigate("/cobrancas?tab=aging")}
+                className="group flex items-center gap-2 pl-2 pr-3 h-8 rounded-full hover:bg-destructive/10 transition-all duration-200"
+                title="Ver Inadimplência"
+              >
+                <span className="relative w-6 h-6 rounded-full bg-destructive/15 flex items-center justify-center ring-1 ring-destructive/25">
+                  <AlertTriangle size={12} className="text-destructive" />
+                  <span className="absolute inset-0 rounded-full bg-destructive/30 animate-ping opacity-60" />
+                </span>
+                <span className="text-[12.5px] font-bold tracking-tight text-destructive">{financials?.overdue}</span>
+              </button>
+            </>
           )}
         </div>
       )}
@@ -135,33 +146,33 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
 
       {/* Quick Add Menu */}
       {!isMobile && (
-        <div ref={quickRef} className="relative flex items-center mr-2">
+        <div ref={quickRef} className="relative flex items-center">
           <button
             onClick={() => setQuickOpen(o => !o)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+            className="flex items-center gap-1.5 pl-3 pr-2.5 h-9 rounded-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground text-[12px] font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all duration-200 active:scale-95 ring-1 ring-primary/40"
             aria-haspopup="menu"
             aria-expanded={quickOpen}
           >
-            <Plus size={14} /> Novo
-            <ChevronDown size={11} className={`transition-transform ${quickOpen ? "rotate-180" : ""}`} />
+            <Plus size={15} strokeWidth={2.8} /> Novo
+            <ChevronDown size={12} className={`transition-transform ${quickOpen ? "rotate-180" : ""}`} />
           </button>
           {quickOpen && (
-            <div className="absolute top-full right-0 mt-2 w-60 rounded-xl border border-border bg-card shadow-2xl overflow-hidden z-50 animate-scale-in origin-top-right">
+            <div className="absolute top-full right-0 mt-2 w-64 rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden z-50 animate-scale-in origin-top-right">
               <p className="px-3 pt-2.5 pb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">Ações rápidas</p>
               {[
-                { Icon: UserPlus, label: "Novo cliente", desc: "Cadastrar + contrato", path: "/clientes/novo" },
-                { Icon: Receipt, label: "Registrar pagamento", desc: "Abrir cobranças", path: "/cobrancas" },
-                { Icon: TrendingUp, label: "Lançar lucro", desc: "Entrada manual", path: "/lucros" },
-                { Icon: Wallet, label: "Lançar gasto", desc: "Despesa manual", path: "/gastos" },
-                { Icon: ListTodo, label: "Nova tarefa", desc: "Lembretes & to-dos", path: "/ferramentas/tarefas" },
-                { Icon: Calculator, label: "Simular empréstimo", desc: "Calcular juros", path: "/ferramentas/simulador" },
+                { Icon: UserPlus, label: "Novo cliente", desc: "Cadastrar + contrato", path: "/clientes/novo", color: "text-violet-400 bg-violet-500/10 ring-violet-500/20" },
+                { Icon: Receipt, label: "Registrar pagamento", desc: "Abrir cobranças", path: "/cobrancas", color: "text-emerald-400 bg-emerald-500/10 ring-emerald-500/20" },
+                { Icon: TrendingUp, label: "Lançar lucro", desc: "Entrada manual", path: "/lucros", color: "text-sky-400 bg-sky-500/10 ring-sky-500/20" },
+                { Icon: Wallet, label: "Lançar gasto", desc: "Despesa manual", path: "/gastos", color: "text-amber-400 bg-amber-500/10 ring-amber-500/20" },
+                { Icon: ListTodo, label: "Nova tarefa", desc: "Lembretes & to-dos", path: "/ferramentas/tarefas", color: "text-rose-400 bg-rose-500/10 ring-rose-500/20" },
+                { Icon: Calculator, label: "Simular empréstimo", desc: "Calcular juros", path: "/ferramentas/simulador", color: "text-indigo-400 bg-indigo-500/10 ring-indigo-500/20" },
               ].map(item => (
                 <button
                   key={item.path}
                   onClick={() => { setQuickOpen(false); navigate(item.path); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left group"
                 >
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ring-1 group-hover:scale-110 transition-transform ${item.color}`}>
                     <item.Icon size={14} />
                   </span>
                   <div className="flex-1 min-w-0">
@@ -183,7 +194,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
       )}
 
       {/* Action buttons */}
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 pl-1 ml-1 border-l border-border/30">
         {isMobile && (
           <button onClick={onSearchClick} aria-label="Buscar" className="p-2 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground">
             <Search size={18} />
@@ -194,7 +205,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           onClick={toggleTheme}
           aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
           title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-          className="relative p-2 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground group"
+          className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/60 transition-all duration-200 text-muted-foreground hover:text-foreground group"
         >
           <span className="relative block w-[18px] h-[18px]">
             <Sun size={18} className={`absolute inset-0 transition-all duration-300 ${theme === "dark" ? "opacity-0 -rotate-90 scale-75" : "opacity-100 rotate-0 scale-100 text-amber-500"}`} />
@@ -211,6 +222,7 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
     </header>
   );
 };
+
 
 interface UserMenuProps {
   profile: any;
