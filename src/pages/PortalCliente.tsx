@@ -8,6 +8,7 @@ import { PaymentModal } from "@/components/ClientPortal/PaymentModal";
 import { NegotiationTab } from "@/components/ClientPortal/NegotiationTab";
 import { NotificationsBell } from "@/components/ClientPortal/NotificationsBell";
 import { computeLateFee } from "@/lib/lateFee";
+import { generatePortalStatementPdf } from "@/utils/portalPdf";
 import { isPortalLoginBlocked, recordPortalLoginAttempt, performFullPortalLogout } from "@/lib/portalSession";
 import { isValidCPF, onlyDigits } from "@/lib/cpfCnpj";
 
