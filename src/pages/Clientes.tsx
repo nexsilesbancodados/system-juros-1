@@ -516,7 +516,8 @@ const Clientes = () => {
                 <tr className="border-b border-border/40 bg-gradient-to-r from-muted/40 via-muted/20 to-transparent">
                   <th className="w-10 px-4 py-3.5">
                     <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible}
-                      className="w-4 h-4 rounded border-border/40 bg-card text-primary focus:ring-primary/40 cursor-pointer" />
+                      ref={(el) => { if (el) el.indeterminate = !allVisibleSelected && selected.size > 0; }}
+                      className="check-premium" />
                   </th>
                   <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Cliente</th>
                   <th className="text-left px-5 py-3.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em]">Contato</th>
