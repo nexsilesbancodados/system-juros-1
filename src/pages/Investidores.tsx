@@ -42,7 +42,19 @@ export default function Investidores() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const expandedId = searchParams.get("perfil");
+  const setExpandedId = (id: string | null) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set("perfil", id);
+        else next.delete("perfil");
+        return next;
+      },
+      { replace: false },
+    );
+  };
   const [newOpen, setNewOpen] = useState(false);
   const [newLoanOpen, setNewLoanOpen] = useState(false);
   const [payOpen, setPayOpen] = useState<string | null>(null);
