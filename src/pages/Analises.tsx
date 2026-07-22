@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PredictiveAnalytics } from "@/components/analises/PredictiveAnalytics";
+import AnaliseNarrative from "@/components/dashboard/AnaliseNarrative";
 import { fetchAll } from "@/lib/fetchAll";
 
 type DetailColumn = { label: string; key: string; align?: "left" | "right"; format?: (v: any, row: any) => string };
