@@ -190,10 +190,23 @@ const TopBar = ({ onSearchClick }: TopBarProps) => {
           </button>
         )}
 
+        <button
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          className="relative p-2 rounded-full hover:bg-muted/50 transition-all duration-200 text-muted-foreground hover:text-foreground group"
+        >
+          <span className="relative block w-[18px] h-[18px]">
+            <Sun size={18} className={`absolute inset-0 transition-all duration-300 ${theme === "dark" ? "opacity-0 -rotate-90 scale-75" : "opacity-100 rotate-0 scale-100 text-amber-500"}`} />
+            <Moon size={18} className={`absolute inset-0 transition-all duration-300 ${theme === "dark" ? "opacity-100 rotate-0 scale-100 text-primary" : "opacity-0 rotate-90 scale-75"}`} />
+          </span>
+        </button>
+
         <LanguageSwitcher />
         <NotificationsBell />
 
         {!isMobile && <UserMenu profile={profile} theme={theme} toggleTheme={toggleTheme} onSignOut={handleSignOut} navigate={navigate} isAdmin={!!profile?.is_admin} />}
+
       </div>
     </header>
   );
