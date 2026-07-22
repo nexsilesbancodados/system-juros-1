@@ -109,9 +109,14 @@ export default function Investidores() {
     void load();
   };
 
+  if (expandedId) {
+    return <InvestidorPerfil investorId={expandedId} onBack={() => { setExpandedId(null); void load(); }} />;
+  }
+
   return (
     <>
       <div className="space-y-6 p-4 md:p-6">
+
 
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
