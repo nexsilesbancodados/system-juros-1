@@ -1501,6 +1501,10 @@ const NovoCliente = () => {
                 </button>
               </div>
 
+              {/* Alocação de capital (opcional) */}
+              <InvestorAllocationSelect value={investorLoanId} onChange={setInvestorLoanId} />
+
+
               {/* Garantia / Aval */}
               <div className="space-y-3 pt-3 border-t border-border">
                 <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Garantia / Aval</h3>
