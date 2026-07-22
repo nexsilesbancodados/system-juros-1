@@ -46,7 +46,7 @@ const ClienteDetalhe = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"resumo" | "contratos" | "parcelas" | "historico">("resumo");
+  const [activeTab, setActiveTab] = useState<"resumo" | "score" | "contratos" | "parcelas" | "historico">("resumo");
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const [editAddressMode, setEditAddressMode] = useState(false);
