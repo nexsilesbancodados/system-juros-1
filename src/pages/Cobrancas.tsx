@@ -47,6 +47,13 @@ const Cobrancas = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab: "parcelas" | "aging" = searchParams.get("tab") === "aging" ? "aging" : "parcelas";
+  const setActiveTab = (t: "parcelas" | "aging") => {
+    const next = new URLSearchParams(searchParams);
+    if (t === "aging") next.set("tab", "aging"); else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
 
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [period, setPeriod] = useState<PeriodFilter>("all");
