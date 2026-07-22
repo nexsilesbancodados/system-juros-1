@@ -582,8 +582,8 @@ const Cobrancas = () => {
     return { count: items.length, total: items.reduce((s: number, i: any) => s + Number(i.amount), 0) };
   }, [installments]);
 
-  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "due_asc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
-  const clearFilters = () => { setPeriod("all"); setSort("due_asc"); setFocoDia(false); setBucket("all"); };
+  const activeFilters = (period !== "all" ? 1 : 0) + (sort !== "amount_desc" ? 1 : 0) + (focoDia ? 1 : 0) + (bucket !== "all" ? 1 : 0);
+  const clearFilters = () => { setPeriod("all"); setSort("amount_desc"); setFocoDia(false); setBucket("all"); };
 
   const copyPix = async (inst: any) => {
     const pix = (profile as any)?.pix_key;
