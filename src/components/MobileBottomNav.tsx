@@ -54,7 +54,7 @@ const moreGroups = [
     items: [
       { label: "Análises", icon: BarChart3, path: "/analises" },
       { label: "Relatórios", icon: FileText, path: "/relatorios" },
-      { label: "Inadimplência", icon: FileSignature, path: "/inadimplencia" },
+      
     ],
   },
   {

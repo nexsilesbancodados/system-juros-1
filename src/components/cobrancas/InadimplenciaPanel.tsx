@@ -7,10 +7,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, TrendingDown, Users, DollarSign, Clock, ArrowRight, Phone, Sparkles } from "lucide-react";
+import { TrendingDown, Users, DollarSign, Clock, Phone, Sparkles } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import { differenceInDays } from "date-fns";
-
 import { computeLateFee } from "@/lib/lateFee";
 
 interface Installment {
@@ -41,9 +40,10 @@ interface OverdueRow {
   bucket: "0-30" | "31-60" | "61-90" | "90+";
 }
 
-const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+const fmtBRL = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const Inadimplencia = () => {
+const InadimplenciaPanel = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -104,7 +104,7 @@ const Inadimplencia = () => {
   useEffect(() => {
     if (!user) return;
     const ch = supabase
-      .channel(`realtime-inadimplencia-${user.id}`)
+      .channel(`realtime-inadimplencia-panel-${user.id}`)
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "contract_installments" }, () => load())
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients" }, () => load())
       .subscribe();
@@ -132,10 +132,7 @@ const Inadimplencia = () => {
       if (cur) {
         cur.totalDue += due;
         cur.installments += 1;
-        if (days > cur.oldestDays) {
-          cur.oldestDays = days;
-          cur.bucket = bucket;
-        }
+        if (days > cur.oldestDays) { cur.oldestDays = days; cur.bucket = bucket; }
       } else {
         map.set(inst.client_id, { client: c, totalDue: due, oldestDays: days, installments: 1, bucket });
       }
@@ -171,19 +168,6 @@ const Inadimplencia = () => {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <AlertTriangle className="text-rose-400" size={26} />
-            Inadimplência
-          </h1>
-          <p className="text-sm text-muted-foreground">Painel de aging, devedores e ações de cobrança</p>
-        </div>
-        <Button variant="outline" onClick={() => navigate("/cobrancas")}>
-          Ir para cobranças <ArrowRight size={14} className="ml-1" />
-        </Button>
-      </header>
-
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
@@ -290,4 +274,4 @@ const Inadimplencia = () => {
   );
 };
 
-export default Inadimplencia;
+export default InadimplenciaPanel;

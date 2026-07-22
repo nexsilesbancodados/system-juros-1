@@ -35,7 +35,7 @@ const PAGES: SearchResult[] = [
   { id: "p-dashboard", group: "Páginas", title: "Painel", path: "/dashboard", Icon: LayoutDashboard, shortcut: "g d" },
   { id: "p-clientes", group: "Páginas", title: "Clientes", path: "/clientes", Icon: Users, shortcut: "g c" },
   { id: "p-cobrancas", group: "Páginas", title: "Cobranças", path: "/cobrancas", Icon: Receipt, shortcut: "g b" },
-  { id: "p-inadimplencia", group: "Páginas", title: "Inadimplência", path: "/inadimplencia", Icon: Zap, shortcut: "g i" },
+  { id: "p-inadimplencia", group: "Páginas", title: "Inadimplência", path: "/cobrancas?tab=aging", Icon: Zap, shortcut: "g i" },
   { id: "p-carteira", group: "Páginas", title: "Carteira", path: "/carteira", Icon: Wallet, shortcut: "g w" },
   { id: "p-lucros", group: "Páginas", title: "Lucros", path: "/lucros", Icon: TrendingUp, shortcut: "g l" },
   { id: "p-gastos", group: "Páginas", title: "Gastos", path: "/gastos", Icon: Wallet, shortcut: "g g" },

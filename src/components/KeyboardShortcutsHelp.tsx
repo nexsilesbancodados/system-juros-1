@@ -8,7 +8,7 @@ const SHORTCUTS: { keys: string[]; label: string; path?: string; action?: () => 
   { keys: ["g", "d"], label: "Ir para Painel", path: "/dashboard" },
   { keys: ["g", "c"], label: "Ir para Clientes", path: "/clientes" },
   { keys: ["g", "b"], label: "Ir para Cobranças", path: "/cobrancas" },
-  { keys: ["g", "i"], label: "Ir para Inadimplência", path: "/inadimplencia" },
+  { keys: ["g", "i"], label: "Ir para Inadimplência", path: "/cobrancas?tab=aging" },
   { keys: ["g", "w"], label: "Ir para Carteira", path: "/carteira" },
   { keys: ["g", "l"], label: "Ir para Lucros", path: "/lucros" },
   { keys: ["g", "g"], label: "Ir para Gastos", path: "/gastos" },

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import InadimplenciaPanel from "@/components/cobrancas/InadimplenciaPanel";
 import {
   Receipt, Check, MessageSquare, Search, X, AlertTriangle, Clock, CheckCircle,
   CalendarDays, Mail, CheckSquare, Square, MinusSquare, List, Copy,
@@ -46,6 +47,13 @@ const Cobrancas = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab: "parcelas" | "aging" = searchParams.get("tab") === "aging" ? "aging" : "parcelas";
+  const setActiveTab = (t: "parcelas" | "aging") => {
+    const next = new URLSearchParams(searchParams);
+    if (t === "aging") next.set("tab", "aging"); else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
 
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [period, setPeriod] = useState<PeriodFilter>("all");
@@ -763,8 +771,39 @@ const Cobrancas = () => {
         </div>
       </div>
 
+      {/* Tabs: Parcelas & Cobranças  |  Inadimplência (por cliente) */}
+      <div className="flex items-center gap-1 p-1 rounded-2xl bg-card border border-border w-fit">
+        <button
+          onClick={() => setActiveTab("parcelas")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "parcelas"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          <Receipt size={14} className="inline mr-1.5 -mt-0.5" />
+          Parcelas & Cobranças
+        </button>
+        <button
+          onClick={() => setActiveTab("aging")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "aging"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          <AlertTriangle size={14} className="inline mr-1.5 -mt-0.5" />
+          Inadimplência (por cliente)
+        </button>
+      </div>
+
+      {activeTab === "aging" ? (
+        <InadimplenciaPanel />
+      ) : (
+        <>
       {/* Métricas de cobranças automáticas */}
       <CollectionMetrics />
+
 
       {/* Reminder schedule card */}
       {reminderSettings && (
@@ -1101,6 +1140,8 @@ const Cobrancas = () => {
         </div>
       )}
       </>)}
+      </>)}
+
 
       {/* Payment Confirmation Modal */}
       {confirmPayId && (

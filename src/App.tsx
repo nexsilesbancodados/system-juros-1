@@ -57,7 +57,7 @@ const ContractRedirect = lazy(() => import("./pages/ContractRedirect"));
 const Suporte = lazy(() => import("./pages/Suporte"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Chat = lazy(() => import("./pages/Chat"));
-const Inadimplencia = lazy(() => import("./pages/Inadimplencia"));
+
 const WhatsAppConfig = lazy(() => import("./pages/WhatsAppConfig"));
 const TvMode = lazy(() => import("./pages/TvMode"));
 const BuscarClientes = lazy(() => import("./pages/BuscarClientes"));
@@ -175,7 +175,7 @@ const App = () => (
                     <Route path="/suporte" element={<ErrorBoundary><Suporte /></ErrorBoundary>} />
                     <Route path="/notificacoes" element={<ErrorBoundary><Notificacoes /></ErrorBoundary>} />
                     <Route path="/chat" element={<ErrorBoundary><Chat /></ErrorBoundary>} />
-                    <Route path="/inadimplencia" element={<ErrorBoundary><Inadimplencia /></ErrorBoundary>} />
+                    <Route path="/inadimplencia" element={<Navigate to="/cobrancas?tab=aging" replace />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
