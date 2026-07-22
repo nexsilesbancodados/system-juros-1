@@ -125,7 +125,7 @@ const Cobradores = () => {
         .update({ name, phone, email, city, state })
         .eq("id", editingId);
       setSaving(false);
-      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (error) toast({ ...friendlyError(error), variant: "destructive" });
       else {
         toast({ title: "✓ Cobrador atualizado!" });
         resetForm(); inv("collectors");
@@ -134,7 +134,7 @@ const Cobradores = () => {
       const { error } = await supabase.from("collectors")
         .insert({ user_id: user.id, name, phone, email, city, state });
       setSaving(false);
-      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (error) toast({ ...friendlyError(error), variant: "destructive" });
       else {
         toast({ title: "✓ Cobrador adicionado!" });
         resetForm(); inv("collectors");
@@ -162,7 +162,7 @@ const Cobradores = () => {
     const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase();
     const { error } = await supabase.from("collector_tokens")
       .insert({ user_id: user.id, collector_id: collectorId, token });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error), variant: "destructive" });
     else {
       navigator.clipboard.writeText(token);
       toast({ title: "Token gerado e copiado!", description: token });
@@ -182,7 +182,7 @@ const Cobradores = () => {
     if (!user) return;
     const { error } = await supabase.from("collector_assignments")
       .insert({ user_id: user.id, collector_id: collectorId, client_id: clientId });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error), variant: "destructive" });
     else {
       toast({ title: "✓ Cliente atribuído!" });
       inv("collector-assignments");
