@@ -15,6 +15,7 @@ import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { friendlyError } from "@/lib/friendlyError";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -96,7 +97,7 @@ const Lucros = () => {
       const { error } = await supabase.from("profits")
         .insert({ user_id: user.id, description: desc.trim(), amount: parseFloat(amount), date: new Date(date).toISOString() });
       setSaving(false);
-      if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (error) toast({ ...friendlyError(error), variant: "destructive" });
       else { toast({ title: "✓ Lucro registrado!" }); resetForm(); qc.invalidateQueries({ queryKey: ["lucros-data"] }); }
     }
   };

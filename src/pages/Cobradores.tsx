@@ -20,11 +20,13 @@ import {
 import { formatBR } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 const Cobradores = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -170,6 +172,7 @@ const Cobradores = () => {
   };
 
   const handleRevokeToken = async (tokenId: string) => {
+    if (!(await confirm("Revogar este token de acesso? O cobrador perderá o acesso ao portal."))) return;
     await supabase.from("collector_tokens").delete().eq("id", tokenId);
     inv("collector-tokens");
     toast({ title: "Token revogado" });
@@ -188,6 +191,7 @@ const Cobradores = () => {
   };
 
   const handleRemoveAssignment = async (id: string) => {
+    if (!(await confirm("Remover esta atribuição de cliente?"))) return;
     await supabase.from("collector_assignments").delete().eq("id", id);
     inv("collector-assignments");
     inv("all-installments-collectors");
