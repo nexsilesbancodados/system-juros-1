@@ -8,6 +8,7 @@ import { Settings, Building, Percent, MessageSquare, Webhook, Bell, Save, Plus, 
 import { CONTRACT_PLACEHOLDERS, DEFAULT_CONTRACT_TEMPLATE } from "@/utils/contractTemplate";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSignedUploadUrl } from "@/lib/storage";
+import { friendlyError } from "@/lib/friendlyError";
 import { DEFAULT_MODULES, type ModuleKey } from "@/contexts/WhiteLabelContext";
 
 const COLOR_PRESETS = [
@@ -186,7 +187,7 @@ const Configuracoes = () => {
     const path = `${user.id}/${folder}/${field}.${ext}`;
     const { error } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
     if (error) {
-      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível enviar o arquivo."), variant: "destructive" });
     } else {
       const url = await getSignedUploadUrl(path);
       if (url) {
@@ -298,7 +299,7 @@ const Configuracoes = () => {
     }).eq("id", user.id);
 
     setSaving(false);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error, "Não foi possível salvar as configurações."), variant: "destructive" });
     else {
       setSaved(true); setTimeout(() => setSaved(false), 2000);
       toast({ title: "✓ Configurações salvas!" });
@@ -314,7 +315,7 @@ const Configuracoes = () => {
       user_id: user.id, name: newTemplate.name, content: newTemplate.content,
       trigger_days: newTemplate.trigger_days ? parseInt(newTemplate.trigger_days) : null,
     });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error, "Não foi possível adicionar o template."), variant: "destructive" });
     else {
       toast({ title: "✓ Template adicionado!" });
       setNewTemplate({ name: "", content: "", trigger_days: "" });
@@ -1401,7 +1402,7 @@ const Configuracoes = () => {
                           user_id: user.id, name: preset.name, content: preset.content,
                           trigger_days: preset.trigger_days,
                         });
-                        if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+                        if (error) toast({ ...friendlyError(error, "Não foi possível adicionar o preset."), variant: "destructive" });
                         else {
                           toast({ title: `✓ "${preset.name}" adicionado!` });
                           queryClient.invalidateQueries({ queryKey: ["message-templates"] });
