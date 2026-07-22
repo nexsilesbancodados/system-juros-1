@@ -147,6 +147,35 @@ export default function InvestidorPerfil({ investorId, onBack }: { investorId?: 
           </Button>
         </div>
 
+        {/* Alert overdue — topo da ficha */}
+        {kpi.overdue > 0 && (
+          <div className="relative overflow-hidden rounded-2xl border border-red-500/40 bg-gradient-to-r from-red-600/20 via-red-500/10 to-transparent p-5 shadow-[0_0_40px_-10px_rgba(239,68,68,0.6)]">
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-red-500" />
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/20 ring-1 ring-red-500/40">
+                <AlertTriangle className="h-6 w-6 animate-pulse text-red-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-heading text-lg font-bold text-red-100">
+                    Você está devendo este investidor
+                  </p>
+                  <Badge className="bg-red-500/30 text-red-100 ring-1 ring-red-400/40">
+                    {kpi.overdue} contrato{kpi.overdue > 1 ? "s" : ""} vencido{kpi.overdue > 1 ? "s" : ""}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-red-200/80">
+                  Regularize o pagamento para manter o relacionamento com o investidor.
+                </p>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-red-200/70">Total em atraso</span>
+                <span className="font-mono text-2xl font-bold text-red-100">{brl(kpi.overdueTotal)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Hero */}
         <section className="glass-card relative overflow-hidden rounded-3xl border border-white/5 p-6">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-emerald-500/5 pointer-events-none" />
@@ -200,18 +229,6 @@ export default function InvestidorPerfil({ investorId, onBack }: { investorId?: 
           </div>
         </section>
 
-        {/* Alert overdue */}
-        {kpi.overdue > 0 && (
-          <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
-            <AlertTriangle className="h-6 w-6 text-red-300" />
-            <div className="flex-1">
-              <p className="font-semibold text-red-100">
-                {kpi.overdue} contrato(s) vencido(s) — {brl(kpi.overdueTotal)} em atraso
-              </p>
-              <p className="text-xs text-red-200/70">Regularize o pagamento para manter o relacionamento com o investidor.</p>
-            </div>
-          </div>
-        )}
 
         {/* KPIs */}
         <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
