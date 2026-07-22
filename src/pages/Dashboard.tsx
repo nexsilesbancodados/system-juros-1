@@ -16,8 +16,11 @@ import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import DailyBriefing from "@/components/dashboard/DailyBriefing";
 import PeriodComparison from "@/components/dashboard/PeriodComparison";
+import NarrativeHero from "@/components/dashboard/NarrativeHero";
+import BentoKPI from "@/components/dashboard/BentoKPI";
 import { formatBR } from "@/lib/dateUtils";
 import { fetchAll } from "@/lib/fetchAll";
+
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
