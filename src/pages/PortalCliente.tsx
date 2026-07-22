@@ -489,9 +489,32 @@ const PortalCliente = () => {
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="ml-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                      <Shield size={11} /> Data de nascimento
+                    </label>
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => {
+                        setBirthDate(e.target.value);
+                        setBirthError(e.target.value ? null : "Informe sua data de nascimento.");
+                      }}
+                      required
+                      max={new Date().toISOString().slice(0, 10)}
+                      aria-invalid={!!birthError}
+                      className={`portal-input w-full rounded-2xl px-5 py-4 text-center font-mono text-lg tracking-wider ${birthError ? "border-red-500/60 focus:border-red-500" : ""}`}
+                    />
+                    {birthError && (
+                      <p className="ml-1 flex items-center gap-1.5 text-xs text-red-400">
+                        <AlertTriangle size={12} /> {birthError}
+                      </p>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf))}
+                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf)) || !birthDate}
                     className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
