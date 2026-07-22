@@ -58,18 +58,24 @@ const Relatorios = () => {
     const startDate = new Date(year, mon - 1, 1).toISOString();
     const endDate = new Date(year, mon, 0, 23, 59, 59).toISOString();
 
-    const [profitData, expenseData, clientData, installmentData] = await Promise.all([
+    const [profitData, expenseData, clientData, installmentDataRaw, activeContractsRaw] = await Promise.all([
       fetchAll((f, t) => supabase.from("profits").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
       fetchAll((f, t) => supabase.from("expenses").select("*").eq("user_id", user.id).gte("date", startDate).lte("date", endDate).range(f, t)),
       fetchAll((f, t) => supabase.from("clients").select("*").eq("user_id", user.id).range(f, t)),
-      fetchAll((f, t) => supabase.from("installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate).range(f, t)),
+      fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user.id).gte("due_date", startDate).lte("due_date", endDate).range(f, t)),
+      fetchAll((f, t) => supabase.from("contracts").select("id,status").eq("user_id", user.id).in("status", ["active","overdue"]).range(f, t)),
     ]);
+
+    // Segregação ativo vs. quitado: relatórios mensais consideram só parcelas
+    // vinculadas a contratos ainda ativos (o histórico vive em /historico-financeiro).
+    const activeIds = new Set(activeContractsRaw.map((c: any) => c.id));
+    const installmentData = installmentDataRaw.filter((i: any) => activeIds.has(i.contract_id));
 
     const totalProfit = profitData.reduce((a: number, p: any) => a + Number(p.amount), 0);
     const totalExpense = expenseData.reduce((a: number, e: any) => a + Number(e.amount), 0);
     const paidInstallments = installmentData.filter((i: any) => i.status === "paid");
     const overdueInstallments = installmentData.filter((i: any) => i.status !== "paid" && new Date(i.due_date) < new Date());
-    const totalReceived = paidInstallments.reduce((a: number, i: any) => a + Number(i.amount), 0);
+    const totalReceived = paidInstallments.reduce((a: number, i: any) => a + Number(i.paid_amount || i.amount), 0);
     const totalOverdue = overdueInstallments.reduce((a: number, i: any) => a + Number(i.amount), 0);
 
     setData({
@@ -95,7 +101,8 @@ const Relatorios = () => {
       .channel("realtime-relatorios")
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "profits", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${user.id}` }, () => fetchReport())
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "installments", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contract_installments", filter: `user_id=eq.${user.id}` }, () => fetchReport())
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "contracts", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "clients", filter: `user_id=eq.${user.id}` }, () => fetchReport())
       .subscribe();
     return () => { supabase.removeChannel(ch); };

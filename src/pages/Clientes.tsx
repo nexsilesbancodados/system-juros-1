@@ -195,7 +195,7 @@ const Clientes = () => {
     if (!(await confirm("Excluir este cliente e todos os seus dados?"))) return;
     await supabase.from("contract_installments").delete().eq("client_id", id);
     await supabase.from("contracts").delete().eq("client_id", id);
-    await supabase.from("installments").delete().eq("client_id", id);
+    
     const { error } = await supabase.from("clients").delete().eq("id", id);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
@@ -208,7 +208,7 @@ const Clientes = () => {
     if (!(await confirm(`Excluir ${ids.length} cliente(s) e todos os dados associados?`))) return;
     await supabase.from("contract_installments").delete().in("client_id", ids);
     await supabase.from("contracts").delete().in("client_id", ids);
-    await supabase.from("installments").delete().in("client_id", ids);
+    
     const { error } = await supabase.from("clients").delete().in("id", ids);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: `${ids.length} cliente(s) excluído(s)!` });
