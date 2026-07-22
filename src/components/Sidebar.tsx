@@ -8,7 +8,7 @@ import {
   CheckSquare, StickyNote, Table, ChevronDown, FileText,
   Crown, ClipboardList, Sparkles, Settings, Bot, QrCode,
   UserCheck, Shield, Cog, LogOut, User, LifeBuoy, MessageCircle,
-  AlertTriangle, ChevronLeft, Plus, Search,
+  AlertTriangle, ChevronLeft, Plus, Search, Archive,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWhiteLabel } from "@/contexts/WhiteLabelContext";
