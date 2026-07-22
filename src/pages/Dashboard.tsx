@@ -282,31 +282,62 @@ const Dashboard = () => {
       {/* ─── Daily AI Briefing ─── */}
       <DailyBriefing />
 
-      {/* ─── Main Metric Cards ─── */}
+      {/* ─── Narrativa Executiva (linguagem simples) ─── */}
+      <NarrativeHero
+        userName={profile?.name}
+        capitalOnStreet={metrics.capitalNaRua}
+        totalReceived={metrics.totalReceived}
+        totalProfit={metrics.totalProfitAmount}
+        roi={metrics.roi}
+        overdueAmount={metrics.totalOverdueAmount}
+        overdueCount={metrics.overdueCount}
+        paidTodayAmount={metrics.paidTodayAmount}
+        vencendoHoje={metrics.vencendoHoje}
+        deltaReceived={deltaReceived}
+      />
+
+      {/* ─── Bento de KPIs Financeiros ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
-        {mainCards.map((card, i) => (
-          <div
-            key={card.title}
-            className="group relative rounded-[32px] glass-premium overflow-hidden micro-press animate-fade-in hover:bg-white/[0.08] hover:border-white/10 transition-all duration-500"
-            style={{ animationDelay: `${i * 80}ms` }}
-          >
-            <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${card.accent} opacity-40 group-hover:opacity-100 transition-opacity`} />
-            <div className={`absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-gradient-to-br ${card.accent} opacity-[0.03] blur-2xl group-hover:scale-150 transition-transform duration-700`} />
-            <div className="relative z-10 p-4 md:p-5 flex flex-col justify-between min-h-[120px] md:min-h-[140px]">
-              <div className="flex items-center justify-between">
-                <span className="text-label">{card.title}</span>
-                <div className={`w-9 h-9 rounded-2xl ${card.iconBg} flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg`}>
-                  <card.icon size={16} className={card.iconColor} />
-                </div>
-              </div>
-              <p className={`text-headline text-xl md:text-2xl lg:text-3xl ${card.valueColor} mt-auto`}>{card.value}</p>
-              {(card as any).sub && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">{(card as any).sub}</p>
-              )}
-            </div>
-          </div>
-        ))}
+        <BentoKPI
+          label="Capital na Rua"
+          value={`R$ ${fmt(metrics.capitalNaRua)}`}
+          explanation="Soma do capital de todos os contratos que ainda estão ativos ou em atraso. É o dinheiro que está trabalhando por você."
+          hint={`${metrics.contratosAtivos} contrato${metrics.contratosAtivos === 1 ? "" : "s"} ativo${metrics.contratosAtivos === 1 ? "" : "s"}`}
+          icon={Landmark}
+          tone="primary"
+          onClick={() => navigate("/carteira")}
+        />
+        <BentoKPI
+          label="Total Recebido"
+          value={`R$ ${fmt(metrics.totalReceived)}`}
+          explanation="Tudo que já entrou no caixa vindo das parcelas pagas — capital + juros."
+          hint="Somando todas as parcelas quitadas"
+          icon={Wallet}
+          tone="success"
+          delta={deltaReceived}
+          positiveIsGood
+          onClick={() => navigate("/analises")}
+        />
+        <BentoKPI
+          label="Lucro Gerado"
+          value={`R$ ${fmt(metrics.totalProfitAmount)}`}
+          explanation="Parte de juros dos pagamentos recebidos — o que sobra depois de devolver o capital emprestado."
+          hint={`ROI de ${metrics.roi.toFixed(1)}% sobre o capital`}
+          icon={TrendingUp}
+          tone="primary"
+          onClick={() => navigate("/analises")}
+        />
+        <BentoKPI
+          label="Em Atraso"
+          value={`R$ ${fmt(metrics.totalOverdueAmount)}`}
+          explanation="Parcelas cujo vencimento já passou e continuam pendentes. Priorize a cobrança para não virar prejuízo."
+          hint={`${metrics.taxaInadimplencia.toFixed(1)}% de inadimplência`}
+          icon={AlertCircle}
+          tone={metrics.totalOverdueAmount > 0 ? "danger" : "muted"}
+          onClick={() => navigate("/cobrancas")}
+        />
       </div>
+
 
       {/* ─── Urgency Cards (sempre visíveis) ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
