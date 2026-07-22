@@ -54,7 +54,7 @@ type Props = {
   delta?: number;
   positiveIsGood?: boolean;
   tone?: BentoTone;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  icon?: React.ComponentType<any>;
   onClick?: () => void;
   /** Ocupa mais espaço no grid (Bento). */
   size?: "sm" | "md" | "lg";
