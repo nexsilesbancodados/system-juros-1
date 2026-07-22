@@ -3,10 +3,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAll } from "@/lib/fetchAll";
-import { Archive, TrendingUp, Wallet, HandCoins, Search, FileText } from "lucide-react";
+import { Archive, TrendingUp, Wallet, HandCoins, Search, FileText, CalendarRange } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatBR } from "@/lib/dateUtils";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/EmptyState";
@@ -14,10 +15,46 @@ import EmptyState from "@/components/EmptyState";
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+type PeriodKey = "7d" | "30d" | "90d" | "6m" | "12m" | "ytd" | "all" | "custom";
+
+const PRESETS: { key: PeriodKey; label: string }[] = [
+  { key: "7d", label: "7 dias" },
+  { key: "30d", label: "30 dias" },
+  { key: "90d", label: "90 dias" },
+  { key: "6m", label: "6 meses" },
+  { key: "12m", label: "12 meses" },
+  { key: "ytd", label: "Ano atual" },
+  { key: "all", label: "Tudo" },
+  { key: "custom", label: "Personalizado" },
+];
+
+function getRange(period: PeriodKey, from?: string, to?: string): { start: Date | null; end: Date | null } {
+  const now = new Date();
+  const end = new Date(now); end.setHours(23, 59, 59, 999);
+  const start = new Date(now); start.setHours(0, 0, 0, 0);
+  switch (period) {
+    case "7d": start.setDate(start.getDate() - 6); return { start, end };
+    case "30d": start.setDate(start.getDate() - 29); return { start, end };
+    case "90d": start.setDate(start.getDate() - 89); return { start, end };
+    case "6m": start.setMonth(start.getMonth() - 6); return { start, end };
+    case "12m": start.setMonth(start.getMonth() - 12); return { start, end };
+    case "ytd": return { start: new Date(now.getFullYear(), 0, 1), end };
+    case "all": return { start: null, end: null };
+    case "custom": {
+      const s = from ? new Date(from + "T00:00:00") : null;
+      const e = to ? new Date(to + "T23:59:59") : null;
+      return { start: s, end: e };
+    }
+  }
+}
+
 export default function HistoricoFinanceiro() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["historico-financeiro", user?.id],
@@ -39,33 +76,53 @@ export default function HistoricoFinanceiro() {
     enabled: !!user,
   });
 
+  const { start, end } = useMemo(
+    () => getRange(period, customFrom, customTo),
+    [period, customFrom, customTo]
+  );
+
+  // Filtra contratos quitados pela data de encerramento (updated_at)
+  // com fallback para created_at, quando updated_at não existir.
+  const contractsInRange = useMemo(() => {
+    if (!data) return [] as any[];
+    if (!start && !end) return data.contracts;
+    return data.contracts.filter((c: any) => {
+      const dateStr = c.updated_at || c.completed_at || c.created_at;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [data, start, end]);
+
   const summary = useMemo(() => {
     if (!data) return null;
-    const ids = new Set(data.contracts.map((c: any) => c.id));
+    const ids = new Set(contractsInRange.map((c: any) => c.id));
     const paidHere = data.installments.filter((i: any) => ids.has(i.contract_id));
     const totalRecebido = paidHere.reduce((s: number, i: any) =>
       s + Number(i.paid_amount || i.amount || 0), 0);
-    const totalCapital = data.contracts.reduce((s: number, c: any) =>
+    const totalCapital = contractsInRange.reduce((s: number, c: any) =>
       s + Number(c.capital || 0), 0);
-    const totalLucro = data.contracts.reduce((s: number, c: any) =>
+    const totalLucro = contractsInRange.reduce((s: number, c: any) =>
       s + Number(c.total_interest || 0), 0);
     return {
       totalRecebido,
       totalCapital,
       totalLucro,
-      quantidade: data.contracts.length,
+      totalGeral: totalCapital + totalLucro,
+      quantidade: contractsInRange.length,
     };
-  }, [data]);
+  }, [data, contractsInRange]);
 
   const filtered = useMemo(() => {
-    if (!data) return [];
     const term = search.toLowerCase().trim();
-    if (!term) return data.contracts;
-    return data.contracts.filter((c: any) =>
+    if (!term) return contractsInRange;
+    return contractsInRange.filter((c: any) =>
       c.clients?.name?.toLowerCase().includes(term) ||
       c.clients?.cpf_cnpj?.includes(term)
     );
-  }, [data, search]);
+  }, [contractsInRange, search]);
 
   if (isLoading) {
     return (
@@ -93,12 +150,51 @@ export default function HistoricoFinanceiro() {
         </div>
       </div>
 
+      {/* Seletor de período */}
+      <div className="rounded-2xl border border-border/50 bg-card/40 backdrop-blur p-4 space-y-3">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-muted-foreground">
+          <CalendarRange size={14} />
+          Período
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <Button
+              key={p.key}
+              size="sm"
+              variant={period === p.key ? "default" : "outline"}
+              onClick={() => setPeriod(p.key)}
+              className="h-8"
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+        {period === "custom" && (
+          <div className="flex flex-wrap gap-2 items-center pt-1">
+            <Input
+              type="date"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="h-9 w-auto"
+            />
+            <span className="text-muted-foreground text-sm">até</span>
+            <Input
+              type="date"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="h-9 w-auto"
+            />
+          </div>
+        )}
+      </div>
+
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KPI icon={FileText} label="Contratos quitados" value={String(summary?.quantidade ?? 0)} tone="slate" />
         <KPI icon={HandCoins} label="Capital histórico" value={`R$ ${fmt(summary?.totalCapital ?? 0)}`} tone="indigo" />
         <KPI icon={Wallet} label="Recebido histórico" value={`R$ ${fmt(summary?.totalRecebido ?? 0)}`} tone="success" />
         <KPI icon={TrendingUp} label="Lucro histórico" value={`R$ ${fmt(summary?.totalLucro ?? 0)}`} tone="primary" />
+        <KPI icon={Archive} label="Total (capital + lucro)" value={`R$ ${fmt(summary?.totalGeral ?? 0)}`} tone="success" />
       </div>
 
       {/* Busca */}
@@ -116,8 +212,8 @@ export default function HistoricoFinanceiro() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={Archive}
-          title="Nada arquivado ainda"
-          description="Quando um contrato for quitado, ele aparece aqui junto do lucro realizado."
+          title="Nada arquivado nesse período"
+          description="Ajuste o período acima ou aguarde novos contratos serem quitados."
         />
       ) : (
         <div className="rounded-2xl border border-border/50 bg-card/40 backdrop-blur overflow-hidden">
@@ -146,7 +242,7 @@ export default function HistoricoFinanceiro() {
                       Quitado
                     </Badge>
                     <span className="text-[11px] text-muted-foreground">
-                      {formatBR(c.created_at)} · {c.num_installments}x
+                      {formatBR(c.updated_at || c.created_at)} · {c.num_installments}x
                     </span>
                   </div>
                 </div>
@@ -162,6 +258,28 @@ export default function HistoricoFinanceiro() {
               </button>
             );
           })}
+          {/* Footer com totais */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-3 items-center border-t border-border/40 bg-muted/30 font-black">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+              Totais ({filtered.length})
+            </span>
+            <span className="text-sm tabular-nums text-muted-foreground">
+              R$ {fmt(filtered.reduce((s: number, c: any) => s + Number(c.capital || 0), 0))}
+            </span>
+            <span className="text-sm tabular-nums text-success">
+              R$ {fmt(
+                filtered.reduce((s: number, c: any) => {
+                  const rec = data!.installments
+                    .filter((i: any) => i.contract_id === c.id)
+                    .reduce((ss: number, i: any) => ss + Number(i.paid_amount || i.amount || 0), 0);
+                  return s + rec;
+                }, 0)
+              )}
+            </span>
+            <span className="text-sm tabular-nums text-primary">
+              R$ {fmt(filtered.reduce((s: number, c: any) => s + Number(c.total_interest || 0), 0))}
+            </span>
+          </div>
         </div>
       )}
     </div>
