@@ -198,6 +198,9 @@ export default function Investidores() {
                     {selected.email && <p className="text-xs text-muted-foreground">{selected.email}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => nav(`/investidores/${selected.id}`)} className="gap-1.5">
+                      <ExternalLink className="h-3.5 w-3.5" /> Abrir perfil
+                    </Button>
                     <Button variant="secondary" size="sm" onClick={() => copyPortal(selected.access_token)} className="gap-1.5">
                       <Copy className="h-3.5 w-3.5" /> Copiar link
                     </Button>
