@@ -198,7 +198,7 @@ const Clientes = () => {
     await supabase.from("contracts").delete().eq("client_id", id);
     
     const { error } = await supabase.from("clients").delete().eq("id", id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
   };
