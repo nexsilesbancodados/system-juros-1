@@ -278,6 +278,8 @@ const Dashboard = () => {
       <NarrativeHero
         userName={profile?.name}
         capitalOnStreet={metrics.capitalNaRua}
+        totalLent={metrics.totalLent}
+        pendingReceivable={metrics.pendingReceivable}
         totalReceived={metrics.totalReceived}
         totalProfit={metrics.totalProfitAmount}
         roi={metrics.roi}
@@ -286,7 +288,10 @@ const Dashboard = () => {
         paidTodayAmount={metrics.paidTodayAmount}
         vencendoHoje={metrics.vencendoHoje}
         deltaReceived={deltaReceived}
+        activeContracts={metrics.contratosAtivos}
+        totalContracts={metrics.totalContratos}
       />
+
 
       {/* ─── KPIs financeiros ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
