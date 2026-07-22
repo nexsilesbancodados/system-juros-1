@@ -319,6 +319,10 @@ const Hoje = () => {
         ))}
       </div>
 
+      {/* Balanço Ativo × Passivo (aparece se houver investidores) */}
+      <AtivoPassivoCard />
+
+
       {/* Primeiro nível: Cobranças + painel lateral */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <section
