@@ -1153,6 +1153,18 @@ const ClienteDetalhe = () => {
         />
       )}
 
+      {renegotiating && (
+        <RenegociarModal
+          contract={renegotiating}
+          installments={installments.filter((i: any) => i.contract_id === renegotiating.id)}
+          clientName={client?.name || ""}
+          onClose={() => setRenegotiating(null)}
+          onConfirm={handleRenegotiate}
+        />
+      )}
+
+
+
 
       {/* ===== CONTENT ===== */}
 
