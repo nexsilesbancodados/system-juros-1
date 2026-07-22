@@ -1205,32 +1205,27 @@ const Cobrancas = () => {
       </>)}
 
 
-      {/* Payment Confirmation Modal */}
-      {confirmPayId && (
-        <div className="modal-backdrop" onClick={() => setConfirmPayId(null)}>
-          <div className="modal-content max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle size={28} className="text-success" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground">Confirmar Pagamento?</h3>
-              {(() => {
-                const inst = installments.find((i: any) => i.id === confirmPayId);
-                return inst ? (
-                  <div className="mt-2">
-                    <p className="text-sm font-medium text-foreground">{inst.client_name}</p>
-                    <p className="text-sm text-muted-foreground">Parcela #{inst.installment_number} · R$ {fmt(Number(inst.amount))}</p>
-                  </div>
-                ) : null;
-              })()}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmPayId(null)} className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={() => handleMarkPaid(confirmPayId)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-success-foreground hover:opacity-90 transition-all">Confirmar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Payment Confirmation Modal (com pagamento parcial) */}
+      {confirmPayId && (() => {
+        const inst = installments.find((i: any) => i.id === confirmPayId);
+        if (!inst) return null;
+        const fee = computeLateFeeBreakdown(inst);
+        const alreadyPaid = Number(inst.paid_amount || 0);
+        const totalDue = Math.round(fee.withFees * 100) / 100;
+        const remaining = Math.max(0, Math.round((totalDue - alreadyPaid) * 100) / 100);
+        const dueDate = parseLocalDate(inst.due_date);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const daysLate = dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / 86400000) : 0;
+        return <PayModal
+          inst={inst}
+          fee={fee}
+          alreadyPaid={alreadyPaid}
+          remaining={remaining}
+          daysLate={daysLate}
+          onCancel={() => setConfirmPayId(null)}
+          onConfirm={(value) => handleMarkPaid(confirmPayId, value)}
+        />;
+      })()}
 
       {/* Bulk WhatsApp preview modal */}
       {bulkPreview && (
