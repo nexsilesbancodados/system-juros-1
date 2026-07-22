@@ -47,6 +47,7 @@ const ClienteDetalhe = () => {
   const qc = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"resumo" | "score" | "contratos" | "parcelas" | "historico">("resumo");
+  const [historyFilter, setHistoryFilter] = useState<"all" | "contract" | "payment" | "profit" | "note" | "contact">("all");
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const [editAddressMode, setEditAddressMode] = useState(false);
