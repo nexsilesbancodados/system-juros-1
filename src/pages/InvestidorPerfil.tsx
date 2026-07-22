@@ -42,7 +42,7 @@ export default function InvestidorPerfil({ investorId, onBack }: { investorId?: 
   const params = useParams<{ id: string }>();
   const id = investorId ?? params.id;
   const nav = useNavigate();
-  const goBack = onBack ?? (() => nav("/investidores"));
+  const goBack = onBack ?? (() => goBack());
   const { user } = useAuth();
 
   const [investor, setInvestor] = useState<Investor | null>(null);
@@ -128,7 +128,7 @@ export default function InvestidorPerfil({ investorId, onBack }: { investorId?: 
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">Investidor não encontrado.</p>
-        <Button variant="outline" className="mt-4" onClick={() => nav("/investidores")}>Voltar</Button>
+        <Button variant="outline" className="mt-4" onClick={() => goBack()}>Voltar</Button>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function InvestidorPerfil({ investorId, onBack }: { investorId?: 
       <div className="space-y-6 p-4 md:p-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => nav("/investidores")} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => goBack()} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Investidores
           </Button>
         </div>
