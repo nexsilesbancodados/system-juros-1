@@ -336,6 +336,10 @@ const Dashboard = () => {
         })}
       </div>
 
+      {/* ─── Indicadores Executivos ─── */}
+      <ExecutiveKPIs contracts={data.contracts} installments={data.installments} />
+
+
       {/* ─── Tabs: Visão Geral / Análises / Listas ─── */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-3 rounded-2xl p-1 bg-card/40 backdrop-blur border border-border/30">
