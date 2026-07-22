@@ -950,6 +950,7 @@ const Cobrancas = () => {
             </div>
           </div>
 
+          {!simpleMode && (
           <button
             onClick={() => setShowFilters(v => !v)}
             className={`relative shrink-0 px-3.5 py-2.5 rounded-2xl border transition-all ${activeFilters > 0 ? "border-primary/40 bg-primary/5 text-primary" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
@@ -960,6 +961,8 @@ const Cobrancas = () => {
               <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold rounded-full bg-primary text-primary-foreground flex items-center justify-center">{activeFilters}</span>
             )}
           </button>
+          )}
+
 
           <div className="pill-tabs">
             {([
