@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { friendlyError } from "@/lib/friendlyError";
 
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -297,7 +298,7 @@ export default function WhatsAppInbox() {
       patch.bot_status = "paused";
     }
     const { error } = await supabase.from("whatsapp_conversations").update(patch).eq("id", selected.id);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) return toast({ ...friendlyError(error, "Não foi possível atualizar o bot."), variant: "destructive" });
     toast({ title: next ? "Bot pausado" : "Bot reativado — handoff limpo" });
   };
 
@@ -306,7 +307,7 @@ export default function WhatsAppInbox() {
     const next = !selected.blocked;
     const { error } = await supabase.from("whatsapp_conversations")
       .update({ blocked: next, bot_paused: next || selected.bot_paused }).eq("id", selected.id);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) return toast({ ...friendlyError(error, "Não foi possível bloquear o contato."), variant: "destructive" });
     toast({ title: next ? "Bloqueado 🚫" : "Desbloqueado" });
   };
 

@@ -8,6 +8,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { formatBR } from "@/lib/dateUtils";
 import { getSignedUploadUrl } from "@/lib/storage";
 import DangerZone from "@/components/perfil/DangerZone";
+import { friendlyError } from "@/lib/friendlyError";
 import MFACard from "@/components/perfil/MFACard";
 
 const Perfil = () => {
@@ -58,7 +59,7 @@ const Perfil = () => {
       pix_key_type: form.pix_key_type, billing_message: form.billing_message.trim() || null, avatar_url,
     }).eq("id", user.id);
     setSaving(false);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error, "Não foi possível salvar o perfil."), variant: "destructive" });
     else {
       setSaved(true); setTimeout(() => setSaved(false), 2000);
       toast({ title: "✓ Perfil atualizado!" });

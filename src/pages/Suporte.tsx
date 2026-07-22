@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { friendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -195,7 +196,7 @@ const Suporte = () => {
       sender_name: profile?.name || "Usuário",
       message: reply.trim(),
     });
-    if (error) toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
+    if (error) toast({ ...friendlyError(error, "Não foi possível enviar sua mensagem."), variant: "destructive" });
     else setReply("");
     setSending(false);
   };
