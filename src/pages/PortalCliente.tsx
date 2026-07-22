@@ -145,10 +145,13 @@ const PortalCliente = () => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
-      const { cpf: c } = JSON.parse(saved);
-      if (c) {
+      const parsed = JSON.parse(saved);
+      const c = parsed?.cpf;
+      const b = parsed?.birth_date;
+      if (c && b) {
         setCpf(c);
-        void doLogin(c, true);
+        setBirthDate(b);
+        void doLogin(c, true, b);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
