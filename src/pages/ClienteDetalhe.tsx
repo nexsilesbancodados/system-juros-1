@@ -1325,43 +1325,43 @@ const ClienteDetalhe = () => {
                   <p className="text-sm font-bold text-primary tabular-nums mt-0.5">+R$ {fmt(Number(c.total_interest))}</p>
                   <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lucro</p>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0 pl-2 border-l border-border/40">
+                <div className="flex items-center gap-1 shrink-0 pl-2 border-l border-border/40 flex-wrap justify-end">
                   <button
                     onClick={(e) => { e.stopPropagation(); exportContractPDF(c); }}
-                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-accent text-muted-foreground hover:text-foreground text-[11px] font-medium transition-colors"
                     title="Exportar contrato em PDF"
                   >
-                    <Download size={14} />
+                    <Download size={13} /> PDF
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); sendContractWhatsApp(c); }}
-                    className="p-2 rounded-lg hover:bg-emerald-500/10 text-emerald-500/80 hover:text-emerald-500 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[11px] font-medium transition-colors"
                     title="Enviar contrato por WhatsApp"
                   >
-                    <MessageSquare size={14} />
+                    <MessageSquare size={13} /> Enviar
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditContract(c); }}
-                    className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-accent text-muted-foreground hover:text-foreground text-[11px] font-medium transition-colors"
                     title="Editar empréstimo"
                   >
-                    <Edit size={14} />
+                    <Edit size={13} /> Editar
                   </button>
                   {c.status === "active" && !isPaid && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setRenegotiating(c); }}
-                      className="p-2 rounded-lg hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-400 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-medium transition-colors"
                       title="Renegociar contrato"
                     >
-                      <Repeat size={14} />
+                      <Repeat size={13} /> Renegociar
                     </button>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteContract(c.id); }}
-                    className="p-2 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive text-[11px] font-medium transition-colors"
                     title="Excluir empréstimo"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} /> Excluir
                   </button>
                 </div>
               </div>
