@@ -44,9 +44,24 @@ const Carteira = () => {
     enabled: !!user,
   });
 
+  // Traz apenas parcelas pagas de contratos AINDA ATIVOS. O que já foi
+  // recebido em contratos quitados fica no /historico-financeiro.
   const { data: installments = [], isLoading: loadingInst } = useQuery({
-    queryKey: ["carteira-installments", user?.id],
-    queryFn: async () => fetchAll((f, t) => supabase.from("contract_installments").select("*").eq("user_id", user!.id).eq("status", "paid").order("paid_at", { ascending: false }).range(f, t)),
+    queryKey: ["carteira-installments-active", user?.id],
+    queryFn: async () => {
+      const activeContracts = await fetchAll((f, t) =>
+        supabase.from("contracts").select("id").eq("user_id", user!.id)
+          .in("status", ["active", "overdue"]).range(f, t)
+      );
+      const ids = activeContracts.map((c: any) => c.id);
+      if (ids.length === 0) return [];
+      return fetchAll((f, t) =>
+        supabase.from("contract_installments").select("*")
+          .eq("user_id", user!.id).eq("status", "paid")
+          .in("contract_id", ids)
+          .order("paid_at", { ascending: false }).range(f, t)
+      );
+    },
     enabled: !!user,
   });
 

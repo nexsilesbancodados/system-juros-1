@@ -45,6 +45,7 @@ const Perfil = lazy(() => import("./pages/Perfil"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Historico = lazy(() => import("./pages/Historico"));
+const HistoricoFinanceiro = lazy(() => import("./pages/HistoricoFinanceiro"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Cobradores = lazy(() => import("./pages/Cobradores"));
 const QRCodePage = lazy(() => import("./pages/QRCodePage"));
@@ -163,6 +164,7 @@ const App = () => (
                     <Route path="/admin" element={<ErrorBoundary><Admin /></ErrorBoundary>} />
                     <Route path="/relatorios" element={<ErrorBoundary><Relatorios /></ErrorBoundary>} />
                     <Route path="/historico" element={<ErrorBoundary><Historico /></ErrorBoundary>} />
+                    <Route path="/historico-financeiro" element={<ErrorBoundary><HistoricoFinanceiro /></ErrorBoundary>} />
                     <Route path="/configuracoes" element={<ErrorBoundary><Configuracoes /></ErrorBoundary>} />
                     <Route path="/cobradores" element={<ErrorBoundary><Cobradores /></ErrorBoundary>} />
                     <Route path="/qrcode" element={<QRCodePage />} />
