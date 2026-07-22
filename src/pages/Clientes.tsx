@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMultiTableRealtime } from "@/hooks/useRealtimeSubscription";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { fetchAll } from "@/lib/fetchAll";
+import { friendlyError } from "@/lib/friendlyError";
 import RiskBadge from "@/components/clients/RiskBadge";
 
 type SortKey = "recent" | "name" | "score_desc" | "score_asc" | "overdue";
@@ -197,7 +198,7 @@ const Clientes = () => {
     await supabase.from("contracts").delete().eq("client_id", id);
     
     const { error } = await supabase.from("clients").delete().eq("id", id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
     toast({ title: "Cliente excluído!" });
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
   };
@@ -210,7 +211,7 @@ const Clientes = () => {
     await supabase.from("contracts").delete().in("client_id", ids);
     
     const { error } = await supabase.from("clients").delete().in("id", ids);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ ...friendlyError(error), variant: "destructive" }); return; }
     toast({ title: `${ids.length} cliente(s) excluído(s)!` });
     clearSelection();
     qc.invalidateQueries({ queryKey: ["clients", user?.id] });
@@ -308,7 +309,7 @@ const Clientes = () => {
     const { error } = await supabase.from("clients").insert(rows);
     setImporting(false);
     if (error) {
-      toast({ title: "Erro ao importar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível importar. Confira o arquivo."), variant: "destructive" });
       return;
     }
     toast({ title: `✓ ${rows.length} cliente(s) importado(s)!` });
