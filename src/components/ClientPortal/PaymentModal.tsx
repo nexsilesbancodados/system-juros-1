@@ -267,6 +267,47 @@ export const PaymentModal = ({ isOpen, onOpenChange, installment, ownerProfile, 
                 </Button>
               )}
 
+              <div className="rounded-2xl border border-border/60 bg-accent/20 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Upload size={16} className="text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wide">Enviar comprovante</span>
+                </div>
+                {uploadedUrl ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-success/30 bg-success/10 p-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Check size={16} className="text-success shrink-0" />
+                      <span className="text-xs text-success font-semibold truncate">Comprovante enviado</span>
+                    </div>
+                    <a href={uploadedUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-success underline shrink-0">Ver</a>
+                  </div>
+                ) : (
+                  <>
+                    <label
+                      htmlFor="portal-receipt-upload"
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-4 text-xs font-semibold text-primary transition hover:bg-primary/10 ${isUploading ? "pointer-events-none opacity-60" : ""}`}
+                    >
+                      {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      {isUploading ? "Enviando..." : "Anexar foto/PDF do comprovante"}
+                    </label>
+                    <input
+                      id="portal-receipt-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      disabled={isUploading}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadReceipt(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      JPG, PNG, WEBP ou PDF — até 6MB. O credor recebe o arquivo para conferir o pagamento.
+                    </p>
+                  </>
+                )}
+              </div>
+
               <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                 <Info size={14} className="text-primary shrink-0 mt-0.5" />
                 <p className="text-[10px] text-primary/80 leading-snug">
