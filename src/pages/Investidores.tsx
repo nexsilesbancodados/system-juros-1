@@ -35,7 +35,7 @@ type Loan = {
 
 export default function Investidores() {
   const { user } = useAuth();
-  const nav = useNavigate();
+
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
