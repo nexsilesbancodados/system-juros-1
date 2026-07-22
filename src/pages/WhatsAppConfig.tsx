@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { friendlyError } from "@/lib/friendlyError";
 import { 
   MessageCircle, QrCode, RefreshCcw, Power, CheckCircle2, 
   AlertCircle, Settings2, ShieldCheck, Loader2, Bot,
@@ -134,7 +135,7 @@ const WhatsAppConfig = () => {
       .eq("user_id", user!.id);
     
     if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      toast({ ...friendlyError(error, "Não foi possível salvar as configurações."), variant: "destructive" });
     } else {
       setSettings((prev: any) => ({ ...prev, ...updates }));
     }

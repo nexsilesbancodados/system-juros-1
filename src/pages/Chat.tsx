@@ -7,6 +7,7 @@ import {
   Plus, Crown, ArrowLeft, Circle, Sparkles, Mic, Square, Pencil, Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendlyError";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSignedUploadUrl } from "@/lib/storage";
@@ -375,7 +376,7 @@ const Chat = () => {
     if (scope.kind === "channel") payload.channel_id = scope.id; else payload.dm_thread_id = scope.id;
     setInput(""); setReplyTo(null);
     const { error } = await supabase.from("chat_messages").insert(payload);
-    if (error) toast.error("Erro ao enviar: " + error.message);
+    if (error) { const f = friendlyError(error, "Não foi possível enviar a mensagem."); toast.error(f.title, { description: f.description }); }
   };
 
   const handleFile = async (file: File, asAudio = false) => {
@@ -496,7 +497,7 @@ const Chat = () => {
       name: newChannelName.trim().toLowerCase().replace(/\s+/g, "-"),
       created_by: user!.id,
     }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) { const f = friendlyError(error, "Não foi possível criar o canal."); return toast.error(f.title, { description: f.description }); }
     toast.success("Canal criado");
     setNewChannelName(""); setShowCreateChannel(false);
     if (data) setScope({ kind: "channel", id: data.id });
