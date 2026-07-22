@@ -100,6 +100,8 @@ const PortalCliente = () => {
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState<string | null>(null);
   const [cpfTouched, setCpfTouched] = useState(false);
+  const [birthDate, setBirthDate] = useState("");
+  const [birthError, setBirthError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
@@ -143,10 +145,13 @@ const PortalCliente = () => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     try {
-      const { cpf: c } = JSON.parse(saved);
-      if (c) {
+      const parsed = JSON.parse(saved);
+      const c = parsed?.cpf;
+      const b = parsed?.birth_date;
+      if (c && b) {
         setCpf(c);
-        void doLogin(c, true);
+        setBirthDate(b);
+        void doLogin(c, true, b);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,8 +169,9 @@ const PortalCliente = () => {
         { event: "*", schema: "public", table: "contract_installments", filter: `client_id=eq.${clientId}` },
         () => {
           const cleanCpf = (portalData.client.cpf_cnpj || "").replace(/\D/g, "");
-          if (cleanCpf) {
-            void doLogin(cleanCpf, true);
+          const b = portalData.client.birth_date || birthDate;
+          if (cleanCpf && b) {
+            void doLogin(cleanCpf, true, b);
 
           }
         },
@@ -219,7 +225,7 @@ const PortalCliente = () => {
     };
   }, [portalData]);
 
-  const doLogin = async (cleanCpf: string, silent = false) => {
+  const doLogin = async (cleanCpf: string, silent = false, birth?: string) => {
     if (!silent) {
       const block = isPortalLoginBlocked();
       if (block.blocked) {
@@ -231,10 +237,16 @@ const PortalCliente = () => {
         return;
       }
     }
+    const birthToUse = birth || birthDate;
+    if (!birthToUse) {
+      if (!silent) toast({ title: "Data de nascimento obrigatória", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("portal_client_login_cpf" as never, {
+      const { data, error } = await supabase.rpc("portal_client_login" as never, {
         _cpf: cleanCpf,
+        _birth_date: birthToUse,
       } as never);
 
       if (error) {
@@ -249,14 +261,14 @@ const PortalCliente = () => {
       if (!data) {
         if (!silent) {
           recordPortalLoginAttempt(false);
-          toast({ title: "Acesso negado", description: "CPF não encontrado.", variant: "destructive" });
+          toast({ title: "Acesso negado", description: "CPF ou data de nascimento não conferem.", variant: "destructive" });
         }
         sessionStorage.removeItem(SESSION_KEY);
         return;
       }
 
       setPortalData(data as unknown as PortalData);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ cpf: cleanCpf, birth_date: birthToUse }));
       if (!silent) {
         recordPortalLoginAttempt(true);
         toast({ title: "Acesso autorizado!" });
@@ -291,13 +303,20 @@ const PortalCliente = () => {
       return;
     }
     setCpfError(null);
-    await doLogin(cleanCpf);
+    if (!birthDate) {
+      setBirthError("Informe sua data de nascimento.");
+      toast({ title: "Data de nascimento obrigatória", variant: "destructive" });
+      return;
+    }
+    setBirthError(null);
+    await doLogin(cleanCpf, false, birthDate);
   };
 
   const handleLogout = async () => {
     // Limpa estado local do React primeiro para UI responsiva
     setPortalData(null);
     setCpf("");
+    setBirthDate("");
     setSelectedInstallment(null);
     setPaymentOpen(false);
     // Limpeza completa: supabase signOut + storage + cookies + caches
@@ -471,9 +490,32 @@ const PortalCliente = () => {
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="ml-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                      <Shield size={11} /> Data de nascimento
+                    </label>
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => {
+                        setBirthDate(e.target.value);
+                        setBirthError(e.target.value ? null : "Informe sua data de nascimento.");
+                      }}
+                      required
+                      max={new Date().toISOString().slice(0, 10)}
+                      aria-invalid={!!birthError}
+                      className={`portal-input w-full rounded-2xl px-5 py-4 text-center font-mono text-lg tracking-wider ${birthError ? "border-red-500/60 focus:border-red-500" : ""}`}
+                    />
+                    {birthError && (
+                      <p className="ml-1 flex items-center gap-1.5 text-xs text-red-400">
+                        <AlertTriangle size={12} /> {birthError}
+                      </p>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf))}
+                    disabled={loading || onlyDigits(cpf).length !== 11 || !isValidCPF(onlyDigits(cpf)) || !birthDate}
                     className="portal-btn-primary flex w-full items-center justify-center gap-2 py-5 text-base disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? <Clock className="animate-spin" size={18} /> : <ArrowRight size={18} />}
@@ -494,8 +536,8 @@ const PortalCliente = () => {
                 <div className="grid grid-cols-3 gap-2 pt-2">
                   {[
                     { icon: Lock, label: "Criptografado" },
-                    { icon: Shield, label: "Acesso seguro" },
-                    { icon: BadgeCheck, label: "Sem senha" },
+                    { icon: Shield, label: "CPF + Nascimento" },
+                    { icon: BadgeCheck, label: "LGPD" },
                   ].map(({ icon: I, label }) => (
                     <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-2 py-3 text-center">
                       <I size={14} className="text-primary" />
