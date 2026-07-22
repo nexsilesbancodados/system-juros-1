@@ -1936,64 +1936,14 @@ const Configuracoes = () => {
                   <CreditCard className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Checkout Hubla</h3>
-                  <p className="text-[11px] text-muted-foreground">Configure os links de pagamento para novos usuários</p>
+                  <h3 className="text-sm font-bold text-foreground">Pagamentos</h3>
+                  <p className="text-[11px] text-muted-foreground">Gerenciados via Mercado Pago no checkout do app.</p>
                 </div>
               </div>
-              
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-label">URL de Checkout Principal</label>
-                  <input 
-                    type="url" 
-                    value={form.hubla_checkout_url} 
-                    onChange={(e) => setForm({ ...form, hubla_checkout_url: e.target.value })}
-                    placeholder="https://checkout.hubla.com/..." 
-                    className={inputCls} 
-                  />
-                  <p className="text-[10px] text-muted-foreground">Link para o qual o sistema redireciona quando a assinatura expira.</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-label">
-                    Token do Webhook Hubla (Segurança)
-                    {(settings as any)?.hubla_webhook_token_configured && <span className="ml-2 text-[10px] text-success font-bold">✓ Configurado</span>}
-                  </label>
-                  <div className="relative">
-                    <Key size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input 
-                      type="password" 
-                      value={form.hubla_webhook_token} 
-                      onChange={(e) => setForm({ ...form, hubla_webhook_token: e.target.value })}
-                      placeholder={(settings as any)?.hubla_webhook_token_configured ? "••••••••  (deixe vazio para manter)" : "Token de segurança registrado na Hubla"} 
-                      className={`${inputCls} pl-10`} 
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">Obrigatório para validar que as notificações de pagamento vêm realmente da Hubla. Por segurança, o token nunca é exibido.</p>
-                </div>
-                
-                <div className="bg-card/50 border border-border/40 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-foreground uppercase tracking-wider">
-                    <Webhook size={14} className="text-primary" />
-                    URL de Notificação (Webhook)
-                  </div>
-                  <div className="flex items-center gap-2 p-2 bg-background/50 rounded-xl border border-border/30">
-                    <code className="flex-1 text-[10px] text-primary break-all select-all">
-                      https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook
-                    </code>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText("https://cvbgrjauqjawrsyknhyj.supabase.co/functions/v1/hubla-webhook");
-                        toast({ title: "Copiado!" });
-                      }}
-                      className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      <Copy size={12} className="text-muted-foreground" />
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">Configure esta URL na sua dashboard da Hubla para ativar o processamento automático.</p>
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Os pagamentos de assinatura são processados automaticamente pelo Mercado Pago em <code className="text-primary">/checkout</code>.
+                Nenhuma configuração adicional é necessária aqui.
+              </p>
             </div>
           </div>
         )}
