@@ -1049,22 +1049,36 @@ const ClienteDetalhe = () => {
   ];
 
 
+  const daysAsClient = client.created_at ? Math.max(1, Math.floor((Date.now() - new Date(client.created_at).getTime()) / 86400000)) : 0;
+  const clientSince = client.created_at ? new Date(client.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).toUpperCase() : "—";
+  const riskLabel = (client.credit_score || 0) >= 750 ? "Baixo Risco" : (client.credit_score || 0) >= 600 ? "Risco Moderado" : (client.credit_score || 0) >= 400 ? "Risco Elevado" : "Risco Alto";
+  const riskTone = (client.credit_score || 0) >= 750 ? "text-emerald-400 border-emerald-400/30 bg-emerald-500/10" : (client.credit_score || 0) >= 600 ? "text-amber-300 border-amber-400/30 bg-amber-500/10" : "text-rose-400 border-rose-400/30 bg-rose-500/10";
+
   return (
-    <div className="max-w-4xl mx-auto space-y-5 pb-24">
-      {/* Premium hero header */}
-      <div className="page-hero animate-fade-in">
-        <div className="page-hero-content flex items-center gap-3">
-        <button onClick={() => navigate("/clientes")} className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-24" style={{ fontFamily: "'Manrope', 'Inter', sans-serif" }}>
+      {/* ===== Editorial Dossier Hero ===== */}
+      <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-background via-card/60 to-background p-6 md:p-8">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-24 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-6">
+            <button onClick={() => navigate("/clientes")} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" aria-label="Voltar">
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.3em] text-muted-foreground uppercase">
+              <Sparkles size={12} className="text-primary" />
+              Dossiê de Crédito · Cliente desde {clientSince}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-center">
+            {/* Avatar */}
             <div className="relative group shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-primary/5 flex items-center justify-center text-2xl font-bold text-primary overflow-hidden ring-1 ring-primary/30 shadow-lg shadow-primary/10">
-                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br from-primary/40 via-primary/20 to-amber-500/10 flex items-center justify-center text-4xl font-bold text-primary overflow-hidden ring-2 ring-primary/30 shadow-xl shadow-primary/20" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>
+                {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-full h-full object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
-              <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 shadow-md" style={{ background: "var(--gradient-button)" }}>
-                <Camera size={11} className="text-primary-foreground" />
+              <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-lg" style={{ background: "var(--gradient-button)" }} title="Trocar foto">
+                <Camera size={13} className="text-primary-foreground" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -1072,8 +1086,8 @@ const ClienteDetalhe = () => {
                   const path = `${user!.id}/client-avatars/${id}.${ext}`;
                   const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, { upsert: true });
                   if (!upErr) {
-                    const signedUrl = await getSignedUploadUrl(path);
-                    if (signedUrl) await supabase.from("clients").update({ avatar_url: signedUrl }).eq("id", id);
+                    const url = await getSignedUploadUrl(path);
+                    if (url) await supabase.from("clients").update({ avatar_url: url }).eq("id", id);
                     inv("client-detail");
                     toast({ title: "✓ Foto atualizada!" });
                   } else {
@@ -1082,37 +1096,70 @@ const ClienteDetalhe = () => {
                 }} className="hidden" />
               </label>
             </div>
+
+            {/* Nome & Tags */}
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-foreground truncate tracking-tight">{client.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap mt-1">
-                <span className="text-xs text-muted-foreground font-mono">{client.cpf_cnpj || "Sem CPF"}</span>
-                <span className="text-muted-foreground/40">·</span>
-                <Badge variant="outline" className={client.status === "Ativo" ? "bg-success/15 text-success border-success/30 text-[10px] font-semibold" : "bg-muted text-muted-foreground text-[10px]"}>{client.status}</Badge>
-                <span className={`text-xs font-bold ${scoreClr} inline-flex items-center gap-1`}>
-                  <Star size={11} className="fill-current" /> {client.credit_score || 0}
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-[0.95] mb-3" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif", letterSpacing: "-0.02em" }}>
+                {client.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${client.status === "Ativo" ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${client.status === "Ativo" ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
+                  {client.status}
                 </span>
-                <AICreditScore clientId={id!} currentScore={client.credit_score || 0} onApplyScore={() => inv("client-detail")} />
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${riskTone}`}>
+                  <ShieldCheck size={11} /> {riskLabel}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-muted-foreground border border-border font-mono">
+                  {client.cpf_cnpj || "SEM CPF"}
+                </span>
+                {kpis.activeContracts.length > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30">
+                    <FileText size={11} /> {kpis.activeContracts.length} Contrato{kpis.activeContracts.length > 1 ? "s" : ""} Ativo{kpis.activeContracts.length > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Ações principais */}
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all" style={{ background: "var(--gradient-button)" }}>
+                <Plus size={14} /> Novo Empréstimo
+              </button>
+              <ClientToolsPanel
+                open={showMoreActions}
+                onOpenChange={setShowMoreActions}
+                groups={toolGroups}
+                trigger={
+                  <button className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors">
+                    <Wrench size={13} /> Ferramentas
+                  </button>
+                }
+              />
+              <button onClick={startEdit} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors" title="Editar dados">
+                <Edit size={13} /> Editar
+              </button>
+            </div>
+          </div>
+
+          {/* Financeiro Consolidado strip */}
+          <div className="mt-8 pt-6 border-t border-border/40 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { label: "Capital Ativo", value: `R$ ${fmt(kpis.totalCapital)}`, sub: `${kpis.activeContracts.length} contrato(s)`, tone: "text-foreground" },
+              { label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, sub: `${kpis.ltvPct}% do total`, tone: "text-emerald-400" },
+              { label: "Lucro Gerado", value: `R$ ${fmt(kpis.totalProfit)}`, sub: `Ticket médio R$ ${fmt(kpis.ticketMedio)}`, tone: "text-amber-300" },
+              { label: "Próximo Vencto.", value: kpis.nextDueInst ? formatBR(kpis.nextDueInst.due_date) : "—", sub: kpis.nextDueInst ? `R$ ${fmt(Number(kpis.nextDueInst.amount))}` : "Sem pendências", tone: kpis.overdueInst.length > 0 ? "text-rose-400" : "text-sky-300" },
+            ].map(k => (
+              <div key={k.label}>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1.5">{k.label}</p>
+                <p className={`text-xl md:text-2xl font-bold tracking-tight ${k.tone}`} style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>{k.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{k.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <button onClick={startEdit} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" title="Editar" aria-label="Editar"><Edit size={16} /></button>
-        <ClientToolsPanel
-          open={showMoreActions}
-          onOpenChange={setShowMoreActions}
-          groups={toolGroups}
-          trigger={
-            <button
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-button)" }}
-              title="Abrir ferramentas" aria-label="Abrir ferramentas"
-            >
-              <Wrench size={14} /> Ferramentas
-            </button>
-          }
-        />
-        </div>
-      </div>
+      </header>
+
 
       {/* ===== MODALS ===== */}
 
