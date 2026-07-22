@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ConfirmProvider";
 import EmptyState from "@/components/EmptyState";
+import { friendlyError } from "@/lib/friendlyError";
 
 const Anotacoes = () => {
   const confirm = useConfirm();
