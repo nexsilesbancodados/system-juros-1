@@ -1389,13 +1389,20 @@ const ClienteDetalhe = () => {
       {/* Tab: Resumo */}
       {activeTab === "resumo" && (
         <div className="space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
-            <div className="grid grid-cols-4 gap-3 text-center">
-              <div><p className="text-2xl font-bold text-foreground">{contracts.length}</p><p className="text-[10px] text-muted-foreground uppercase">Contratos</p></div>
-              <div><p className="text-2xl font-bold text-success">{kpis.paidInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pagas</p></div>
-              <div><p className="text-2xl font-bold text-destructive">{kpis.overdueInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Atrasadas</p></div>
-              <div><p className="text-2xl font-bold text-foreground">{kpis.pendingInst.length}</p><p className="text-[10px] text-muted-foreground uppercase">Pendentes</p></div>
+          <div className="glass-card rounded-2xl p-5">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Activity size={16} className="text-primary" /> Visão Geral</h3>
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { n: contracts.length, l: "Contratos", c: "text-foreground", tint: "from-primary/10" },
+                { n: kpis.paidInst.length, l: "Pagas", c: "text-success", tint: "from-emerald-500/10" },
+                { n: kpis.overdueInst.length, l: "Atrasadas", c: "text-destructive", tint: "from-rose-500/10" },
+                { n: kpis.pendingInst.length, l: "Pendentes", c: "text-foreground", tint: "from-sky-500/10" },
+              ].map(k => (
+                <div key={k.l} className={`relative overflow-hidden rounded-xl p-3 text-center bg-gradient-to-br ${k.tint} to-transparent ring-1 ring-border/30`}>
+                  <p className={`text-3xl font-bold ${k.c} tracking-tight`}>{k.n}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold mt-1">{k.l}</p>
+                </div>
+              ))}
             </div>
           </div>
           {contracts.map((c: any) => {
