@@ -68,7 +68,7 @@ const moreGroups = [
   {
     title: "Comunicação",
     items: [
-      { label: "Comunicação & IA", icon: Bot, path: "/comunicacao" },
+      { label: "WhatsApp & Cobrança automática", icon: Bot, path: "/comunicacao" },
       { label: "Inbox WhatsApp", icon: MessageCircle, path: "/comunicacao/inbox" },
       { label: "Chat interno", icon: MessageCircle, path: "/chat" },
     ],
@@ -77,7 +77,7 @@ const moreGroups = [
     title: "Equipe & Portais",
     items: [
       { label: "Cobradores", icon: UserCheck, path: "/cobradores" },
-      { label: "Portais", icon: QrCode, path: "/qrcode" },
+      { label: "QR Code de acesso", icon: QrCode, path: "/qrcode" },
     ],
   },
   {
@@ -88,7 +88,7 @@ const moreGroups = [
       { label: "Tarefas", icon: CheckSquare, path: "/ferramentas/tarefas" },
       { label: "Anotações", icon: StickyNote, path: "/ferramentas/anotacoes" },
       { label: "Planilha", icon: Table, path: "/ferramentas/planilha" },
-      { label: "Puxada Dados", icon: Database, path: "/puxada-dados" },
+      { label: "Importar contratos", icon: Database, path: "/puxada-dados" },
     ],
   },
   {
