@@ -196,48 +196,21 @@ const Dashboard = () => {
   const timeStr = currentTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   const dateStr = currentTime.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
-  const mainCards = [
-    {
-      title: "Capital na Rua",
-      value: `R$ ${fmt(metrics.capitalNaRua)}`,
-      icon: Landmark,
-      accent: "from-primary/20 to-primary/5",
-      iconBg: "bg-primary/10",
-      iconColor: "text-primary",
-      valueColor: "text-foreground",
-    },
-    {
-      title: "Total Recebido",
-      value: `R$ ${fmt(metrics.totalReceived)}`,
-      icon: Wallet,
-      accent: "from-success/20 to-success/5",
-      iconBg: "bg-success/10",
-      iconColor: "text-success",
-      valueColor: "text-success",
-    },
-    {
-      title: "Lucro Gerado",
-      value: `R$ ${fmt(metrics.totalProfitAmount)}`,
-      icon: TrendingUp,
-      accent: "from-primary/20 to-primary/5",
-      iconBg: "bg-primary/10",
-      iconColor: "text-primary",
-      valueColor: "text-primary",
-      sub: `ROI: ${metrics.roi.toFixed(1)}%`,
-    },
-    {
-      title: "Em Atraso",
-      value: `R$ ${fmt(metrics.totalOverdueAmount)}`,
-      icon: AlertCircle,
-      accent: metrics.totalOverdueAmount > 0 ? "from-destructive/20 to-destructive/5" : "from-muted/30 to-muted/10",
-      iconBg: metrics.totalOverdueAmount > 0 ? "bg-destructive/10" : "bg-muted/30",
-      iconColor: metrics.totalOverdueAmount > 0 ? "text-destructive" : "text-muted-foreground",
-      valueColor: metrics.totalOverdueAmount > 0 ? "text-destructive" : "text-foreground",
-      sub: `${metrics.taxaInadimplencia.toFixed(1)}% inadimplência`,
-    },
-  ];
+  // Compute delta vs previous period for received amount (last 30d vs prior 30d)
+  const deltaReceived = useMemo(() => {
+    if (!data) return undefined;
+    const now = new Date();
+    const d30 = new Date(now.getTime() - 30 * 86400000);
+    const d60 = new Date(now.getTime() - 60 * 86400000);
+    const paid = data.installments.filter((i: any) => i.status === "paid" && i.paid_at);
+    const cur = paid.filter((i: any) => new Date(i.paid_at) >= d30).reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+    const prev = paid.filter((i: any) => { const d = new Date(i.paid_at); return d >= d60 && d < d30; }).reduce((s: number, i: any) => s + Number(i.paid_amount || i.amount || 0), 0);
+    if (prev === 0) return cur > 0 ? 100 : 0;
+    return ((cur - prev) / prev) * 100;
+  }, [data]);
 
   return (
+
     <div className="relative space-y-6 md:space-y-8 pb-8 max-w-[1600px] mx-auto animate-fade-in">
       {/* ─── Background Eagle (Refined Overlay) ─── */}
       <div className="eagle-bg-overlay overflow-hidden">
