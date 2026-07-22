@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { friendlyError } from "@/lib/friendlyError";
 
 const Tarefas = () => {
   const confirm = useConfirm();
