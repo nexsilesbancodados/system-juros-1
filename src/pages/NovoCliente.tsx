@@ -1174,7 +1174,9 @@ const NovoCliente = () => {
               </div>
             )}
           </div>
+          </>)}
 
+          {loanSubStep === 2 && (<>
           {/* Values — Metallic glow */}
           <div className="relative overflow-hidden bg-card/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
             {/* Metallic radial background */}
