@@ -176,6 +176,59 @@ export function serializeMemory(memory: BotMemory, maxBytes = MAX_BYTES): string
     motivos_atraso: [],
     contatos_alternativos: [],
     promessas: [],
+    intencoes: [],
     ultima_interacao: memory.ultima_interacao,
   });
 }
+
+// ─── Intenções por cliente ────────────────────────────────────────────
+// Tipos canônicos usados para personalizar o próximo envio:
+//   "prometeu_pagar"       — cliente prometeu pagar em data X
+//   "pediu_desconto"       — cliente pediu abatimento/negociação
+//   "dificuldade"          — sinalizou hardship (desemprego, doença…)
+//   "abriu_portal"         — acessou o portal do cliente
+//   "pediu_prazo"          — pediu extensão de vencimento
+//   "hostil"               — mensagem agressiva
+//   "silencio"             — não respondeu ao último envio
+//   "quitou_parcial"       — pagou parte
+//   "renovacao"            — pediu para renovar o contrato
+export type IntentType =
+  | "prometeu_pagar" | "pediu_desconto" | "dificuldade" | "abriu_portal"
+  | "pediu_prazo" | "hostil" | "silencio" | "quitou_parcial" | "renovacao";
+
+export interface IntentEntry {
+  tipo: IntentType;
+  data: string;          // YYYY-MM-DD
+  detalhe?: string;      // curta descrição opcional
+  abordagem?: string;    // rótulo curto da abordagem enviada (ex: "lembrete_amigavel", "acordo_15off")
+  canal?: "whatsapp" | "email" | "portal";
+}
+
+/** Adiciona uma intenção nova ao topo da lista (mais recente primeiro). */
+export function pushIntent(mem: BotMemory, entry: IntentEntry, limit = 12): BotMemory {
+  const list = Array.isArray(mem.intencoes) ? mem.intencoes : [];
+  // Dedupe por tipo+data (evita spam de eventos idênticos no mesmo dia)
+  const filtered = list.filter((x: any) => !(x && x.tipo === entry.tipo && x.data === entry.data));
+  return { ...mem, intencoes: [entry, ...filtered].slice(0, limit) };
+}
+
+/** Resumo textual das intenções recentes — para injetar em prompts. */
+export function summarizeIntents(mem: BotMemory, maxItems = 6): string {
+  const list = (Array.isArray(mem.intencoes) ? mem.intencoes : []).slice(0, maxItems);
+  if (!list.length) return "";
+  return list
+    .map((i: any) => {
+      const parts = [i.tipo, i.data].filter(Boolean).join(" ");
+      const extra = [i.abordagem && `abordagem=${i.abordagem}`, i.detalhe].filter(Boolean).join(", ");
+      return `- ${parts}${extra ? ` (${extra})` : ""}`;
+    })
+    .join("\n");
+}
+
+/** Última abordagem usada — para o cron variar o próximo disparo. */
+export function lastApproach(mem: BotMemory): string | null {
+  const list = Array.isArray(mem.intencoes) ? mem.intencoes : [];
+  for (const i of list) if (i && typeof i.abordagem === "string" && i.abordagem) return i.abordagem;
+  return null;
+}
+
