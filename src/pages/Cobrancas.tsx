@@ -325,7 +325,7 @@ const Cobrancas = () => {
         .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
     } else {
       // Mensagem curta padrão
-      base = `*Aviso de pagamento*\n${nome}\nParcela ${parcelaInfo} — R$ ${valor}\nVenceu em ${data}`;
+      base = `*Aviso de pagamento*\n${nome}\nParcela ${parcelaInfo} — R$ ${valor}\nVenceu em ${data}\n\nPortal: ${portalUrl}`;
     }
     const pix = (profile as any)?.pix_key;
     if (opts.includePix && pix && !/PIX/i.test(base)) {
