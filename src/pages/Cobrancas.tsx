@@ -374,12 +374,13 @@ const Cobrancas = () => {
 
   const buildBulkWhatsAppMessage = (clientName: string, items: any[]) => {
     const pix = (profile as any)?.pix_key;
+    const portalUrl = `${window.location.origin}/portal-cliente`;
     const lines = items.map((i: any) =>
       `Parcela ${i.installment_number} — R$ ${fmt(Number(i.amount))} — venceu ${formatBR(i.due_date)}`
     ).join("\n");
     const total = items.reduce((s: number, i: any) => s + Number(i.amount), 0);
     const pixBlock = pix ? `\n\nPIX: ${pix}` : "";
-    return `*Aviso de pagamento*\n${clientName}\n${lines}\nTotal: R$ ${fmt(total)}${pixBlock}`;
+    return `*Aviso de pagamento*\n${clientName}\n${lines}\nTotal: R$ ${fmt(total)}${pixBlock}\n\nPortal: ${portalUrl}`;
   };
 
   const handleBulk = (channel: "whatsapp" | "email") => {
