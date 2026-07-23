@@ -1725,6 +1725,7 @@ const NovoCliente = () => {
               }}
             />
           )}
+          </>)}
         </div>
       )}
 
