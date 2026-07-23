@@ -1448,12 +1448,8 @@ const NovoCliente = () => {
             )}
             </div>
           </div>
-          </>)}
 
-          {/* Extras */}
-          {(() => { const _extras = true; return null; })()}
-          <>
-          </>
+
 
           {/* ── ADVANCED CONTRACT FIELDS ── */}
           {!expressMode && (
@@ -1647,7 +1643,7 @@ const NovoCliente = () => {
               }}
             />
           )}
-          </>)}
+          
         </div>
       )}
 
