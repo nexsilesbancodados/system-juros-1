@@ -210,71 +210,30 @@ const Cobrancas = () => {
   };
 
 
+  // Pagamento atômico via RPC no servidor: atualiza a parcela, lança lucro (juros
+  // reais do contrato) e caixa (só o dinheiro novo) e conclui o contrato — tudo
+  // numa transação. Elimina os estados inconsistentes das escritas separadas.
   const markPaidOne = async (inst: any, paidValue?: number) => {
     if (!user) return;
     const paid = Number(paidValue ?? inst.amount);
-    const { error } = await supabase.from("contract_installments").update({
-      status: "paid", paid_at: new Date().toISOString(), paid_amount: paid,
-    }).eq("id", inst.id);
+    const { error } = await supabase.rpc("pay_installment", {
+      _installment_id: inst.id,
+      _paid_total: paid,
+      _mark_paid: true,
+    });
     if (error) throw error;
-
-    const contract = inst.contracts;
-    if (contract) {
-      // A4: juros da parcela = fração real do total de juros do contrato, não a
-      // fórmula rate/(1+rate) (que só vale p/ empréstimo de 1 período e subestimava
-      // o lucro em ~80% em contratos multi-parcela). Fallback p/ contratos antigos
-      // sem os totais salvos.
-      const totalAmount = Number(contract.total_amount || 0);
-      const totalInterest = Number(contract.total_interest || 0);
-      const interestRate = Number(contract.interest_rate || 0) / 100;
-      const interestPortion = totalAmount > 0
-        ? Number(inst.amount) * (totalInterest / totalAmount)
-        : Number(inst.amount) * (interestRate / (1 + interestRate));
-      if (interestPortion > 0) {
-        // M2: não engolir erro das escritas secundárias (antes falha silenciosa
-        // deixava lucro/caixa inconsistentes sem ninguém saber).
-        const { error: pErr } = await supabase.from("profits").insert({
-          user_id: user.id, amount: interestPortion,
-          description: `Juros parcela #${inst.installment_number} - ${inst.client_name}`,
-          client_id: inst.client_id,
-        });
-        if (pErr) console.error("markPaidOne: falha ao lançar lucro:", pErr);
-      }
-    }
-    // A5: registra no caixa apenas o dinheiro NOVO desta chamada. Se já houve
-    // pagamento parcial (que já lançou sua transação), somar o valor cheio aqui
-    // duplicaria a entrada. newMoney = total pago agora - o que já estava pago.
-    const prevPaid = Number(inst.paid_amount || 0);
-    const newMoney = Math.max(0, Math.round((paid - prevPaid) * 100) / 100);
-    if (newMoney > 0) {
-      const { error: tErr } = await supabase.from("transactions").insert({
-        user_id: user.id, amount: newMoney, type: "payment",
-        description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
-        client_id: inst.client_id, contract_id: inst.contract_id,
-      });
-      if (tErr) console.error("markPaidOne: falha ao lançar transação:", tErr);
-    }
-    const { data: remaining } = await supabase
-      .from("contract_installments").select("id").eq("contract_id", inst.contract_id).neq("status", "paid");
-    if (remaining && remaining.length === 0) {
-      const { error: cErr } = await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
-      if (cErr) console.error("markPaidOne: falha ao concluir contrato:", cErr);
-    }
   };
 
   const markPaidPartial = async (inst: any, amount: number) => {
     if (!user) return;
     const prev = Number(inst.paid_amount || 0);
     const next = Math.round((prev + amount) * 100) / 100;
-    const { error } = await supabase.from("contract_installments").update({
-      paid_amount: next,
-    }).eq("id", inst.id);
-    if (error) throw error;
-    await supabase.from("transactions").insert({
-      user_id: user.id, amount, type: "payment",
-      description: `Pagamento parcial parcela #${inst.installment_number} - ${inst.client_name}`,
-      client_id: inst.client_id, contract_id: inst.contract_id,
+    const { error } = await supabase.rpc("pay_installment", {
+      _installment_id: inst.id,
+      _paid_total: next,
+      _mark_paid: false,
     });
+    if (error) throw error;
   };
 
   const optimisticMarkPaid = (ids: string[]) => {

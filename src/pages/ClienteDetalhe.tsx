@@ -30,7 +30,7 @@ import {
 import EmptyState from "@/components/EmptyState";
 import { formatBR } from "@/lib/dateUtils";
 import { useConfirm } from "@/components/ConfirmProvider";
-import { calculateLoan, LOAN_MODE_LABEL, type LoanMode } from "@/lib/loanMath";
+import { calculateLoan, generateInstallmentSchedule, LOAN_MODE_LABEL, type LoanMode, type Frequency } from "@/lib/loanMath";
 import { getSignedUploadUrl } from "@/lib/storage";
 import ClientToolsPanel, { type ToolGroup } from "@/components/clients/ClientToolsPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -287,30 +287,16 @@ const ClienteDetalhe = () => {
     toast({ title: "Endereço atualizado!" }); setEditAddressMode(false); inv("client-detail");
   };
 
+  // M3: usa o mesmo gerador do NovoCliente (loanMath) para não divergir. Antes
+  // esta tela usava quinzenal = 14 dias e diária = dias corridos; agora fica
+  // quinzenal = 15 dias e diária = dias úteis (mon-fri), igual à criação padrão.
   const generateDueDates = (start: string, freq: string, count: number, periodsAhead?: number) => {
-    const dates: string[] = [];
-    const [sy, sm, sd] = start.split("-").map(Number);
-    const base = new Date(sy, (sm || 1) - 1, sd || 1, 12, 0, 0, 0);
-    const stepFor = (i: number) => {
-      const nd = new Date(base);
-      if (freq === "daily") nd.setDate(base.getDate() + i);
-      else if (freq === "weekly") nd.setDate(base.getDate() + i * 7);
-      else if (freq === "biweekly") nd.setDate(base.getDate() + i * 14);
-      else {
-        const tm = base.getMonth() + i;
-        const y = base.getFullYear() + Math.floor(tm / 12);
-        const m = ((tm % 12) + 12) % 12;
-        const lastDay = new Date(y, m + 1, 0).getDate();
-        return new Date(y, m, Math.min(base.getDate(), lastDay), 12, 0, 0, 0);
-      }
-      return nd;
-    };
-    if (periodsAhead && count === 1) {
-      dates.push(stepFor(periodsAhead).toISOString());
-      return dates;
-    }
-    for (let i = 0; i < count; i++) dates.push(stepFor(i + 1).toISOString());
-    return dates;
+    return generateInstallmentSchedule({
+      startDate: start,
+      frequency: freq as Frequency,
+      count,
+      periodsAhead,
+    });
   };
 
   const handleCreateLoan = async () => {
@@ -594,45 +580,19 @@ const ClienteDetalhe = () => {
     if (receiptUrl) patch.receipt_url = receiptUrl;
     const snapshot = patchInstallment(instId, patch);
     toast({ title: "Parcela quitada!" });
-    const { error } = await supabase.from("contract_installments").update(patch).eq("id", instId);
+    // RPC atômico: parcela + lucro (juros reais) + caixa (só dinheiro novo) +
+    // conclusão do contrato, tudo numa transação no servidor.
+    const { error } = await supabase.rpc("pay_installment", {
+      _installment_id: instId,
+      _paid_total: amount,
+      _mark_paid: true,
+      _method: method,
+      _receipt_url: receiptUrl,
+    });
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
       toast({ ...friendlyError(error, "Não foi possível quitar a parcela."), variant: "destructive" });
       return;
-    }
-
-    const inst = installments.find((i: any) => i.id === instId);
-    if (inst) {
-      const contract = contracts.find((c: any) => c.id === inst.contract_id);
-      if (contract) {
-        // A4: juros = fração real do total de juros do contrato (não rate/(1+rate),
-        // que subestimava ~80% em contratos multi-parcela). Fallback p/ contratos
-        // antigos sem os totais salvos.
-        const totalAmount = Number(contract.total_amount || 0);
-        const totalInterest = Number(contract.total_interest || 0);
-        const rate = Number(contract.interest_rate || 0) / 100;
-        const interest = totalAmount > 0
-          ? amount * (totalInterest / totalAmount)
-          : amount * (rate / (1 + rate));
-        if (interest > 0) {
-          // M2: não engolir erro das escritas secundárias.
-          const { error: pErr } = await supabase.from("profits").insert({ user_id: user.id, amount: interest, description: `Juros parcela #${inst.installment_number} - ${client?.name}`, client_id: id });
-          if (pErr) console.error("payFull: falha ao lançar lucro:", pErr);
-        }
-      }
-      // A5: registra no caixa só o dinheiro novo (evita duplicar quando já houve
-      // pagamento parcial, que já lançou sua própria transação).
-      const prevPaid = Number(inst.paid_amount || 0);
-      const newMoney = Math.max(0, Math.round((amount - prevPaid) * 100) / 100);
-      if (newMoney > 0) {
-        const { error: tErr } = await supabase.from("transactions").insert({ user_id: user.id, amount: newMoney, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name} (${method})`, client_id: id, contract_id: inst.contract_id });
-        if (tErr) console.error("payFull: falha ao lançar transação:", tErr);
-      }
-      const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
-      if (otherUnpaid.length === 0) {
-        const { error: cErr } = await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
-        if (cErr) console.error("payFull: falha ao concluir contrato:", cErr);
-      }
     }
     invAll();
   };
@@ -656,12 +616,18 @@ const ClienteDetalhe = () => {
       if (receiptUrl) patch.receipt_url = receiptUrl;
       const snapshot = patchInstallment(partialPayModal.id, patch);
       toast({ title: `R$ ${fmt(val)} registrado!` });
-      const { error } = await supabase.from("contract_installments").update(patch).eq("id", partialPayModal.id);
+      // RPC atômico (parcial: não quita, lança só o dinheiro novo no caixa).
+      const { error } = await supabase.rpc("pay_installment", {
+        _installment_id: partialPayModal.id,
+        _paid_total: alreadyPaid + val,
+        _mark_paid: false,
+        _method: payMethod,
+        _receipt_url: receiptUrl,
+      });
       if (error) {
         qc.setQueryData(["client-installments", id], snapshot);
         toast({ ...friendlyError(error, "Não foi possível registrar o pagamento."), variant: "destructive" });
       } else {
-        await supabase.from("transactions").insert({ user_id: user.id, amount: val, type: "partial_payment", description: `Pagamento parcial #${partialPayModal.installment_number} - ${client?.name} (${payMethod})`, client_id: id, contract_id: partialPayModal.contract_id });
         invAll();
       }
     }
@@ -675,7 +641,9 @@ const ClienteDetalhe = () => {
     if (!(await confirm("Estornar pagamento?"))) return;
     const snapshot = patchInstallment(instId, { status: "pending", paid_at: null, paid_amount: null });
     toast({ title: "Estornado!" });
-    const { error } = await supabase.from("contract_installments").update({ status: "pending", paid_at: null, paid_amount: null }).eq("id", instId);
+    // RPC atômico: reverte a parcela E remove o lucro/caixa lançados por ela
+    // (vinculados por installment_id), reabrindo o contrato se estava concluído.
+    const { error } = await supabase.rpc("reverse_installment_payment", { _installment_id: instId });
     if (error) {
       qc.setQueryData(["client-installments", id], snapshot);
       toast({ ...friendlyError(error, "Não foi possível estornar o pagamento."), variant: "destructive" });

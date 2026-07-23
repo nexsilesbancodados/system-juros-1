@@ -10,7 +10,8 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Permissions-Policy", "value": "geolocation=(), browsing-topics=()" }
+        { "key": "Permissions-Policy", "value": "geolocation=(), browsing-topics=()" },
+        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://*.mercadopago.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://gateway.apibrasil.io https://brasilapi.com.br https://viacep.com.br; frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com; object-src 'none'; base-uri 'self'; form-action 'self'" }
       ]
     },
     {

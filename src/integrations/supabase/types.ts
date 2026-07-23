@@ -2420,6 +2420,20 @@ export type Database = {
           name: string
         }[]
       }
+      pay_installment: {
+        Args: {
+          _installment_id: string
+          _paid_total: number
+          _mark_paid?: boolean
+          _method?: string
+          _receipt_url?: string
+        }
+        Returns: Json
+      }
+      reverse_installment_payment: {
+        Args: { _installment_id: string }
+        Returns: Json
+      }
       portal_client_login: {
         Args: { _birth_date: string; _cpf: string }
         Returns: Json
