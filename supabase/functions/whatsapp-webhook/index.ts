@@ -683,6 +683,10 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
   "receipt_date": "YYYY-MM-DD lido do comprovante, senão null",
   "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida|negociacao|atualizacao_dados|outro",
+  "sentiment": "positivo|neutro|frustrado|hostil",
+  "urgencia": "baixa|media|alta",
+  "dificuldade_financeira": boolean,
+  "desconto_pct": number,
   "summary": "resumo 1 linha do status",
   "memory_update": {
     "fatos": ["fatos consolidados, máx 12"],
@@ -693,6 +697,14 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
     "ultima_interacao": "${todayStr}"
   }
 }`;
+
+    // Temperatura adaptativa: mais criativa em saudações, mais determinística
+    // quando há dinheiro ou tensão em jogo (evita alucinação de valores).
+    const adaptiveTemp = tone.hostile || tone.paying_intent || overdue.length > 0 ? 0.2 : 0.35;
+
+    // Prompt caching (Anthropic): o system prompt é reaproveitado por 5min,
+    // reduz custo/latência em conversas com múltiplas idas e vindas.
+    const systemBlocks = [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }];
 
     const anthMessages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
     if (messageType === "text") anthMessages.push({ role: "user", content: incomingText });
