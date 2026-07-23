@@ -513,6 +513,52 @@ serve(async (req) => {
     }, 0);
     const estagio = maxDiasAtraso === 0 ? 'em dia' : maxDiasAtraso <= 3 ? 'lembrete amigável' : maxDiasAtraso <= 10 ? 'cobrança padrão' : maxDiasAtraso <= 30 ? 'cobrança firme' : 'pré-jurídico';
 
+    // ─── Inteligência comportamental ──────────────────────────────────
+    // Puxa histórico amplo para cálculo de perfil (limite maior que recentPaid)
+    const { data: fullPaid } = await supabase
+      .from("contract_installments")
+      .select("amount, paid_amount, paid_at, due_date, installment_number, status")
+      .eq("client_id", client.id)
+      .eq("status", "paid")
+      .order("paid_at", { ascending: false })
+      .limit(40);
+
+    const behavior = computeClientBehavior({
+      paidHistory: (fullPaid || []) as any,
+      pending: (installments || []) as any,
+      promises: (openPromises || []).map((p: any) => ({
+        promise_date: p.details?.promise_date,
+        created_at: p.created_at,
+      })),
+      todayStr,
+    });
+
+    // Tom da mensagem atual (heurística rápida, roda antes da IA)
+    const tone = detectClientTone(incomingText);
+
+    // Contexto temporal (dia da semana, período do dia, fim de semana)
+    const dowNames = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    const brNow = brDate;
+    const hourBR = brNow.getUTCHours();
+    const dowBR = dowNames[brNow.getUTCDay()];
+    const isWeekend = brNow.getUTCDay() === 0 || brNow.getUTCDay() === 6;
+    const periodoDia = hourBR < 6 ? "madrugada" : hourBR < 12 ? "manhã" : hourBR < 18 ? "tarde" : "noite";
+    const cumprimento = hourBR < 12 ? "Bom dia" : hourBR < 18 ? "Boa tarde" : "Boa noite";
+
+    // Últimas 4 respostas do bot para detectar looping repetitivo
+    const recentBotReplies = conversationHistory
+      .filter(m => m.role === "assistant")
+      .slice(-4)
+      .map(m => m.content);
+    const loopSignal = detectResponseLoop(recentBotReplies);
+
+    // Escalonamento IMEDIATO por sinais fortes (antes mesmo de chamar a IA)
+    let preEscalate: string | null = null;
+    if (tone.hostile) preEscalate = "cliente_hostil";
+    else if (behavior.brokenPromisesLast30d >= 2) preEscalate = "2+_promessas_quebradas_30d";
+    else if (loopSignal.loop) preEscalate = `bot_em_loop_sim=${loopSignal.similarity}`;
+
+
     const systemPrompt = `Você é o Atendente Virtual Sênior da "${settings.company_name || 'nossa empresa'}", especialista em recuperação de crédito com 10 anos de experiência. Sua missão: RECUPERAR VALORES com máxima eficiência, mantendo o relacionamento com o cliente. Você é PRECISO, EMPÁTICO e NUNCA inventa fatos.
 
 ═══ 👤 PERFIL DO CLIENTE ═══
