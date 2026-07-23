@@ -344,6 +344,18 @@ ${settings.bot_negotiation_enabled && selectedDays >= 15 ? "MENCIONE proposta de
                   pre_due: isPreDue, amount: totalAmount, reliability, ai_generated: !!settings.bot_use_ai,
                 },
               });
+              // Registra a abordagem usada NA MEMÓRIA do cliente (evita repetir no próximo cron)
+              try {
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const memUpd = pushIntent(clientMemory, {
+                  tipo: "silencio", // será atualizado pela resposta do cliente, se houver
+                  data: todayStr,
+                  abordagem: nextApproach,
+                  canal: "whatsapp",
+                  detalhe: `${isPreDue ? `pré ${daysUntilDue}d` : `atraso ${daysOverdue}d`} R$${totalAmount.toFixed(2)}`,
+                });
+                await supabase.from("clients").update({ bot_memory: serializeMemory(memUpd) }).eq("id", clientId);
+              } catch (memErr) { console.error("[memory] auto-collection push failed:", memErr); }
             } else { errors.push(`${client.name}: ${await sendResp.text()}`); }
           } catch (err) { errors.push(`${client.name}: ${err instanceof Error ? err.message : "Erro envio"}`); }
         }
