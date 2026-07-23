@@ -926,47 +926,65 @@ const NovoCliente = () => {
         <div className="space-y-4 pb-24">
           {/* Duplicate from previous */}
           {pastContracts.length > 0 && (
-            <div className="rounded-2xl border border-border bg-card/50 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <History size={14} className="text-primary" />
-                <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Duplicar termos de um contrato anterior</h2>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-xl p-5">
+              <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl bg-primary/10" />
+              <div className="relative flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                  <History size={14} className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.15em]">Duplicar contrato anterior</h2>
+                  <p className="text-[10px] text-muted-foreground">Clique para replicar os termos</p>
+                </div>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="relative flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
                 {pastContracts.map((c: any) => (
                   <button
                     key={c.id}
                     onClick={() => duplicateFrom(c)}
-                    className="shrink-0 text-left px-3 py-2 rounded-xl border border-border bg-muted/30 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                    className="group shrink-0 text-left px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-primary/50 hover:bg-primary/10 hover:-translate-y-0.5 transition-all duration-200"
                   >
-                    <p className="text-[11px] font-semibold text-foreground truncate max-w-[140px]">{(c.clients as any)?.name || "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">R$ {Number(c.capital).toLocaleString("pt-BR")} · {c.num_installments}x · {c.interest_rate}%</p>
+                    <p className="text-[11px] font-bold text-foreground truncate max-w-[150px] group-hover:text-primary transition-colors">{(c.clients as any)?.name || "—"}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">R$ {Number(c.capital).toLocaleString("pt-BR")} · {c.num_installments}x · {c.interest_rate}%</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Presets rápidos — 1 clique para os modos mais comuns */}
-          <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={14} className="text-primary" />
-              <h2 className="text-xs font-semibold text-foreground uppercase tracking-wider">Presets rápidos</h2>
-              <span className="text-[10px] text-muted-foreground">configura tudo em 1 clique</span>
+          {/* Presets rápidos */}
+          <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-transparent p-5">
+            <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 w-56 h-56 rounded-full blur-3xl bg-primary/15" />
+            <div className="relative flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20">
+                <Sparkles size={14} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.15em]">Presets rápidos</h2>
+                <p className="text-[10px] text-muted-foreground">Configura tudo em 1 clique</p>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
               {([
-                { id: "mensal", label: "Mensal · 12x", desc: "Parcelas mensais fixas", apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("monthly"); setNumInstallments("12"); } },
-                { id: "diario22", label: "Diário · 22 dias", desc: "Seg-Sex, 22 parcelas", apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("daily"); setDailyMode("mon-fri"); setNumInstallments("22"); } },
-                { id: "sojuros", label: "Só juros mensal", desc: "Capital no último mês", apply: () => { setLoanMode("interest_only"); setValueMode("rate"); setFrequency("monthly"); } },
+                { id: "mensal", label: "Mensal · 12x", desc: "Parcelas mensais fixas", Icon: Calendar, apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("monthly"); setNumInstallments("12"); } },
+                { id: "diario22", label: "Diário · 22 dias", desc: "Seg-Sex, 22 parcelas", Icon: Clock, apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("daily"); setDailyMode("mon-fri"); setNumInstallments("22"); } },
+                { id: "sojuros", label: "Só juros mensal", desc: "Capital no último mês", Icon: Coins, apply: () => { setLoanMode("interest_only"); setValueMode("rate"); setFrequency("monthly"); } },
               ]).map(p => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={p.apply}
-                  className="text-left p-3 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                  className="group relative overflow-hidden text-left p-3.5 rounded-xl border border-white/10 bg-card/60 hover:border-primary/50 hover:bg-primary/10 hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  <p className="text-xs font-bold text-foreground">{p.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{p.desc}</p>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+                      <p.Icon size={14} className="text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{p.label}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{p.desc}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -974,16 +992,24 @@ const NovoCliente = () => {
 
 
           {/* Loan Mode */}
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="relative overflow-hidden bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Modo do Empréstimo</h2>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                  <TrendingDown size={14} className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Modo do Empréstimo</h2>
+                  <p className="text-[10px] text-muted-foreground">Como o cliente irá pagar</p>
+                </div>
+              </div>
               {!isNewContractOnly && (
                 <button
                   type="button"
                   onClick={() => setShowMoreModes(v => !v)}
-                  className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors px-2.5 py-1 rounded-lg hover:bg-primary/10"
                 >
-                  {showMoreModes ? "Menos opções" : "+ Mais modos"}
+                  {showMoreModes ? "− Menos" : "+ Mais modos"}
                 </button>
               )}
             </div>
@@ -999,26 +1025,30 @@ const NovoCliente = () => {
                   { v: "bullet" as LoanMode, label: "Pagamento Único", desc: "Tudo numa data futura", Icon: Target },
                   { v: "grace" as LoanMode, label: "Com Carência", desc: "X períodos sem pagar", Icon: PauseCircle },
                 ];
-                // Auto-mostra extras se o modo atual for um dos secundários
-                // Cliente existente sempre vê todos os modos; novo cliente esconde os avançados por padrão
                 const all = (isNewContractOnly || showMoreModes || extra.some(m => m.v === loanMode)) ? [...primary, ...extra] : primary;
-                return all.map(m => (
-                <button key={m.v} onClick={() => {
-                  setLoanMode(m.v);
-                  setValueMode(m.v === "installments" ? "installment" : "rate");
-                }}
-                  className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 transition-colors text-left ${loanMode === m.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
-                  <m.Icon size={18} className={`mt-0.5 shrink-0 ${loanMode === m.v ? "text-primary" : "text-muted-foreground"}`} />
-                  <div className="min-w-0">
-                    <p className={`text-xs font-semibold ${loanMode === m.v ? "text-primary" : "text-foreground"}`}>{m.label}</p>
-                    <p className="text-[10px] text-muted-foreground leading-tight">{m.desc}</p>
-                  </div>
-                </button>
-                ));
+                return all.map(m => {
+                  const active = loanMode === m.v;
+                  return (
+                    <button key={m.v} onClick={() => {
+                      setLoanMode(m.v);
+                      setValueMode(m.v === "installments" ? "installment" : "rate");
+                    }}
+                      className={`group relative overflow-hidden flex items-start gap-2.5 p-3.5 rounded-2xl border-2 transition-all duration-200 text-left ${active ? "border-primary bg-primary/10 shadow-lg shadow-primary/10 -translate-y-0.5" : "border-white/10 bg-white/[0.02] hover:border-primary/40 hover:bg-primary/5"}`}>
+                      {active && <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />}
+                      <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${active ? "bg-primary/25 border border-primary/40" : "bg-muted/40 border border-white/5 group-hover:bg-primary/10"}`}>
+                        <m.Icon size={16} className={active ? "text-primary" : "text-muted-foreground group-hover:text-primary"} />
+                      </div>
+                      <div className="relative min-w-0 pt-0.5">
+                        <p className={`text-xs font-bold ${active ? "text-primary" : "text-foreground"}`}>{m.label}</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{m.desc}</p>
+                      </div>
+                    </button>
+                  );
+                });
               })()}
             </div>
             {loanMode === "grace" && (
-              <div className="pt-3 border-t border-border">
+              <div className="pt-3 border-t border-white/10">
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">Períodos de Carência</label>
                 <input
                   type="number" min={1} max={24}
@@ -1027,49 +1057,66 @@ const NovoCliente = () => {
                   className={INPUT}
                   placeholder="2"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Durante a carência o cliente não paga; os juros simples acumulam sobre o capital. Total de parcelas será carência + nº de parcelas.
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  Durante a carência o cliente não paga; os juros simples acumulam sobre o capital.
                 </p>
               </div>
             )}
             {loanMode === "bullet" && (
-              <p className="text-[10px] text-muted-foreground pt-2 border-t border-border">
-                💡 No modo "Pagamento Único", o campo <strong>Nº de Parcelas</strong> representa quantos períodos até o vencimento (ex.: 3 meses).
+              <p className="text-[10px] text-muted-foreground pt-3 border-t border-white/10">
+                💡 No modo "Pagamento Único", o campo <strong>Nº de Parcelas</strong> representa períodos até o vencimento.
               </p>
             )}
           </div>
 
 
           {/* Frequency */}
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Frequência</h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+          <div className="relative overflow-hidden bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                <Repeat size={14} className="text-primary" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-foreground">Frequência</h2>
+                <p className="text-[10px] text-muted-foreground">Periodicidade das parcelas</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
               {([
                 { v: "daily" as Frequency, label: "Diário", Icon: Clock },
                 { v: "weekly" as Frequency, label: "Semanal", Icon: Repeat },
                 { v: "biweekly" as Frequency, label: "Quinzenal", Icon: Repeat },
                 { v: "monthly" as Frequency, label: "Mensal", Icon: Calendar },
                 { v: "custom" as Frequency, label: "Programado", Icon: Calendar },
-              ]).map(f => (
-                <button key={f.v} onClick={() => setFrequency(f.v)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-colors ${frequency === f.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
-                  <f.Icon size={18} className={frequency === f.v ? "text-primary" : "text-muted-foreground"} />
-                  <p className={`text-xs font-semibold ${frequency === f.v ? "text-primary" : "text-foreground"}`}>{f.label}</p>
-                </button>
-              ))}
+              ]).map(f => {
+                const active = frequency === f.v;
+                return (
+                  <button key={f.v} onClick={() => setFrequency(f.v)}
+                    className={`group relative overflow-hidden flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 ${active ? "border-primary bg-primary/10 shadow-lg shadow-primary/10 -translate-y-0.5" : "border-white/10 bg-white/[0.02] hover:border-primary/40 hover:bg-primary/5"}`}>
+                    {active && <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />}
+                    <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${active ? "bg-primary/25 border border-primary/40" : "bg-muted/40 border border-white/5 group-hover:bg-primary/10"}`}>
+                      <f.Icon size={16} className={active ? "text-primary" : "text-muted-foreground group-hover:text-primary"} />
+                    </div>
+                    <p className={`relative text-xs font-bold ${active ? "text-primary" : "text-foreground"}`}>{f.label}</p>
+                  </button>
+                );
+              })}
             </div>
             {frequency === "daily" && (
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/10">
                 {([
-                  { v: "mon-fri" as DailyMode, label: "Seg→Sex" },
-                  { v: "mon-sat" as DailyMode, label: "Seg→Sáb" },
-                  { v: "mon-sun" as DailyMode, label: "Seg→Dom" },
-                ]).map(d => (
-                  <button key={d.v} onClick={() => setDailyMode(d.v)}
-                    className={`p-2 rounded-lg border text-xs font-semibold transition-colors ${dailyMode === d.v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
-                    {d.label}
-                  </button>
-                ))}
+                  { v: "mon-fri" as DailyMode, label: "Seg → Sex" },
+                  { v: "mon-sat" as DailyMode, label: "Seg → Sáb" },
+                  { v: "mon-sun" as DailyMode, label: "Seg → Dom" },
+                ]).map(d => {
+                  const active = dailyMode === d.v;
+                  return (
+                    <button key={d.v} onClick={() => setDailyMode(d.v)}
+                      className={`p-2.5 rounded-xl border-2 text-xs font-bold transition-all ${active ? "border-primary bg-primary/15 text-primary shadow-md shadow-primary/10" : "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}>
+                      {d.label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
