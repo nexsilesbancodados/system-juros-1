@@ -437,7 +437,7 @@ const NovoCliente = () => {
     if (valueMode === "rate") {
       const taxa = parseFloat(taxaJuros);
       if (!taxaJuros || isNaN(taxa) || taxa <= 0) errs.taxa = "Informe uma taxa maior que zero";
-      else if (taxa > 100) errs.taxa = `Taxa muito alta (máx. 100% por ${periodLabel})`;
+      else if (taxa > 1000) errs.taxa = `Taxa fora do limite (máx. 1000% por ${periodLabel})`;
     } else {
       const parcela = parseFloat(installmentValue);
       if (!installmentValue || isNaN(parcela) || parcela <= 0) {
@@ -448,9 +448,6 @@ const NovoCliente = () => {
           errs.parcela = "Parcela × nº de parcelas é menor que o capital";
         } else if (total === cap) {
           errs.geral = "Sem juros: parcela × nº de parcelas é igual ao capital";
-        } else {
-          const taxaCalc = ((total - cap) / (cap * n)) * 100;
-          if (taxaCalc > 100) errs.parcela = `Taxa derivada inviável (${taxaCalc.toFixed(1)}% por ${periodLabel})`;
         }
       }
     }
