@@ -1110,24 +1110,6 @@ const NovoCliente = () => {
                   {loanMode === "grace" && "Capital • Taxa • Carência • Nº"}
                 </span>
               </div>
-              {loanMode === "installments" && (
-                <div className="inline-flex p-1 bg-black/40 rounded-xl border border-white/5 backdrop-blur-md">
-                  <button
-                    type="button"
-                    onClick={() => setValueMode("rate")}
-                    className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all ${valueMode === "rate" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-1 ring-primary/30" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    Por Taxa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValueMode("installment")}
-                    className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all ${valueMode === "installment" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-1 ring-primary/30" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    Por Valor da Parcela
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="relative z-10 space-y-8">
