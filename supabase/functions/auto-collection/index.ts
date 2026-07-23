@@ -219,6 +219,38 @@ serve(async (req) => {
         const daysOverdue = Math.max(0, selectedDays);
         const daysUntilDue = Math.max(0, -selectedDays);
 
+        // ─── Memória de intenções do cliente ─────────────────────────────
+        // Personaliza o próximo envio: se prometeu pagar, cobre a promessa;
+        // se pediu desconto, ofereça um acordo; se abriu o portal, chame
+        // para pagar por lá; nunca repita a mesma abordagem duas vezes.
+        const clientMemory = parseMemory((client as any).bot_memory);
+        const intentSummary = summarizeIntents(clientMemory, 5);
+        const priorApproach = lastApproach(clientMemory);
+        const intentsList = Array.isArray(clientMemory.intencoes) ? clientMemory.intencoes : [];
+        const has = (t: string) => intentsList.some((i: any) => i && i.tipo === t);
+        const promiseIntent = intentsList.find((i: any) => i && i.tipo === "prometeu_pagar");
+        const personalizations: string[] = [];
+        if (has("prometeu_pagar") && promiseIntent) personalizations.push(`Cliente PROMETEU pagar (registro ${promiseIntent.data}${promiseIntent.detalhe ? " – " + promiseIntent.detalhe : ""}). Cobre a promessa com respeito, sem repetir a mesma frase.`);
+        if (has("pediu_desconto")) personalizations.push("Cliente JÁ PEDIU DESCONTO — vá direto ao acordo, sem retórica.");
+        if (has("dificuldade")) personalizations.push("Cliente sinalizou DIFICULDADE FINANCEIRA — tom empático, ofereça parcelar.");
+        if (has("abriu_portal")) personalizations.push("Cliente ABRIU O PORTAL recentemente — reforce o CTA de pagar pelo portal, não repita o link.");
+        if (has("hostil")) personalizations.push("Cliente ficou HOSTIL — desarme, seja curto, ofereça falar com humano.");
+        if (has("pediu_prazo")) personalizations.push("Cliente PEDIU PRAZO antes — proponha data concreta, não repita a pergunta.");
+
+        // Escolhe uma nova abordagem — DIFERENTE da última usada
+        const stageApproach = isPreDue ? "lembrete_amigavel"
+          : selectedDays >= 30 ? "cobranca_firme"
+          : selectedDays >= 15 ? "acordo_desconto"
+          : selectedDays >= 7 ? "cobranca_padrao"
+          : "cobranca_padrao";
+        const alt: Record<string, string> = {
+          lembrete_amigavel: "pergunta_confirmacao",
+          cobranca_firme: "proposta_acordo",
+          acordo_desconto: "condicao_especial",
+          cobranca_padrao: "opcao_parcelar",
+        };
+        const nextApproach = priorApproach === stageApproach ? (alt[stageApproach] || stageApproach) : stageApproach;
+
         if (settings.bot_use_ai && anthropicKey) {
           try {
             const tone = settings.bot_tone || "profissional";
@@ -227,13 +259,17 @@ serve(async (req) => {
               : selectedDays >= 15 ? "assertiva mas respeitosa"
               : selectedDays >= 7 ? "preocupada e clara"
               : "amigável e gentil";
-            const systemPrompt = `Você é especialista em recuperação de crédito da empresa ${companyName}. Tom: ${tone}. Severidade atual: ${severity}. NUNCA diga que é uma IA. Use português brasileiro. Máximo 4 linhas curtas. Emojis discretos (1-2). Gere APENAS o texto da mensagem, sem aspas, sem comentários.`;
+            const systemPrompt = `Você é especialista em recuperação de crédito da empresa ${companyName}. Tom: ${tone}. Severidade atual: ${severity}. NUNCA diga que é uma IA. Use português brasileiro. Máximo 4 linhas curtas. Emojis discretos (1-2). Gere APENAS o texto da mensagem, sem aspas, sem comentários. IMPORTANTE: VARIE — não repita a mesma abordagem da última mensagem.`;
             const userPrompt = `Gere mensagem WhatsApp personalizada:
 CLIENTE: ${client.name}
 ${isPreDue ? `PARCELA VENCE EM ${daysUntilDue} DIA(S)` : `PARCELA EM ATRASO: ${daysOverdue} DIA(S)`}
 VALOR: R$ ${totalAmount.toFixed(2)} (${insts.length} parcela(s))
 SCORE: ${client.credit_score ?? 100}/100
 HISTÓRICO: ${paidCount}/${totalHist} pagas (${reliability}% confiabilidade)
+INTENÇÕES RECENTES:
+${intentSummary || '(nenhuma)'}
+${priorApproach ? `ÚLTIMA ABORDAGEM USADA: "${priorApproach}" — USE OUTRA ("${nextApproach}").` : `ABORDAGEM SUGERIDA: "${nextApproach}".`}
+${personalizations.length ? "AJUSTES OBRIGATÓRIOS:\n- " + personalizations.join("\n- ") : ""}
 ${isPreDue ? "Apenas LEMBRE, sem cobrar. Sugira o pagamento antecipado via PIX." : ""}
 ${settings.bot_negotiation_enabled && selectedDays >= 15 ? "MENCIONE proposta de acordo abaixo." : ""}`;
             message = await callAnthropic({
@@ -262,7 +298,18 @@ ${settings.bot_negotiation_enabled && selectedDays >= 15 ? "MENCIONE proposta de
               message = `${greeting}\n\nIdentificamos ${insts.length} parcela(s) pendente(s) totalizando R$ ${totalAmount.toFixed(2)}.\nAtraso de ${daysOverdue} dia(s).\n\n${settings.bot_closing_message || "Qualquer dúvida, entre em contato."}`;
             }
           }
+          // Variação por intenção no template básico (evita eco literal)
+          if (has("prometeu_pagar") && promiseIntent) {
+            message += `\n\nVocê havia combinado pagar em ${promiseIntent.data}${promiseIntent.detalhe ? " (" + promiseIntent.detalhe + ")" : ""}. Conseguiu se organizar?`;
+          } else if (has("pediu_desconto")) {
+            message += `\n\nComo você comentou sobre condição especial, posso avaliar um acordo — me diga se prefere à vista com desconto ou parcelar.`;
+          } else if (has("dificuldade")) {
+            message += `\n\nSei que o momento tá difícil — se puder pagar hoje uma parte, já ajuda. Me chame que a gente combina.`;
+          } else if (has("abriu_portal")) {
+            message += `\n\n(Vi que você abriu o portal recentemente — se precisar de ajuda pra concluir, me chama por aqui.)`;
+          }
         }
+
 
         if (!isPreDue && settings.bot_negotiation_enabled) {
           const offer = buildNegotiationOffer(totalAmount, daysOverdue);
