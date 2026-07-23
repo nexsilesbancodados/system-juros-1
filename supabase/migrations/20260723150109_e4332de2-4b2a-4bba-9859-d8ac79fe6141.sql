@@ -8,8 +8,13 @@
 
 -- M-2: a view public_profiles (security_invoker=false) expunha nome + is_admin
 -- de TODOS os usuários para anon. Não é usada pelo frontend (o app usa o RPC
--- list_public_profiles). Revoga o acesso anônimo.
-REVOKE SELECT ON public.public_profiles FROM anon;
+-- list_public_profiles). Revoga o acesso anônimo — só se a view existir.
+DO $$
+BEGIN
+  IF to_regclass('public.public_profiles') IS NOT NULL THEN
+    EXECUTE 'REVOKE SELECT ON public.public_profiles FROM anon';
+  END IF;
+END $$;
 
 -- M-3: `settings` guarda whatsapp_api_key/hubla_webhook_token e `profiles` guarda
 -- PII + pix_key. O grant de SELECT para anon era uma defesa frágil (bastava uma
