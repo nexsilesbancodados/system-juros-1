@@ -373,22 +373,13 @@ const Cobrancas = () => {
   const getSelectedItems = () => installments.filter((i: any) => selected.has(i.id));
 
   const buildBulkWhatsAppMessage = (clientName: string, items: any[]) => {
-    const portalUrl = `${window.location.origin}/portal-cliente`;
     const pix = (profile as any)?.pix_key;
-    const pixType = (profile as any)?.pix_key_type;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const lines = items.map((i: any) => {
-      const d = parseLocalDate(i.due_date);
-      const days = d ? Math.floor((today.getTime() - d.getTime()) / 86400000) : 0;
-      const tag = days > 0 ? ` ⚠️ ${days}d atrasada` : days === 0 ? " 📌 vence hoje" : "";
-      const contractTag = i.contract_id ? ` (contrato #${String(i.contract_id).slice(0, 6)})` : "";
-      return `• Parcela #${i.installment_number}${contractTag} — R$ ${fmt(Number(i.amount))} — venc. ${formatBR(i.due_date)}${tag}`;
-    }).join("\n");
+    const lines = items.map((i: any) =>
+      `Parcela ${i.installment_number} — R$ ${fmt(Number(i.amount))} — venceu ${formatBR(i.due_date)}`
+    ).join("\n");
     const total = items.reduce((s: number, i: any) => s + Number(i.amount), 0);
-    const pixBlock = pix
-      ? `\n\n💸 *Pague via PIX*\nChave (${pixType || "PIX"}): *${pix}*\nValor total: *R$ ${fmt(total)}*\n_(a chave já foi copiada para sua área de transferência)_`
-      : "";
-    return `Olá ${clientName}, tudo bem? 👋\n\nIdentifiquei ${items.length} parcela${items.length > 1 ? "s" : ""} pendente${items.length > 1 ? "s" : ""} totalizando *R$ ${fmt(total)}*:\n\n${lines}${pixBlock}\n\nQualquer dúvida estou à disposição. Obrigado! 🙏\n\nPortal: ${portalUrl}`;
+    const pixBlock = pix ? `\n\nPIX: ${pix}` : "";
+    return `*Aviso de pagamento*\n${clientName}\n${lines}\nTotal: R$ ${fmt(total)}${pixBlock}`;
   };
 
   const handleBulk = (channel: "whatsapp" | "email") => {
