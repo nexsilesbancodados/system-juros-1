@@ -16,7 +16,8 @@ export type ClientNotification = {
 };
 
 interface Props {
-  cpf: string;
+  /** Token de sessão do portal (emitido por portal_client_login). */
+  token?: string | null;
 }
 
 const timeAgo = (iso: string) => {
@@ -31,19 +32,20 @@ const timeAgo = (iso: string) => {
   return formatBR(iso);
 };
 
-export const NotificationsBell = ({ cpf }: Props) => {
+export const NotificationsBell = ({ token }: Props) => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ClientNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const load = async () => {
+    if (!token) return;
     setLoading(true);
     try {
-      const { data } = await supabase.rpc("portal_client_notifications" as never, {
-        _cpf: cpf,
+      const { data } = await supabase.rpc("portal_notifications_by_token", {
+        _token: token,
         _limit: 30,
-      } as never);
+      });
       setItems((data as unknown as ClientNotification[]) || []);
     } finally {
       setLoading(false);
@@ -51,12 +53,12 @@ export const NotificationsBell = ({ cpf }: Props) => {
   };
 
   useEffect(() => {
-    if (!cpf) return;
+    if (!token) return;
     load();
     const id = setInterval(load, 60000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cpf]);
+  }, [token]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,8 +72,8 @@ export const NotificationsBell = ({ cpf }: Props) => {
   const unread = useMemo(() => items.filter((i) => !i.is_read).length, [items]);
 
   const markAllRead = async () => {
-    if (unread === 0) return;
-    await supabase.rpc("portal_client_mark_notifications_read" as never, { _cpf: cpf, _ids: null } as never);
+    if (unread === 0 || !token) return;
+    await supabase.rpc("portal_mark_notifications_read_by_token", { _token: token, _ids: undefined });
     setItems((prev) => prev.map((i) => ({ ...i, is_read: true })));
   };
 

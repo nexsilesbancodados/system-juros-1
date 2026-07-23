@@ -2446,6 +2446,14 @@ export type Database = {
         Args: { _cpf: string; _limit?: number }
         Returns: Json
       }
+      portal_notifications_by_token: {
+        Args: { _token: string; _limit?: number }
+        Returns: Json
+      }
+      portal_mark_notifications_read_by_token: {
+        Args: { _token: string; _ids?: string[] }
+        Returns: number
+      }
       portal_lookup_creditor_contact: { Args: { _cpf: string }; Returns: Json }
       search_clients_by_document: {
         Args: { _document: string }

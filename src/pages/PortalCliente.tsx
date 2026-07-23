@@ -55,6 +55,7 @@ type PortalData = {
     status?: string | null;
     birth_date?: string | null;
   };
+  session_token?: string | null;
   contracts: PortalContract[];
   owner?: {
     name?: string | null;
@@ -582,7 +583,7 @@ const PortalCliente = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <NotificationsBell cpf={onlyDigits(portalData.client.cpf_cnpj || cpf)} />
+                <NotificationsBell token={portalData.session_token} />
                 <button
                   onClick={() => {
                     try {
