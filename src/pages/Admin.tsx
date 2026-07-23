@@ -155,17 +155,20 @@ const Admin = () => {
   };
 
   const handleToggleChatBlock = async (userId: string, current: boolean) => {
-    await supabase.from("profiles").update({ is_chat_blocked: !current }).eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ is_chat_blocked: !current }).eq("id", userId);
+    if (error) { toast({ ...friendlyError(error, "Não foi possível atualizar o chat."), variant: "destructive" }); return; }
     toast({ title: current ? "Chat desbloqueado" : "Chat bloqueado" });
   };
 
   const handleToggleAdmin = async (userId: string, current: boolean) => {
-    await supabase.from("profiles").update({ is_admin: !current }).eq("id", userId);
-    if (!current) {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-    } else {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-    }
+    // M6: checa cada escrita. Antes ignorava erros e mostrava sucesso mesmo se
+    // o RLS negasse — deixando profiles.is_admin e user_roles fora de sincronia.
+    const { error: pErr } = await supabase.from("profiles").update({ is_admin: !current }).eq("id", userId);
+    if (pErr) { toast({ ...friendlyError(pErr, "Não foi possível atualizar o admin."), variant: "destructive" }); return; }
+    const { error: rErr } = !current
+      ? await supabase.from("user_roles").insert({ user_id: userId, role: "admin" })
+      : await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
+    if (rErr) { toast({ ...friendlyError(rErr, "Perfil atualizado, mas a role admin falhou — verifique."), variant: "destructive" }); return; }
     toast({ title: current ? "Admin removido" : "Promovido a admin" });
   };
 
@@ -173,10 +176,11 @@ const Admin = () => {
     const expiresAt = new Date();
     if (type === "monthly") expiresAt.setMonth(expiresAt.getMonth() + 1);
     else if (type === "yearly") expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    await supabase.from("profiles").update({
+    const { error } = await supabase.from("profiles").update({
       subscription_type: type,
       subscription_expires_at: expiresAt.toISOString(),
     }).eq("id", userId);
+    if (error) { toast({ ...friendlyError(error, "Não foi possível atualizar a assinatura."), variant: "destructive" }); return; }
     toast({ title: "Assinatura atualizada" });
   };
 
@@ -185,7 +189,8 @@ const Admin = () => {
     const base = u?.subscription_expires_at ? new Date(u.subscription_expires_at) : new Date();
     if (base < new Date()) base.setTime(Date.now());
     base.setDate(base.getDate() + days);
-    await supabase.from("profiles").update({ subscription_expires_at: base.toISOString() }).eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ subscription_expires_at: base.toISOString() }).eq("id", userId);
+    if (error) { toast({ ...friendlyError(error, "Não foi possível estender a assinatura."), variant: "destructive" }); return; }
     toast({ title: `+${days} dias adicionados` });
   };
 
@@ -202,7 +207,8 @@ const Admin = () => {
 
   const bulkBlock = async (block: boolean) => {
     const ids = Array.from(selected);
-    await supabase.from("profiles").update({ is_blocked: block }).in("id", ids);
+    const { error } = await supabase.from("profiles").update({ is_blocked: block }).in("id", ids);
+    if (error) { toast({ ...friendlyError(error, "Não foi possível atualizar em massa."), variant: "destructive" }); return; }
     toast({ title: `${ids.length} usuário(s) ${block ? "bloqueados" : "desbloqueados"}` });
     setSelected(new Set());
   };
@@ -217,7 +223,8 @@ const Admin = () => {
     if (!notifyMsg.trim()) return;
     const ids = Array.from(selected);
     const rows = ids.map((user_id) => ({ user_id, message: notifyMsg, from: "Administração", type: "admin" }));
-    await supabase.from("notifications").insert(rows);
+    const { error } = await supabase.from("notifications").insert(rows);
+    if (error) { toast({ ...friendlyError(error, "Não foi possível enviar as notificações."), variant: "destructive" }); return; }
     toast({ title: `Notificação enviada para ${ids.length} usuário(s)` });
     setNotifyMsg("");
     setNotifyOpen(false);
@@ -886,7 +893,13 @@ const AdminLogs = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from("settings").select("*").single();
+      // M4: filtra pelo mesmo user_id que o handleSave usa. Antes usava .single()
+      // sem filtro — com várias linhas em settings (é por usuário) isso dava
+      // PGRST116, o form ficava no default e mostrava um token diferente do salvo.
+      if (!user?.id) return;
+      const { data, error } = await supabase
+        .from("settings").select("*").eq("user_id", user.id).maybeSingle();
+      if (error) { console.error("fetchSettings:", error); return; }
       if (data) {
         setForm({
           maintenance_mode: false,
@@ -900,7 +913,7 @@ const AdminLogs = () => {
       }
     };
     fetchSettings();
-  }, []);
+  }, [user?.id]);
 
   const handleSave = async () => {
     setSaving(true);

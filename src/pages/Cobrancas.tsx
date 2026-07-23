@@ -231,11 +231,14 @@ const Cobrancas = () => {
         ? Number(inst.amount) * (totalInterest / totalAmount)
         : Number(inst.amount) * (interestRate / (1 + interestRate));
       if (interestPortion > 0) {
-        await supabase.from("profits").insert({
+        // M2: não engolir erro das escritas secundárias (antes falha silenciosa
+        // deixava lucro/caixa inconsistentes sem ninguém saber).
+        const { error: pErr } = await supabase.from("profits").insert({
           user_id: user.id, amount: interestPortion,
           description: `Juros parcela #${inst.installment_number} - ${inst.client_name}`,
           client_id: inst.client_id,
         });
+        if (pErr) console.error("markPaidOne: falha ao lançar lucro:", pErr);
       }
     }
     // A5: registra no caixa apenas o dinheiro NOVO desta chamada. Se já houve
@@ -244,16 +247,18 @@ const Cobrancas = () => {
     const prevPaid = Number(inst.paid_amount || 0);
     const newMoney = Math.max(0, Math.round((paid - prevPaid) * 100) / 100);
     if (newMoney > 0) {
-      await supabase.from("transactions").insert({
+      const { error: tErr } = await supabase.from("transactions").insert({
         user_id: user.id, amount: newMoney, type: "payment",
         description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
         client_id: inst.client_id, contract_id: inst.contract_id,
       });
+      if (tErr) console.error("markPaidOne: falha ao lançar transação:", tErr);
     }
     const { data: remaining } = await supabase
       .from("contract_installments").select("id").eq("contract_id", inst.contract_id).neq("status", "paid");
     if (remaining && remaining.length === 0) {
-      await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
+      const { error: cErr } = await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
+      if (cErr) console.error("markPaidOne: falha ao concluir contrato:", cErr);
     }
   };
 
