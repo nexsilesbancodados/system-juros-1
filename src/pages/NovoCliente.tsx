@@ -98,7 +98,7 @@ const NovoCliente = () => {
   const existingClientId = searchParams.get("clientId");
   const isNewContractOnly = !!existingClientId;
   const [step, setStep] = useState(isNewContractOnly ? 2 : 1);
-  const [loanSubStep, setLoanSubStep] = useState<1 | 2 | 3>(1);
+  
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
