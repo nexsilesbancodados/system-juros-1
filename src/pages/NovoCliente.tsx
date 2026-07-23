@@ -475,10 +475,30 @@ const NovoCliente = () => {
         toast({ title: "E-mail inválido", variant: "destructive" });
         return;
       }
+      setStep(2);
+      setLoanSubStep(1);
+      return;
     }
-    if (step === 2 && !canGoStep3) {
-      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
-      toast({ title: firstErr || "Preencha os dados do empréstimo", variant: "destructive" });
+    if (step === 2) {
+      if (loanSubStep === 1) {
+        setLoanSubStep(2);
+        return;
+      }
+      if (loanSubStep === 2) {
+        if (!canGoStep3) {
+          const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+          toast({ title: firstErr || "Preencha capital, taxa e parcelas", variant: "destructive" });
+          return;
+        }
+        setLoanSubStep(3);
+        return;
+      }
+      // subStep 3 → review
+      if (!canGoStep3) {
+        toast({ title: "Complete os valores do empréstimo antes de revisar", variant: "destructive" });
+        return;
+      }
+      setStep(3);
       return;
     }
     setStep(step + 1);
