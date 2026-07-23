@@ -977,6 +977,7 @@ const NovoCliente = () => {
       {/* ═══ STEP 2: LOAN CONFIG ═══ */}
       {step === 2 && (
         <div className="space-y-4 pb-24">
+          {loanSubStep === 1 && (<>
           {/* Duplicate from previous */}
           {pastContracts.length > 0 && (
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-xl p-5">
