@@ -141,7 +141,7 @@ serve(async (req) => {
 
       const clientIds = [...new Set(installments.map(i => i.client_id))];
       const { data: clients } = await supabase
-        .from("clients").select("id, name, phone, whatsapp, email, credit_score").in("id", clientIds);
+        .from("clients").select("id, name, phone, whatsapp, email, credit_score, bot_memory").in("id", clientIds);
       const clientMap = new Map((clients || []).map(c => [c.id, c]));
 
       const { data: profile } = await supabase
