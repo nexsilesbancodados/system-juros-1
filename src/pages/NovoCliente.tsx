@@ -1006,43 +1006,6 @@ const NovoCliente = () => {
             </div>
           )}
 
-          {/* Presets rápidos */}
-          <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-transparent p-5">
-            <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 w-56 h-56 rounded-full blur-3xl bg-primary/15" />
-            <div className="relative flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20">
-                <Sparkles size={14} className="text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.15em]">Presets rápidos</h2>
-                <p className="text-[10px] text-muted-foreground">Configura tudo em 1 clique</p>
-              </div>
-            </div>
-            <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {([
-                { id: "mensal", label: "Mensal · 12x", desc: "Parcelas mensais fixas", Icon: Calendar, apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("monthly"); setNumInstallments("12"); } },
-                { id: "diario22", label: "Diário · 22 dias", desc: "Seg-Sex, 22 parcelas", Icon: Clock, apply: () => { setLoanMode("installments"); setValueMode("installment"); setFrequency("daily"); setDailyMode("mon-fri"); setNumInstallments("22"); } },
-                { id: "sojuros", label: "Só juros mensal", desc: "Capital no último mês", Icon: Coins, apply: () => { setLoanMode("interest_only"); setValueMode("rate"); setFrequency("monthly"); } },
-              ]).map(p => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={p.apply}
-                  className="group relative overflow-hidden text-left p-3.5 rounded-xl border border-white/10 bg-card/60 hover:border-primary/50 hover:bg-primary/10 hover:-translate-y-0.5 transition-all duration-200"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
-                      <p.Icon size={14} className="text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-foreground truncate">{p.label}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{p.desc}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
 
           {/* Loan Mode */}
