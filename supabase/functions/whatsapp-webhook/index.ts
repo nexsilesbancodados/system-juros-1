@@ -69,9 +69,9 @@ function isRateLimited(jid: string): boolean {
   return false;
 }
 
-const STOP_WORDS = ["parar bot", "pare bot", "cancelar bot", "desativar bot", "silenciar bot", "stop bot"];
-const HUMAN_WORDS = ["atendente", "humano", "pessoa de verdade", "falar com alguem", "falar com alguém", "operador", "gerente", "responsavel", "responsável"];
-const PIX_WORDS = ["qual o pix", "qual a chave pix", "me passa o pix", "manda o pix", "envia o pix", "me manda a chave pix"];
+const STOP_WORDS = ["parar bot", "pare bot", "pare de me mandar", "para de mandar", "cancelar bot", "desativar bot", "silenciar bot", "stop bot", "chega de bot", "para com isso bot", "desliga o bot"];
+const HUMAN_WORDS = ["atendente", "humano", "pessoa de verdade", "falar com alguem", "falar com alguém", "falar c alguem", "operador", "gerente", "responsavel", "responsável", "quero falar com voce mesmo", "quero falar com vc mesmo", "com uma pessoa", "com alguém real", "quero falar com o dono", "quero falar com o patrão"];
+const PIX_WORDS = ["qual o pix", "qual a chave pix", "me passa o pix", "manda o pix", "envia o pix", "me manda a chave pix", "manda a chave", "me manda a chave", "qual sua chave", "qual a chave", "chave pra pagar", "pix pra pagar", "pix p pagar"];
 
 function matchesAny(text: string, words: string[]): boolean {
   const t = (text || "").toLowerCase();
