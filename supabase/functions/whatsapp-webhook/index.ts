@@ -10,6 +10,9 @@ import {
   isEchoOfLastReply,
   computeRolloverInterest,
   validatePixReply,
+  computeClientBehavior,
+  detectResponseLoop,
+  detectClientTone,
 } from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
