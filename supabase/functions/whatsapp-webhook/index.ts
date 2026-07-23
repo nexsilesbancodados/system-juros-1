@@ -10,6 +10,9 @@ import {
   isEchoOfLastReply,
   computeRolloverInterest,
   validatePixReply,
+  computeClientBehavior,
+  detectResponseLoop,
+  detectClientTone,
 } from "../_shared/bot_utils.ts";
 
 const corsHeaders = {
@@ -66,9 +69,9 @@ function isRateLimited(jid: string): boolean {
   return false;
 }
 
-const STOP_WORDS = ["parar bot", "pare bot", "cancelar bot", "desativar bot", "silenciar bot", "stop bot"];
-const HUMAN_WORDS = ["atendente", "humano", "pessoa de verdade", "falar com alguem", "falar com alguém", "operador", "gerente", "responsavel", "responsável"];
-const PIX_WORDS = ["qual o pix", "qual a chave pix", "me passa o pix", "manda o pix", "envia o pix", "me manda a chave pix"];
+const STOP_WORDS = ["parar bot", "pare bot", "pare de me mandar", "para de mandar", "cancelar bot", "desativar bot", "silenciar bot", "stop bot", "chega de bot", "para com isso bot", "desliga o bot"];
+const HUMAN_WORDS = ["atendente", "humano", "pessoa de verdade", "falar com alguem", "falar com alguém", "falar c alguem", "operador", "gerente", "responsavel", "responsável", "quero falar com voce mesmo", "quero falar com vc mesmo", "com uma pessoa", "com alguém real", "quero falar com o dono", "quero falar com o patrão"];
+const PIX_WORDS = ["qual o pix", "qual a chave pix", "me passa o pix", "manda o pix", "envia o pix", "me manda a chave pix", "manda a chave", "me manda a chave", "qual sua chave", "qual a chave", "chave pra pagar", "pix pra pagar", "pix p pagar"];
 
 function matchesAny(text: string, words: string[]): boolean {
   const t = (text || "").toLowerCase();
@@ -510,6 +513,52 @@ serve(async (req) => {
     }, 0);
     const estagio = maxDiasAtraso === 0 ? 'em dia' : maxDiasAtraso <= 3 ? 'lembrete amigável' : maxDiasAtraso <= 10 ? 'cobrança padrão' : maxDiasAtraso <= 30 ? 'cobrança firme' : 'pré-jurídico';
 
+    // ─── Inteligência comportamental ──────────────────────────────────
+    // Puxa histórico amplo para cálculo de perfil (limite maior que recentPaid)
+    const { data: fullPaid } = await supabase
+      .from("contract_installments")
+      .select("amount, paid_amount, paid_at, due_date, installment_number, status")
+      .eq("client_id", client.id)
+      .eq("status", "paid")
+      .order("paid_at", { ascending: false })
+      .limit(40);
+
+    const behavior = computeClientBehavior({
+      paidHistory: (fullPaid || []) as any,
+      pending: (installments || []) as any,
+      promises: (openPromises || []).map((p: any) => ({
+        promise_date: p.details?.promise_date,
+        created_at: p.created_at,
+      })),
+      todayStr,
+    });
+
+    // Tom da mensagem atual (heurística rápida, roda antes da IA)
+    const tone = detectClientTone(incomingText);
+
+    // Contexto temporal (dia da semana, período do dia, fim de semana)
+    const dowNames = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    const brNow = brDate;
+    const hourBR = brNow.getUTCHours();
+    const dowBR = dowNames[brNow.getUTCDay()];
+    const isWeekend = brNow.getUTCDay() === 0 || brNow.getUTCDay() === 6;
+    const periodoDia = hourBR < 6 ? "madrugada" : hourBR < 12 ? "manhã" : hourBR < 18 ? "tarde" : "noite";
+    const cumprimento = hourBR < 12 ? "Bom dia" : hourBR < 18 ? "Boa tarde" : "Boa noite";
+
+    // Últimas 4 respostas do bot para detectar looping repetitivo
+    const recentBotReplies = conversationHistory
+      .filter(m => m.role === "assistant")
+      .slice(-4)
+      .map(m => m.content);
+    const loopSignal = detectResponseLoop(recentBotReplies);
+
+    // Escalonamento IMEDIATO por sinais fortes (antes mesmo de chamar a IA)
+    let preEscalate: string | null = null;
+    if (tone.hostile) preEscalate = "cliente_hostil";
+    else if (behavior.brokenPromisesLast30d >= 2) preEscalate = "2+_promessas_quebradas_30d";
+    else if (loopSignal.loop) preEscalate = `bot_em_loop_sim=${loopSignal.similarity}`;
+
+
     const systemPrompt = `Você é o Atendente Virtual Sênior da "${settings.company_name || 'nossa empresa'}", especialista em recuperação de crédito com 10 anos de experiência. Sua missão: RECUPERAR VALORES com máxima eficiência, mantendo o relacionamento com o cliente. Você é PRECISO, EMPÁTICO e NUNCA inventa fatos.
 
 ═══ 👤 PERFIL DO CLIENTE ═══
@@ -564,6 +613,27 @@ Multa: ${settings.default_late_fee || 0}% | Juros diários pós-vencimento: ${se
 Horário comercial: ${settings.bot_business_start || '08:00'}–${settings.bot_business_end || '18:00'}
 PIX: ${profile?.pix_key || '(sem chave cadastrada)'} ${profile?.pix_key_type ? `(${profile.pix_key_type})` : ''} | Recebedor: ${profile?.name || settings.company_name}
 
+═══ 🧠 INTELIGÊNCIA COMPORTAMENTAL (raio-x deste cliente) ═══
+Perfil pagador: ${behavior.perfil.toUpperCase()} (score interno ${behavior.score0to100}/100)
+Pontualidade histórica: ${behavior.onTimePct}% em dia nos últimos 20 pagamentos
+Atraso médio quando atrasa: ${behavior.avgDaysLate} dia(s)
+Streak de pagamentos em dia (mais recentes): ${behavior.onTimeStreak}
+Pagamentos atrasados nos últimos 30d: ${behavior.latePayments30d}
+Promessas quebradas nos últimos 30d: ${behavior.brokenPromisesLast30d}
+Dias desde o último pagamento: ${behavior.daysSinceLastPayment ?? 'n/d'}
+Melhor janela p/ receber: ${behavior.bestPayDow ?? 'n/d'}${behavior.bestPayHour !== null ? ` ~${behavior.bestPayHour}h` : ''}
+Volume total pago historicamente: R$ ${behavior.totalPaidVolume.toFixed(2)}
+
+═══ 🗓 CONTEXTO TEMPORAL ═══
+Agora no Brasil: ${dowBR}, ${brDate.toLocaleDateString('pt-BR')} ~${hourBR}h (${periodoDia}${isWeekend ? ', fim de semana' : ', dia útil'})
+Cumprimento adequado (se for primeira interação do dia): "${cumprimento}"
+
+═══ 🎙 TOM DETECTADO NA MENSAGEM ATUAL (heurística — confirme com sua análise) ═══
+Hostil: ${tone.hostile ? 'SIM ⚠️' : 'não'} | Frustrado: ${tone.frustrated ? 'sim' : 'não'} | Urgente: ${tone.urgent ? 'sim' : 'não'}
+Intenção de pagar: ${tone.paying_intent ? 'SIM 💰' : 'não'} | Situação de dificuldade: ${tone.hardship ? 'SIM 🫂 (empatia obrigatória)' : 'não'}
+${preEscalate ? `⚠️ SINAL FORTE: ${preEscalate} → você DEVE marcar needs_human=true e responder curto/educado.` : ''}
+${loopSignal.loop ? `⚠️ Suas últimas respostas estão repetitivas (similaridade ${loopSignal.similarity}). MUDE de abordagem — se cliente já ouviu o mesmo argumento 2x, ofereça alternativa (renovação, prazo, humano).` : ''}
+
 ═══ 🧭 FRAMEWORK DE RACIOCÍNIO (siga SEMPRE nesta ordem, no campo "thought") ═══
 1. OBSERVAR: O que o cliente escreveu? Qual a intenção real (não apenas literal)? Há anexo (comprovante)?
 2. RECUPERAR CONTEXTO: Última interação, promessas pendentes, último pagamento, o que já foi cobrado nas últimas mensagens. NUNCA repita cobrança já feita há < 3 mensagens sem novo motivo.
@@ -613,6 +683,10 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
   "receipt_date": "YYYY-MM-DD lido do comprovante, senão null",
   "needs_human": boolean,
   "intent": "saudacao|pagamento|comprovante|renovacao|promessa|reclamacao|duvida|negociacao|atualizacao_dados|outro",
+  "sentiment": "positivo|neutro|frustrado|hostil",
+  "urgencia": "baixa|media|alta",
+  "dificuldade_financeira": boolean,
+  "desconto_pct": number,
   "summary": "resumo 1 linha do status",
   "memory_update": {
     "fatos": ["fatos consolidados, máx 12"],
@@ -623,6 +697,14 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
     "ultima_interacao": "${todayStr}"
   }
 }`;
+
+    // Temperatura adaptativa: mais criativa em saudações, mais determinística
+    // quando há dinheiro ou tensão em jogo (evita alucinação de valores).
+    const adaptiveTemp = tone.hostile || tone.paying_intent || overdue.length > 0 ? 0.2 : 0.35;
+
+    // Prompt caching (Anthropic): o system prompt é reaproveitado por 5min,
+    // reduz custo/latência em conversas com múltiplas idas e vindas.
+    const systemBlocks = [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }];
 
     const anthMessages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
     if (messageType === "text") anthMessages.push({ role: "user", content: incomingText });
@@ -640,8 +722,8 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
       try {
         aiResp = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 2200, temperature: 0.25, top_p: 0.85, system: systemPrompt, messages: anthMessages }),
+          headers: { "Content-Type": "application/json", "x-api-key": anthropicApiKey!, "anthropic-version": "2023-06-01", "anthropic-beta": "prompt-caching-2024-07-31" },
+          body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 2200, temperature: adaptiveTemp, top_p: 0.85, system: systemBlocks, messages: anthMessages }),
         });
         if (aiResp.ok) break;
         aiErrBody = await aiResp.text();
@@ -668,7 +750,31 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
       const cleaned = rawText.replace(/```[a-z]*|```/gi, "").replace(/[{}\[\]"]/g, " ").trim();
       parsed = { reply: cleaned.slice(0, 400) || "Desculpe, tive um problema técnico. Pode repetir, por favor?" };
     }
-    const result = sanitizeAiResult(parsed);
+    const result: any = sanitizeAiResult(parsed);
+
+    // Preserva campos novos que o sanitizer estrito descarta (backward-compat).
+    const sentiment = ["positivo", "neutro", "frustrado", "hostil"].includes(parsed.sentiment) ? parsed.sentiment : "neutro";
+    const urgencia = ["baixa", "media", "alta"].includes(parsed.urgencia) ? parsed.urgencia : "baixa";
+    const dificuldade = parsed.dificuldade_financeira === true || tone.hardship;
+    const descontoPct = Math.max(0, Math.min(100, Number(parsed.desconto_pct) || 0));
+
+    // Escalonamento forçado por sinais fortes detectados ANTES da IA
+    if (preEscalate) {
+      result.needs_human = true;
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "🚨 Bot escalou para humano",
+        message: `Cliente ${client.name}: motivo = ${preEscalate}. Assuma a conversa quando puder.`,
+        type: "warning",
+      });
+    }
+
+    // Se o modelo pedir desconto > 15% (regra de escopo), força revisão humana
+    if (descontoPct > 15 && !result.needs_human) {
+      result.needs_human = true;
+    }
+
+
 
     // ─── Validação de PIX e valores antes de enviar ──────────────────────
     if (result.reply) {

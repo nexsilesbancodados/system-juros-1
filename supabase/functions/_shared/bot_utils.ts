@@ -483,3 +483,202 @@ export function validatePixReply(input: PixReplyValidationInput): PixReplyValida
   reply = reply.trimEnd() + "\n" + lines.join("\n");
   return { reply, fixed: true, reasons };
 }
+
+// ─── Inteligência comportamental ────────────────────────────────────────────
+// Extrai um "raio-x" do cliente a partir do histórico de parcelas pagas +
+// pendentes/atrasadas. Alimenta o prompt com sinais concretos (não achismo):
+// pontualidade, atrasos médios, melhor dia da semana p/ cobrar, streak, etc.
+
+export interface BehaviorInstallmentLike {
+  amount: number | string;
+  due_date?: string | null;
+  paid_at?: string | null;
+  paid_amount?: number | string | null;
+  status?: string | null;
+  installment_number?: number | null;
+}
+
+export interface ClientBehavior {
+  onTimeStreak: number;          // pagamentos seguidos em dia (mais recentes)
+  latePayments30d: number;       // pagamentos com atraso nos últimos 30 dias
+  avgDaysLate: number;           // média de atraso (positivo = atraso)
+  onTimePct: number;             // % dos últimos 20 pagamentos em dia
+  bestPayDow: string | null;     // dia da semana com mais pagamentos
+  bestPayHour: number | null;    // hora do dia mais comum de pagamento
+  totalPaidVolume: number;       // R$ acumulados historicamente
+  brokenPromisesLast30d: number; // promessas vencidas sem pagamento no período
+  daysSinceLastPayment: number | null;
+  perfil: "cumpridor" | "atrasa_pouco" | "atrasa_muito" | "novo" | "inadimplente";
+  score0to100: number;           // sinal composto (0=risco alto, 100=perfeito)
+}
+
+const DOW_PT = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+function toDateSafe(s?: string | null): Date | null {
+  if (!s) return null;
+  const d = new Date(s);
+  return isFinite(d.getTime()) ? d : null;
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+export function computeClientBehavior(opts: {
+  paidHistory: BehaviorInstallmentLike[];   // últimas parcelas pagas (mais recentes primeiro OU sem ordem)
+  pending: BehaviorInstallmentLike[];       // pendentes/atrasadas atuais
+  promises?: Array<{ promise_date?: string | null; created_at?: string | null }>;
+  todayStr: string;                          // YYYY-MM-DD
+}): ClientBehavior {
+  const today = new Date(opts.todayStr + "T12:00:00");
+  const paid = (opts.paidHistory || [])
+    .map(p => ({
+      due: toDateSafe(p.due_date || null),
+      paidAt: toDateSafe(p.paid_at || null),
+      amount: num(p.paid_amount ?? p.amount),
+    }))
+    .filter(p => p.paidAt)
+    .sort((a, b) => (b.paidAt!.getTime()) - (a.paidAt!.getTime()));
+
+  // Atraso por pagamento (dias)
+  const daysLateList: number[] = [];
+  const onTimeList: boolean[] = [];
+  let latePayments30d = 0;
+  for (const p of paid.slice(0, 20)) {
+    if (!p.due) continue;
+    const late = daysBetween(p.due, p.paidAt!);
+    daysLateList.push(late);
+    onTimeList.push(late <= 0);
+    if (late > 0 && daysBetween(p.paidAt!, today) <= 30) latePayments30d++;
+  }
+  const avgDaysLate = daysLateList.length
+    ? +(daysLateList.reduce((s, n) => s + Math.max(0, n), 0) / daysLateList.length).toFixed(1)
+    : 0;
+  const onTimePct = onTimeList.length
+    ? Math.round((onTimeList.filter(Boolean).length / onTimeList.length) * 100)
+    : 0;
+
+  // Streak em dia (mais recentes)
+  let onTimeStreak = 0;
+  for (const inOrder of onTimeList) { if (inOrder) onTimeStreak++; else break; }
+
+  // Dia da semana / hora mais comum de pagamento
+  const dowCount = new Array(7).fill(0);
+  const hourCount = new Array(24).fill(0);
+  for (const p of paid.slice(0, 30)) {
+    if (!p.paidAt) continue;
+    dowCount[p.paidAt.getDay()]++;
+    hourCount[p.paidAt.getHours()]++;
+  }
+  const bestPayDow = paid.length
+    ? DOW_PT[dowCount.indexOf(Math.max(...dowCount))]
+    : null;
+  const bestPayHour = paid.length
+    ? hourCount.indexOf(Math.max(...hourCount))
+    : null;
+
+  const totalPaidVolume = +(paid.reduce((s, p) => s + p.amount, 0)).toFixed(2);
+  const daysSinceLastPayment = paid[0]?.paidAt ? daysBetween(paid[0].paidAt, today) : null;
+
+  // Promessas quebradas (data prometida já passou sem pagamento no dia)
+  let brokenPromisesLast30d = 0;
+  for (const pr of opts.promises || []) {
+    const pd = toDateSafe(pr.promise_date || null);
+    if (!pd) continue;
+    if (pd > today) continue; // ainda no futuro
+    const days = daysBetween(pd, today);
+    if (days > 30) continue;
+    // Considera quebrada se não houve pagamento na janela ±1 dia
+    const kept = paid.some(p => p.paidAt && Math.abs(daysBetween(pd, p.paidAt)) <= 1);
+    if (!kept) brokenPromisesLast30d++;
+  }
+
+  // Perfil compostos
+  const pendingCount = (opts.pending || []).length;
+  let perfil: ClientBehavior["perfil"];
+  if (paid.length === 0) perfil = "novo";
+  else if (pendingCount > 0 && (latePayments30d >= 2 || brokenPromisesLast30d >= 2)) perfil = "inadimplente";
+  else if (onTimePct >= 85) perfil = "cumpridor";
+  else if (avgDaysLate <= 5) perfil = "atrasa_pouco";
+  else perfil = "atrasa_muito";
+
+  const score0to100 = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        onTimePct * 0.6 +
+        Math.min(20, onTimeStreak * 2) +
+        Math.max(0, 20 - avgDaysLate * 2) -
+        brokenPromisesLast30d * 15,
+      ),
+    ),
+  );
+
+  return {
+    onTimeStreak,
+    latePayments30d,
+    avgDaysLate,
+    onTimePct,
+    bestPayDow,
+    bestPayHour,
+    totalPaidVolume,
+    brokenPromisesLast30d,
+    daysSinceLastPayment,
+    perfil,
+    score0to100,
+  };
+}
+
+/**
+ * Detecta laço de resposta: se o bot está repetindo respostas semelhantes,
+ * é sinal de que o modelo não está avançando a conversa — hora de escalar.
+ * Retorna similarity 0..1 e um flag `loop` (>= 0.75 de similaridade entre
+ * as últimas N respostas).
+ */
+export function detectResponseLoop(recentBotReplies: string[], threshold = 0.75): {
+  loop: boolean;
+  similarity: number;
+} {
+  const clean = (s: string) => (s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9áéíóúàãõâêîôûç ]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const replies = recentBotReplies.map(clean).filter(Boolean).slice(-4);
+  if (replies.length < 3) return { loop: false, similarity: 0 };
+
+  const jaccard = (a: string, b: string) => {
+    const A = new Set(a.split(" "));
+    const B = new Set(b.split(" "));
+    const inter = [...A].filter(x => B.has(x)).length;
+    const uni = new Set([...A, ...B]).size;
+    return uni ? inter / uni : 0;
+  };
+  const pairs: number[] = [];
+  for (let i = 1; i < replies.length; i++) pairs.push(jaccard(replies[i - 1], replies[i]));
+  const sim = pairs.length ? pairs.reduce((s, n) => s + n, 0) / pairs.length : 0;
+  return { loop: sim >= threshold, similarity: +sim.toFixed(2) };
+}
+
+/**
+ * Analisa a mensagem do cliente em busca de sinais de tom (heurístico rápido,
+ * usado ANTES da IA para decidir escalonamento imediato e ajustar temperatura).
+ */
+export function detectClientTone(text: string): {
+  hostile: boolean;
+  frustrated: boolean;
+  urgent: boolean;
+  paying_intent: boolean;
+  hardship: boolean;
+} {
+  const t = (text || "").toLowerCase();
+  const hostile = /(vai (se |te |)f[uo]d|caralh|porra|merda|otari|desgra|golpe|golpist|processar|advogad|procon|reclame aqui|xingar|palhaç|idiota|imbecil|ladr[aã]o)/i.test(t);
+  const frustrated = /(cansei|chateado|desisto|nunca mais|absurd|ridiculo|rid[íi]culo|não aguento|nao aguento|ta demais|tá demais|revoltad|indignad)/i.test(t);
+  const urgent = /(urgente|agora mesmo|hoje mesmo|imediat|preciso muito|socorro|por favor rapid)/i.test(t);
+  const paying_intent = /(vou pagar|vou fazer o pix|acabei de pagar|paguei agora|acabo de|manda o pix|me passa o pix|chave pix|quitar|quitação|regulariz)/i.test(t);
+  const hardship = /(desempregad|sem trabalho|desempreg|sem dinheiro|dif[íi]cil|mal to comendo|n[ãa]o tenho como|pai doente|m[ãa]e doente|filho doente|doente|internad|acident|falec|morreu|luto|separei|divorci|corte de luz|despej)/i.test(t);
+  return { hostile, frustrated, urgent, paying_intent, hardship };
+}
+
