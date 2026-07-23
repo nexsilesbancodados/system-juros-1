@@ -933,7 +933,7 @@ const NovoCliente = () => {
       {/* ═══ STEP 2: LOAN CONFIG ═══ */}
       {step === 2 && (
         <div className="space-y-4 pb-24">
-          {loanSubStep === 1 && (<>
+          {/* Modo & Frequência */}
           {/* Duplicate from previous */}
           {pastContracts.length > 0 && (
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-xl p-5">
@@ -1093,9 +1093,8 @@ const NovoCliente = () => {
               </div>
             )}
           </div>
-          </>)}
 
-          {loanSubStep === 2 && (<>
+          {/* Valores & Datas */}
           {/* Values — Metallic glow */}
           <div className="relative overflow-hidden bg-card/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
             {/* Metallic radial background */}
@@ -1451,7 +1450,11 @@ const NovoCliente = () => {
           </div>
           </>)}
 
-          {loanSubStep === 3 && (<>
+          {/* Extras */}
+          {(() => { const _extras = true; return null; })()}
+          <>
+          </>
+
           {/* ── ADVANCED CONTRACT FIELDS ── */}
           {!expressMode && (
           <details className="bg-card border border-border rounded-2xl p-5 group">
