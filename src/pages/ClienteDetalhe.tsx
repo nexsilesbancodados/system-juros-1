@@ -1287,39 +1287,44 @@ const ClienteDetalhe = () => {
 
       {/* ===== CONTENT ===== */}
 
-      {/* Contact */}
-      <div className="glass-card rounded-2xl p-5 hover-lift transition-all">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-md p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><User size={14} /></div>
+            <h3 className="text-sm font-bold text-foreground">Contato & Endereço</h3>
+          </div>
+          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/60 text-muted-foreground text-[11px] font-semibold hover:bg-accent hover:text-foreground transition-all">
+            <MapPin size={12} /> Endereço
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
-            { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20" },
-            { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20" },
-            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20" },
-            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20" },
+            { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20", onClick: () => { if (client.phone) window.open(`tel:${client.phone.replace(/\D/g, "")}`, "_self"); } },
+            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp || client.phone, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20", onClick: () => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); } },
+            { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20", onClick: () => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); } },
+            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20", onClick: startEditAddress },
           ].map(item => (
-            <div key={item.label} className="flex items-start gap-3">
-              <div className={`w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
-                <item.Icon size={15} />
+            <button
+              key={item.label}
+              onClick={item.value ? item.onClick : startEdit}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-background/30 hover:bg-accent/60 hover:border-border transition-all text-left group"
+            >
+              <div className={`w-10 h-10 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
+                <item.Icon size={16} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{item.label}</p>
-                <p className="text-sm text-foreground font-semibold truncate">{item.value || "—"}</p>
+                <p className="text-sm text-foreground font-semibold truncate">{item.value || <span className="text-muted-foreground/60 italic font-normal">Adicionar</span>}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
         {address?.street && (
           <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/40 flex items-center gap-1.5">
-            <MapPin size={12} className="text-primary" />
-            {address.street}{address.number ? `, ${address.number}` : ""} - {address.neighborhood} · {address.city}/{address.state}
+            <MapPin size={12} className="text-primary shrink-0" />
+            <span className="truncate">{address.street}{address.number ? `, ${address.number}` : ""}{address.neighborhood ? ` — ${address.neighborhood}` : ""} · {address.city}/{address.state}</span>
           </p>
         )}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 flex-wrap">
-          <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-400/20 text-xs font-semibold hover:bg-sky-500/20 hover:-translate-y-0.5 transition-all"><Phone size={13} /> Ligar</button>
-          <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/20 text-xs font-semibold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all"><MessageSquare size={13} /> WhatsApp</button>
-          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-semibold hover:bg-primary/20 hover:-translate-y-0.5 transition-all"><Send size={13} /> Enviar Portal</button>
-          <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-400/20 text-xs font-semibold hover:bg-amber-500/20 hover:-translate-y-0.5 transition-all"><Mail size={13} /> E-mail</button>
-          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border/60 text-muted-foreground text-xs font-semibold hover:bg-accent hover:text-foreground transition-all ml-auto"><MapPin size={13} /> Editar Endereço</button>
-        </div>
       </div>
 
       {/* Quick actions bar */}
