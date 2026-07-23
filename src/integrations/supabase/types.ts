@@ -1268,6 +1268,35 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_sessions: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string
+          token: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at?: string
+          token?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1339,6 +1368,7 @@ export type Database = {
           date: string
           description: string
           id: string
+          installment_id: string | null
           status: string
           user_id: string
         }
@@ -1349,6 +1379,7 @@ export type Database = {
           date?: string
           description: string
           id?: string
+          installment_id?: string | null
           status?: string
           user_id: string
         }
@@ -1359,6 +1390,7 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          installment_id?: string | null
           status?: string
           user_id?: string
         }
@@ -1858,6 +1890,7 @@ export type Database = {
           date: string
           description: string
           id: string
+          installment_id: string | null
           type: string
           user_id: string
         }
@@ -1870,6 +1903,7 @@ export type Database = {
           date?: string
           description: string
           id?: string
+          installment_id?: string | null
           type?: string
           user_id: string
         }
@@ -1882,6 +1916,7 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          installment_id?: string | null
           type?: string
           user_id?: string
         }
@@ -2423,15 +2458,11 @@ export type Database = {
       pay_installment: {
         Args: {
           _installment_id: string
-          _paid_total: number
           _mark_paid?: boolean
           _method?: string
+          _paid_total: number
           _receipt_url?: string
         }
-        Returns: Json
-      }
-      reverse_installment_payment: {
-        Args: { _installment_id: string }
         Returns: Json
       }
       portal_client_login: {
@@ -2446,15 +2477,19 @@ export type Database = {
         Args: { _cpf: string; _limit?: number }
         Returns: Json
       }
-      portal_notifications_by_token: {
-        Args: { _token: string; _limit?: number }
-        Returns: Json
-      }
+      portal_lookup_creditor_contact: { Args: { _cpf: string }; Returns: Json }
       portal_mark_notifications_read_by_token: {
-        Args: { _token: string; _ids?: string[] }
+        Args: { _ids?: string[]; _token: string }
         Returns: number
       }
-      portal_lookup_creditor_contact: { Args: { _cpf: string }; Returns: Json }
+      portal_notifications_by_token: {
+        Args: { _limit?: number; _token: string }
+        Returns: Json
+      }
+      reverse_installment_payment: {
+        Args: { _installment_id: string }
+        Returns: Json
+      }
       search_clients_by_document: {
         Args: { _document: string }
         Returns: {

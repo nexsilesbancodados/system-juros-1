@@ -98,6 +98,7 @@ const NovoCliente = () => {
   const existingClientId = searchParams.get("clientId");
   const isNewContractOnly = !!existingClientId;
   const [step, setStep] = useState(isNewContractOnly ? 2 : 1);
+  const [loanSubStep, setLoanSubStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [createdContractId, setCreatedContractId] = useState<string | null>(null);
@@ -474,10 +475,30 @@ const NovoCliente = () => {
         toast({ title: "E-mail inválido", variant: "destructive" });
         return;
       }
+      setStep(2);
+      setLoanSubStep(1);
+      return;
     }
-    if (step === 2 && !canGoStep3) {
-      const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
-      toast({ title: firstErr || "Preencha os dados do empréstimo", variant: "destructive" });
+    if (step === 2) {
+      if (loanSubStep === 1) {
+        setLoanSubStep(2);
+        return;
+      }
+      if (loanSubStep === 2) {
+        if (!canGoStep3) {
+          const firstErr = loanErrors.capital || loanErrors.taxa || loanErrors.parcela || loanErrors.n || loanErrors.geral;
+          toast({ title: firstErr || "Preencha capital, taxa e parcelas", variant: "destructive" });
+          return;
+        }
+        setLoanSubStep(3);
+        return;
+      }
+      // subStep 3 → review
+      if (!canGoStep3) {
+        toast({ title: "Complete os valores do empréstimo antes de revisar", variant: "destructive" });
+        return;
+      }
+      setStep(3);
       return;
     }
     setStep(step + 1);
@@ -760,11 +781,43 @@ const NovoCliente = () => {
       </div>
 
       {/* Progress */}
-      <div className="flex gap-2">
-        {(isNewContractOnly ? [2, 3] : [1, 2, 3]).map((s) => (
-          <button key={s} onClick={() => { if (s < step && (!isNewContractOnly || s >= 2)) setStep(s); }}
-            className={`h-2 flex-1 rounded-full transition-colors ${s < step ? "bg-success cursor-pointer" : s === step ? "bg-primary" : "bg-border"}`} />
-        ))}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          {(isNewContractOnly ? [2, 3] : [1, 2, 3]).map((s) => (
+            <button key={s} onClick={() => { if (s < step && (!isNewContractOnly || s >= 2)) setStep(s); }}
+              className={`h-2 flex-1 rounded-full transition-colors ${s < step ? "bg-success cursor-pointer" : s === step ? "bg-primary" : "bg-border"}`} />
+          ))}
+        </div>
+        {step === 2 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(["Modo & Frequência", "Valores & Datas", "Extras (opcional)"] as const).map((lbl, i) => {
+              const n = (i + 1) as 1 | 2 | 3;
+              const active = loanSubStep === n;
+              const done = loanSubStep > n;
+              return (
+                <button
+                  key={lbl}
+                  type="button"
+                  onClick={() => {
+                    if (n === loanSubStep) return;
+                    if (n > loanSubStep && n >= 3 && !canGoStep3) return;
+                    setLoanSubStep(n);
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                    active
+                      ? "bg-primary/15 border-primary/40 text-primary"
+                      : done
+                        ? "bg-success/10 border-success/30 text-success"
+                        : "bg-white/[0.02] border-white/10 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${active ? "bg-primary text-primary-foreground" : done ? "bg-success text-white" : "bg-white/10 text-muted-foreground"}`}>{done ? "✓" : n}</span>
+                  {lbl}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Draft restore banner */}
@@ -924,6 +977,7 @@ const NovoCliente = () => {
       {/* ═══ STEP 2: LOAN CONFIG ═══ */}
       {step === 2 && (
         <div className="space-y-4 pb-24">
+          {loanSubStep === 1 && (<>
           {/* Duplicate from previous */}
           {pastContracts.length > 0 && (
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-xl p-5">
@@ -1120,7 +1174,9 @@ const NovoCliente = () => {
               </div>
             )}
           </div>
+          </>)}
 
+          {loanSubStep === 2 && (<>
           {/* Values — Metallic glow */}
           <div className="relative overflow-hidden bg-card/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
             {/* Metallic radial background */}
@@ -1474,7 +1530,9 @@ const NovoCliente = () => {
             )}
             </div>
           </div>
+          </>)}
 
+          {loanSubStep === 3 && (<>
           {/* ── ADVANCED CONTRACT FIELDS ── */}
           {!expressMode && (
           <details className="bg-card border border-border rounded-2xl p-5 group">
@@ -1667,6 +1725,7 @@ const NovoCliente = () => {
               }}
             />
           )}
+          </>)}
         </div>
       )}
 
