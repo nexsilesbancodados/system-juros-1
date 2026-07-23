@@ -1048,28 +1048,35 @@ const ClienteDetalhe = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-24" style={{ fontFamily: "'Manrope', 'Inter', sans-serif" }}>
       {/* ===== Editorial Dossier Hero ===== */}
-      <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-background via-card/60 to-background p-6 md:p-8">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-24 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => navigate("/clientes")} className="p-2 rounded-xl hover:bg-accent text-muted-foreground transition-colors" aria-label="Voltar">
-              <ArrowLeft size={18} />
+      <header className="relative rounded-[28px] border border-border/60 bg-card/40 overflow-hidden backdrop-blur-xl shadow-2xl shadow-primary/5">
+        {/* Cover banner */}
+        <div className="relative h-40 md:h-48 overflow-hidden">
+          <div className="absolute inset-0" style={{ background: "radial-gradient(120% 140% at 15% 0%, hsl(var(--primary)/0.55) 0%, transparent 55%), radial-gradient(90% 120% at 85% 20%, rgba(245,158,11,0.35) 0%, transparent 50%), linear-gradient(135deg, hsl(var(--primary)/0.35), hsl(var(--background)) 70%)" }} />
+          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "22px 22px" }} />
+          <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-primary/25 blur-3xl" />
+          <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-amber-500/15 blur-3xl" />
+
+          {/* Top bar over cover */}
+          <div className="relative z-10 flex items-center justify-between p-4">
+            <button onClick={() => navigate("/clientes")} className="p-2 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 hover:bg-background/60 transition-colors" aria-label="Voltar">
+              <ArrowLeft size={16} />
             </button>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.3em] text-muted-foreground uppercase">
-              <Sparkles size={12} className="text-primary" />
-              Dossiê de Crédito · Cliente desde {clientSince}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-[9px] font-bold tracking-[0.25em] text-foreground/80 uppercase">
+              <Sparkles size={10} className="text-primary" /> Cliente desde {clientSince}
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-center">
-            {/* Avatar */}
-            <div className="relative group shrink-0">
-              <div className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br from-primary/40 via-primary/20 to-amber-500/10 flex items-center justify-center text-4xl font-bold text-primary overflow-hidden ring-2 ring-primary/30 shadow-xl shadow-primary/20" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>
+        {/* Body */}
+        <div className="relative px-5 md:px-8 pb-6 pt-0">
+          {/* Avatar floating */}
+          <div className="flex flex-col md:flex-row md:items-end md:gap-6 -mt-16 md:-mt-14">
+            <div className="relative group shrink-0 mx-auto md:mx-0">
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-primary/40 via-primary/20 to-amber-500/10 flex items-center justify-center text-4xl md:text-5xl font-bold text-primary overflow-hidden ring-4 ring-card shadow-2xl shadow-primary/30" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>
                 {client.avatar_url ? <img src={client.avatar_url} alt="" className="w-full h-full object-cover" /> : client.name?.charAt(0)?.toUpperCase()}
               </div>
-              <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-lg" style={{ background: "var(--gradient-button)" }} title="Trocar foto">
-                <Camera size={13} className="text-primary-foreground" />
+              <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-lg ring-2 ring-card" style={{ background: "var(--gradient-button)" }} title="Trocar foto">
+                <Camera size={14} className="text-primary-foreground" />
                 <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file || !id) return;
@@ -1088,63 +1095,85 @@ const ClienteDetalhe = () => {
               </label>
             </div>
 
-            {/* Nome & Tags */}
-            <div className="min-w-0">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-[0.95] mb-3" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif", letterSpacing: "-0.02em" }}>
+            {/* Name + chips */}
+            <div className="min-w-0 flex-1 mt-4 md:mt-0 md:pb-2 text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.05]" style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif", letterSpacing: "-0.02em" }}>
                 {client.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${client.status === "Ativo" ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
+              <div className="flex flex-wrap justify-center md:justify-start items-center gap-1.5 mt-2.5">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${client.status === "Ativo" ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground border-border"}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${client.status === "Ativo" ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
                   {client.status}
                 </span>
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${riskTone}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${riskTone}`}>
                   <ShieldCheck size={11} /> {riskLabel}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-muted-foreground border border-border font-mono">
-                  {client.cpf_cnpj || "SEM CPF"}
-                </span>
+                {client.cpf_cnpj && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold text-muted-foreground border border-border/60 bg-background/40 font-mono">
+                    {client.cpf_cnpj}
+                  </span>
+                )}
                 {kpis.activeContracts.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30">
-                    <FileText size={11} /> {kpis.activeContracts.length} Contrato{kpis.activeContracts.length > 1 ? "s" : ""} Ativo{kpis.activeContracts.length > 1 ? "s" : ""}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30">
+                    <FileText size={11} /> {kpis.activeContracts.length} ativo{kpis.activeContracts.length > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
             </div>
-
-            {/* Ações principais */}
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              <button onClick={() => setNewLoanMode(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all" style={{ background: "var(--gradient-button)" }}>
-                <Plus size={14} /> Novo Empréstimo
-              </button>
-              <ClientToolsPanel
-                open={showMoreActions}
-                onOpenChange={setShowMoreActions}
-                groups={toolGroups}
-                trigger={
-                  <button className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors">
-                    <Wrench size={13} /> Ferramentas
-                  </button>
-                }
-              />
-              <button onClick={startEdit} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-border bg-card hover:bg-accent transition-colors" title="Editar dados">
-                <Edit size={13} /> Editar
-              </button>
-            </div>
           </div>
 
-          {/* Financeiro Consolidado strip */}
-          <div className="mt-8 pt-6 border-t border-border/40 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {/* App-style action rail */}
+          <div className="mt-6 grid grid-cols-5 gap-2 md:flex md:justify-start md:gap-2">
             {[
-              { label: "Capital Ativo", value: `R$ ${fmt(kpis.totalCapital)}`, sub: `${kpis.activeContracts.length} contrato(s)`, tone: "text-foreground" },
-              { label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, sub: `${kpis.ltvPct}% do total`, tone: "text-emerald-400" },
-              { label: "Lucro Gerado", value: `R$ ${fmt(kpis.totalProfit)}`, sub: `Ticket médio R$ ${fmt(kpis.ticketMedio)}`, tone: "text-amber-300" },
-              { label: "Próximo Vencto.", value: kpis.nextDueInst ? formatBR(kpis.nextDueInst.due_date) : "—", sub: kpis.nextDueInst ? `R$ ${fmt(Number(kpis.nextDueInst.amount))}` : "Sem pendências", tone: kpis.overdueInst.length > 0 ? "text-rose-400" : "text-sky-300" },
+              { Icon: MessageSquare, label: "WhatsApp", tint: "text-emerald-300 bg-emerald-500/10 ring-emerald-400/30 hover:bg-emerald-500/20", onClick: () => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }, disabled: !getPhone() },
+              { Icon: Phone, label: "Ligar", tint: "text-sky-300 bg-sky-500/10 ring-sky-400/30 hover:bg-sky-500/20", onClick: () => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }, disabled: !client.phone },
+              { Icon: Mail, label: "E-mail", tint: "text-amber-300 bg-amber-500/10 ring-amber-400/30 hover:bg-amber-500/20", onClick: () => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }, disabled: !client.email },
+              { Icon: Send, label: "Portal", tint: "text-primary bg-primary/10 ring-primary/30 hover:bg-primary/20", onClick: sendPortalLink },
+              { Icon: Plus, label: "Empréstimo", tint: "text-primary-foreground ring-primary/40 hover:brightness-110", onClick: () => setNewLoanMode(true), primary: true },
+            ].map((a) => (
+              <button
+                key={a.label}
+                onClick={a.onClick}
+                disabled={a.disabled}
+                className={`group flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-2xl ring-1 transition-all hover:-translate-y-0.5 disabled:opacity-40 disabled:pointer-events-none md:min-w-[86px] ${a.tint}`}
+                style={a.primary ? { background: "var(--gradient-button)" } : undefined}
+              >
+                <a.Icon size={17} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{a.label}</span>
+              </button>
+            ))}
+            <ClientToolsPanel
+              open={showMoreActions}
+              onOpenChange={setShowMoreActions}
+              groups={toolGroups}
+              trigger={
+                <button className="group flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-2xl ring-1 ring-border bg-card/60 text-foreground hover:bg-accent transition-all hover:-translate-y-0.5 md:min-w-[86px]">
+                  <Wrench size={17} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Mais</span>
+                </button>
+              }
+            />
+            <button onClick={startEdit} className="group flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-2xl ring-1 ring-border bg-card/60 text-foreground hover:bg-accent transition-all hover:-translate-y-0.5 md:min-w-[86px] col-span-5 md:col-span-1" title="Editar dados">
+              <Edit size={17} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Editar</span>
+            </button>
+          </div>
+
+          {/* KPI strip */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            {[
+              { label: "Capital Ativo", value: `R$ ${fmt(kpis.totalCapital)}`, sub: `${kpis.activeContracts.length} contrato(s)`, Icon: Wallet, tint: "text-foreground", ring: "ring-border/60" },
+              { label: "Recebido", value: `R$ ${fmt(kpis.totalPaid)}`, sub: `${kpis.ltvPct}% do total`, Icon: CheckCircle, tint: "text-emerald-300", ring: "ring-emerald-400/20" },
+              { label: "Lucro", value: `R$ ${fmt(kpis.totalProfit)}`, sub: `Ticket R$ ${fmt(kpis.ticketMedio)}`, Icon: TrendingUp, tint: "text-amber-300", ring: "ring-amber-400/20" },
+              { label: "Próx. Vencto.", value: kpis.nextDueInst ? formatBR(kpis.nextDueInst.due_date) : "—", sub: kpis.nextDueInst ? `R$ ${fmt(Number(kpis.nextDueInst.amount))}` : "Sem pendências", Icon: Calendar, tint: kpis.overdueInst.length > 0 ? "text-rose-400" : "text-sky-300", ring: kpis.overdueInst.length > 0 ? "ring-rose-400/20" : "ring-sky-400/20" },
             ].map(k => (
-              <div key={k.label}>
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1.5">{k.label}</p>
-                <p className={`text-xl md:text-2xl font-bold tracking-tight ${k.tone}`} style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>{k.value}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{k.sub}</p>
+              <div key={k.label} className={`rounded-2xl bg-background/40 backdrop-blur-sm ring-1 ${k.ring} p-3.5 hover:-translate-y-0.5 transition-transform`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{k.label}</p>
+                  <k.Icon size={13} className={k.tint} />
+                </div>
+                <p className={`text-lg md:text-xl font-bold tracking-tight ${k.tint}`} style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}>{k.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{k.sub}</p>
               </div>
             ))}
           </div>
@@ -1258,39 +1287,44 @@ const ClienteDetalhe = () => {
 
       {/* ===== CONTENT ===== */}
 
-      {/* Contact */}
-      <div className="glass-card rounded-2xl p-5 hover-lift transition-all">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-md p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><User size={14} /></div>
+            <h3 className="text-sm font-bold text-foreground">Contato & Endereço</h3>
+          </div>
+          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/60 text-muted-foreground text-[11px] font-semibold hover:bg-accent hover:text-foreground transition-all">
+            <MapPin size={12} /> Endereço
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
-            { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20" },
-            { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20" },
-            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20" },
-            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20" },
+            { Icon: Phone, label: "Telefone", value: client.phone, tint: "text-sky-400 bg-sky-500/10 ring-sky-400/20", onClick: () => { if (client.phone) window.open(`tel:${client.phone.replace(/\D/g, "")}`, "_self"); } },
+            { Icon: MessageSquare, label: "WhatsApp", value: client.whatsapp || client.phone, tint: "text-emerald-400 bg-emerald-500/10 ring-emerald-400/20", onClick: () => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); } },
+            { Icon: Mail, label: "E-mail", value: client.email, tint: "text-amber-400 bg-amber-500/10 ring-amber-400/20", onClick: () => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); } },
+            { Icon: MapPin, label: "Cidade", value: address?.city ? `${address.city}/${address.state}` : null, tint: "text-violet-400 bg-violet-500/10 ring-violet-400/20", onClick: startEditAddress },
           ].map(item => (
-            <div key={item.label} className="flex items-start gap-3">
-              <div className={`w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
-                <item.Icon size={15} />
+            <button
+              key={item.label}
+              onClick={item.value ? item.onClick : startEdit}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-background/30 hover:bg-accent/60 hover:border-border transition-all text-left group"
+            >
+              <div className={`w-10 h-10 rounded-xl ring-1 flex items-center justify-center shrink-0 ${item.tint}`}>
+                <item.Icon size={16} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.14em] font-semibold">{item.label}</p>
-                <p className="text-sm text-foreground font-semibold truncate">{item.value || "—"}</p>
+                <p className="text-sm text-foreground font-semibold truncate">{item.value || <span className="text-muted-foreground/60 italic font-normal">Adicionar</span>}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
         {address?.street && (
           <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/40 flex items-center gap-1.5">
-            <MapPin size={12} className="text-primary" />
-            {address.street}{address.number ? `, ${address.number}` : ""} - {address.neighborhood} · {address.city}/{address.state}
+            <MapPin size={12} className="text-primary shrink-0" />
+            <span className="truncate">{address.street}{address.number ? `, ${address.number}` : ""}{address.neighborhood ? ` — ${address.neighborhood}` : ""} · {address.city}/{address.state}</span>
           </p>
         )}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40 flex-wrap">
-          <button onClick={() => { const p = client.phone; if (p) window.open(`tel:${p.replace(/\D/g, "")}`, "_self"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-400/20 text-xs font-semibold hover:bg-sky-500/20 hover:-translate-y-0.5 transition-all"><Phone size={13} /> Ligar</button>
-          <button onClick={() => { const p = getPhone(); if (p) window.open(`https://wa.me/${p}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-400/20 text-xs font-semibold hover:bg-emerald-500/20 hover:-translate-y-0.5 transition-all"><MessageSquare size={13} /> WhatsApp</button>
-          <button onClick={sendPortalLink} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-semibold hover:bg-primary/20 hover:-translate-y-0.5 transition-all"><Send size={13} /> Enviar Portal</button>
-          <button onClick={() => { if (client.email) window.open(`mailto:${client.email}`, "_blank"); }} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-400/20 text-xs font-semibold hover:bg-amber-500/20 hover:-translate-y-0.5 transition-all"><Mail size={13} /> E-mail</button>
-          <button onClick={startEditAddress} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border/60 text-muted-foreground text-xs font-semibold hover:bg-accent hover:text-foreground transition-all ml-auto"><MapPin size={13} /> Editar Endereço</button>
-        </div>
       </div>
 
       {/* Quick actions bar */}
