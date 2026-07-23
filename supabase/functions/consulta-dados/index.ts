@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCallerUser } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // SEGURANÇA (A2): exige usuário autenticado. Sem isso, qualquer um consultava
+    // CPF/CNPJ na internet gastando os créditos pagos da APIBrasil do dono e
+    // colhendo PII de terceiros em massa.
+    const user = await getCallerUser(req);
+    if (!user) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { tipo, documento } = await req.json();
 
     if (!tipo || !documento) {

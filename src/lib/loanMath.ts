@@ -350,11 +350,17 @@ export function buildAmortization(
       balance += interest;
       rows.push({ n: k + 1, payment: 0, interest, principal: 0, balance });
     }
-    // Pós-carência: parcelas iguais (sistema simples)
+    // Pós-carência: parcelas iguais (juros simples diluídos linearmente).
+    // O total de juros pós-carência é (pmt * n − saldo pós-carência); distribuímos
+    // igualmente por parcela para o saldo amortizar linearmente até zero e o total
+    // reconciliar com result.totalInterest. (A fórmula antiga balance*i/(n−k) não
+    // fechava: zerava o saldo cedo demais e subestimava os juros.)
     const remaining = result.schedule.length - grace;
     const pmt = result.schedule[grace] ?? 0;
+    const startBalance = balance; // capital acumulado ao fim da carência
+    const interestPer = remaining > 0 ? (pmt * remaining - startBalance) / remaining : 0;
     for (let k = 0; k < remaining; k++) {
-      const interest = balance * i / Math.max(1, remaining - k);
+      const interest = interestPer;
       const principal = pmt - interest;
       balance = Math.max(0, balance - principal);
       rows.push({ n: grace + k + 1, payment: pmt, interest, principal, balance });

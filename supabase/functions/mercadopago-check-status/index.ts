@@ -40,13 +40,15 @@ serve(async (req) => {
     });
     const data = await res.json();
     if (!res.ok) return json({ error: "mp_error", details: data }, 502);
+    // SEGURANÇA (M2): endpoint é público (polling do checkout antes do login), então
+    // NÃO retornamos payer_email — isso permitia enumerar IDs e vazar e-mails de
+    // clientes. Devolvemos apenas o necessário para a tela de status.
     return json({
       id: data.id,
       status: data.status,
       status_detail: data.status_detail,
       payment_method_id: data.payment_method_id,
       transaction_amount: data.transaction_amount,
-      payer_email: data?.payer?.email ?? null,
     });
   } catch (e) {
     return json({ error: String(e) }, 500);

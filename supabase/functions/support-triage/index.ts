@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAnthropicJSON } from "../_shared/anthropic.ts";
+import { getCallerUser } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +39,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // SEGURANÇA (A3): exige usuário autenticado. Sem isso, qualquer um iterava
+    // ticket_id e disparava triagem de IA sobre tickets de outros tenants (IDOR),
+    // lendo assunto/mensagens alheios e gastando custo de IA.
+    const user = await getCallerUser(req);
+    if (!user) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { ticket_id } = await req.json();
     if (!ticket_id) {
       return new Response(JSON.stringify({ error: "ticket_id obrigatório" }), {
@@ -53,7 +65,7 @@ Deno.serve(async (req) => {
 
     const { data: ticket, error: tErr } = await supabase
       .from("support_tickets")
-      .select("id, subject, category, priority, ai_triaged_at")
+      .select("id, user_id, subject, category, priority, ai_triaged_at")
       .eq("id", ticket_id)
       .single();
 
@@ -62,6 +74,18 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Só o dono do ticket ou um admin pode acionar a triagem.
+    if (ticket.user_id !== user.id) {
+      const { data: prof } = await supabase
+        .from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+      if (!prof?.is_admin) {
+        return new Response(JSON.stringify({ error: "forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (ticket.ai_triaged_at) {

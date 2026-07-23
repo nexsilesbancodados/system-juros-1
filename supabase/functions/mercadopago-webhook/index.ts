@@ -164,6 +164,18 @@ serve(async (req) => {
       });
     }
 
+    // SEGURANÇA (C3): nunca ativar assinatura por um pagamento abaixo do preço
+    // do plano. Fecha o bypass "pagar R$ 0,01 pelo plano de R$ 99,90". O valor
+    // esperado pode ser ajustado via env PLAN_MONTHLY_PRICE sem mudar código.
+    const EXPECTED_AMOUNT = Number(Deno.env.get("PLAN_MONTHLY_PRICE") ?? "99.9");
+    if (subscriptionStatus === "active" && !(Number(amountPaid) >= EXPECTED_AMOUNT - 0.01)) {
+      console.warn(
+        `Underpayment ignored: paid=${amountPaid} < expected=${EXPECTED_AMOUNT} (order=${orderId}, email=${email ?? "-"})`,
+      );
+      // Registra o pagamento, mas NÃO concede acesso.
+      subscriptionStatus = "inactive";
+    }
+
     if (!email) {
       console.warn("No email in MP payload, ignoring");
       return new Response(JSON.stringify({ message: "No email found, ignored" }), {

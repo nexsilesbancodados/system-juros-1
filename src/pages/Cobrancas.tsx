@@ -220,8 +220,16 @@ const Cobrancas = () => {
 
     const contract = inst.contracts;
     if (contract) {
+      // A4: juros da parcela = fração real do total de juros do contrato, não a
+      // fórmula rate/(1+rate) (que só vale p/ empréstimo de 1 período e subestimava
+      // o lucro em ~80% em contratos multi-parcela). Fallback p/ contratos antigos
+      // sem os totais salvos.
+      const totalAmount = Number(contract.total_amount || 0);
+      const totalInterest = Number(contract.total_interest || 0);
       const interestRate = Number(contract.interest_rate || 0) / 100;
-      const interestPortion = Number(inst.amount) * (interestRate / (1 + interestRate));
+      const interestPortion = totalAmount > 0
+        ? Number(inst.amount) * (totalInterest / totalAmount)
+        : Number(inst.amount) * (interestRate / (1 + interestRate));
       if (interestPortion > 0) {
         await supabase.from("profits").insert({
           user_id: user.id, amount: interestPortion,
@@ -230,11 +238,18 @@ const Cobrancas = () => {
         });
       }
     }
-    await supabase.from("transactions").insert({
-      user_id: user.id, amount: paid, type: "payment",
-      description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
-      client_id: inst.client_id, contract_id: inst.contract_id,
-    });
+    // A5: registra no caixa apenas o dinheiro NOVO desta chamada. Se já houve
+    // pagamento parcial (que já lançou sua transação), somar o valor cheio aqui
+    // duplicaria a entrada. newMoney = total pago agora - o que já estava pago.
+    const prevPaid = Number(inst.paid_amount || 0);
+    const newMoney = Math.max(0, Math.round((paid - prevPaid) * 100) / 100);
+    if (newMoney > 0) {
+      await supabase.from("transactions").insert({
+        user_id: user.id, amount: newMoney, type: "payment",
+        description: `Pagamento parcela #${inst.installment_number} - ${inst.client_name}`,
+        client_id: inst.client_id, contract_id: inst.contract_id,
+      });
+    }
     const { data: remaining } = await supabase
       .from("contract_installments").select("id").eq("contract_id", inst.contract_id).neq("status", "paid");
     if (remaining && remaining.length === 0) {

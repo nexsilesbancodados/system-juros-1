@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkSharedSecret } from "../_shared/guard.ts";
 import { parseMemory, mergeMemory, serializeMemory } from "../_shared/memory.ts";
 import {
   extractJsonObject,
@@ -203,6 +204,18 @@ async function escalateToHuman(supabase: any, convoId: string, reason: string) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // SEGURANÇA (C2): o Evolution não assina o payload, então exigimos um segredo
+  // compartilhado. Configure o webhook do Evolution com `?secret=<valor>` na URL
+  // (ou header x-webhook-secret) e defina EVOLUTION_WEBHOOK_SECRET nos secrets.
+  // FAIL-SAFE: só passa a EXIGIR quando o env estiver setado — assim o deploy do
+  // código não derruba a recepção antes de você configurar o segredo no Evolution.
+  if (!checkSharedSecret(req, "EVOLUTION_WEBHOOK_SECRET", "x-webhook-secret")) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

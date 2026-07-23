@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, templates } from "../_shared/brevo.ts";
+import { getCallerUser, checkSharedSecret } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,17 @@ serve(async (req) => {
   }
 
   try {
+    // SEGURANÇA (M3): sem auth, qualquer um enviava e-mail com a marca CredMais para
+    // qualquer destinatário (spam/phishing + queima de cota Brevo). Aceita um usuário
+    // autenticado OU um segredo interno (INTERNAL_FN_SECRET) para chamadas server-side.
+    const user = await getCallerUser(req);
+    if (!user && !checkSharedSecret(req, "INTERNAL_FN_SECRET", "x-internal-secret")) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!

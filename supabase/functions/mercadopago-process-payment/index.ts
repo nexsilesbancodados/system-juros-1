@@ -59,7 +59,10 @@ serve(async (req) => {
 
   // Corpo /v1/payments conforme docs oficiais MP
   const body: Record<string, unknown> = {
-    transaction_amount: Number(formData.transaction_amount ?? PLAN.amount),
+    // SEGURANÇA (C3): o valor é SEMPRE fixado no servidor. Nunca usar
+    // formData.transaction_amount (controlado pelo cliente) — senão qualquer um
+    // pagaria R$ 0,01 pelo plano de R$ 99,90 e ativaria a assinatura.
+    transaction_amount: PLAN.amount,
     description: PLAN.title,
     external_reference: PLAN.id,
     statement_descriptor: "CREDMAIS",

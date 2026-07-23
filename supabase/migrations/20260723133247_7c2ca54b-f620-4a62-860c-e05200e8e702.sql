@@ -1,0 +1,22 @@
+-- ============================================================================
+-- Segurança (C1) — Remove o vazamento de dados de clientes por CPF-only.
+--
+-- A função public.portal_client_login_cpf(_cpf text) era SECURITY DEFINER e
+-- tinha `GRANT EXECUTE ... TO anon` (migration 20260707204715). Com apenas um
+-- CPF (sem senha, sem data de nascimento, sem token), qualquer chamada anônima a
+--   POST /rest/v1/rpc/portal_client_login_cpf
+-- retornava o dossiê COMPLETO do cliente: nome, e-mail, telefone/WhatsApp, CPF,
+-- data de nascimento, TODOS os contratos e parcelas (valores, taxas, recibos) e
+-- a CHAVE PIX do credor — para qualquer cliente de qualquer tenant.
+--
+-- Como CPF é de baixa entropia e amplamente vazado no Brasil, isso constituía um
+-- oráculo de extração em massa de PII e dados financeiros (violação de LGPD) e
+-- viabilizava fraude de redirecionamento de PIX.
+--
+-- O portal do cliente (src/pages/PortalCliente.tsx) NÃO usa esta função: o login
+-- é feito por public.portal_client_login(_cpf, _birth_date), que exige a data de
+-- nascimento como 2º fator (campo obrigatório na tela). Portanto, remover a
+-- função CPF-only fecha o buraco sem quebrar o acesso legítimo dos clientes.
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.portal_client_login_cpf(text);

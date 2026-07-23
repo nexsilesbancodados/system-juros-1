@@ -605,11 +605,22 @@ const ClienteDetalhe = () => {
     if (inst) {
       const contract = contracts.find((c: any) => c.id === inst.contract_id);
       if (contract) {
+        // A4: juros = fração real do total de juros do contrato (não rate/(1+rate),
+        // que subestimava ~80% em contratos multi-parcela). Fallback p/ contratos
+        // antigos sem os totais salvos.
+        const totalAmount = Number(contract.total_amount || 0);
+        const totalInterest = Number(contract.total_interest || 0);
         const rate = Number(contract.interest_rate || 0) / 100;
-        const interest = amount * (rate / (1 + rate));
+        const interest = totalAmount > 0
+          ? amount * (totalInterest / totalAmount)
+          : amount * (rate / (1 + rate));
         if (interest > 0) await supabase.from("profits").insert({ user_id: user.id, amount: interest, description: `Juros parcela #${inst.installment_number} - ${client?.name}`, client_id: id });
       }
-      await supabase.from("transactions").insert({ user_id: user.id, amount, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name} (${method})`, client_id: id, contract_id: inst.contract_id });
+      // A5: registra no caixa só o dinheiro novo (evita duplicar quando já houve
+      // pagamento parcial, que já lançou sua própria transação).
+      const prevPaid = Number(inst.paid_amount || 0);
+      const newMoney = Math.max(0, Math.round((amount - prevPaid) * 100) / 100);
+      if (newMoney > 0) await supabase.from("transactions").insert({ user_id: user.id, amount: newMoney, type: "payment", description: `Pagamento parcela #${inst.installment_number} - ${client?.name} (${method})`, client_id: id, contract_id: inst.contract_id });
       const otherUnpaid = installments.filter((i: any) => i.contract_id === inst.contract_id && i.id !== instId && i.status !== "paid");
       if (otherUnpaid.length === 0) await supabase.from("contracts").update({ status: "completed" }).eq("id", inst.contract_id);
     }

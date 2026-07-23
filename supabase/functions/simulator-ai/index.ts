@@ -1,5 +1,6 @@
 // AI Simulator: returns smart insights and 3 alternative scenarios for a loan setup.
 import { callAnthropicJSON } from "../_shared/anthropic.ts";
+import { getCallerUser } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,9 +11,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth check: exige um token de usuário válido (anon ou autenticado) p/ não expor a chave da IA
-    const authHeader = req.headers.get("Authorization") || "";
-    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+    // Auth check: valida o token de fato (antes só checava se o header EXISTIA, então
+    // qualquer string "Bearer x" passava e gastava a chave da IA).
+    const user = await getCallerUser(req);
+    if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

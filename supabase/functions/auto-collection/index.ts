@@ -55,6 +55,14 @@ function buildNegotiationOffer(totalAmount: number, daysOverdue: number) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  // SEGURANÇA (M4): cron protegido por segredo. FAIL-SAFE: só exige quando
+  // CRON_SECRET estiver configurado nos secrets (senão apenas roda, como antes).
+  if (Deno.env.get("CRON_SECRET") &&
+      (req.headers.get("x-cron-secret") ?? new URL(req.url).searchParams.get("secret") ?? "") !== Deno.env.get("CRON_SECRET")) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);

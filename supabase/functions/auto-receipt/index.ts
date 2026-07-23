@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCallerUser } from "../_shared/guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,15 +11,26 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // SEGURANÇA (M1): exige usuário autenticado e deriva o user_id DELE (nunca do
+    // corpo). Sem isso, qualquer um que soubesse um installment_id disparava um
+    // "✅ Recibo de Pagamento" no WhatsApp do devedor via a instância do dono (fraude).
+    const user = await getCallerUser(req);
+    if (!user) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const user_id = user.id;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const body = await req.json().catch(() => ({}));
-    const { installment_id, user_id } = body;
-    if (!installment_id || !user_id) {
-      return new Response(JSON.stringify({ error: "installment_id e user_id obrigatórios" }), {
+    const { installment_id } = body;
+    if (!installment_id) {
+      return new Response(JSON.stringify({ error: "installment_id obrigatório" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -32,6 +44,13 @@ serve(async (req) => {
     if (!inst) {
       return new Response(JSON.stringify({ error: "Parcela não encontrada" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // A parcela precisa pertencer ao usuário autenticado.
+    if ((inst as any).user_id !== user_id) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
