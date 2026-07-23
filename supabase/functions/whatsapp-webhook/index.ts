@@ -750,7 +750,31 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
       const cleaned = rawText.replace(/```[a-z]*|```/gi, "").replace(/[{}\[\]"]/g, " ").trim();
       parsed = { reply: cleaned.slice(0, 400) || "Desculpe, tive um problema técnico. Pode repetir, por favor?" };
     }
-    const result = sanitizeAiResult(parsed);
+    const result: any = sanitizeAiResult(parsed);
+
+    // Preserva campos novos que o sanitizer estrito descarta (backward-compat).
+    const sentiment = ["positivo", "neutro", "frustrado", "hostil"].includes(parsed.sentiment) ? parsed.sentiment : "neutro";
+    const urgencia = ["baixa", "media", "alta"].includes(parsed.urgencia) ? parsed.urgencia : "baixa";
+    const dificuldade = parsed.dificuldade_financeira === true || tone.hardship;
+    const descontoPct = Math.max(0, Math.min(100, Number(parsed.desconto_pct) || 0));
+
+    // Escalonamento forçado por sinais fortes detectados ANTES da IA
+    if (preEscalate) {
+      result.needs_human = true;
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "🚨 Bot escalou para humano",
+        message: `Cliente ${client.name}: motivo = ${preEscalate}. Assuma a conversa quando puder.`,
+        type: "warning",
+      });
+    }
+
+    // Se o modelo pedir desconto > 15% (regra de escopo), força revisão humana
+    if (descontoPct > 15 && !result.needs_human) {
+      result.needs_human = true;
+    }
+
+
 
     // ─── Validação de PIX e valores antes de enviar ──────────────────────
     if (result.reply) {
