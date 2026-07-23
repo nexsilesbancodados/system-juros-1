@@ -607,6 +607,10 @@ ${pendingPromises.length ? pendingPromises.map(p => `- Promete pagar até ${p.da
 ═══ 🧠 MEMÓRIA DE LONGO PRAZO (JSON) ═══
 ${memoryPretty}
 
+═══ 🎯 INTENÇÕES RECENTES DO CLIENTE (mais novo → antigo) ═══
+${intentSummary || '(nenhuma intenção registrada ainda)'}
+${priorApproach ? `Última abordagem usada com este cliente: "${priorApproach}". VARIE — não repita o mesmo argumento/formato. Se ele já prometeu pagar, cobre a promessa; se pediu desconto, decida (aceita/contra-proposta); se abriu o portal, reforce o CTA de pagar por lá.` : ''}
+
 ═══ ✍️ TEMPLATES DA EMPRESA (inspiração de tom) ═══
 ${templatesText || '(sem templates cadastrados)'}
 
