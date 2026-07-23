@@ -130,6 +130,8 @@ export function mergeMemory(
     motivos_atraso: dedupArr(existing.motivos_atraso, safeUpdate.motivos_atraso, limit),
     contatos_alternativos: dedupArr(existing.contatos_alternativos, safeUpdate.contatos_alternativos, limit),
     promessas: dedupArr(existing.promessas, safeUpdate.promessas, limit),
+    // intenções: janela menor (12) — só interessa o passado recente
+    intencoes: dedupArr(existing.intencoes, safeUpdate.intencoes, Math.min(limit, 12)),
     ultima_interacao:
       (typeof safeUpdate.ultima_interacao === "string" && safeUpdate.ultima_interacao) ||
       todayStr ||
