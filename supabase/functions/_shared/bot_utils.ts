@@ -678,7 +678,7 @@ export function detectClientTone(text: string): {
   const frustrated = /(cansei|chateado|desisto|nunca mais|absurd|ridiculo|rid[íi]culo|não aguento|nao aguento|ta demais|tá demais|revoltad|indignad)/i.test(t);
   const urgent = /(urgente|agora mesmo|hoje mesmo|imediat|preciso muito|socorro|por favor rapid)/i.test(t);
   const paying_intent = /(vou pagar|vou fazer o pix|acabei de pagar|paguei agora|acabo de|manda o pix|me passa o pix|chave pix|quitar|quitação|regulariz)/i.test(t);
-  const hardship = /(desempregad|sem trabalho|desempreg|sem dinheiro|difícil|dificil|mal to comendo|não tenho como|nao tenho como|pai/mãe doente|doente|internad|acident|falec|morreu|luto|separei|divorci|corte de luz|despej)/i.test(t);
+  const hardship = /(desempregad|sem trabalho|desempreg|sem dinheiro|dif[íi]cil|mal to comendo|n[ãa]o tenho como|pai doente|m[ãa]e doente|filho doente|doente|internad|acident|falec|morreu|luto|separei|divorci|corte de luz|despej)/i.test(t);
   return { hostile, frustrated, urgent, paying_intent, hardship };
 }
 
