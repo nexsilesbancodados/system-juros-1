@@ -1530,7 +1530,9 @@ const NovoCliente = () => {
             )}
             </div>
           </div>
+          </>)}
 
+          {loanSubStep === 3 && (<>
           {/* ── ADVANCED CONTRACT FIELDS ── */}
           {!expressMode && (
           <details className="bg-card border border-border rounded-2xl p-5 group">
