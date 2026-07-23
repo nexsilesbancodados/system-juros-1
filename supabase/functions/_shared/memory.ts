@@ -16,6 +16,10 @@ export const MEMORY_SECTIONS = [
   "motivos_atraso",
   "contatos_alternativos",
   "promessas",
+  // Intenções recentes do cliente — cada item é um objeto:
+  // { tipo, data, detalhe?, abordagem?, canal?, resultado? }
+  // Usado para personalizar o PRÓXIMO envio (evitar repetir abordagem).
+  "intencoes",
 ] as const;
 
 export type MemorySection = typeof MEMORY_SECTIONS[number];
