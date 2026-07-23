@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.mercadopago-webhook]
 verify_jwt = false
+
+[functions.admin-create-lifetime]
+verify_jwt = false
