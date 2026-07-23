@@ -309,18 +309,27 @@ const Cobrancas = () => {
   const buildMessage = (inst: any, opts: { includePix?: boolean } = {}) => {
     const portalUrl = `${window.location.origin}/portal-cliente`;
     const total = inst.contracts?.num_installments || inst.total_installments || "";
-    const parcelaInfo = total ? `${inst.installment_number} de ${total}` : `${inst.installment_number}`;
-    const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
-    let base = billingTemplate
-      .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
-      .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
-      .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
-      .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
-      .replace(/\{portal\}|\[Portal\]/g, portalUrl)
-      .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
+    const parcelaInfo = total ? `${inst.installment_number}/${total}` : `${inst.installment_number}`;
+    const nome = inst.client_name || "";
+    const valor = Number(inst.amount).toFixed(2);
+    const data = formatBR(inst.due_date);
+    const customTemplate = profile?.billing_message;
+    let base: string;
+    if (customTemplate) {
+      base = customTemplate
+        .replace(/\{nome\}|\[Nome do Cliente\]/g, nome)
+        .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
+        .replace(/\{valor\}|\[Valor da Parcela\]/g, valor)
+        .replace(/\{data\}|\[Data\]/g, data)
+        .replace(/\{portal\}|\[Portal\]/g, portalUrl)
+        .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
+    } else {
+      // Mensagem curta padrão
+      base = `*Aviso de pagamento*\n${nome}\nParcela ${parcelaInfo} — R$ ${valor}\nVenceu em ${data}`;
+    }
     const pix = (profile as any)?.pix_key;
     if (opts.includePix && pix && !/PIX/i.test(base)) {
-      base += `\n\n💸 Pague via PIX:\nChave: ${pix}\nValor: R$ ${Number(inst.amount).toFixed(2)}`;
+      base += `\n\nPIX: ${pix}`;
     }
     return base;
   };
