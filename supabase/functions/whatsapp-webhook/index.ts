@@ -821,9 +821,61 @@ Ex3 — Cliente pede parcelar atraso de 3 parcelas:
     if (result.reply) await botSay(result.reply);
 
     // Merge inteligente da memória (validado + dedup + limite por seção, ver _shared/memory.ts)
-    if (result.memory_update) {
+    if (result.memory_update || true) {
       try {
-        const merged = mergeMemory(memoryObj, result.memory_update, todayStr);
+        let merged = mergeMemory(memoryObj, result.memory_update, todayStr);
+
+        // ─── Registra intenções derivadas desta interação ────────────────
+        // Deriva sinais do que a IA classificou + heurísticas locais para
+        // que o PRÓXIMO envio (webhook ou cron) evite repetir a abordagem.
+        const intents: IntentEntry[] = [];
+        const pushI = (e: IntentEntry) => intents.push(e);
+        if (result.is_promise && result.promise_date) {
+          pushI({ tipo: "prometeu_pagar", data: todayStr, detalhe: `até ${result.promise_date}`, canal: "whatsapp" });
+        }
+        if (descontoPct > 0 || result.intent === "negociacao" || /desconto|abatimento|acordo/i.test(incomingText || "")) {
+          pushI({ tipo: "pediu_desconto", data: todayStr, detalhe: descontoPct ? `${descontoPct}%` : undefined, canal: "whatsapp" });
+        }
+        if (dificuldade) {
+          pushI({ tipo: "dificuldade", data: todayStr, canal: "whatsapp" });
+        }
+        if (/prazo|adiar|proximo mes|próximo mês|semana que vem/i.test(incomingText || "")) {
+          pushI({ tipo: "pediu_prazo", data: todayStr, canal: "whatsapp" });
+        }
+        if (sentiment === "hostil" || tone.hostile) {
+          pushI({ tipo: "hostil", data: todayStr, canal: "whatsapp" });
+        }
+        if (result.intent === "renovacao" || result.is_rollover) {
+          pushI({ tipo: "renovacao", data: todayStr, canal: "whatsapp" });
+        }
+
+        // Registra a "abordagem" usada pelo bot nesta resposta, para que o
+        // próximo disparo saiba variar (rótulo curto derivado do estágio).
+        const abordagem =
+          result.needs_human ? "escalou_humano" :
+          descontoPct > 0 ? `acordo_${Math.round(descontoPct)}off` :
+          result.is_promise ? "aceitou_promessa" :
+          estagio === "em dia" ? "conversa_neutra" :
+          estagio === "lembrete amigável" ? "lembrete_amigavel" :
+          estagio === "cobrança padrão" ? "cobranca_padrao" :
+          estagio === "cobrança firme" ? "cobranca_firme" :
+          "pre_juridico";
+        pushI({ tipo: (result.intent === "pagamento" ? "prometeu_pagar" : "silencio") as any, data: todayStr, abordagem, canal: "whatsapp" });
+
+        for (const it of intents) merged = pushIntent(merged, it);
+
+        // Detecta acesso recente ao portal (últimas 24h) → intenção "abriu_portal"
+        const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+        const { data: portalHits } = await supabase
+          .from("portal_sessions")
+          .select("id, created_at")
+          .eq("client_id", client.id)
+          .gte("created_at", since)
+          .limit(1);
+        if (portalHits?.length) {
+          merged = pushIntent(merged, { tipo: "abriu_portal", data: todayStr, canal: "portal" });
+        }
+
         const serialized = serializeMemory(merged);
         // Garantia final: só grava se for JSON parseável (nunca corrompe a coluna)
         JSON.parse(serialized);
