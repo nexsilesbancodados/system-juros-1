@@ -135,7 +135,9 @@ export function calculateLoan(input: CalculateLoanInput): CalculateLoanResult | 
       };
     }
     if (periods > 0) {
-      const juros = capital * (rate / 100) * periods;
+      // Porcentagem: taxa aplicada UMA vez sobre o capital (total),
+      // e o total é dividido em N parcelas iguais.
+      const juros = capital * (rate / 100);
       const total = capital + juros;
       const parcela = total / periods;
       return {
