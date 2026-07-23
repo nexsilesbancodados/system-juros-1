@@ -474,6 +474,8 @@ serve(async (req) => {
     // Memória de longo prazo — JSON estruturado (com fallback p/ texto legado)
     const memoryObj = parseMemory(client.bot_memory);
     const memoryPretty = JSON.stringify(memoryObj, null, 2);
+    const intentSummary = summarizeIntents(memoryObj, 6);
+    const priorApproach = lastApproach(memoryObj);
 
     // Promessas pendentes (audit_logs) ainda não concluídas
     const pendingPromises = (openPromises || []).map(p => ({
