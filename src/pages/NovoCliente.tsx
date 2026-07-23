@@ -1762,8 +1762,7 @@ const NovoCliente = () => {
         </button>
         {step < 3 ? (
           <button onClick={goNext}
-            disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 transition-opacity"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-opacity"
             style={{ background: "var(--gradient-button, hsl(var(--primary)))" }}>
             Próximo <ArrowRight size={16} />
           </button>
