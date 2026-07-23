@@ -92,6 +92,7 @@ export function parseMemory(raw: unknown): BotMemory {
     motivos_atraso: [],
     contatos_alternativos: [],
     promessas: [],
+    intencoes: [],
   };
   if (!raw) return base;
   const s = String(raw);
