@@ -309,18 +309,27 @@ const Cobrancas = () => {
   const buildMessage = (inst: any, opts: { includePix?: boolean } = {}) => {
     const portalUrl = `${window.location.origin}/portal-cliente`;
     const total = inst.contracts?.num_installments || inst.total_installments || "";
-    const parcelaInfo = total ? `${inst.installment_number} de ${total}` : `${inst.installment_number}`;
-    const billingTemplate = profile?.billing_message || `Olá {nome}, sua parcela {parcela} no valor de R$ {valor} venceu em {data}. Por favor, regularize. Acesse seu portal: {portal}`;
-    let base = billingTemplate
-      .replace(/\{nome\}|\[Nome do Cliente\]/g, inst.client_name || "")
-      .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
-      .replace(/\{valor\}|\[Valor da Parcela\]/g, Number(inst.amount).toFixed(2))
-      .replace(/\{data\}|\[Data\]/g, formatBR(inst.due_date))
-      .replace(/\{portal\}|\[Portal\]/g, portalUrl)
-      .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
+    const parcelaInfo = total ? `${inst.installment_number}/${total}` : `${inst.installment_number}`;
+    const nome = inst.client_name || "";
+    const valor = Number(inst.amount).toFixed(2);
+    const data = formatBR(inst.due_date);
+    const customTemplate = profile?.billing_message;
+    let base: string;
+    if (customTemplate) {
+      base = customTemplate
+        .replace(/\{nome\}|\[Nome do Cliente\]/g, nome)
+        .replace(/\{parcela\}|\[Parcela\]/g, parcelaInfo)
+        .replace(/\{valor\}|\[Valor da Parcela\]/g, valor)
+        .replace(/\{data\}|\[Data\]/g, data)
+        .replace(/\{portal\}|\[Portal\]/g, portalUrl)
+        .replace(/\[Nome da Empresa\]/g, "CredMais App").replace(/Sr\(a\)\s*/g, "");
+    } else {
+      // Mensagem curta padrão
+      base = `*Aviso de pagamento*\n${nome}\nParcela ${parcelaInfo} — R$ ${valor}\nVenceu em ${data}`;
+    }
     const pix = (profile as any)?.pix_key;
     if (opts.includePix && pix && !/PIX/i.test(base)) {
-      base += `\n\n💸 Pague via PIX:\nChave: ${pix}\nValor: R$ ${Number(inst.amount).toFixed(2)}`;
+      base += `\n\nPIX: ${pix}`;
     }
     return base;
   };
@@ -364,22 +373,13 @@ const Cobrancas = () => {
   const getSelectedItems = () => installments.filter((i: any) => selected.has(i.id));
 
   const buildBulkWhatsAppMessage = (clientName: string, items: any[]) => {
-    const portalUrl = `${window.location.origin}/portal-cliente`;
     const pix = (profile as any)?.pix_key;
-    const pixType = (profile as any)?.pix_key_type;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const lines = items.map((i: any) => {
-      const d = parseLocalDate(i.due_date);
-      const days = d ? Math.floor((today.getTime() - d.getTime()) / 86400000) : 0;
-      const tag = days > 0 ? ` ⚠️ ${days}d atrasada` : days === 0 ? " 📌 vence hoje" : "";
-      const contractTag = i.contract_id ? ` (contrato #${String(i.contract_id).slice(0, 6)})` : "";
-      return `• Parcela #${i.installment_number}${contractTag} — R$ ${fmt(Number(i.amount))} — venc. ${formatBR(i.due_date)}${tag}`;
-    }).join("\n");
+    const lines = items.map((i: any) =>
+      `Parcela ${i.installment_number} — R$ ${fmt(Number(i.amount))} — venceu ${formatBR(i.due_date)}`
+    ).join("\n");
     const total = items.reduce((s: number, i: any) => s + Number(i.amount), 0);
-    const pixBlock = pix
-      ? `\n\n💸 *Pague via PIX*\nChave (${pixType || "PIX"}): *${pix}*\nValor total: *R$ ${fmt(total)}*\n_(a chave já foi copiada para sua área de transferência)_`
-      : "";
-    return `Olá ${clientName}, tudo bem? 👋\n\nIdentifiquei ${items.length} parcela${items.length > 1 ? "s" : ""} pendente${items.length > 1 ? "s" : ""} totalizando *R$ ${fmt(total)}*:\n\n${lines}${pixBlock}\n\nQualquer dúvida estou à disposição. Obrigado! 🙏\n\nPortal: ${portalUrl}`;
+    const pixBlock = pix ? `\n\nPIX: ${pix}` : "";
+    return `*Aviso de pagamento*\n${clientName}\n${lines}\nTotal: R$ ${fmt(total)}${pixBlock}`;
   };
 
   const handleBulk = (channel: "whatsapp" | "email") => {
